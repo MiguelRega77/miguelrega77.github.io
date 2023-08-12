@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-08-12T10:57:25-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">l1nvx - blog</title><subtitle>Publicare articulos sobre HackTheBox, TryHackme y algunas cosas que me llaman la atencion.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-08-12T11:17:22-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">l1nvx - blog</title><subtitle>Publicare articulos sobre HackTheBox, TryHackme y algunas cosas que me llaman la atencion.
 </subtitle><author><name>l1nvx</name></author><entry><title type="html">HackTheBox - Busqueda (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2023/08/12/Busqueda.html" rel="alternate" type="text/html" title="HackTheBox - Busqueda (easy)" /><published>2023-08-12T00:00:00-04:00</published><updated>2023-08-12T00:00:00-04:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2023/08/12/Busqueda</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2023/08/12/Busqueda.html"><![CDATA[<p><img src="https://www.hackthebox.com/storage/avatars/a6942ab57b6a79f71240420442027334.png" alt="busqueda-avatar" /></p>
 
 <p>Busqueda es una maquina facil, comienza con una enumeracion web inicial, encontraremos y explotaremos una vulnerabilidad de Searchor que esta web utiliza.</p>
@@ -111,9 +111,9 @@ Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><
 <span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> contraseña para l1nvx:
 10.10.11.208 searcher.htb</code></pre></figure>
 
-<p>Algo que yo siempre hago y recomiendo es utilizar un scope usando expresiones regulares, porque existe la posibilidad que en el codigo de la web realize una peticion a un subdominio.</p>
-
 <h3 id="configuracion-de-burpsuite"><strong>Configuracion De Burpsuite</strong></h3>
+
+<p>Algo que yo siempre hago y recomiendo es utilizar un scope usando expresiones regulares, porque existe la posibilidad que en el codigo de la web realize una peticion a un subdominio.</p>
 
 <p><img src="/assets/hackthebox/img/machines/easy/busqueda/burpsuite-scope.png" alt="burpsuite-scope" /></p>
 
