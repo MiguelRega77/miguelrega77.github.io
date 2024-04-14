@@ -1,12 +1,12 @@
-title: l1nvx - blog 
+title: MiguelRega7 - blog 
 author:
-  name: l1nvx
+  name: MiguelRega7
 #  email: your-email@domain.com
 
 # The `>` after `description:` means to ignore line-breaks until next key.
 # If you want to omit the line-break after the end of text, use `>-` instead.
 description: >
-  Publicare articulos sobre HackTheBox, TryHackme y algunas cosas que me llaman la atencion.
+  Posts sobre resolucion de CTFs y ciberseguridad.
 
 # Build settings
 
