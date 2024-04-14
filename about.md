@@ -18,3 +18,9 @@ Estas son las certificaciones que planeo obtener a lo largo de mi carrera:
 
 - ![](https://images.credly.com/images/ec81134d-e80b-4eb5-ae07-0eb8e1a60fcd/image.png){: .align-left width="40" height="40"} OSCP (Offensive Security Certified Professional)
 
+
+- ![Github](https://github.com/MikeRega7)
+
+- ![Linkedln](https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278)
+
+- ![Hack The Box](https://app.hackthebox.com/profile/910232)
