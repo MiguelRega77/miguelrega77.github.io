@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Vulnlab - Escape | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Vulnlab - Escape" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/vulnlab/machines/2024/03/25/escape.html" />
+<meta property="og:url" content="http://localhost:4000/vulnlab/machines/2024/03/25/escape.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-25T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Vulnlab - Escape" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-25T00:00:00-06:00","datePublished":"2024-03-25T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Vulnlab - Escape","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnlab/machines/2024/03/25/escape.html"},"url":"http://localhost:4000/vulnlab/machines/2024/03/25/escape.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Vulnlab - Escape</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-25T00:00:00-06:00" itemprop="datePublished">
+        Mar 25, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/vulnlab/img/machines/escape/icon.png" />
+</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> donde solo encontramos un puerto abierto <strong>3389</strong> por el protocolo <strong>TCP</strong> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-rdp">https://book.hacktricks.xyz/network-services-pentesting/pentesting-rdp</a> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p3389</span> 10.10.90.255 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-02-27 10:47 CST
+Nmap scan report <span class="k">for </span>10.10.90.255
+Host is up <span class="o">(</span>0.18s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE       VERSION
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+|_ssl-date: 2024-02-27T16:48:15+00:00<span class="p">;</span> 0s from scanner time.
+| rdp-ntlm-info:
+|   Target_Name: ESCAPE
+|   NetBIOS_Domain_Name: ESCAPE
+|   NetBIOS_Computer_Name: ESCAPE
+|   DNS_Domain_Name: Escape
+|   DNS_Computer_Name: Escape
+|   Product_Version: 10.0.19041
+|_  System_Time: 2024-02-27T16:48:11+00:00
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>Escape
+| Not valid before: 2024-02-02T11:08:33
+|_Not valid after:  2024-08-03T11:08:33
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+
+<h2 id="xfreerdp">xfreerdp</h2>
+
+<ul>
+  <li>Vamos a conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap xfreerdp /v:10.10.90.255 /tls-seclevel:0 <span class="nt">-sec-nla</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Nos dice lo siguiente que nos conectemos con el usuario <strong>KiosUser0</strong> .</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/UieJqtq.png" />
+</p>
+
+<p align="center">
+<img src="https://i.imgur.com/kH5q7gE.png" />
+</p>
+
+<ul>
+  <li>Una vez conectados vemos lo siguiente:</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/GhZZKNL.png" />
+</p>
+
+<ul>
+  <li>Como tal la máquina se llama <strong>Escape</strong> a sí que tenemos que escapar del modo <strong>Kios mode</strong> si presionamos la tecla <strong>Windows</strong> funciona.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/3Qz8UuZ.png" />
+</p>
+
+<ul>
+  <li>Si intentamos arrancar una consola, simplemente no nos deja.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/xi7PNAh.png" />
+</p>
+
+<ul>
+  <li>Si preguntamos a <strong>ChatGPT</strong> sobre <strong>Windows Kiosk</strong> nos dice que puede ser configurado para abrir un navegador o aplicación en específico.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/7o1mxOE.png" />
+</p>
+
+<ul>
+  <li>Podemos ejecutar el navegador de <strong>Windows</strong> <a href="https://blog.nviso.eu/2022/05/24/breaking-out-of-windows-kiosks-using-only-microsoft-edge/">https://blog.nviso.eu/2022/05/24/breaking-out-of-windows-kiosks-using-only-microsoft-edge/</a>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/TGrxsKS.png" />
+</p>
+
+<ul>
+  <li>Vemos que <strong>ChatGPT</strong> también nos dice que podemos acceder a archivos.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/OUpii2B.png" />
+</p>
+
+<ul>
+  <li>Si escribimos <code class="language-plaintext highlighter-rouge">file:///C:\</code> vemos el <strong>C</strong> <strong>Drive</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/QDPE7We.png" />
+</p>
+
+<ul>
+  <li>Examinando dentro de <strong>admin</strong> hay un archivo <strong>profiles.xml</strong> con una contraseña:</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/BSiTKkP.png" />
+</p>
+
+<ul>
+  <li>En la ruta <strong>C:\Windows\System32</strong> encontramos un ejecutable interesante vamos a descargarlo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/01.png" />
+</p>
+
+<ul>
+  <li>No podemos ejecutarlo porque como nos dijo <strong>ChatGPT</strong> el <strong>Windows Kiosk</strong> se configura para que el usuario solo pueda ejecutar algo en específico como vimos que podemos ejecutar <strong>msedge</strong> vamos a cambiarle el nombre al archivo y lo ejecutamos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/02.png" />
+</p>
+
+<ul>
+  <li>Funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/03.png" />
+</p>
+
+<ul>
+  <li>Vamos a usar <strong>Powershell</strong> para poder ejecutar comandos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/04.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si recordamos tenemos un password, pero está encriptada podemos usar lo siguiente <a href="https://www.nirsoft.net/utils/bullets_password_view.html">https://www.nirsoft.net/utils/bullets_password_view.html</a> .</p>
+  </li>
+  <li>
+    <p>Una vez descargado lo pasamos a la máquina víctima.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/05.png" />
+</p>
+
+<ul>
+  <li>En caso de que no se pueda hacemos lo siguiente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/06.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora vamos a copear él <strong>.exe</strong> a la carpeta de <strong>_admin</strong> .</p>
+  </li>
+  <li>
+    <p>Ahora vamos a ejecutar el <strong>Remote Desktop</strong> para poder ver la contraseña.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/07.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora vamos a <strong>Manages Profiles</strong> y despues en <strong>Import Profiles</strong>.</p>
+  </li>
+  <li>
+    <p>Pero antes vamos a copear el <strong>profiles.xml</strong> que necesitamos.</p>
+  </li>
+</ul>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\_admin</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">copy</span><span class="w"> </span><span class="o">.</span><span class="nx">\profiles.xml</span><span class="w"> </span><span class="nx">C:\Users\kioskUser0\Downloads\</span><span class="w">    
+</span></code></pre></div></div>
+
+<ul>
+  <li>Y ahora importamos el <strong>profiles.xml</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/08.png" />
+</p>
+
+<h2 id="password">Password</h2>
+
+<ul>
+  <li>Ahora, si ejecutamos el <code class="language-plaintext highlighter-rouge">BulletsPassView.exe</code> desde la consola, tenemos la contraseña:</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/09.png" />
+</p>
+
+<ul>
+  <li>Vemos que el usuario <strong>admin</strong> es un usuario del sistema.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/10.png" />
+</p>
+
+<ul>
+  <li>Para convertirnos en ese usuario vamos a usar <strong>Runas.exe</strong> <a href="https://www.jctsoluciones.com.co/uso-del-comando-runas-en-windows/">https://www.jctsoluciones.com.co/uso-del-comando-runas-en-windows/</a>.</li>
+</ul>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\_admin</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">runas</span><span class="w"> </span><span class="nx">/user:admin</span><span class="w"> </span><span class="nx">cmd</span><span class="w">                                                                                          </span><span class="nx">Enter</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">password</span><span class="w"> </span><span class="nx">for</span><span class="w"> </span><span class="nx">admin:</span><span class="w">  
+</span></code></pre></div></div>
+
+<h2 id="shell-as-admin">Shell as admin</h2>
+
+<ul>
+  <li>Ahora estamos como ese usuario:</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/11.png" />
+</p>
+
+<ul>
+  <li>Pero no somos el <strong>administrator</strong> .</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/12.png" />
+</p>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<ul>
+  <li>
+    <p>Tenemos que hacer un bypass de UAC.</p>
+  </li>
+  <li>
+    <p>Vamos a ejecutar una <strong>cmd.exe</strong> con privilegios elevados usando <strong>runas</strong>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/13.png" />
+</p>
+
+<ul>
+  <li>Y ya podemos ver la flag porque tenemos privilegios máximos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/14.png" />
+</p>
+
+  </div><a class="u-url" href="/vulnlab/machines/2024/03/25/escape.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

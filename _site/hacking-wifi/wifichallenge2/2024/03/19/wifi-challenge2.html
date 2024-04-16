@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Hacking Wifi - WifiChallenge 2 | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="Hacking Wifi - WifiChallenge 2" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hacking-wifi/wifichallenge2/2024/03/19/wifi-challenge2.html" />
+<meta property="og:url" content="http://localhost:4000/hacking-wifi/wifichallenge2/2024/03/19/wifi-challenge2.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-03-19T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Hacking Wifi - WifiChallenge 2" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-03-19T00:00:00-06:00","datePublished":"2024-03-19T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"Hacking Wifi - WifiChallenge 2","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hacking-wifi/wifichallenge2/2024/03/19/wifi-challenge2.html"},"url":"http://localhost:4000/hacking-wifi/wifichallenge2/2024/03/19/wifi-challenge2.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Hacking Wifi - WifiChallenge 2</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-03-19T00:00:00-06:00" itemprop="datePublished">
+        Mar 19, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="/assets/wifi/wifi-challenge2/icon.PNG" />
+</p>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+
+<ul>
+  <li>Para descargar la maquina virtual y podemos acceder al laboratorio puedes hacerlo desde aquí <a href="https://drive.proton.me/urls/Q4WPB23W7R#Qk4nxMH8Q4oQ">https://drive.proton.me/urls/Q4WPB23W7R#Qk4nxMH8Q4oQ</a>.</li>
+</ul>
+
+<p><a href="https://wifichallengelab.com/">https://wifichallengelab.com/</a></p>
+
+<ul>
+  <li>
+    <p>Las credenciales para acceder al laboratorio son <code class="language-plaintext highlighter-rouge">user:user</code>.</p>
+  </li>
+  <li>
+    <p>Para poner el teclado en español usamos <code class="language-plaintext highlighter-rouge">setxkbmap es</code>.</p>
+  </li>
+</ul>
+
+<h2 id="introducction">Introducction</h2>
+
+<h1 id="what-is-the-contents-of-the-file-rootflagtxt-on-the-vm">What is the contents of the file /root/flag.txt on the VM?</h1>
+
+<ul>
+  <li>En este reto simplemente nos piden mostrar el contenido de la flag <code class="language-plaintext highlighter-rouge">flag.txt</code> una vez nos vamos ala ruta  <code class="language-plaintext highlighter-rouge">/root</code> vemos la flag ahora simplemente la mostramos.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/HUZbHgV.png" alt="" /></p>
+
+<h2 id="recon">Recon</h2>
+
+<h1 id="what-is-the-channel-that-the-wifi-global-access-point-is-currently-using">What is the channel that the wifi-global Access Point is currently using?</h1>
+
+<ul>
+  <li>
+    <p>Como primer desafío nos piden decir cual es canal donde esta operativo el <strong>AP</strong> <strong>wifi-global</strong> o donde esta corriendo, para esto podemos usar  <code class="language-plaintext highlighter-rouge">airodump-ng </code> pero primero vamos a poner la antena en modo monitor <strong>no es necesario que tu tengas una antena físicamente el laboratorio ya cuenta con ella</strong>.</p>
+  </li>
+  <li>
+    <p>Para hacer esto ejecutamos lo siguiente.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/eMcO4wm.png" alt="" /></p>
+
+<ul>
+  <li>Una vez hecho podemos proceder lo que haremos primeramente es ejecutar <code class="language-plaintext highlighter-rouge">airodump-ng</code> con las opciones de <code class="language-plaintext highlighter-rouge">--band abg</code> que sirve para que nos muestre <strong>APs</strong> que usan <strong>2.4 GHz</strong> o <strong>5GHz</strong> una vez dicho esto vamos a ejecutar <code class="language-plaintext highlighter-rouge">airodump-ng start wlan0mon --band abg</code> y con eso veremos en que canal opera el <strong>AP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/fUdydXV.png" alt="" /></p>
+
+<h1 id="what-is-the-mac-of-the-wifi-it-client">What is the MAC of the wifi-IT client?</h1>
+
+<ul>
+  <li>Ahora nos piden conocer la dirección <strong>MAC</strong> que esta usando el cliente conectado al <strong>AP</strong> <strong>wifi-IT client</strong> para eso como ya conocemos los canales donde estan operando los <strong>APs</strong> que vimos podemos filtrar directamente por el canal para que nos muestre información de ese <strong>AP</strong> y ver directamente la <strong>MAC</strong> para eso simplemente ejecutamos el anterior comando + <code class="language-plaintext highlighter-rouge">-c 11</code> que es donde esta operando el <strong>AP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/ZkgCEY4.png" alt="" /></p>
+
+<h1 id="what-is-the-probe-of-78c1a7bf7246">What is the probe of 78:C1:A7:BF:72:46?</h1>
+
+<ul>
+  <li>Ahora nos piden saber el <strong>probe</strong> de esa dirección <strong>MAC</strong> cuando usamos  <code class="language-plaintext highlighter-rouge">airodump-ng</code> podemos ver siempre en la parte de abajo hay un apartado que se llama <code class="language-plaintext highlighter-rouge">Probes</code> lo unico que tenemos que hacer es ver el nombre del <strong>probe</strong> que opera en esa direccion <strong>mac</strong>  <code class="language-plaintext highlighter-rouge">airodump-ng wlan0mon --band abg</code>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/I8DysqE.png" alt="" /></p>
+
+<h1 id="what-is-the-essid-of-the-hidden-ap-mac-f09fc26a8826">What is the ESSID of the hidden AP (mac F0:9F:C2:6A:88:26)?</h1>
+
+<ul>
+  <li>
+    <p>Ahora nos piden saber el <strong>ESSID</strong> del <strong>AP</strong> que esta escondido con la <strong>MAC</strong> <strong>F0:9F:C2:6A:88:26</strong> hay que saber que no siempre vamos a poder ver los nombres de todos los <strong>APs</strong> cuando nos hablan de <strong>ESSID</strong> es por que el nombre de la red no es publico y cuando nos hablan de <strong>BSSID</strong> es la dirección <strong>MAC</strong> del punto de acceso.</p>
+  </li>
+  <li>
+    <p>Si recordamos previamente cuando ejecutamos <code class="language-plaintext highlighter-rouge">airodump-ng wlan0mon --band abg</code> vimos un <strong>AP</strong> oculto con esa dirección <strong>MAC</strong> que opera en el canal <strong>11</strong> a si que vamos a establecer <strong>wlan0mon</strong> que opere en el canal <strong>11</strong> con <code class="language-plaintext highlighter-rouge">iwconfig wlan0mon channel 11</code>.</p>
+  </li>
+  <li>
+    <p>Ahora vamos a usar <strong>mdk4</strong> <strong>“Murder Death Kill 4”</strong> para emitir <strong>Probes</strong> usando el <strong>rockyou.txt</strong> la herramienta va ir enviando <strong>Probes</strong> con un posible nombre del <strong>ESSID</strong> que los nombres están en el <strong>rockyou.txt</strong> y cuando el <strong>AP</strong> responda significa que ese es su nombre correcto.</p>
+  </li>
+</ul>
+
+<p>-Para que esto sea mas rápido lo que podemos hacer es agregar la palabra <strong>wifi-</strong> antes del nombre que es como sugiere el creador para hacer esto podemos hacerlo así <code class="language-plaintext highlighter-rouge">sed 's/^/wifi-/' ~/rockyou-top100000.txt &gt; ~/wifi-rockyou.txt</code> .</p>
+
+<ul>
+  <li>
+    <p>Ahora si ejecutamos lo siguiente <code class="language-plaintext highlighter-rouge">mdk4 wlan0mon p -t F0:9F:C2:6A:88:26 -f ~/wifi-rockyou.txt</code>.</p>
+  </li>
+  <li>
+    <p>Y encontramos el nombre.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/p9g8dIr.png" alt="" /></p>
+
+<h2 id="opn">OPN</h2>
+
+<h1 id="what-is-the-flag-in-the-hidden-ap-router-behind-default-credentials">What is the flag in the hidden AP router behind default credentials?</h1>
+
+<ul>
+  <li>Para empezar es necesario comprender que significa una red <strong>OPN</strong> esto quiero decir que es una red <strong>abierta</strong> o sin <strong>seguridad</strong> no utiliza ningún método de autenticación o cifrado nos dicen que que el <strong>hidden AP</strong> como ya conocemos el nombre ya que previamente usamos <code class="language-plaintext highlighter-rouge">mdk4</code> para conocerlo como no emplea seguridad podemos crear un <strong>.conf</strong> especificando el nombre y que tiene contraseña y usar <code class="language-plaintext highlighter-rouge">wpa_supplicant</code> para asociarnos a ese <strong>AP</strong> le tenemos que indicar el driver que <code class="language-plaintext highlighter-rouge">wpa_supplicant</code> va a utilizar y la interfaz de red que va a usar para esto simplemente ejecutamos lo siguiente.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/JnwPew9.png" alt="" /></p>
+
+<ul>
+  <li>Ahora ejecutamos el <strong>wpa_supplicant</strong>, Y en otra terminal como <strong>root</strong> nos vamos asignar una dirección <strong>IP</strong> por <strong>DHCP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/hUDVDKq.png" alt="" /></p>
+
+<ul>
+  <li>Y ahora abrimos el navegador y nos dirigimos al <strong>Panel de autenticaccion</strong> donde si probamos las credenciales por defecto <strong>admin/admin</strong> son correctas y una vez hecho eso podremos ver la flag.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/IpeVlky.png" alt="" /></p>
+
+<ul>
+  <li>Por ultimo para evitar conflictos ejecutamos lo siguiente <code class="language-plaintext highlighter-rouge">dhclient wlan2 -r</code>.</li>
+</ul>
+
+<h1 id="what-is-the-flag-on-the-ap-router-of-the-wifi-guest-network">What is the flag on the AP router of the wifi-guest network?</h1>
+
+<ul>
+  <li>Pues bueno ahora nos piden saber la flag en el <strong>AP</strong> de <strong>wifi-guest</strong> de los antiguos ataques que hemos hecho sabemos que este <strong>AP</strong> opera en el canal <strong>6</strong> a si que estaremos con <strong>airodump-ng</strong> capturando trafico de esa red en especifico mientras nos conectamos a ese <strong>AP</strong>.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">airodump-ng wlan0mon --band abg --essid wifi-guest -c 6 -w captura</code></p>
+
+<ul>
+  <li>
+    <p>Ahora vamos a crear de nuevo un <strong>.conf</strong>.</p>
+  </li>
+  <li>
+    <p>Y ejecutamos el <code class="language-plaintext highlighter-rouge">wpa_supplicant</code> de la misma forma que antes.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/3EJiMZb.png" alt="" /></p>
+
+<ul>
+  <li>Ahora nos asignamos <strong>IP</strong> en otra terminal.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">dhclient -v wlan2</code></p>
+
+<ul>
+  <li>Ahora si vamos a nuestro navegador y vamos ala <strong>IP</strong> del <strong>router</strong> eh intentamos acceder con credenciales por defecto no vamos a poder.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/EVrHIc6.png" alt="" /></p>
+
+<ul>
+  <li>
+    <p>La única forma de acceder es haciendo un <strong>Bypass</strong> al panel de login si vemos en <strong>airodump-ng</strong> hay un cliente asociado al <strong>AP</strong> podemos usar su direccion <strong>MAC</strong>.</p>
+  </li>
+  <li>
+    <p>Para hacer esto vamos a matar los procesos que ya estaban corriendo.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/Mys23NU.png" alt="" /></p>
+
+<ul>
+  <li>
+    <p>Ahora nos volvemos asignar <strong>IP</strong> con <strong>dhclient</strong>.</p>
+  </li>
+  <li>
+    <p>Y nos carga.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/dql1j5s.png" alt="" /></p>
+
+<ul>
+  <li>
+    <p>Bueno para obtener las credenciales es importante saber que estamos en una web a lo que se tramita una petición ya sea por <strong>POST</strong> o <strong>GET</strong> como estamos capturando trafico podemos abrir la captura donde estamos exportando el trafico con <strong>wireshark</strong> y ver si hay algunas credenciales en el trafico de red.</p>
+  </li>
+  <li>
+    <p>Y hay vemos las credenciales.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/x7Si8bG.png" alt="" /></p>
+
+<h2 id="wep">WEP</h2>
+
+<ul>
+  <li>Ahora nos piden obtener la contraseña del <strong>AP</strong> <strong>wifi-old</strong> es importante saber que <strong>WEP</strong> es un protocola de seguridad muy viejo que es fácilmente vulnerable si vemos las redes disponibles vemos las siguientes hay encontramos el <strong>AP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/5pBZGU6.png" alt="" /></p>
+
+<ul>
+  <li>Hay un cliente asociado al <strong>AP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/IDER8eO.png" alt="" /></p>
+
+<ul>
+  <li>Ahora como el <strong>AP</strong> usa <strong>WEP</strong> podemos usar <strong>besside-ng</strong> para que haga un ataque de fuerza bruta y nos encuentre la contraseña <code class="language-plaintext highlighter-rouge">besside-ng -c 1 -b F0:9F:C2:AA:19:29 wlan2</code>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/I8uZJc9.png" alt="" /></p>
+
+<h2 id="psk">PSK</h2>
+
+<ul>
+  <li>Ahora entramos el <strong>PSK</strong> que esta orientado en <strong>WPA2</strong> <strong>PSK</strong> <strong>“Wi-Fi Protected Access 2 con Pre-Shared Key”</strong> es un protocolo de seguridad que operan las redes inalámbricas y cifran la comunicación entre dispositivos, <strong>PSK</strong> <strong>Pre-Shared Key</strong> es una clave de seguridad que comparte entre los dispositivos que se conectan hoy en día ya existe <strong>WPA3</strong> que ya no utiliza <strong>PSK</strong> cuando un dispositivo se conecta a un <strong>AP</strong> emite un <strong>Probe Request</strong> y el router emite el <strong>Probe response</strong>.</li>
+</ul>
+
+<h1 id="what-is-the-wifi-mobile-ap-password">What is the wifi-mobile AP password?</h1>
+
+<ul>
+  <li>
+    <p>Para los ataques <strong>WPA2 PSK</strong> necesitamos obtener el <strong>Handshake</strong> o el apretón de manos se realiza cuando el dispositivo o el cliente se conecta al <strong>AP</strong> ya que hay viaja la contraseña encriptada.</p>
+  </li>
+  <li>
+    <p>Si vemos con <code class="language-plaintext highlighter-rouge">airodump-ng</code> el <strong>AP</strong> usa <strong>PSK</strong> y opera en el canal <strong>6</strong>.</p>
+  </li>
+  <li>
+    <p>Primeramente nos vamos a poner a capturar trafico en el canal 6 y lo vamos a exportar para poder capturar el <strong>handshake</strong> <code class="language-plaintext highlighter-rouge">airodump-ng wlan0mon -c 6 -w captura</code>.</p>
+  </li>
+  <li>
+    <p>Vamos a hacer ejecutar lo siguiente <code class="language-plaintext highlighter-rouge">iwconfig wlan0mon channel 6</code>.</p>
+  </li>
+  <li>
+    <p>Ahora vamos a emitir <strong>15</strong> paquetes de <strong>Deautenticación</strong> para que los clientes asociados se desconecten y cuando se vuelvan a conectar podremos capturar el <strong>Handshake</strong> <code class="language-plaintext highlighter-rouge">aireplay-ng -0 10 -a F0:9F:C2:71:22:12 wlan0mon</code>.</p>
+  </li>
+  <li>
+    <p>Una vez se emiten y el cliente se reasocia obtenemos el <strong>handshake</strong>.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/oHe4NrJ.png" alt="" /></p>
+
+<ul>
+  <li>Ahora podemos usar <code class="language-plaintext highlighter-rouge">aircrack-ng</code> y el <strong>rockyou</strong> para poder encontrar la contraseña <code class="language-plaintext highlighter-rouge">aircrack-ng captura-01.cap -w ~/rockyou-top100000.txt</code>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/QY3ZXxR.png" alt="" /></p>
+
+<h1 id="what-is-the-ip-of-the-web-server-in-the-wifi-mobile-network">What is the IP of the web server in the wifi-mobile network?</h1>
+
+<ul>
+  <li>Si tenemos la contraseña del <strong>AP</strong> podemos desencriptar el trafico usando <strong>airdecap-ng</strong> <a href="https://mikerega7.github.io/hacking-writeup-wifi/#espionaje">https://mikerega7.github.io/hacking-writeup-wifi/#espionaje</a> para esto simplemente le indicamos la captura el nombre del <strong>AP</strong> y la contraseña del <strong>AP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/ox1OFrd.png" alt="" /></p>
+
+<ul>
+  <li>
+    <p>Ahora lo que vamos a hacer abrir el <strong>wireshark</strong> para ver la dirección <strong>IP</strong> <code class="language-plaintext highlighter-rouge">wireshark captura-01-dec.cap</code>.</p>
+  </li>
+  <li>
+    <p>Hay podemos ver una <strong>cookie</strong> y una <strong>IP</strong> vamos a guardar la <strong>cookie</strong>.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/U6feLYz.png" alt="" /></p>
+
+<h1 id="what-is-the-flag-after-login-in-wifi-mobile">what is the flag after login in wifi-mobile?</h1>
+
+<ul>
+  <li>Y bueno ahora después de todo esto que hicimos nos piden obtener la flag después de conectarnos al <strong>AP</strong> como nos están diciendo que nos conectemos vamos a usar <code class="language-plaintext highlighter-rouge">wpa_supplicant</code> empleando el <strong>.conf</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/0S9vE5J.png" alt="" /></p>
+
+<ul>
+  <li>Ahora de la misma forma vamos a usar el <strong>wpa_supplicant</strong> <code class="language-plaintext highlighter-rouge">wpa_supplicant -Dnl80211 -iwlan3 -c zi.conf</code> y una vez hecho nos vamos asignar <strong>IP</strong> con <code class="language-plaintext highlighter-rouge">dhclient wlan3 -v</code>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/HMNacOA.png" alt="" /></p>
+
+<ul>
+  <li>Ahora vamos a usar la <strong>cookie</strong> que tenemos y listo.</li>
+</ul>
+
+<h1 id="is-there-client-isolation-in-the-wifi-mobile-network">Is there client isolation in the wifi-mobile network?</h1>
+
+<ul>
+  <li>Para este reto simplemente hay que usar <strong>arp_scan</strong> para ver si hay mas clientes en la interfaz de uso y <strong>curl</strong> para poder ver la flag.</li>
+</ul>
+
+<h1 id="what-is-the-wifi-office-password">What is the wifi-office password?</h1>
+
+<ul>
+  <li>
+    <p>Ahora pasamos al ultimo reto de la parte de <strong>PSK</strong> donde nos piden obtener la contraseña del <strong>AP</strong> <strong>wifi-office</strong> de igual manera tenemos que obtener un <strong>handshake</strong> pero asta ahora esa red esta oculta y no es visible una forma de obtener el <strong>handshake</strong> es creando un <strong>Fake AP</strong> para capturar el <strong>handshake</strong> de clientes que se asocian a ese <strong>AP</strong> podemos usar <strong>hostapd-mana</strong> para crear el <strong>AP</strong> pasándole un <strong>.conf</strong> donde el nombre del <strong>AP</strong> sea el mismo de <strong>wifi-office</strong> esta herramienta nos permite configurar <strong>APs</strong> esta herramienta permite hacer ataques <strong>MITM</strong> es un tipo de ataque en el cual un atacante intercepta y potencialmente altera la comunicación entre dos partes sin que ellas lo sepan <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">https://en.wikipedia.org/wiki/Man-in-the-middle_attack</a>.</p>
+  </li>
+  <li>
+    <p>Ahora vamos a crear el <strong>.conf</strong> y vamos a exportar todo en <code class="language-plaintext highlighter-rouge">.hccapx</code> en el <strong>.conf</strong> necesitamos pasarle lo siguiente <strong>interface, driver, hw_mode, channel, ssid, wpa, wpa_key_mgmt, el pairwise, y la contraseña</strong>.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/XEzgsrj.png" alt="" /></p>
+
+<ul>
+  <li>Podemos hacer un <strong>CTRL+C</strong> ya que ya vimos lo siguiente AP-STA-POSSIBLE-PSK-MISMATCH.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/8kJfxJQ.png" alt="" /></p>
+
+<ul>
+  <li>
+    <p>Ahora usaremos <strong>hashcat</strong> para obtener la contraseña.</p>
+  </li>
+  <li>
+    <p>A dia de hoy <strong>2500</strong> ya no funciona a si que tenemos que convertirlo a <strong>22000</strong> vamos a seguir instrucciones del creador del laboratorio.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/zSt9Zgf.png" alt="" /></p>
+
+<h1 id="sae-wpa3">SAE WPA3</h1>
+
+<h1 id="what-is-the-wifi-management-password">What is the wifi-management password?</h1>
+
+<ul>
+  <li>
+    <p>Ahora entramos con <strong>WPA3</strong> que es la tercera generación del estándar de seguridad para redes Wi-Fi (Wireless Protected Access). Es una tecnología diseñada para mejorar la protección de las redes inalámbricas, proporcionando métodos más seguros de autenticación y cifrado de datos, lo que hace que sea más difícil para los atacantes comprometer la seguridad de una red Wi-Fi. Utiliza el protocolo Dragonfly (también conocido como SAE) para proteger las contraseñas contra ataques de fuerza bruta.</p>
+  </li>
+  <li>
+    <p>En este apartado nos piden obtener la contraseña del <strong>AP</strong> <strong>wifi-management</strong> que usa <strong>WPA3</strong> podemos usar esta herramienta https://github.com/blunderbuss-wctf/wacker lo único que necesitamos es el nombre del <strong>AP</strong> y el <strong>bssid</strong> que lo podemos obtener fácilmente al usar <strong>airodump-ng</strong>.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/XS5OjVl.png" alt="" /></p>
+
+<h1 id="what-is-the-wifi-it-password">What is the wifi-IT password?</h1>
+
+<ul>
+  <li>
+    <p>Ahora lo que tenemos que hacer es obtener la contraseña del <strong>AP</strong> <strong>wifi-IT</strong> en el apartado nos dicen <strong>Downgrade WPA3 to WPA2</strong> a si que lo que quiere decir es que vamos a hacer un <strong>RogueAP</strong> que ofrezca <strong>WPA2</strong> para obtener el handshake ya que es mas débil que <strong>WPA3</strong> una vez conectado el cliente podemos aprovecharno de 802.11w es una extensión del estándar de Wi-Fi que proporciona protección contra ataques de deautenticación. Cuando está habilitado, ayuda a proteger contra la desautenticación no solicitada, que es un tipo de ataque en el que un atacante intenta desconectar a los clientes de una red Wi-Fi de manera no autorizada en caso de que esta este desactivada.</p>
+  </li>
+  <li>
+    <p>Lo primero que vamos a hacer es crear el <strong>.conf</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">interface</span><span class="o">=</span>wlan1
+<span class="nv">driver</span><span class="o">=</span>nl80211
+<span class="nv">hw_mode</span><span class="o">=</span>g
+<span class="nv">channel</span><span class="o">=</span>11
+<span class="nv">ssid</span><span class="o">=</span>wifi-IT
+<span class="nv">mana_wpaout</span><span class="o">=</span>hostapd-management.hccapx
+<span class="nv">wpa</span><span class="o">=</span>2
+<span class="nv">wpa_key_mgmt</span><span class="o">=</span>WPA-PSK
+<span class="nv">wpa_pairwise</span><span class="o">=</span>TKIP CCMP
+<span class="nv">wpa_passphrase</span><span class="o">=</span>12345678
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora solo ejecutamos el <strong>hostapd-mana</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/CKe0Qdh.png" alt="" /></p>
+
+<ul>
+  <li>Si nos podemos con <strong>airodump-ng</strong> nos daremos cuenta que hay un cliente asociado a si que haremos un ataque de deautenticacion para desasociar al cliente y que se conecte a nuestro <strong>AP</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/Yzro1Sm.png" alt="" /></p>
+
+<ul>
+  <li>Una vez hecho eso obtenemos el handshake y podemos usar <strong>hashcat</strong>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/HrFYfyT.png" alt="" /></p>
+
+<h2 id="recon-mgt">Recon MGT</h2>
+
+<h1 id="what-is-the-domain-of-the-users-of-the-wifi-regional-network">What is the domain of the users of the wifi-regional network?</h1>
+
+<ul>
+  <li>
+    <p>Las redes MGT son usadas en empresas ya que cada usuario tiene su propia autenticación puede ser su nombre o contraseña los ataques contra las redes MGT incluyen obtener información de reconocimiento del Punto de Acceso (AP) y clientes, información de identidad, detalles de certificados y métodos EAP admitidos por la red https://github.com/koutto/pi-pwnbox-rogueap/wiki/13.-WPA-WPA2-Enterprise-(MGT)-Rogue-AP-Evil-Twin.</p>
+  </li>
+  <li>
+    <p>En esta sección nos piden obtener el dominio de los usuarios que pertenecen a <strong>wifi-regional</strong>.</p>
+  </li>
+  <li>
+    <p>Lo primero que vamos hacer es estar con <strong>airodump-ng</strong> recolectando trafico del <strong>AP</strong> en cuestión que opera en el canal 44.</p>
+  </li>
+  <li>
+    <p>Una vez conectados los clientes podemos usar <strong>wireshark</strong> para analizar la captura.</p>
+  </li>
+</ul>
+
+<p><img src="https://i.imgur.com/auoQT3W.png" alt="" /></p>
+
+<h1 id="what-is-the-email-address-of-the-server-certificate">What is the email address of the server certificate?</h1>
+
+<ul>
+  <li>Ahora nos piden obtener el correo al que pertenece el certificado el Punto de Acceso (AP) envía el certificado al cliente en texto claro, por lo que cualquiera puede verlo vamos a utlizar una herramienta del propio creador <a href="https://gist.github.com/r4ulcl/f3470f097d1cd21dbc5a238883e79fb2">https://gist.github.com/r4ulcl/f3470f097d1cd21dbc5a238883e79fb2</a>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/3wsBFMA.png" alt="" /></p>
+
+<h1 id="what-is-the-eap-method-supported-by-the-wifi-global-ap">What is the EAP method supported by the wifi-global AP?</h1>
+
+<ul>
+  <li>La autenticación EAP (Extensible Authentication Protocol) es un marco de protocolo utilizado en redes de computadoras para respaldar diversos métodos de autenticación, EAP facilita el intercambio seguro de información de autenticación entre el cliente y el servidor de autenticación. Los detalles específicos del intercambio pueden depender del método de autenticación particular utilizado nos comparten esta herramienta para este reto <a href="https://github.com/blackarrowsec/EAP_buster">https://github.com/blackarrowsec/EAP_buster</a>.</li>
+</ul>
+
+<p><img src="https://i.imgur.com/La86Ato.png" alt="" /></p>
+
+<h2 id="final">Final</h2>
+
+<blockquote>
+  <p>Pues bueno asta aquí el Post falto la parte de <strong>MGT</strong> pero quiero hacer un post dedicado solo a eso ya que es muy interesante y un poco mas complicado muchas gracias por leer y gracias al creador r4ulcl <a href="https://twitter.com/_r4ulcl_">https://twitter.com/_r4ulcl_</a> por crear los laboratorios para mi es el mejor en este campo del Hacking wifi nos vemos en el siguiente posts cualquier cosa puedes contactarme por Discord miguelrega7.</p>
+</blockquote>
+
+  </div><a class="u-url" href="/hacking-wifi/wifichallenge2/2024/03/19/wifi-challenge2.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
