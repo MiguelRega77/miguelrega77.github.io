@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-11T00:03:36-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-11T00:07:34-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
 </subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Authority (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html" rel="alternate" type="text/html" title="HackTheBox - Authority (medium)" /><published>2024-07-10T00:00:00-06:00</published><updated>2024-07-10T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/e6257bbacb2ddd56f5703bb61eadd8cb.png" />
 </p>
@@ -1031,7 +1031,13 @@ Info: Establishing connection to remote endpoint
 <span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
 </span>htb<span class="se">\a</span>dministrator
 <span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Epsilon (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html" rel="alternate" type="text/html" title="HackTheBox - Epsilon (medium)" /><published>2024-07-04T00:00:00-06:00</published><updated>2024-07-04T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html"><![CDATA[<p align="center">
+</code></pre></div></div>
+
+<ul>
+  <li>Recomiendo el writeup de mi amigo y compañero Soqui :) .</li>
+</ul>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5L0rHK3Ik54?si=AD5c9-hS52h_QD-0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Epsilon (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html" rel="alternate" type="text/html" title="HackTheBox - Epsilon (medium)" /><published>2024-07-04T00:00:00-06:00</published><updated>2024-07-04T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/04/epsilon.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/16ed7466c1f37757e15bd7e37668d243.png" />
 </p>
 

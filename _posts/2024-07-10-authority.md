@@ -969,3 +969,7 @@ Info: Establishing connection to remote endpoint
 htb\administrator
 *Evil-WinRM* PS C:\Users\Administrator\Documents>
 ```
+
+- Recomiendo el writeup de mi amigo y compañero Soqui :) .
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5L0rHK3Ik54?si=AD5c9-hS52h_QD-0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
