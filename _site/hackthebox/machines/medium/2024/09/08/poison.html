@@ -192,17 +192,17 @@ charix:<span class="k">*</span>:1001:1001:charix:/home/charix:/bin/csh
   <li>En este caso se esta empleando <code class="language-plaintext highlighter-rouge">FreeBSD</code> y la ruta donde están los logs es en <code class="language-plaintext highlighter-rouge">/var/log/httpd-access.log</code> hay se guardan todas las solicitudes que recibe cada que intentamos interactuar con el servidor o la maquina todo se va a guardar allí si nosotros somos capaces de ver el contenido de ese archivo podemos tratar de hacer un <code class="language-plaintext highlighter-rouge">Log Poisoning</code> que esto lo que hace es envenenar los logs de apache y poder inyectar comandos <a href="https://medium.com/@josewice7/lfi-to-rce-via-log-poisoning-db3e0e7a1cf1">https://medium.com/@josewice7/lfi-to-rce-via-log-poisoning-db3e0e7a1cf1</a>.</li>
 </ul>
 
-<p>&lt;p align”center”&gt;
+<p align="center">
 <img src="/assets/hackthebox/img/machines/medium/poison/3.png" />
-&lt;/p&gt;</p>
+</p>
 
 <ul>
   <li>Vemos que podemos ver el archivo.</li>
 </ul>
 
-<p>&lt;p align”center”&gt;
+<p align="center">
 <img src="/assets/hackthebox/img/machines/medium/poison/4.png" />
-&lt;/p&gt;</p>
+</p>
 
 <ul>
   <li>Como la web interpreta <code class="language-plaintext highlighter-rouge">PHP</code> lo que podemos hacer es mediante el <code class="language-plaintext highlighter-rouge">User-Agent</code> inyectar código <code class="language-plaintext highlighter-rouge">PHP</code> para ver si lo interpreta esto lo que va hacer es como vamos a hacerlo mediante <code class="language-plaintext highlighter-rouge">curl</code> por <code class="language-plaintext highlighter-rouge">GET</code> se va a guardar el el <code class="language-plaintext highlighter-rouge">access.log</code> y hay podremos ver si en este caso funciono.</li>

