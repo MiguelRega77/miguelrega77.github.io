@@ -4,7 +4,7 @@ title: "WifiChallengeLab - Wi-Fi - MGT"
 categories: Hacking-wifi/Wifichallenge2
 ---
 
-- Link del laboratorio: https://lab.wifichallenge.com/challenges .
+- Link del laboratorio: <https://lab.wifichallenge.com/challenges> .
 
 - Ejemplo de una conexión MGT.
 
@@ -21,7 +21,7 @@ categories: Hacking-wifi/Wifichallenge2
 
 -  Para atacar a un cliente no confiable en una red MGT, tenemos que crear un `RogueAP` (punto de acceso falso) con el mismo `ESSID` y configuración, pero con un certificado autofirmado, preferiblemente con los mismos datos que el real en caso de que el cliente verifique manualmente el certificado.
 
-- Usa esta herramienta: https://github.com/s0lst1c3/eaphammer previamente instalada en el laboratorio.
+- Usa esta herramienta: <https://github.com/s0lst1c3/eaphammer> previamente instalada en el laboratorio.
 
 ```bash
 root@WiFiChallengeLab:~/tools/eaphammer# cd /root/tools/eaphammer/^C
