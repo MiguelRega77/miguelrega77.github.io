@@ -8,10 +8,11 @@ permalink: /about/
 
 Hola me llamo Miguel estoy aprendiendo **Pentesting** me gusta resolver CTFs y retos de Hacking Wifi, actualmente cuento con las siguientes 📚 certificaciones:
 
-- eJPTv2 (eLearnSecurity Junior Penetration Tester)
-- CNPen (Certified Network Pentester)
-- CNSP (Certified Network Security Practitioner)
+- eJPTv2 (eLearnSecurity Junior Penetration Tester).
+- CNPen (Certified Network Pentester).
+- CNSP (Certified Network Security Practitioner).
 - CWP (Certified WiFiChallenge Professional).
+- CPTS (Hack The Box Certified Penetration Testing Specialist).
 
 🌐 Redes:
 
