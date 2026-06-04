@@ -15,34 +15,34 @@ Aun así, decidí ir por él. No me consideraba un principiante antes de empezar
 
 # Prerrequisitos 
 
-- Bueno, para presentar esta certificación, primero necesitas completar el Path de Penetration Tester disponible en Academy de Hack The Box: https://academy.hackthebox.com/app/paths/16/path-progress.
+- Bueno, para presentar esta certificación, primero necesitas completar el Path de Penetration Tester disponible en Academy de Hack The Box: <https://academy.hackthebox.com/app/paths/16/path-progress>.
 Esto es obligatorio, ya que si no lo completas no podrás presentar el examen. Al día de hoy, mientras escribo esto, el path consta de 28 módulos, y todos son necesarios para poder obtener el acceso a la certificación.
 
 # Preparación
 
 Bueno, en este caso yo considero que la preparación es muy importante, sin tomar en cuenta el Path, ya que este examen es bastante largo y requiere que ya tengas conocimientos previos. En mi opinión, yo me preparé haciendo máquinas de Hack The Box de todas las categorías.
 
-Además, considero que, si tienes la oportunidad, hagas un Pro Lab https://www.hackthebox.com/hacker/pro-labs como Dante, ya que considero que está muy bien para que puedas ir entendiendo cómo va la cosa.
+Además, considero que, si tienes la oportunidad, hagas un Pro Lab <https://www.hackthebox.com/hacker/pro-labs> como Dante, ya que considero que está muy bien para que puedas ir entendiendo cómo va la cosa.
 
 * Es necesario completar todo el Path, como lo mencioné anteriormente, pero en mi opinión estos son los módulos que vas a necesitar muchísimo.
 
-* https://academy.hackthebox.com/app/module/19 Network Enumeration with Nmap.
+* <https://academy.hackthebox.com/app/module/19> Network Enumeration with Nmap.
 
-* https://academy.hackthebox.com/app/module/108 Vulnerability Assessment.
+* <https://academy.hackthebox.com/app/module/108> Vulnerability Assessment.
 
-* https://academy.hackthebox.com/app/module/24 File Transfers.
+* <https://academy.hackthebox.com/app/module/24> File Transfers.
 
-* https://academy.hackthebox.com/app/module/158 Pivoting, Tunneling, and Port Forwarding.
+* <https://academy.hackthebox.com/app/module/158> Pivoting, Tunneling, and Port Forwarding.
 
-* https://academy.hackthebox.com/app/module/143 Active Directory Enumeration & Attacks.
+* <https://academy.hackthebox.com/app/module/143> Active Directory Enumeration & Attacks.
 
-* https://academy.hackthebox.com/app/module/110 Using Web Proxies.
+* <https://academy.hackthebox.com/app/module/110> Using Web Proxies.
 
-* https://academy.hackthebox.com/app/module/163 Attacking Enterprise Networks.
+* <https://academy.hackthebox.com/app/module/163> Attacking Enterprise Networks.
 
 * Estos módulos antes mencionados son los que yo considero más importantes para tener cierto control durante el examen, pero sin duda es necesario que ya tengas conocimientos en Web Hacking y Active Directory.
 
-* Existe una lista de máquinas que puedes hacer y que son algo parecidas a algunas del CPTS: https://0xdf.gitlab.io/tags#cpts-like.
+* Existe una lista de máquinas que puedes hacer y que son algo parecidas a algunas del CPTS: <https://0xdf.gitlab.io/tags#cpts-like>.
 
 # Examen
 
@@ -52,7 +52,7 @@ Además, considero que, si tienes la oportunidad, hagas un Pro Lab https://www.h
 
 # Reporte
 
-* Para realizar el reporte, te recomiendo utilizar la plantilla de Hack The Box disponible en esta plataforma: https://docs.sysreptor.com/.
+* Para realizar el reporte, te recomiendo utilizar la plantilla de Hack The Box disponible en esta plataforma: <https://docs.sysreptor.com/>.
 
 * Guarda siempre capturas de todo y ve documentando tu progreso a medida que avanzas. De esta forma, cuando llegue el momento de redactar el informe, evitarás confundirte u omitir información importante. Recuerda que el reporte debe estar escrito en inglés.
 
