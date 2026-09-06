@@ -124,7 +124,7 @@ def layout(title, body, desc='MiguelRega7 — Cybersecurity, penetration testing
 </div></header>
 {body}
 <footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
-<script src="/app.js?v=10"></script></body></html>'''
+<script src="/app.js?v=11"></script></body></html>'''
 
 
 def github_svg():
