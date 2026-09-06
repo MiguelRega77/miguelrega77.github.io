@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Path Traversal - Portswigger · MiguelRega7</title>
+<meta name="description" content="Path traversal es una vulnerabilidad donde un atacante manipula una ruta de archivo para salir del directorio permitido y acceder a archivos que no debería. Lab: File path traversa"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">PortSwigger</span><h1>Path Traversal - Portswigger</h1><div class="meta"><span>◷</span><time>2026-01-17</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">Path traversal es una vulnerabilidad donde un atacante manipula una ruta de archivo para salir del directorio permitido y acceder a archivos que no debería. Lab: File path traversa.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#lab-file-path-traversal-simple-case">Lab: File path traversal, simple case</a><a href="#lab-file-path-traversal-traversal-sequences-blocked-with-absolute-path-bypass">Lab: File path traversal, traversal sequences blocked with absolute path bypass</a><a href="#lab-file-path-traversal-traversal-sequences-stripped-non-recursively">Lab: File path traversal, traversal sequences stripped non-recursively</a><a href="#lab-file-path-traversal-traversal-sequences-stripped-with-superfluous-url-decode">Lab: File path traversal, traversal sequences stripped with superfluous URL-decode</a><a href="#lab-file-path-traversal-validation-of-start-of-path">Lab: File path traversal, validation of start of path</a><a href="#lab-file-path-traversal-validation-of-file-extension-with-null-byte-bypass">Lab: File path traversal, validation of file extension with null byte bypass</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://portswigger.net/public/Logos/Light/portswigger-200h.png">
+</p>
+
+<blockquote>
+<p>Path traversal es una vulnerabilidad donde un atacante manipula una ruta de archivo para salir del directorio permitido y acceder a archivos que no debería.</p>
+</blockquote>
+<h2 id="lab-file-path-traversal-simple-case">Lab: File path traversal, simple case</h2>
+<ul>
+<li>Vamos a capturar la petición en la cual abramos una imagen cualquiera en otra ventana.</li>
+</ul>
+<blockquote>
+<p>En path traversal, un atacante usa muchos ../ para salirse de la carpeta permitida y llegar a archivos sensibles.</p>
+</blockquote>
+<p><img src="/assets/PathTraversal/1.png" alt="" /></p>
+<ul>
+<li>Abusamos de la falta de validación para escalar directorios utilizando secuencias ‘../‘.</li>
+</ul>
+<p><img src="/assets/PathTraversal/2.png" alt="" /></p>
+<h2 id="lab-file-path-traversal-traversal-sequences-blocked-with-absolute-path-bypass">Lab: File path traversal, traversal sequences blocked with absolute path bypass</h2>
+<ul>
+<li><p>Volvemos a capturar la petición en la cual abramos una imagen cualquiera en otra ventana.</p>
+</li>
+<li><p>Al modificar el parámetro filename e indicar directamente <strong>/etc/passwd</strong>, logramos leer el contenido del archivo, demostrando que el filtrado es insuficiente y que no hay validación sobre rutas absolutas.</p>
+</li>
+</ul>
+<p><img src="/assets/PathTraversal/3.png" alt="" /></p>
+<h2 id="lab-file-path-traversal-traversal-sequences-stripped-non-recursively">Lab: File path traversal, traversal sequences stripped non-recursively</h2>
+<ul>
+<li><p>Volvemos a capturar la petición en la cual abramos una imagen cualquiera en otra ventana.</p>
+</li>
+<li><p>La aplicación intenta mitigar el path traversal eliminando las secuencias ‘<strong>../</strong>‘, pero lo hace de forma no recursiva. Esto permite evadir el filtro usando variantes como ‘<strong>….//</strong>‘, que tras la normalización del sistema de archivos siguen interpretándose como una subida de directorio. Usando ‘<strong>….//….//etc/passwd</strong>‘, logramos acceder a archivos sensibles como ‘<strong>/etc/passwd</strong>‘.</p>
+</li>
+<li><p>El filtro valida texto, el sistema operativo interpreta rutas, <code>//</code> → Linux lo interpreta igual que <code>/</code>).</p>
+</li>
+</ul>
+<p><img src="/assets/PathTraversal/4.png" alt="" /></p>
+<h2 id="lab-file-path-traversal-traversal-sequences-stripped-with-superfluous-url-decode">Lab: File path traversal, traversal sequences stripped with superfluous URL-decode</h2>
+<blockquote>
+<p>La aplicación bloquea de forma directa las secuencias ../, sin embargo, comete el fallo de decodificar la entrada una vez adicional después del filtrado. Aprovechando este comportamiento, se utiliza ..%252f, que tras ser decodificado en dos ocasiones termina convirtiéndose en ../, lo que permite ejecutar un path traversal con éxito. Mediante esta técnica fue posible acceder al archivo /etc/passwd, demostrando cómo una decodificación extra puede dar lugar a vulnerabilidades críticas.</p>
+</blockquote>
+<ul>
+<li><p>Volvemos a capturar la petición en la cual abramos una imagen cualquiera en otra ventana.</p>
+</li>
+<li><p>Vamos aplicar un URL-ENCODE a los <strong>/</strong> para que quede algo asi:</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">GET /image?filename=..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd HTTP/2
+</code></pre></div></div>
+<ul>
+<li>URL ENCODE a los %: (Una vez url decodea el % se queda con un %2f lo cual significa una / y asi hacemos un bypass y podemos apuntar directo al archivo).</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">GET /image?filename=..%252f..%252f..%252f..%252f..%252f..%252f..%252fetc/passwd
+</code></pre></div></div>
+<p><img src="/assets/PathTraversal/5.png" alt="" /></p>
+<h2 id="lab-file-path-traversal-validation-of-start-of-path">Lab: File path traversal, validation of start of path</h2>
+<ul>
+<li><p>Volvemos a capturar la petición en la cual abramos una imagen cualquiera en otra ventana.</p>
+</li>
+<li><p>En este caso, la aplicación verifica únicamente que la ruta comience con /var/www/images/, pero no controla correctamente el contenido posterior. Esto permite enviar una ruta como /var/www/images/https://miguelonches/../etc/passwd, que al resolverse finalmente termina accediendo a un archivo sensible fuera del directorio autorizado. Este ejemplo muestra cómo una validación superficial del inicio del path puede ser fácilmente eludida mediante el uso de secuencias de retroceso (../).</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">GET /image?filename=/var/www/images/../../../../../../etc/passwd HTTP/2
+</code></pre></div></div>
+<p><img src="/assets/PathTraversal/6.png" alt="" /></p>
+<h2 id="lab-file-path-traversal-validation-of-file-extension-with-null-byte-bypass">Lab: File path traversal, validation of file extension with null byte bypass</h2>
+<ul>
+<li><p>Volvemos a capturar la petición en la cual abramos una imagen cualquiera en otra ventana.</p>
+</li>
+<li><p>La aplicación intenta garantizar que los archivos solicitados terminen en .png, pero no tiene en cuenta el uso del byte nulo (%00). Este carácter indica el final de una cadena para muchas funciones en lenguajes como C, por lo que al enviar una ruta como https://miguelonches/../etc/passwd%00.png, el servidor interpreta únicamente la parte anterior al %00 y accede al archivo /etc/passwd, aun cuando la validación de la extensión parece cumplirse.</p>
+</li>
+</ul>
+<p><img src="/assets/PathTraversal/7.png" alt="" /></p>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

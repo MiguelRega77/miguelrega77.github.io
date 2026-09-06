@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vulnlab - Escape · MiguelRega7</title>
+<meta name="description" content="PortScan - Comenzamos escaneando los puertos abiertos por el protocolo TCP donde solo encontramos un puerto abierto 3389 por el protocolo TCP . xfreerdp - Vamos a conectarnos. - No"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">VulnLab</span><h1>Vulnlab - Escape</h1><div class="meta"><span>◷</span><time>2024-03-25</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">PortScan - Comenzamos escaneando los puertos abiertos por el protocolo TCP donde solo encontramos un puerto abierto 3389 por el protocolo TCP . xfreerdp - Vamos a conectarnos. - No.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#xfreerdp">xfreerdp</a><a href="#password">Password</a><a href="#shell-as-admin">Shell as admin</a><a href="#root-txt">Root.txt</a></aside><article class="article-content" id="top"><p align="center">
+<img src="/assets/vulnlab/img/machines/escape/icon.png">
+</p>
+
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> donde solo encontramos un puerto abierto <strong>3389</strong> por el protocolo <strong>TCP</strong> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-rdp">https://book.hacktricks.xyz/network-services-pentesting/pentesting-rdp</a> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p3389 10.10.90.255 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-02-27 10:47 CST
+Nmap scan report for 10.10.90.255
+Host is up (0.18s latency).
+
+PORT     STATE SERVICE       VERSION
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+|_ssl-date: 2024-02-27T16:48:15+00:00; 0s from scanner time.
+| rdp-ntlm-info:
+|   Target_Name: ESCAPE
+|   NetBIOS_Domain_Name: ESCAPE
+|   NetBIOS_Computer_Name: ESCAPE
+|   DNS_Domain_Name: Escape
+|   DNS_Computer_Name: Escape
+|   Product_Version: 10.0.19041
+|_  System_Time: 2024-02-27T16:48:11+00:00
+| ssl-cert: Subject: commonName=Escape
+| Not valid before: 2024-02-02T11:08:33
+|_Not valid after:  2024-08-03T11:08:33
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+</code></pre></div></div>
+<h2 id="xfreerdp">xfreerdp</h2>
+<ul>
+<li>Vamos a conectarnos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap xfreerdp /v:10.10.90.255 /tls-seclevel:0 -sec-nla
+</code></pre></div></div>
+<ul>
+<li>Nos dice lo siguiente que nos conectemos con el usuario <strong>KiosUser0</strong> .</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/UieJqtq.png">
+</p>
+
+<p align="center">
+<img src="https://i.imgur.com/kH5q7gE.png">
+</p>
+
+<ul>
+<li>Una vez conectados vemos lo siguiente:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/GhZZKNL.png">
+</p>
+
+<ul>
+<li>Como tal la máquina se llama <strong>Escape</strong> a sí que tenemos que escapar del modo <strong>Kios mode</strong> si presionamos la tecla <strong>Windows</strong> funciona.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/3Qz8UuZ.png">
+</p>
+
+<ul>
+<li>Si intentamos arrancar una consola, simplemente no nos deja.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/xi7PNAh.png">
+</p>
+
+<ul>
+<li>Si preguntamos a <strong>ChatGPT</strong> sobre <strong>Windows Kiosk</strong> nos dice que puede ser configurado para abrir un navegador o aplicación en específico.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/7o1mxOE.png">
+</p>
+
+<ul>
+<li>Podemos ejecutar el navegador de <strong>Windows</strong> <a href="https://blog.nviso.eu/2022/05/24/breaking-out-of-windows-kiosks-using-only-microsoft-edge/">https://blog.nviso.eu/2022/05/24/breaking-out-of-windows-kiosks-using-only-microsoft-edge/</a>.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/TGrxsKS.png">
+</p>
+
+<ul>
+<li>Vemos que <strong>ChatGPT</strong> también nos dice que podemos acceder a archivos.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/OUpii2B.png">
+</p>
+
+<ul>
+<li>Si escribimos <code>file:///C:\</code> vemos el <strong>C</strong> <strong>Drive</strong>.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/QDPE7We.png">
+</p>
+
+<ul>
+<li>Examinando dentro de <strong>admin</strong> hay un archivo <strong>profiles.xml</strong> con una contraseña:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/BSiTKkP.png">
+</p>
+
+<ul>
+<li>En la ruta <strong>C:\Windows\System32</strong> encontramos un ejecutable interesante vamos a descargarlo.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/01.png">
+</p>
+
+<ul>
+<li>No podemos ejecutarlo porque como nos dijo <strong>ChatGPT</strong> el <strong>Windows Kiosk</strong> se configura para que el usuario solo pueda ejecutar algo en específico como vimos que podemos ejecutar <strong>msedge</strong> vamos a cambiarle el nombre al archivo y lo ejecutamos.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/02.png">
+</p>
+
+<ul>
+<li>Funciona.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/03.png">
+</p>
+
+<ul>
+<li>Vamos a usar <strong>Powershell</strong> para poder ejecutar comandos.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/04.png">
+</p>
+
+<ul>
+<li><p>Si recordamos tenemos un password, pero está encriptada podemos usar lo siguiente <a href="https://www.nirsoft.net/utils/bullets_password_view.html">https://www.nirsoft.net/utils/bullets_password_view.html</a> .</p>
+</li>
+<li><p>Una vez descargado lo pasamos a la máquina víctima.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/05.png">
+</p>
+
+<ul>
+<li>En caso de que no se pueda hacemos lo siguiente.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/06.png">
+</p>
+
+<ul>
+<li><p>Ahora vamos a copear él <strong>.exe</strong> a la carpeta de <strong>_admin</strong> .</p>
+</li>
+<li><p>Ahora vamos a ejecutar el <strong>Remote Desktop</strong> para poder ver la contraseña.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/07.png">
+</p>
+
+<ul>
+<li><p>Ahora vamos a <strong>Manages Profiles</strong> y despues en <strong>Import Profiles</strong>.</p>
+</li>
+<li><p>Pero antes vamos a copear el <strong>profiles.xml</strong> que necesitamos.</p>
+</li>
+</ul>
+<div class="code-window" data-language="PowerShell"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PowerShell</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-powershell">PS C:\_admin&gt; copy .\profiles.xml C:\Users\kioskUser0\Downloads\    
+</code></pre></div></div>
+<ul>
+<li>Y ahora importamos el <strong>profiles.xml</strong>.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/08.png">
+</p>
+
+<h2 id="password">Password</h2>
+<ul>
+<li>Ahora, si ejecutamos el <code>BulletsPassView.exe</code> desde la consola, tenemos la contraseña:</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/09.png">
+</p>
+
+<ul>
+<li>Vemos que el usuario <strong>admin</strong> es un usuario del sistema.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/10.png">
+</p>
+
+<ul>
+<li>Para convertirnos en ese usuario vamos a usar <strong>Runas.exe</strong> <a href="https://www.jctsoluciones.com.co/uso-del-comando-runas-en-windows/">https://www.jctsoluciones.com.co/uso-del-comando-runas-en-windows/</a>.</li>
+</ul>
+<div class="code-window" data-language="PowerShell"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">PowerShell</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-powershell">PS C:\_admin&gt; runas /user:admin cmd                                                                                          Enter the password for admin:  
+</code></pre></div></div>
+<h2 id="shell-as-admin">Shell as admin</h2>
+<ul>
+<li>Ahora estamos como ese usuario:</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/11.png">
+</p>
+
+<ul>
+<li>Pero no somos el <strong>administrator</strong> .</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/12.png">
+</p>
+
+<h2 id="root-txt">Root.txt</h2>
+<ul>
+<li><p>Tenemos que hacer un bypass de UAC.</p>
+</li>
+<li><p>Vamos a ejecutar una <strong>cmd.exe</strong> con privilegios elevados usando <strong>runas</strong>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/13.png">
+</p>
+
+<ul>
+<li>Y ya podemos ver la flag porque tenemos privilegios máximos.</li>
+</ul>
+<p align="center">
+<img src="/assets/vulnlab/img/machines/escape/14.png">
+</p>
+
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

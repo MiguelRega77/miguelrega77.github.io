@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WifiChallengeLab - Wi-Fi - Recon MGT (Redes Empresariales) · MiguelRega7</title>
+<meta name="description" content="En las redes Wi-Fi que usan WPA/2-Enterprise (WPA MGT), las identidades se utilizan para autenticar a los usuarios y dispositivos que intentan conectarse, funcionando como el nombr"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Wi-Fi</span><h1>WifiChallengeLab - Wi-Fi - Recon MGT (Redes Empresariales)</h1><div class="meta"><span>◷</span><time>2025-10-26</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">En las redes Wi-Fi que usan WPA/2-Enterprise (WPA MGT), las identidades se utilizan para autenticar a los usuarios y dispositivos que intentan conectarse, funcionando como el nombr.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#15-what-is-the-domain-of-the-users-of-the-wifi-regional-network">15. What is the domain of the users of the wifi-regional network?</a><a href="#16-what-is-the-email-address-of-the-servers-certificate">16. What is the email address of the servers certificate?</a><a href="#17-what-is-the-eap-method-supported-by-the-wifi-global-ap">17. What is the EAP method supported by the wifi-global AP?</a></aside><article class="article-content" id="top"><blockquote>
+<p>En las redes Wi-Fi que usan WPA/2-Enterprise (WPA MGT), las identidades se utilizan para autenticar a los usuarios y dispositivos que intentan conectarse, funcionando como el nombre de usuario al iniciar sesión. Por diseño, estas identidades se envían antes de establecer el túnel TLS que cifra la autenticación, lo que permite que, mediante una monitorización pasiva, se puedan obtener los nombres de usuario de los clientes durante el proceso de conexión. Para evitarlo, se pueden configurar identidades anónimas en los dispositivos, de modo que primero se envíe una identidad común (igual para todos) y, una vez creado el túnel cifrado, se transmita la identidad real. Sin embargo, como esto depende de la configuración del cliente, es común que no se utilicen identidades anónimas, dejando expuestos los nombres de usuario.</p>
+</blockquote>
+<blockquote>
+<p>Existen varios tipos de identidades que se pueden emplear en la infraestructura, y cada uno ofrece un nivel distinto de información. Entre ellos, se encuentran las identidades estándar, como el nombre de usuario simple (&quot;usuario&quot;), el User Principal Name (UPN) que combina el usuario y dominio (&quot;usuario@dominio.com&quot;), el SAMAccountName en formato de dominio y usuario (&quot;dominio\usuario&quot;), y la dirección de correo electrónico (&quot;correo@dominio.com&quot;). Además, en ciertas configuraciones específicas pueden usarse atributos personalizados como el número de empleado u otros atributos en plataformas como Azure en el caso de integraciones con la nube de Microsoft.
+Por otro lado, cuando se emplea una identidad anónima, aún es posible obtener cierto grado de información. Esto se debe a que muchos administradores configuran la identidad anónima incluyendo el nombre de dominio, lo que permite identificar el dominio con solo monitorizar la red. Por ejemplo, en el formato CONTOSO\anonymous o anonymous@CONTOSO.local es evidente el nombre de dominio.</p>
+</blockquote>
+<h2 id="15-what-is-the-domain-of-the-users-of-the-wifi-regional-network">15. What is the domain of the users of the wifi-regional network?</h2>
+<ul>
+<li>Primero vamos a comenzar escaneando la red que se encuentra en el canal 44 y vamos a exportar todo a un .cap.</li>
+</ul>
+<p align="center">
+<img src="https://github.com/MiguelRega77/miguelrega77.github.io/blob/main/assets/wifi/Recon%20MGT/1.png?raw=true">
+</p>
+
+<ul>
+<li>Vemos que hay un cliente conectado.</li>
+<li>Ahora procedemos a ver el domain con la herramienta wifi_db <a href="https://github.com/r4ulcl/wifi_db">https://github.com/r4ulcl/wifi_db</a> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/tools/wifi_db# python3 wifi_db.py -d wifichallenge.db /home/user/temp/captura-01.cap
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/tools/wifi_db# sqlitebrowser wifichallenge.db
+</code></pre></div></div>
+<ul>
+<li>Vemos el dominio al que pertenecen los usuarios.</li>
+</ul>
+<p align="center">
+<img src="https://github.com/MiguelRega77/miguelrega77.github.io/blob/main/assets/wifi/Recon%20MGT/2.png?raw=true">
+</p>
+
+<h2 id="16-what-is-the-email-address-of-the-servers-certificate">16. What is the email address of the servers certificate?</h2>
+<ul>
+<li><p>Nos dice que para poder ver el datos del certificado podemos usar esta herramienta: pcapFilter.sh lo que vamos a hacer es comenzar escaneando para ver donde se encuentre esa red wifi:.</p>
+</li>
+<li><p>Para crear el túnel TLS entre el AP y un cliente, el AP envía el certificado al cliente en texto claro, por lo que cualquiera puede verlo. Esta información puede ser útil para crear un certificado falso con los mismos campos en un ataque RogueAP o para obtener información sobre el dominio corporativo, correos internos u otra información relevante sobre el AP.</p>
+</li>
+<li><p>Solo basta con escanear la red y exportar todo.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/xd# airodump-ng wlan0mon --band abg --wps -c44 -w yi
+</code></pre></div></div>
+<p align"center">
+<img src="https://github.com/MiguelRega77/miguelrega77.github.io/blob/main/assets/wifi/Recon%20MGT/3.png?raw=true">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/tools# ./pcapFilter.sh -f ~/xd/yi-01.cap -C | more
+</code></pre></div></div>
+<p align="center">
+<img src="https://github.com/MiguelRega77/miguelrega77.github.io/blob/main/assets/wifi/Recon%20MGT/4.png?raw=true">
+</p>
+
+<h2 id="17-what-is-the-eap-method-supported-by-the-wifi-global-ap">17. What is the EAP method supported by the wifi-global AP?</h2>
+<ul>
+<li>Una vez se dispone de un usuario válido, se pueden probar diversos métodos de autenticación EAP soportados por el AP utilizando herramientas como EAP_buster, esto nos permite conocer que métodos de autenticación están soportados en el AP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/tools/wifi_db# airmon-ng check kill
+</code></pre></div></div>
+<ul>
+<li>Para todo esto necesitamos usar identidades validas para que funcione así que lo que vamos a hacer es escanear todo y hacer el proceso de reconocimiento: <a href="https://github.com/blackarrowsec/EAP_buster">https://github.com/blackarrowsec/EAP_buster</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/tools/EAP_buster# bash ./EAP_buster.sh wifi-global 'GLOBAL\\GlobalAdmin' wlan1
+
+EAP_buster by BlackArrow [https://github.com/blackarrowsec/EAP_buster]
+
+WARNING
+You need to use legitimate EAP identities in order to start the 802.1X authentication process and get reliable results (EAP identites can be collected using sniffing tools such as crEAP, just make sure you use a real identity and not an anonymous one =&gt; https://github.com/Snizz/crEAP)
+
+supported      =&gt;  ***-***
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

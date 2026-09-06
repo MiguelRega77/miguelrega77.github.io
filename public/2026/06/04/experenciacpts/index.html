@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Mi experiencia con la certificación CPTS (Hack The Box Certified Penetration Testing Specialist) · MiguelRega7</title>
+<meta name="description" content="Sobre mi - Antes de presentar el CPTS, ya tenía años practicando con CTFs en diferentes plataformas, además de haber obtenido otras certificaciones anteriormente. Honestamente, sab"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Mi experiencia con la certificación CPTS (Hack The Box Certified Penetration Testing Specialist)</h1><div class="meta"><span>◷</span><time>2026-06-04</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">Sobre mi - Antes de presentar el CPTS, ya tenía años practicando con CTFs en diferentes plataformas, además de haber obtenido otras certificaciones anteriormente. Honestamente, sab.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#top">Writeup</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://academy.hackthebox.com/storage/exam_overview_banners/Fpoo8YaykR3341XtswrcmuyLNcAK6bZ1WF86Ro6v.png">
+</p>
+
+<h1>Sobre mi</h1>
+<ul>
+<li>Antes de presentar el CPTS, ya tenía años practicando con CTFs en diferentes plataformas, además de haber obtenido otras certificaciones anteriormente. Honestamente, sabía que el CPTS iba a ser algo difícil para mí.
+Aun así, decidí ir por él. No me consideraba un principiante antes de empezar la certificación, pero sin duda fue un reto. En este post describiré cómo fue mi experiencia y compartiré algunos consejos que podrían ayudarte si estás pensando en obtener esta certificación.</li>
+</ul>
+<h1>Prerrequisitos</h1>
+<ul>
+<li>Bueno, para presentar esta certificación, primero necesitas completar el Path de Penetration Tester disponible en Academy de Hack The Box: <a href="https://academy.hackthebox.com/app/paths/16/path-progress">https://academy.hackthebox.com/app/paths/16/path-progress</a>.
+Esto es obligatorio, ya que si no lo completas no podrás presentar el examen. Al día de hoy, mientras escribo esto, el path consta de 28 módulos, y todos son necesarios para poder obtener el acceso a la certificación.</li>
+</ul>
+<h1>Preparación</h1>
+<p>Bueno, en este caso yo considero que la preparación es muy importante, sin tomar en cuenta el Path, ya que este examen es bastante largo y requiere que ya tengas conocimientos previos. En mi opinión, yo me preparé haciendo máquinas de Hack The Box de todas las categorías.</p>
+<p>Además, considero que, si tienes la oportunidad, hagas un Pro Lab <a href="https://www.hackthebox.com/hacker/pro-labs">https://www.hackthebox.com/hacker/pro-labs</a> como Dante, ya que considero que está muy bien para que puedas ir entendiendo cómo va la cosa.</p>
+<ul>
+<li><p>Es necesario completar todo el Path, como lo mencioné anteriormente, pero en mi opinión estos son los módulos que vas a necesitar muchísimo.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/19">https://academy.hackthebox.com/app/module/19</a> Network Enumeration with Nmap.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/108">https://academy.hackthebox.com/app/module/108</a> Vulnerability Assessment.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/24">https://academy.hackthebox.com/app/module/24</a> File Transfers.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/158">https://academy.hackthebox.com/app/module/158</a> Pivoting, Tunneling, and Port Forwarding.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/143">https://academy.hackthebox.com/app/module/143</a> Active Directory Enumeration &amp; Attacks.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/110">https://academy.hackthebox.com/app/module/110</a> Using Web Proxies.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/app/module/163">https://academy.hackthebox.com/app/module/163</a> Attacking Enterprise Networks.</p>
+</li>
+<li><p>Estos módulos antes mencionados son los que yo considero más importantes para tener cierto control durante el examen, pero sin duda es necesario que ya tengas conocimientos en Web Hacking y Active Directory.</p>
+</li>
+<li><p>Existe una lista de máquinas que puedes hacer y que son algo parecidas a algunas del CPTS: <a href="https://0xdf.gitlab.io/tags#cpts-like">https://0xdf.gitlab.io/tags#cpts-like</a>.</p>
+</li>
+</ul>
+<h1>Examen</h1>
+<ul>
+<li><p>Una vez que terminas el Path y presentas el examen, tienes exactamente 10 días para completarlo y enviar tu informe. El examen consta de 14 flags que debes obtener, pero con 12 es suficiente para aprobar.</p>
+</li>
+<li><p>Puedes ir avanzando poco a poco. Algunas personas utilizan Silver como C2 para recuperar sesiones, ya que vas a tener que realizar mucho pivoting con Ligolo-ng <a href="https://github.com/nicocha30/ligolo-ng">https://github.com/nicocha30/ligolo-ng</a>.</p>
+</li>
+</ul>
+<h1>Reporte</h1>
+<ul>
+<li><p>Para realizar el reporte, te recomiendo utilizar la plantilla de Hack The Box disponible en esta plataforma: <a href="https://docs.sysreptor.com/">https://docs.sysreptor.com/</a>.</p>
+</li>
+<li><p>Guarda siempre capturas de todo y ve documentando tu progreso a medida que avanzas. De esta forma, cuando llegue el momento de redactar el informe, evitarás confundirte u omitir información importante. Recuerda que el reporte debe estar escrito en inglés.</p>
+</li>
+<li><p>Hack The Box tiene un modulo <a href="https://academy.hackthebox.com/app/module/162">https://academy.hackthebox.com/app/module/162</a> Documentation &amp; Reporting que te recomiendo hacerlo.</p>
+</li>
+</ul>
+<h1>Final</h1>
+<ul>
+<li><p>Bueno considero que con esto puedes pasar la certificacion de igual manera estoy para ayudar y puedes contactarme en cualquier momento en caso de tener alguna duda.</p>
+</li>
+<li><p><a href="https://academy.hackthebox.com/achievement/badge/6cdce52a-4b32-11f1-82d1-bea50ffe6cb4">https://academy.hackthebox.com/achievement/badge/6cdce52a-4b32-11f1-82d1-bea50ffe6cb4</a>.</p>
+</li>
+</ul>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

