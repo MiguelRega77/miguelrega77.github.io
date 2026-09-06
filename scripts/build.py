@@ -120,7 +120,6 @@ def layout(title, body, desc='MiguelRega7 — Cybersecurity, penetration testing
 <a href="https://github.com/MikeRega7" target="_blank" rel="noreferrer" aria-label="GitHub">{github_svg()}</a>
 <a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278" target="_blank" rel="noreferrer" aria-label="LinkedIn">{linkedin_svg()}</a>
 <a href="https://www.instagram.com/_miguelitornuno7" target="_blank" rel="noreferrer" aria-label="Instagram">{instagram_svg()}</a>
-
 </div><button class="menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
 </div></header>
 {body}
@@ -129,7 +128,7 @@ def layout(title, body, desc='MiguelRega7 — Cybersecurity, penetration testing
 
 
 def github_svg():
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.26 5.69.41.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg>'
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.04c-3.2.7-3.87-1.35-3.87-1.35-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.67 1.24 3.32.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.3-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.73 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.75.11 3.05.74.35.77 1.04.77 2.1v3.07c0 .31.21.67.8.55A11.5 11.5 0 0 0 12 .7Z"/></svg>'
 
 
 def linkedin_svg():
@@ -161,6 +160,7 @@ def card(p):
 <h3><a href="{p['url']}">{html.escape(p['title'])}</a></h3><p>{excerpt}</p>
 <a class="read" href="{p['url']}">Leer writeup <span>→</span><span class="external">↗</span></a></article>'''
 
+
 cards = ''.join(card(p) for p in posts)
 
 index = f'''<main class="wrap">
@@ -185,7 +185,53 @@ for p in posts:
     out.mkdir(parents=True, exist_ok=True)
     (out / 'index.html').write_text(layout(p['title'], body, p['excerpt']), encoding='utf-8')
 
-about = '''<main class="wrap"><section class="page"><p class="eyebrow">MIGUELREGA7</p><h1>About</h1><div class="page-content"><h2>Hola 👋</h2><p>Soy <strong>Miguel Rega</strong> y este es mi espacio para documentar lo que voy aprendiendo en ciberseguridad.</p><p>Me interesa especialmente el <strong>penetration testing</strong>, la seguridad web, las redes inalámbricas, los CTFs y la resolución de laboratorios.</p><h2>Certificaciones</h2><ul><li>eJPTv2 — eLearnSecurity Junior Penetration Tester</li><li>CNPen — Certified Network Pentester</li><li>CNSP — Certified Network Security Practitioner</li><li>CWP — Certified WiFiChallenge Professional</li><li>CPTS — Hack The Box Certified Penetration Testing Specialist</li></ul><h2>Redes</h2><ul><li><a href="https://github.com/MikeRega7">GitHub</a></li><li><a href="https://app.hackthebox.com/profile/910232">Hack The Box</a></li><li><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a></li><li><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></li></ul></div></section></main>'''
+about = '''<main class="wrap">
+<section class="page">
+<p class="eyebrow">MIGUELREGA7</p>
+<h1>About</h1>
+<div class="page-content">
+
+<h2>Hola 👋</h2>
+
+<p>Hola, me llamo <strong>Miguel</strong>. Estoy aprendiendo y desarrollándome en el área de ciberseguridad, con especial interés en <strong>penetration testing</strong>, seguridad web, redes inalámbricas y resolución de CTFs.</p>
+
+<p>Este sitio es mi espacio personal para documentar lo que voy aprendiendo: writeups de laboratorios, experiencias con plataformas de seguridad, investigación técnica y notas de los retos que voy resolviendo.</p>
+
+<p>Gran parte de mi aprendizaje viene de practicar directamente en laboratorios y CTFs. Me gusta entender no solo cómo funciona una vulnerabilidad, sino también el proceso completo de enumeración, explotación y escalada de privilegios.</p>
+
+<h2>Certificaciones</h2>
+
+<ul>
+<li>eJPTv2 — eLearnSecurity Junior Penetration Tester</li>
+<li>CNPen — Certified Network Pentester</li>
+<li>CNSP — Certified Network Security Practitioner</li>
+<li>CWP — Certified WiFiChallenge Professional</li>
+<li>CPTS — Hack The Box Certified Penetration Testing Specialist</li>
+</ul>
+
+<h2>Intereses</h2>
+
+<ul>
+<li>Penetration Testing</li>
+<li>Web Security</li>
+<li>Wireless Security</li>
+<li>CTFs y laboratorios</li>
+<li>Vulnerability Research</li>
+</ul>
+
+<h2>Redes</h2>
+
+<ul>
+<li><a href="https://github.com/MikeRega7">GitHub</a></li>
+<li><a href="https://app.hackthebox.com/profile/910232">Hack The Box</a></li>
+<li><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a></li>
+<li><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></li>
+</ul>
+
+</div>
+</section>
+</main>'''
+
 (PUBLIC / 'about').mkdir(exist_ok=True)
 (PUBLIC / 'about' / 'index.html').write_text(layout('About', about), encoding='utf-8')
 
