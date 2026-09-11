@@ -199,34 +199,154 @@ about = '''<main class="wrap">
 
 <p>Gran parte de mi aprendizaje viene de practicar directamente en laboratorios y CTFs. Me gusta entender no solo cómo funciona una vulnerabilidad, sino también el proceso completo de enumeración, explotación y escalada de privilegios.</p>
 
-<h2>Certificaciones</h2>
+<h2>Certifications</h2>
 
-<ul>
-<li>eJPTv2 — eLearnSecurity Junior Penetration Tester</li>
-<li>CNPen — Certified Network Pentester</li>
-<li>CNSP — Certified Network Security Practitioner</li>
-<li>CWP — Certified WiFiChallenge Professional</li>
-<li>CPTS — Hack The Box Certified Penetration Testing Specialist</li>
-</ul>
+<div class="cert-grid">
 
+<div class="cert-card">
+  <div class="cert-logo">
+    <img src="/assets/certs/ejpt.png" alt="eJPTv2">
+  </div>
+  <div class="cert-info">
+    <div class="cert-name">eJPTv2</div>
+    <div class="cert-title">eLearnSecurity Junior Penetration Tester</div>
+    <div class="cert-org">eLearnSecurity</div>
+  </div>
+</div>
+
+<div class="cert-card">
+  <div class="cert-logo">
+    <img src="/assets/certs/cnpen.png" alt="CNPen">
+  </div>
+  <div class="cert-info">
+    <div class="cert-name">CNPen</div>
+    <div class="cert-title">Certified Network Pentester</div>
+    <div class="cert-org">The SecOps Group</div>
+  </div>
+</div>
+
+<div class="cert-card">
+  <div class="cert-logo">
+    <img src="/assets/certs/cnsp.png" alt="CNSP">
+  </div>
+  <div class="cert-info">
+    <div class="cert-name">CNSP</div>
+    <div class="cert-title">Certified Network Security Practitioner</div>
+    <div class="cert-org">The SecOps Group</div>
+  </div>
+</div>
+
+<div class="cert-card">
+  <div class="cert-logo">
+    <img src="/assets/certs/cwp.png" alt="CWP">
+  </div>
+  <div class="cert-info">
+    <div class="cert-name">CWP</div>
+    <div class="cert-title">Certified WiFiChallenge Professional</div>
+    <div class="cert-org">WiFiChallenge Academy</div>
+  </div>
+</div>
+
+<div class="cert-card">
+  <div class="cert-logo">
+    <img src="/assets/certs/cpts.png" alt="CPTS">
+  </div>
+  <div class="cert-info">
+    <div class="cert-name">CPTS</div>
+    <div class="cert-title">Certified Penetration Testing Specialist</div>
+    <div class="cert-org">Hack The Box</div>
+  </div>
+</div>
+
+</div>
 <h2>Intereses</h2>
 
-<ul>
-<li>Penetration Testing</li>
-<li>Web Security</li>
-<li>Wireless Security</li>
-<li>CTFs y laboratorios</li>
-<li>Vulnerability Research</li>
-</ul>
+<div class="about-panel">
+  <div class="about-panel-title">Areas of Interest</div>
+
+  <div class="about-panel-list">
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>Penetration Testing</span>
+    </div>
+
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>Web Security</span>
+    </div>
+
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>Wireless Security</span>
+    </div>
+
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>CTFs y Laboratories</span>
+    </div>
+
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>LLM Red Teaming</span>
+    </div>
+
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>Active Directory</span>
+    </div>
+
+    <div class="about-panel-item">
+      <span class="panel-arrow">▸</span>
+      <span>Vulnerability Research</span>
+    </div>
+  </div>
+</div>
 
 <h2>Redes</h2>
 
-<ul>
-<li><a href="https://github.com/MikeRega7">GitHub</a></li>
-<li><a href="https://app.hackthebox.com/profile/910232">Hack The Box</a></li>
-<li><a href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278">LinkedIn</a></li>
-<li><a href="https://www.instagram.com/_miguelitornuno7">Instagram</a></li>
-</ul>
+<div class="about-panel">
+  <div class="about-panel-title">SOCIAL NETWORKS</div>
+
+  <div class="about-panel-list">
+
+    <a class="about-panel-item social-item"
+       href="https://github.com/MikeRega7"
+       target="_blank"
+       rel="noopener">
+      <span class="panel-arrow">▸</span>
+      <span>GitHub</span>
+      <span class="panel-external">↗</span>
+    </a>
+
+    <a class="about-panel-item social-item"
+       href="https://app.hackthebox.com/profile/910232"
+       target="_blank"
+       rel="noopener">
+      <span class="panel-arrow">▸</span>
+      <span>Hack The Box</span>
+      <span class="panel-external">↗</span>
+    </a>
+
+    <a class="about-panel-item social-item"
+       href="https://www.linkedin.com/in/juan-miguel-regalado-nu%C3%B1o-a3b14b278"
+       target="_blank"
+       rel="noopener">
+      <span class="panel-arrow">▸</span>
+      <span>LinkedIn</span>
+      <span class="panel-external">↗</span>
+    </a>
+
+    <a class="about-panel-item social-item"
+       href="https://www.instagram.com/_miguelitornu07"
+       target="_blank"
+       rel="noopener">
+      <span class="panel-arrow">▸</span>
+      <span>Instagram</span>
+      <span class="panel-external">↗</span>
+    </a>
+
+  </div>
+</div>
 
 </div>
 </section>
